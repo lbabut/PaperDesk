@@ -15,7 +15,7 @@ The currently validated release is **1.0.5**, tested on reMarkable OS
 
 - `product/` — installable release tree, including source and licence notices.
 - `tests/` — package, QML, and physical-tablet user journey tests.
-- `website/` — product site and local waitlist service.
+- `website/` — open-source product site and download service.
 - `docs/` — positioning, go-to-market plan, launch checklist, and the
   [control-by-control UX audit](docs/UX-CONTROL-AUDIT.md).
 - `scripts/` — repeatable build and verification helpers.
@@ -49,8 +49,8 @@ PAPERDESK_E2E_TARGET=journey PAPERDESK_E2E_LOOPS=2 ./tests/run-tablet-e2e.sh
 python3 website/server.py --host 127.0.0.1 --port 8090
 ```
 
-Open `http://127.0.0.1:8090/`. Interest-form submissions are stored locally
-in `website/data/interests.sqlite3` and are intentionally not committed.
+Open `http://127.0.0.1:8090/`. The site does not collect accounts, email
+addresses, analytics, or telemetry.
 
 ## Independence and warranty
 

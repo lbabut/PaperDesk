@@ -157,7 +157,11 @@ systemctl reset-failed xochitl
 systemctl start xochitl
 '
 
-if [[ "$TARGET" == "web" || "$TARGET" == "journey" ]]; then
+if [[ "$TARGET" == "showcase" ]]; then
+    remote 'sed -i '\''s/^webFixture=true$/webFixture=false/; s/^rssLongArticle=true$/rssLongArticle=false/; s/^rssStressParser=true$/rssStressParser=false/; s/^rssTraceScroll=true$/rssTraceScroll=false/'\'' /home/root/.config/remarkable/xochitl.conf
+systemctl restart xochitl
+sleep 8'
+elif [[ "$TARGET" == "web" || "$TARGET" == "journey" ]]; then
     remote 'printf "\n[PaperWeb]\nsavedMobileMode=true\n" >>/home/root/.config/remarkable/xochitl.conf
 systemctl restart xochitl
 sleep 8'
@@ -199,6 +203,44 @@ capture_screen "$ARTIFACT_DIR/paperdesk-autostart.png"
 sleep 2
 
 case "$TARGET" in
+    showcase)
+        tap 360 500
+        wait_for_log 'PaperDesk touch launching literm' 10
+        tap 1120 50
+        wait_for_log 'PaperDesk Terminal shortcuts opened' 8
+        capture_screen "$ARTIFACT_DIR/showcase-terminal.png"
+        tap 1306 52
+        wait_for_log 'PaperDesk Terminal action close' 8
+        sleep 2
+
+        tap 1040 500
+        wait_for_log 'PaperDesk touch launching paperweb' 10
+        sleep 8
+        capture_screen "$ARTIFACT_DIR/showcase-web.png"
+        tap 1310 52
+        wait_for_log 'PaperWeb action close' 8
+        sleep 2
+
+        tap 360 1250
+        wait_for_log 'PaperDesk touch launching paperrdp-login' 10
+        sleep 3
+        capture_screen "$ARTIFACT_DIR/showcase-rdp.png"
+        tap 1280 60
+        wait_for_log 'PaperDesk RDP action close' 8
+        sleep 2
+
+        tap 1040 1250
+        wait_for_log 'PaperDesk touch launching paperrss' 10
+        sleep 5
+        if remote "journalctl -u xochitl --since '@$RUN_STARTED' --no-pager" | grep -Fq 'PaperRSS E2E full text ready'; then
+            echo 'RSS showcase unexpectedly entered the hardware test fixture' >&2
+            exit 1
+        fi
+        capture_screen "$ARTIFACT_DIR/showcase-rss.png"
+        tap 1304 52
+        wait_for_log 'PaperRSS action close' 30
+        echo "PASS: real tablet showcase captures contain current production UI without RSS fixtures"
+        ;;
     journey)
         for ((journey = 1; journey <= JOURNEY_LOOPS; ++journey)); do
             echo "User journey $journey/$JOURNEY_LOOPS: Terminal"

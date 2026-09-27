@@ -2,13 +2,7 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
-import json
 import mimetypes
-import re
-import sqlite3
-import time
-from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
@@ -16,28 +10,6 @@ from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parent
 REPO = ROOT.parent
-DATA = ROOT / "data"
-DB = DATA / "interests.sqlite3"
-EMAIL = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]{2,}$")
-MAX_BODY = 4096
-
-
-def initialise() -> None:
-    DATA.mkdir(mode=0o700, parents=True, exist_ok=True)
-    with sqlite3.connect(DB) as db:
-        db.execute(
-            """CREATE TABLE IF NOT EXISTS interests (
-            id INTEGER PRIMARY KEY,
-            created_at INTEGER NOT NULL,
-            email TEXT NOT NULL,
-            use_case TEXT NOT NULL,
-            consent INTEGER NOT NULL,
-            source TEXT NOT NULL,
-            visitor_hash TEXT NOT NULL
-            )"""
-        )
-
-
 class Handler(BaseHTTPRequestHandler):
     server_version = "PaperDesk/1.0"
 
@@ -54,9 +26,6 @@ class Handler(BaseHTTPRequestHandler):
     def send_bytes(self, code: int, payload: bytes, content_type: str) -> None:
         self.send_standard_headers(code, content_type, len(payload))
         self.wfile.write(payload)
-
-    def send_json(self, code: int, value: dict) -> None:
-        self.send_bytes(code, json.dumps(value).encode(), "application/json; charset=utf-8")
 
     def target_for_path(self, path: str) -> tuple[Path, str] | None:
         if path == "/healthz":
@@ -99,34 +68,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_standard_headers(200, mime, target.stat().st_size)
 
     def do_POST(self) -> None:
-        if urlsplit(self.path).path != "/api/interest":
-            self.send_json(404, {"ok": False, "error": "not_found"})
-            return
-        try:
-            length = int(self.headers.get("Content-Length", "0"))
-        except ValueError:
-            length = 0
-        if length < 2 or length > MAX_BODY:
-            self.send_json(413, {"ok": False, "error": "invalid_body"})
-            return
-        try:
-            data = json.loads(self.rfile.read(length))
-        except (json.JSONDecodeError, UnicodeDecodeError):
-            self.send_json(400, {"ok": False, "error": "invalid_json"})
-            return
-        email = str(data.get("email", "")).strip().lower()[:254]
-        use_case = str(data.get("useCase", "")).strip()[:120]
-        consent = data.get("consent") is True
-        if not EMAIL.match(email) or not use_case or not consent:
-            self.send_json(400, {"ok": False, "error": "invalid_fields"})
-            return
-        visitor = hashlib.sha256((self.client_address[0] + "paperdesk-local-salt").encode()).hexdigest()
-        with sqlite3.connect(DB) as db:
-            db.execute(
-                "INSERT INTO interests(created_at,email,use_case,consent,source,visitor_hash) VALUES(?,?,?,?,?,?)",
-                (int(time.time()), email, use_case, 1, "product-site", visitor),
-            )
-        self.send_json(HTTPStatus.CREATED, {"ok": True})
+        self.send_bytes(404, b"not found\n", "text/plain; charset=utf-8")
 
     def log_message(self, fmt: str, *args: object) -> None:
         print(f"{self.address_string()} - {fmt % args}")
@@ -137,7 +79,6 @@ def main() -> None:
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8090)
     args = parser.parse_args()
-    initialise()
     ThreadingHTTPServer((args.host, args.port), Handler).serve_forever()
 
 
