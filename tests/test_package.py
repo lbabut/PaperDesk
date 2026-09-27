@@ -223,6 +223,7 @@ class PackageRegressionTests(unittest.TestCase):
 
     def test_rss_full_text_has_dedicated_touch_scroller(self):
         qml = (RELEASE / "payload/apps/paperrss/ui/main.qml").read_text()
+        self.assertIn('objectName: "rssReaderCloseButton"', qml)
         self.assertIn('objectName: "readerTouch"', qml)
         self.assertIn('objectName: "readerFlick"', qml)
         self.assertIn("MultiPointTouchArea", qml)

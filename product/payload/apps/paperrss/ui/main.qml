@@ -1023,6 +1023,16 @@ Rectangle {
                             loading ? abortRequests() : fetchFullArticle()
                         }
                     }
+                    ActionButton {
+                        objectName: "rssReaderCloseButton"
+                        label: "Close"
+                        Layout.preferredWidth: 176
+                        Layout.fillHeight: true
+                        onTriggered: {
+                            console.log("PaperRSS action close")
+                            root.close()
+                        }
+                    }
                 }
             }
 

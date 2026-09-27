@@ -415,6 +415,10 @@ Item {
             spy.target = scene.rss
             tap("rssCloseButton")
             compare(spy.count, 1)
+            scene.rss.openArticle(0)
+            compare(scene.rss.view, "reader")
+            tap("rssReaderCloseButton")
+            compare(spy.count, 2)
             spy.destroy()
         }
 

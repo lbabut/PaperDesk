@@ -316,9 +316,9 @@ case "$TARGET" in
             wait_for_log 'PaperRSS E2E zoom gesture' 10
             pinch 450 900 950 900 600 900 800 900 700
             wait_for_log 'PaperRSS E2E zoom gesture' 10
-            tap 1112 52
+            tap 940 52
             wait_for_log 'PaperRSS action favourite' 8
-            tap 1112 52
+            tap 940 52
             wait_for_log 'PaperRSS action favourite' 8
             tap 100 52
             wait_for_log 'PaperRSS action articles' 8
@@ -394,7 +394,7 @@ case "$TARGET" in
         wait_for_log 'PaperRSS E2E full text scrolled' 10
         pinch 600 900 800 900 450 900 950 900 700
         wait_for_log 'PaperRSS E2E zoom gesture' 10
-        tap 1112 52
+        tap 940 52
         wait_for_log 'PaperRSS action favourite' 8
         tap 100 52
         wait_for_log 'PaperRSS action articles' 8
