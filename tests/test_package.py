@@ -105,6 +105,9 @@ class PackageRegressionTests(unittest.TestCase):
                 "rssCancelAddButton", "rssAddButton", "rssFeedNameInput",
                 "rssFeedUrlInput",
             ),
+            "papercare": (
+                "careCheckButton", "careInstallButton", "careCloseButton",
+            ),
         }
         for app_name, targets in expected.items():
             qml = (apps / app_name / "ui/main.qml").read_text()
@@ -131,10 +134,10 @@ class PackageRegressionTests(unittest.TestCase):
         apps = RELEASE / "payload/apps"
         qml = {
             name: (apps / name / "ui/main.qml").read_text()
-            for name in ("paperdesk", "literm", "paperweb", "paperrdp-login", "paperrss")
+            for name in ("paperdesk", "literm", "paperweb", "paperrdp-login", "paperrss", "papercare")
         }
         self.assertIn("PAPERDESK  /  E-INK WORKSPACE", qml["paperdesk"])
-        for name in ("literm", "paperweb", "paperrdp-login", "paperrss"):
+        for name in ("literm", "paperweb", "paperrdp-login", "paperrss", "papercare"):
             self.assertIn("PAPERDESK  /", qml[name], name)
             self.assertIn("radius: 8", qml[name], name)
         self.assertIn("var paperCss", qml["paperweb"])
@@ -180,6 +183,33 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("systemctl enable xovi-autostart.service", installer)
         uninstaller = (RELEASE / "uninstall.sh").read_text()
         self.assertIn("systemctl disable xovi-autostart.service", uninstaller)
+
+    def test_updater_requires_signed_and_hashed_official_packages(self):
+        system = RELEASE / "payload/system"
+        agent = (system / "paperdesk-update-agent").read_text()
+        self.assertIn("openssl pkeyutl -verify -rawin -pubin", agent)
+        self.assertIn("sha256sum -c -", agent)
+        self.assertIn("sha256sum -c SHA256SUMS", agent)
+        self.assertIn("version_is_newer", agent)
+        self.assertIn("52428800", agent)
+        self.assertIn("The update size does not match", agent)
+        self.assertIn("systemctl --no-block restart xovi-autostart.service", agent)
+        self.assertIn("^/download/paperdesk-", agent)
+        self.assertNotIn("eval ", agent)
+        self.assertTrue((system / "paperdesk-release-public.pem").is_file())
+        installer = (RELEASE / "install.sh").read_text()
+        self.assertIn("systemctl enable --now paperdesk-update.path", installer)
+        self.assertIn("paperdesk-update-agent", installer)
+        self.assertIn("TriggerLimitIntervalSec=0", (system / "paperdesk-update.path").read_text())
+        self.assertIn("StartLimitIntervalSec=0", (system / "paperdesk-update.service").read_text())
+
+    def test_usb_management_code_is_local_and_never_copied(self):
+        installer = (RELEASE / "install-from-computer.sh").read_text()
+        self.assertIn("paperdesk.local.conf", installer)
+        self.assertIn("--exclude='./paperdesk.local.conf'", installer)
+        self.assertIn("SSH_ASKPASS_REQUIRE=force", installer)
+        self.assertNotIn("sshpass", installer)
+        self.assertIn("USB_MANAGEMENT_CODE=", (RELEASE / "paperdesk.conf.example").read_text())
 
     def test_rdp_engine_cannot_fall_back_to_legacy_login(self):
         source = (RELEASE / "payload/apps/paperrdp/paperrdp.cpp").read_text()
@@ -267,6 +297,8 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("PaperWeb HTML reader items", runner)
         self.assertIn("web-live-dynamic)", runner)
         self.assertIn("PaperWeb embedded reader items", runner)
+        self.assertIn("care)", runner)
+        self.assertIn("PaperDesk Care action check", runner)
         self.assertIn("LOG_EXPECTED", runner)
 
     def test_web_keyboard_is_contextual(self):

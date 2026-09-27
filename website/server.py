@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import mimetypes
+import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
@@ -30,8 +31,9 @@ class Handler(BaseHTTPRequestHandler):
     def target_for_path(self, path: str) -> tuple[Path, str] | None:
         if path == "/healthz":
             return None
-        if path == "/download/paperdesk-1.0.5.zip":
-            target = REPO / "dist" / "paperdesk-1.0.5.zip"
+        archive = path.removeprefix("/download/")
+        if re.fullmatch(r"paperdesk-[0-9]+\.[0-9]+\.[0-9]+\.zip", archive):
+            target = REPO / "dist" / archive
         elif path == "/download/SHA256SUMS":
             target = REPO / "dist" / "SHA256SUMS"
         else:

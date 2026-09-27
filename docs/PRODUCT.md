@@ -18,20 +18,15 @@ PaperDesk is not another launcher or collection of unrelated ports. It is one
 tested workflow with a consistent touch UI, a shared e-ink refresh philosophy,
 an installer with backups, and real-device regression tests.
 
-## Offer ladder
+## Sustainability
 
-1. **Community — free:** source, self-install package, checksums, no guaranteed
-   compatibility support.
-2. **Founding Edition — EUR 29 one-time:** tested installer, compatibility
-   notes, 12 months of update notifications, and one guided setup session.
-3. **Care — EUR 19/year after year one:** update guidance and priority support.
-
-The paid value is convenience, confidence, maintenance, and support—not the
-removal of open-source freedoms.
+PaperDesk remains free and open source. Voluntary support funds compatibility
+work, real-device testing, documentation, and maintenance. Optional guided
+setup can be offered separately without locking features or updates behind a
+payment.
 
 ## Current boundary
 
-Release 1.0.5 is validated only on reMarkable 2 with reMarkable OS 3.29.0.149,
+Release 1.1.0 is validated only on reMarkable 2 with reMarkable OS 3.29.0.149,
 XOVI 0.3.3, AppLoad 0.6.0, rm-xovi-extensions v19, and LiTerm 0.1.7. Public
 copy must say this clearly and must not imply official support from reMarkable.
-

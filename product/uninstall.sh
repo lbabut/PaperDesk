@@ -11,13 +11,16 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
-for app in paperdesk literm paperweb paperrdp-login paperrdp paperrss; do
+for app in paperdesk literm paperweb paperrdp-login paperrdp paperrss papercare; do
     rm -rf "$TARGET/$app"
 done
 
 rm -f /home/root/.local/bin/rmssh-menu
 systemctl disable xovi-autostart.service 2>/dev/null || true
+systemctl disable --now paperdesk-update.path 2>/dev/null || true
 rm -f /etc/systemd/system/xovi-autostart.service
+rm -f /etc/systemd/system/paperdesk-update.path /etc/systemd/system/paperdesk-update.service
+rm -rf /home/root/.local/lib/paperdesk
 systemctl daemon-reload
 
 LAST_BACKUP=""

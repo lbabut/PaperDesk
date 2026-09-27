@@ -42,7 +42,9 @@ BEGIN { in_e2e=0 }
 mv /tmp/paperdesk-e2e-clean.conf /home/root/.config/remarkable/xochitl.conf
 printf "quit\n" >/tmp/paperdesk-touch.fifo 2>/dev/null || true
 sleep 1
-killall paperdesk-rm-touchd 2>/dev/null || true
+for helper_pid in $(pidof paperdesk-rm-touchd || true); do
+    kill -9 "$helper_pid" 2>/dev/null || true
+done
 rm -f /tmp/paperdesk-touch.fifo /tmp/paperdesk-touch.ready
 rm -f /tmp/paperdesk-e2e-physical-dev /tmp/paperdesk-e2e-xochitl.conf
 systemctl reset-failed xochitl
@@ -145,6 +147,9 @@ BEGIN { in_e2e=0 }
 '\'' /home/root/.config/remarkable/xochitl.conf > /tmp/paperdesk-e2e-base.conf
 mv /tmp/paperdesk-e2e-base.conf /home/root/.config/remarkable/xochitl.conf
 printf "\n[PaperDeskE2E]\nautostart=true\napplicationId=paperdesk\nscenarioVersion=20260927\ntraceTouches=true\nwebFixture=true\nwebTraceGestures=true\nrssLongArticle=true\nrssStressParser=true\nrssTraceScroll=true\n" >>/home/root/.config/remarkable/xochitl.conf
+for helper_pid in $(pidof paperdesk-rm-touchd || true); do
+    kill -9 "$helper_pid" 2>/dev/null || true
+done
 rm -f /tmp/paperdesk-touch.fifo /tmp/paperdesk-touch.ready
 nohup /tmp/paperdesk-rm-touchd >/tmp/paperdesk-touch.log 2>&1 &
 for n in $(seq 1 40); do test -e /tmp/paperdesk-touch.ready && break; sleep 0.1; done
@@ -164,6 +169,7 @@ systemctl reset-failed xochitl
 systemctl start xochitl
 '
 
+AUTOSTART_APPLICATION=paperdesk
 if [[ "$TARGET" == "showcase" ]]; then
     remote 'sed -i '\''s/^webFixture=true$/webFixture=false/; s/^rssLongArticle=true$/rssLongArticle=false/; s/^rssStressParser=true$/rssStressParser=false/; s/^rssTraceScroll=true$/rssTraceScroll=false/'\'' /home/root/.config/remarkable/xochitl.conf
 systemctl restart xochitl
@@ -200,9 +206,14 @@ elif [[ "$TARGET" == "web-live-polish-text" ]]; then
     remote 'printf "\n[PaperWeb]\nsavedShowPictures=false\nsavedMobileMode=true\n[PaperDeskE2E]\nwebLivePolishText=true\n" >>/home/root/.config/remarkable/xochitl.conf
 systemctl restart xochitl
 sleep 8'
+elif [[ "$TARGET" == "care" ]]; then
+    AUTOSTART_APPLICATION=papercare
+    remote 'sed -i '\''s/^applicationId=.*/applicationId=papercare/; s/^autostart=.*/autostart=true/'\'' /home/root/.config/remarkable/xochitl.conf
+systemctl restart xochitl
+sleep 28'
 fi
 
-wait_for_log 'PaperDesk E2E autostart paperdesk' 40
+wait_for_log "PaperDesk E2E autostart $AUTOSTART_APPLICATION" 40
 wait_for_log 'Application starting with' 10
 BASE_PID=$(remote 'pidof xochitl' | awk '{print $1}')
 assert_tablet_healthy 'startup'
@@ -588,6 +599,17 @@ case "$TARGET" in
         sleep 2
         capture_screen "$ARTIFACT_DIR/rss-add-feed.png"
         echo "PASS: physical input covered RSS reader, scroll, list, and add-feed view"
+        ;;
+    care)
+        wait_for_log 'PaperDesk Care action check' 15
+        wait_for_log 'PaperDesk Care manifest' 15
+        tap 1117 56
+        wait_for_log 'PaperDesk Care action check' 8
+        wait_for_log 'PaperDesk Care manifest' 15
+        tap 1300 56
+        wait_for_log 'PaperDesk Care action close' 8
+        assert_tablet_healthy 'PaperDesk Care check and close'
+        echo "PASS: physical input checked the signed update feed and closed PaperDesk Care"
         ;;
     *)
         echo "Unknown PAPERDESK_E2E_TARGET: $TARGET" >&2

@@ -1,0 +1,10 @@
+[Unit]
+Description=Watch for PaperDesk update requests
+
+[Path]
+PathChanged=/home/root/.config/remarkable/xochitl.conf
+Unit=paperdesk-update.service
+TriggerLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target

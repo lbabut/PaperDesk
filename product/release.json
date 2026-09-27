@@ -1,13 +1,14 @@
 {
   "product": "PaperDesk",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "releaseDate": "2026-09-27",
   "device": "reMarkable 2",
   "components": [
     { "id": "literm", "name": "PaperDesk Terminal" },
     { "id": "paperweb", "name": "PaperDesk Web" },
     { "id": "paperrdp-login", "name": "PaperDesk RDP" },
-    { "id": "paperrss", "name": "PaperDesk RSS" }
+    { "id": "paperrss", "name": "PaperDesk RSS" },
+    { "id": "papercare", "name": "PaperDesk Care" }
   ],
   "internalComponents": [
     { "id": "external::paperrdp", "name": "PaperDesk RDP Engine", "role": "hidden FreeRDP/QTFB worker" }

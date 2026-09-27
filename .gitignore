@@ -7,4 +7,4 @@ website/data/
 dist/*.tar.gz
 dist/*.zip
 !dist/SHA256SUMS
-
+product/paperdesk.local.conf

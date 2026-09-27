@@ -3,10 +3,12 @@ import threading
 import unittest
 import urllib.error
 import urllib.request
+import json
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+VERSION = (ROOT / "product/VERSION").read_text().strip()
 
 
 def load_server():
@@ -54,19 +56,30 @@ class WebsiteTests(unittest.TestCase):
                 "rdp-session.png",
             ):
                 self.assertIn(f"/assets/screens/{screenshot}", body)
-        with self.request("/download/paperdesk-1.0.5.zip") as response:
+        with self.request(f"/download/paperdesk-{VERSION}.zip") as response:
             self.assertEqual(response.status, 200)
             self.assertGreater(int(response.headers["Content-Length"]), 1_000_000)
             self.assertGreater(len(response.read()), 1_000_000)
 
     def test_head_supports_health_and_download_monitors(self):
-        for path in ("/healthz", "/", "/download/paperdesk-1.0.5.zip"):
+        for path in ("/healthz", "/", f"/download/paperdesk-{VERSION}.zip", "/update/latest.json", "/update/latest.json.sig"):
             request = urllib.request.Request(
                 f"http://127.0.0.1:{self.port}{path}", method="HEAD"
             )
             with urllib.request.urlopen(request) as response:
                 self.assertEqual(response.status, 200)
                 self.assertGreater(int(response.headers["Content-Length"]), 0)
+
+    def test_signed_update_feed_matches_download(self):
+        with self.request("/update/latest.json") as response:
+            manifest = json.loads(response.read())
+        self.assertEqual(manifest["product"], "PaperDesk")
+        self.assertEqual(manifest["version"], VERSION)
+        self.assertEqual(manifest["archiveUrl"], f"/download/paperdesk-{VERSION}.zip")
+        self.assertEqual(len(manifest["archiveSha256"]), 64)
+        self.assertGreaterEqual(len(manifest["releaseNotes"]), 3)
+        with self.request("/update/latest.json.sig") as response:
+            self.assertGreater(len(response.read()), 32)
 
     def test_retired_interest_endpoint_does_not_collect_data(self):
         request = urllib.request.Request(

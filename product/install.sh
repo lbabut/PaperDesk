@@ -3,7 +3,7 @@
 set -eu
 
 PRODUCT="PaperDesk"
-VERSION="1.0.5"
+VERSION="1.1.0"
 TARGET="/home/root/xovi/exthome/appload"
 QRR_DIR="/home/root/xovi/exthome/qt-resource-rebuilder"
 STATE="/home/root/.local/share/paperdesk"
@@ -20,14 +20,14 @@ if [ ! -d "/home/root/xovi" ] || [ ! -d "$TARGET" ]; then
     exit 1
 fi
 
-for required in paperdesk literm paperweb paperrdp-login paperrdp paperrss shims; do
+for required in paperdesk literm paperweb paperrdp-login paperrdp paperrss papercare shims; do
     if [ ! -d "$PAYLOAD/apps/$required" ]; then
         echo "Niepelna paczka: brak payload/apps/$required" >&2
         exit 1
     fi
 done
 
-for required in paperdesk-appload-compat.qrr paperdesk-appload-window.qml paperdesk-appload.qml xovi-autostart.service; do
+for required in paperdesk-appload-compat.qrr paperdesk-appload-window.qml paperdesk-appload.qml xovi-autostart.service paperdesk-update-agent paperdesk-update.service paperdesk-update.path paperdesk-release-public.pem; do
     if [ ! -f "$PAYLOAD/system/$required" ]; then
         echo "Niepelna paczka: brak payload/system/$required" >&2
         exit 1
@@ -35,8 +35,16 @@ for required in paperdesk-appload-compat.qrr paperdesk-appload-window.qml paperd
 done
 
 cp "$PAYLOAD/system/xovi-autostart.service" /etc/systemd/system/xovi-autostart.service
+cp "$PAYLOAD/system/paperdesk-update.service" /etc/systemd/system/paperdesk-update.service
+cp "$PAYLOAD/system/paperdesk-update.path" /etc/systemd/system/paperdesk-update.path
+mkdir -p /home/root/.local/lib/paperdesk
+cp "$PAYLOAD/system/paperdesk-update-agent" /home/root/.local/lib/paperdesk/paperdesk-update-agent
+cp "$PAYLOAD/system/paperdesk-release-public.pem" /home/root/.local/lib/paperdesk/release-public.pem
+chmod 755 /home/root/.local/lib/paperdesk/paperdesk-update-agent
+chmod 644 /home/root/.local/lib/paperdesk/release-public.pem
 systemctl daemon-reload
 systemctl enable xovi-autostart.service
+systemctl enable --now paperdesk-update.path
 
 if [ ! -f /home/root/xovi/extensions.d/qt-resource-rebuilder.so ]; then
     echo "Brak rozszerzenia qt-resource-rebuilder wymaganego przez poprawke AppLoad." >&2
@@ -51,7 +59,7 @@ mkdir -p "$BACKUP/apps" "$BACKUP/system" "$TARGET" /home/root/.local/bin \
 echo "$PRODUCT $VERSION — instalacja"
 echo "Kopia poprzedniej wersji: $BACKUP"
 
-for app in paperdesk literm paperweb paperrdp-login paperrdp paperrss shims; do
+for app in paperdesk literm paperweb paperrdp-login paperrdp paperrss papercare shims; do
     if [ -e "$TARGET/$app" ]; then
         cp -R "$TARGET/$app" "$BACKUP/apps/$app"
     fi

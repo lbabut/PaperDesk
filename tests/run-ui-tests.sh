@@ -16,8 +16,10 @@ export QT_QUICK_BACKEND=software
 export QML_XHR_ALLOW_FILE_READ=1
 
 TEST_CONFIG=$(mktemp -d)
-trap 'rm -rf "$TEST_CONFIG"' EXIT INT TERM
+QML_OUTPUT=$(mktemp)
+trap 'rm -rf "$TEST_CONFIG"; rm -f "$QML_OUTPUT"' EXIT INT TERM
 export XDG_CONFIG_HOME="$TEST_CONFIG"
 
 python3 -m unittest discover -s "$ROOT/tests" -p 'test_*.py' -v
-"$QML_RUNNER" -input "$ROOT/tests/qml" -import "$ROOT/tests/qml/imports"
+"$QML_RUNNER" -input "$ROOT/tests/qml" -import "$ROOT/tests/qml/imports" | tee "$QML_OUTPUT"
+grep -Eq '^Totals: [0-9]+ passed, 0 failed,' "$QML_OUTPUT"

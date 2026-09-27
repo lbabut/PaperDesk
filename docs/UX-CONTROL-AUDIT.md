@@ -15,7 +15,7 @@ This audit treats tablet space, e-ink refreshes, and attention as scarce resourc
 | RSS reader | Yes | Read cached RSS/Atom feeds | Yes; core product tool |
 | Menu | Yes | Return to AppLoad/system navigation | No; expected navigation |
 
-Decision: no separate PaperDesk launcher inside the hub. The four application cards are the product navigation.
+Decision: no separate PaperDesk launcher inside the hub. The five AppLoad applications are the product navigation.
 
 ## Terminal
 

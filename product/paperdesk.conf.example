@@ -1,0 +1,3 @@
+# Copy this file to paperdesk.local.conf and keep it private (chmod 600).
+# The value is the reMarkable USB web-interface management code.
+USB_MANAGEMENT_CODE=

@@ -1,0 +1,17 @@
+{
+  "product": "PaperDesk",
+  "channel": "stable",
+  "version": "1.1.0",
+  "publishedAt": "2026-09-27",
+  "archiveUrl": "/download/paperdesk-1.1.0.zip",
+  "archiveSha256": "f0826546e3315a335272cfdc7bc0c6025da2c1d0ffb5086735d7742f6ae58655",
+  "archiveSize": 1301623,
+  "releaseNotes": [
+    "Meet PaperDesk Care, a calm home for updates and release information.",
+    "Check the installed and latest versions without opening a terminal.",
+    "Every official release manifest is signed with Ed25519.",
+    "Every downloaded archive and packaged component is verified before installation.",
+    "Automatic backups preserve applications, connections and reader data.",
+    "USB installation can use one private local management-code setting."
+  ]
+}

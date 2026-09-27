@@ -1,0 +1,6 @@
+Meet PaperDesk Care, a calm home for updates and release information.
+Check the installed and latest versions without opening a terminal.
+Every official release manifest is signed with Ed25519.
+Every downloaded archive and packaged component is verified before installation.
+Automatic backups preserve applications, connections and reader data.
+USB installation can use one private local management-code setting.

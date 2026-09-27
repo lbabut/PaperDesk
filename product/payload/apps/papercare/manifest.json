@@ -1,0 +1,10 @@
+{
+  "name": "PaperDesk Care",
+  "description": "Secure updates and release information",
+  "icon": "icon.png",
+  "entry": "/ui/main.qml",
+  "id": "papercare",
+  "loadsBackend": false,
+  "supportsScaling": true,
+  "canHaveMultipleFrontends": false
+}

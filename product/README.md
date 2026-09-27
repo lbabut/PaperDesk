@@ -1,7 +1,7 @@
-# PaperDesk 1.0.5
+# PaperDesk 1.1.0
 
 PaperDesk zmienia reMarkable 2 w spokojne, monochromatyczne stanowisko sieciowe.
-Pakiet dodaje cztery aplikacje bezposrednio do listy AppLoad i zachowuje ich
+Pakiet dodaje piec aplikacji bezposrednio do listy AppLoad i zachowuje ich
 ustawienia pomiedzy uruchomieniami. Redundantny hub oraz techniczny proces RDP
 sa ukryte przed uzytkownikiem.
 
@@ -16,6 +16,8 @@ sa ukryte przed uzytkownikiem.
   obrazu i lokalnie zapisywany profil.
 - **Czytnik RSS** — RSS/Atom, wlasne kanaly, ulubione, przeczytane artykuly,
   pelny tekst oraz cache offline.
+- **PaperDesk Care** — wersja lokalna i dostepna, informacje o wydaniu oraz
+  aktualizacja z podpisanego i zweryfikowanego pakietu.
 
 PaperDesk nie odswieza niczego automatycznie w tle. Siec i ekran sa uzywane
 tylko po poleceniu uzytkownika, co ogranicza miganie i zuzycie baterii.
@@ -51,6 +53,14 @@ dokladnej wersji systemu. Na testowanym urzadzeniu zrobiono to narzedziem
 Podlacz tablet przez USB, rozpakuj paczke i uruchom:
 
 ```sh
+cp paperdesk.conf.example paperdesk.local.conf
+chmod 600 paperdesk.local.conf
+```
+
+W `paperdesk.local.conf` wpisz tylko kod zarzadzania USB z ustawien tabletu,
+a nastepnie uruchom:
+
+```sh
 ./install-from-computer.sh
 ```
 
@@ -83,6 +93,11 @@ wiec najpierw zakoncz prace nad dokumentami.
   ograniczyc grafike do 760 px i usunac animacje. Nie wysyla tam cookies ani
   danych logowania.
 - PaperDesk nie ma telemetrii ani zewnetrznego konta.
+- PaperDesk Care przypina klucz publiczny wydan, weryfikuje podpis Ed25519,
+  sume SHA-256 archiwum oraz wewnetrzne sumy plikow przed instalacja.
+- Kod zarzadzania USB pozostaje w ignorowanym przez Git pliku
+  `paperdesk.local.conf`; nie jest kopiowany na tablet ani przekazywany w
+  argumentach procesu.
 
 ## Usuwanie
 
@@ -99,7 +114,7 @@ bezposrednio w paczce.
 
 ## Status wydania
 
-Wydanie 1.0.5 zostalo przetestowane na fizycznym reMarkable 2 z systemem
+Wydanie 1.1.0 zostalo przetestowane na fizycznym reMarkable 2 z systemem
 3.29.0.149: uruchamianie wszystkich modulow, wszystkie bezpieczne akcje menu,
 klawiatura systemowa, zachowanie ustawien, odswiezanie RSS, pobieranie pelnego
 tekstu, czyszczenie okna AppLoad oraz fizyczne gesty przewijania i pinch.

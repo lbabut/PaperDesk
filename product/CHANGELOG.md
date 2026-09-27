@@ -1,5 +1,14 @@
 # Historia zmian
 
+## 1.1.0 — 2026-09-27
+
+- dodano PaperDesk Care: czytelny ekran wersji, dostepnosci aktualizacji i informacji o wydaniu,
+- aktualizacje korzystaja z podpisanego manifestu Ed25519 i przypietego klucza publicznego,
+- paczka ZIP jest weryfikowana przez SHA-256 przed rozpakowaniem, a jej pliki przez wewnetrzny manifest przed instalacja,
+- instalator nadal wykonuje kopie poprzedniej wersji i zachowuje konfiguracje aplikacji,
+- zadanie aktualizacji dziala poza interfejsem Xochitl, dzieki czemu moze bezpiecznie przeladowac XOVI po instalacji,
+- konfiguracja instalacji przez USB wymaga tylko lokalnego kodu zarzadzania; sekret nie trafia do repozytorium ani argumentow procesu.
+
 ## 1.0.5 — 2026-09-27
 
 - odswiezono caly system wizualny: redakcyjna typografia, lzejsze obramowania, wspolny rytm, promienie i stany dotyku,
