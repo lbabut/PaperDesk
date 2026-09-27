@@ -690,6 +690,7 @@ Rectangle {
                             model: feedsModel
                             boundsBehavior: Flickable.StopAtBounds
                             delegate: Rectangle {
+                                property bool deleteArmed: false
                                 width: feedsList.width
                                 height: 86
                                 color: model.url === selectedFeedUrl ? "black" : "white"
@@ -717,13 +718,24 @@ Rectangle {
                                     anchors.right: parent.right
                                     anchors.verticalCenter: parent.verticalCenter
                                     anchors.rightMargin: 10
-                                    width: 50
+                                    width: 92
                                     height: 50
-                                    label: "×"
+                                    label: parent.deleteArmed ? "Sure?" : "Remove"
                                     onTriggered: {
-                                        console.log("PaperRSS action delete feed", model.url)
-                                        removeFeed(index)
+                                        if (!parent.deleteArmed) {
+                                            parent.deleteArmed = true
+                                            deleteReset.restart()
+                                            console.log("PaperRSS action confirm delete feed", model.url)
+                                        } else {
+                                            console.log("PaperRSS action delete feed", model.url)
+                                            removeFeed(index)
+                                        }
                                     }
+                                }
+                                Timer {
+                                    id: deleteReset
+                                    interval: 3000
+                                    onTriggered: parent.deleteArmed = false
                                 }
                                 Item {
                                     anchors.left: parent.left

@@ -16,7 +16,8 @@ The currently validated release is **1.0.5**, tested on reMarkable OS
 - `product/` — installable release tree, including source and licence notices.
 - `tests/` — package, QML, and physical-tablet user journey tests.
 - `website/` — product site and local waitlist service.
-- `docs/` — positioning, go-to-market plan, and launch checklist.
+- `docs/` — positioning, go-to-market plan, launch checklist, and the
+  [control-by-control UX audit](docs/UX-CONTROL-AUDIT.md).
 - `scripts/` — repeatable build and verification helpers.
 - `dist/` — checksums for distributable artifacts. Release archives are built locally.
 

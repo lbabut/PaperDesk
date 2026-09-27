@@ -55,6 +55,15 @@ class WebsiteTests(unittest.TestCase):
             self.assertEqual(response.status, 200)
             self.assertIn("Your quiet network desk", body)
             self.assertIn("Founding Edition", body)
+            self.assertIn("Every control earns its place", body)
+            self.assertIn('id="tour"', body)
+            for screenshot in (
+                "terminal-shortcuts.png",
+                "web-reader.png",
+                "rss-reading-list.png",
+                "rdp-session.png",
+            ):
+                self.assertIn(f"/assets/screens/{screenshot}", body)
         with self.request("/download/paperdesk-1.0.5.zip") as response:
             self.assertEqual(response.status, 200)
             self.assertGreater(int(response.headers["Content-Length"]), 1_000_000)

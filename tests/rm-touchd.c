@@ -198,11 +198,18 @@ int main(void) {
     while (running && fgets(line, sizeof(line), fifo)) {
         int x1, y1, x2, y2, x3, y3, x4, y4, duration;
         if (sscanf(line, "tap %d %d", &x1, &y1) == 2) {
+            fprintf(stderr, "tap %d %d\n", x1, y1);
+            fflush(stderr);
             tap(touch_fd, x1, y1, tracking_id++);
         } else if (sscanf(line, "swipe %d %d %d %d %d", &x1, &y1, &x2, &y2, &duration) == 5) {
+            fprintf(stderr, "swipe %d %d %d %d %d\n", x1, y1, x2, y2, duration);
+            fflush(stderr);
             swipe(touch_fd, x1, y1, x2, y2, duration, tracking_id++);
         } else if (sscanf(line, "pinch %d %d %d %d %d %d %d %d %d",
                           &x1, &y1, &x2, &y2, &x3, &y3, &x4, &y4, &duration) == 9) {
+            fprintf(stderr, "pinch %d %d %d %d %d %d %d %d %d\n",
+                    x1, y1, x2, y2, x3, y3, x4, y4, duration);
+            fflush(stderr);
             pinch(touch_fd, x1, y1, x2, y2, x3, y3, x4, y4, duration, tracking_id);
             tracking_id += 2;
         } else if (!strncmp(line, "quit", 4)) {

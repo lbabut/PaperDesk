@@ -353,6 +353,9 @@ Item {
             var deleteButton = findChild(scene.rss, "rssDeleteFeedButton_" + before)
             verify(deleteButton !== null)
             mouseClick(deleteButton, deleteButton.width / 2, deleteButton.height / 2, Qt.LeftButton)
+            compare(scene.rss.feedCountForTest(), before + 1)
+            compare(deleteButton.label, "Sure?")
+            mouseClick(deleteButton, deleteButton.width / 2, deleteButton.height / 2, Qt.LeftButton)
             compare(scene.rss.feedCountForTest(), before)
         }
 

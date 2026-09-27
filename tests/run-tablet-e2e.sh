@@ -2,15 +2,16 @@
 set -euo pipefail
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+WORKDIR=${PAPERDESK_WORKDIR:-$ROOT/work}
 HOST=${PAPERDESK_TABLET_HOST:-10.11.99.1}
-KEY=${PAPERDESK_TABLET_KEY:-$ROOT/work/keys/remarkable2_ed25519}
-KNOWN_HOSTS=${PAPERDESK_KNOWN_HOSTS:-$ROOT/work/keys/known_hosts}
+KEY=${PAPERDESK_TABLET_KEY:-$WORKDIR/keys/remarkable2_ed25519}
+KNOWN_HOSTS=${PAPERDESK_KNOWN_HOSTS:-$WORKDIR/keys/known_hosts}
 REMOTE=root@$HOST
 SSH=(ssh -i "$KEY" -o UserKnownHostsFile="$KNOWN_HOSTS" -o StrictHostKeyChecking=yes "$REMOTE")
 SCP=(scp -i "$KEY" -o UserKnownHostsFile="$KNOWN_HOSTS" -o StrictHostKeyChecking=yes)
 RUN_STARTED=$(date +%s)
-ARTIFACT_DIR="$ROOT/work/tests/tablet-e2e"
-TOOLCHAIN="$ROOT/work/arm-toolchain/root"
+ARTIFACT_DIR=${PAPERDESK_ARTIFACT_DIR:-$WORKDIR/tests/tablet-e2e}
+TOOLCHAIN="$WORKDIR/arm-toolchain/root"
 TARGET=${PAPERDESK_E2E_TARGET:-all}
 JOURNEY_LOOPS=${PAPERDESK_E2E_LOOPS:-2}
 BASE_PID=""
@@ -103,6 +104,10 @@ capture_screen() {
         if remote "{ dd bs=1 skip=$skip count=0 && dd bs=$window count=1; } < /proc/$pid/mem 2>/dev/null" |
             ffmpeg -y -loglevel error -f rawvideo -pixel_format bgra \
                 -video_size 1404x1872 -i - -frames:v 1 "$output"; then
+            # Reading xochitl's mapped framebuffer briefly stalls its input
+            # loop on current firmware. Let it resume before the next injected
+            # hardware event, otherwise that first event can be dropped.
+            sleep 2
             return 0
         fi
         sleep 1
@@ -116,8 +121,8 @@ mkdir -p "$ARTIFACT_DIR"
 LD_LIBRARY_PATH="$TOOLCHAIN/usr/lib/x86_64-linux-gnu" \
     "$TOOLCHAIN/usr/bin/arm-linux-gnueabihf-gcc-12" \
     --sysroot="$TOOLCHAIN" -O2 -Wall -Wextra \
-    "$ROOT/tests/rm-touchd.c" -o "$ROOT/work/tests/rm-touchd"
-"${SCP[@]}" "$ROOT/work/tests/rm-touchd" "$REMOTE:/tmp/paperdesk-rm-touchd"
+    "$ROOT/tests/rm-touchd.c" -o "$WORKDIR/tests/rm-touchd"
+"${SCP[@]}" "$WORKDIR/tests/rm-touchd" "$REMOTE:/tmp/paperdesk-rm-touchd"
 
 remote 'set -eu
 chmod 700 /tmp/paperdesk-rm-touchd
@@ -145,7 +150,7 @@ systemctl reset-failed xochitl
 systemctl start xochitl
 '
 
-if [[ "$TARGET" == "web" ]]; then
+if [[ "$TARGET" == "web" || "$TARGET" == "journey" ]]; then
     remote 'printf "\n[PaperWeb]\nsavedMobileMode=true\n" >>/home/root/.config/remarkable/xochitl.conf
 systemctl restart xochitl
 sleep 8'
@@ -269,6 +274,10 @@ case "$TARGET" in
             assert_tablet_healthy "live Physics World refresh $journey"
             tap 160 246
             wait_for_log 'PaperRSS action all articles' 8
+            # rebuildArticles() is synchronous. Wait for the freshly rebuilt
+            # ListModel to settle before sending the next physical gesture;
+            # an evdev tap delivered while Qt is rebuilding can be discarded.
+            sleep 2
             tap 1112 52
             wait_for_log 'PaperRSS action add feed view' 8
             tap 123 67
@@ -343,9 +352,15 @@ case "$TARGET" in
         wait_for_log 'PaperRSS action cancel add' 8
         tap 160 246
         wait_for_log 'PaperRSS action all articles' 8
+        # Give the synchronous ListModel rebuild time to finish. This keeps the
+        # next hardware tap representative of a real user action.
+        sleep 2
         capture_screen "$ARTIFACT_DIR/all-rss-list.png"
         tap 1304 52
-        wait_for_log 'PaperRSS action close' 8
+        # /proc framebuffer capture can pause xochitl's event loop for more
+        # than ten seconds on OS 3.29. Keep the single user tap and allow it
+        # to drain instead of hiding the stall with repeated clicks.
+        wait_for_log 'PaperRSS action close' 30
         echo "PASS: one physical tablet session covered every safe menu action, scrolling, pinch zoom, keyboard and close flows"
         ;;
     terminal)
