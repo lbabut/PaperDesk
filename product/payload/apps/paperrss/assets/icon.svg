@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <rect width="256" height="256" rx="22" fill="white" stroke="black" stroke-width="12"/>
+  <circle cx="67" cy="190" r="18" fill="black"/>
+  <path d="M51 126a79 79 0 0 1 79 79" fill="none" stroke="black" stroke-width="18"/>
+  <path d="M51 67a138 138 0 0 1 138 138" fill="none" stroke="black" stroke-width="18"/>
+  <text x="150" y="78" text-anchor="middle" font-family="sans-serif" font-size="32" font-weight="bold">RSS</text>
+</svg>

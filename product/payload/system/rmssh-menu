@@ -1,0 +1,119 @@
+#!/bin/sh
+
+# RMSSH: a deliberately small SSH launcher for the reMarkable 2 LiTerm app.
+# Profiles are pipe-separated:
+# name|user|host|port|identity_file|remote_command
+
+set -u
+
+CONFIG_DIR="${HOME:-/home/root}/.config/rmssh"
+PROFILES="$CONFIG_DIR/profiles"
+KNOWN_HOSTS="${HOME:-/home/root}/.ssh/known_hosts"
+
+mkdir -p "$CONFIG_DIR" "${HOME:-/home/root}/.ssh"
+chmod 700 "${HOME:-/home/root}/.ssh"
+touch "$PROFILES" "$KNOWN_HOSTS"
+chmod 600 "$PROFILES" "$KNOWN_HOSTS"
+
+clear_screen() {
+    printf '\033[2J\033[H'
+}
+
+pause() {
+    printf '\nPress Enter to return to the menu...'
+    IFS= read -r _answer
+}
+
+connect_profile() {
+    _name=$1
+    _user=$2
+    _host=$3
+    _port=${4:-22}
+    _identity=${5:-}
+    _command=${6:-}
+
+    clear_screen
+    printf 'RMSSH — %s\n\n' "$_name"
+    printf 'Connecting to %s@%s:%s\n\n' "$_user" "$_host" "$_port"
+
+    set -- ssh -tt \
+        -o "UserKnownHostsFile=$KNOWN_HOSTS" \
+        -o StrictHostKeyChecking=ask \
+        -o ConnectTimeout=12 \
+        -o ServerAliveInterval=30 \
+        -o ServerAliveCountMax=3 \
+        -p "$_port"
+    if [ -n "$_identity" ]; then
+        set -- "$@" -i "$_identity"
+    fi
+    set -- "$@" "$_user@$_host"
+    if [ -n "$_command" ]; then
+        set -- "$@" "$_command"
+    fi
+    "$@"
+    _status=$?
+    printf '\nConnection closed (code %s).\n' "$_status"
+    pause
+}
+
+quick_connect() {
+    clear_screen
+    printf 'RMSSH — quick connection\n\n'
+    printf 'Host or IP address: '
+    IFS= read -r _host
+    [ -n "$_host" ] || return
+    printf 'Username: '
+    IFS= read -r _user
+    [ -n "$_user" ] || return
+    printf 'Port [22]: '
+    IFS= read -r _port
+    _port=${_port:-22}
+    connect_profile "$_user@$_host" "$_user" "$_host" "$_port" "" ""
+}
+
+show_profiles() {
+    _number=0
+    while IFS='|' read -r _name _user _host _port _identity _command; do
+        case "$_name" in ''|'#'*) continue ;; esac
+        _number=$((_number + 1))
+        printf '  %s) %s  (%s@%s:%s)\n' "$_number" "$_name" "$_user" "$_host" "${_port:-22}"
+    done < "$PROFILES"
+}
+
+open_numbered_profile() {
+    _wanted=$1
+    _number=0
+    while IFS='|' read -r _name _user _host _port _identity _command; do
+        case "$_name" in ''|'#'*) continue ;; esac
+        _number=$((_number + 1))
+        if [ "$_number" = "$_wanted" ]; then
+            connect_profile "$_name" "$_user" "$_host" "${_port:-22}" "$_identity" "$_command"
+            return 0
+        fi
+    done < "$PROFILES"
+    printf 'No such profile.\n'
+    sleep 1
+}
+
+while :; do
+    clear_screen
+    printf 'RMSSH — SSH terminal for reMarkable 2\n'
+    printf '====================================\n\n'
+    show_profiles
+    printf '\n  n) New connection\n'
+    printf '  l) Local recovery shell\n'
+    printf '  q) Close application\n\n'
+    printf 'Choice: '
+    IFS= read -r _choice || exit 0
+    case "$_choice" in
+        n|N) quick_connect ;;
+        l|L)
+            clear_screen
+            printf 'Local shell. Type exit to return to RMSSH.\n\n'
+            /bin/sh -l
+            ;;
+        q|Q) exit 0 ;;
+        *[!0-9]*|'') ;;
+        *) open_numbered_profile "$_choice" ;;
+    esac
+done

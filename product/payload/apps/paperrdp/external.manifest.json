@@ -1,0 +1,9 @@
+{
+  "name": "PaperDesk RDP Engine",
+  "application": "/home/root/xovi/exthome/appload/paperrdp/paperrdp",
+  "workingDirectory": "/home/root/xovi/exthome/appload/paperrdp",
+  "qtfb": true,
+  "supportsVirtualKeyboard": true,
+  "disablesWindowedMode": true,
+  "aspectRatio": "original"
+}

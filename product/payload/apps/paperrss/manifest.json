@@ -1,0 +1,8 @@
+{
+  "name": "PaperDesk RSS",
+  "loadsBackend": false,
+  "entry": "/ui/main.qml",
+  "id": "paperrss",
+  "supportsScaling": true,
+  "canHaveMultipleFrontends": false
+}

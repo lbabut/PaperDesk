@@ -1,0 +1,7 @@
+# name|user|host|port|identity_file|remote_command
+#
+# Plain shell:
+# Home server|user|192.168.1.10|22|/home/root/.ssh/id_ed25519|
+#
+# Persistent tmux session:
+# VPS tmux|ubuntu|example.org|22|/home/root/.ssh/id_ed25519|tmux new-session -A -s remarkable

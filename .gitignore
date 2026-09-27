@@ -1,0 +1,10 @@
+.DS_Store
+__pycache__/
+*.pyc
+*.log
+.pytest_cache/
+website/data/
+dist/*.tar.gz
+dist/*.zip
+!dist/SHA256SUMS
+

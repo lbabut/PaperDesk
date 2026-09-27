@@ -1,0 +1,10 @@
+{
+  "name": "PaperDesk RDP",
+  "description": "Native RDP login",
+  "icon": "icon.png",
+  "entry": "/ui/main.qml",
+  "id": "paperrdp-login",
+  "loadsBackend": false,
+  "supportsScaling": true,
+  "canHaveMultipleFrontends": false
+}

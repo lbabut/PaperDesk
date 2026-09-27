@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f2efe6">
+  <meta name="description" content="PaperDesk turns reMarkable 2 into a quiet network workspace with SSH, reader-first web, RDP, and RSS.">
+  <title>PaperDesk — a quiet network workspace for reMarkable 2</title>
+  <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="shell nav">
+    <a class="brand" href="#top">PAPERDESK</a>
+    <nav class="navlinks" aria-label="Main navigation">
+      <a href="#tools">Tools</a><a href="#principles">Why</a><a href="#pricing">Pricing</a>
+      <a class="button" href="#founding" data-scroll>Join founding list</a>
+    </nav>
+  </header>
+  <main id="top">
+    <section class="shell hero">
+      <div>
+        <div class="kicker">E-ink, connected</div>
+        <h1>Your quiet network desk.</h1>
+        <p class="lede">Turn reMarkable 2 into a focused workspace for SSH, static web reading, remote desktop, and RSS—designed around e-ink instead of fighting it.</p>
+        <div class="hero-actions">
+          <a class="button blue" href="#founding" data-scroll>Reserve Founding Edition</a>
+          <a class="button light" href="#download" data-scroll>Download community build</a>
+        </div>
+        <div class="proofline"><span>Real-device tested</span><span>No telemetry</span><span>No animations</span></div>
+      </div>
+      <div class="device-wrap" aria-label="PaperDesk RDP running on a reMarkable 2">
+        <div class="device"><img src="/assets/paperdesk-rdp.png" alt="PaperDesk RDP showing a remote Linux desktop and terminal"></div>
+      </div>
+    </section>
+    <div class="manifesto"><div class="manifesto-track"><span>Four useful tools</span><span>One coherent interface</span><span>Built for slow pixels</span><span>Your data stays yours</span><span>Tested with real touch</span></div></div>
+
+    <section class="section alt" id="tools"><div class="shell">
+      <div class="section-head"><div><div class="kicker">The suite</div><h2>Useful, not noisy.</h2></div><p class="section-intro">A consistent monochrome interface, large touch targets, deliberate refreshes, and no background churn. Each tool is tuned for what an e-ink screen does well.</p></div>
+      <div class="features">
+        <article class="feature"><span class="feature-no">01 / TERMINAL</span><h3>SSH without the laptop.</h3><p>Readable text, native system keyboard, scrolling, pinch-to-size, and shortcuts such as Ctrl+C, Tab, and Esc.</p><div class="tags">SSH · profiles · shortcuts</div></article>
+        <article class="feature"><span class="feature-no">02 / WEB</span><h3>Pages become documents.</h3><p>Reader-first browsing, mobile or desktop mode, optional static images, tap-safe links, zoom, and e-ink scrolling.</p><div class="tags">static HTML · no scripts · images optional</div></article>
+        <article class="feature"><span class="feature-no">03 / RDP</span><h3>Your desktop, in ink.</h3><p>A monochrome FreeRDP client with local profiles, native keyboard, useful shortcuts, pan, and zoom.</p><div class="tags">FreeRDP · pan · zoom · keyboard</div></article>
+        <article class="feature"><span class="feature-no">04 / RSS</span><h3>A calmer reading queue.</h3><p>RSS and Atom feeds, favourites, read state, full-text extraction, science starters, and an offline cache.</p><div class="tags">RSS/Atom · full text · offline</div></article>
+      </div>
+    </div></section>
+
+    <section class="shell section" id="principles">
+      <div class="section-head"><div><div class="kicker">Why PaperDesk</div><h2>Made for the device you own.</h2></div><p class="section-intro">PaperDesk does not pretend an e-ink tablet is a fast LCD. It turns those limits into a calmer way to check a server, read a page, or reach a remote computer.</p></div>
+      <div class="principles">
+        <div class="principle"><strong>Deliberate refresh</strong><p>Updates are batched and triggered when they matter, reducing needless flashing and ghosting.</p></div>
+        <div class="principle"><strong>Touch you can trust</strong><p>Stable targets and physical-tablet journeys exercise taps, swipes, pinches, keyboard input, and close flows.</p></div>
+        <div class="principle"><strong>Local by default</strong><p>No PaperDesk account and no telemetry. Connection profiles and reading data stay on the tablet.</p></div>
+      </div>
+    </section>
+
+    <section class="shell section" id="pricing">
+      <div class="pricing">
+        <div class="price-note"><div><div class="kicker">Honest open-source business</div><h2>Pay for confidence.</h2><p>The community build remains available. The paid product is the maintained compatibility work, tested installer, update guidance, and human help.</p></div><p class="compat"><strong>Current verified target</strong><br>reMarkable 2 · OS 3.29.0.149 · XOVI 0.3.3 · AppLoad 0.6.0 · LiTerm 0.1.7</p></div>
+        <div class="offer"><div class="kicker">Founding Edition</div><div class="price"><b>€29</b><span>one time<br>first year included</span></div><ul><li>Tested PaperDesk package</li><li>Backup-aware installer and uninstaller</li><li>12 months of update guidance</li><li>One guided setup session</li><li>Founding-customer feedback channel</li></ul><a class="button blue" href="#founding" data-scroll>Reserve—no charge today</a></div>
+      </div>
+    </section>
+
+    <section class="founding" id="founding"><div class="shell">
+      <div><div class="kicker" style="color:white">Early access</div><h2>Help shape the first paid release.</h2><p>Tell us what you want PaperDesk for. We are recruiting a small founding group before opening checkout and expanding the compatibility matrix.</p></div>
+      <form class="form" id="interest-form">
+        <label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" required placeholder="you@example.com">
+        <label for="useCase">Main use</label><select id="useCase" name="useCase" required><option value="">Choose one…</option><option>SSH / server work</option><option>Reader-first web</option><option>Remote desktop / RDP</option><option>RSS and research</option><option>All four</option></select>
+        <label class="consent"><input type="checkbox" name="consent" value="yes" required><span>I agree that PaperDesk may store my email on Lola and contact me about early access. No marketing partners and no telemetry.</span></label>
+        <button class="button" type="submit">Join founding list</button><p class="form-note" id="form-note" aria-live="polite"></p>
+      </form>
+    </div></section>
+
+    <section class="shell download" id="download"><div><h3>Community build 1.0.5</h3><p>For experienced users. Read the compatibility notes and keep a recovery path.</p></div><div class="hero-actions"><a class="button" href="/download/paperdesk-1.0.5.zip">Download ZIP</a><a class="button light" href="/download/SHA256SUMS">SHA-256</a></div></section>
+  </main>
+  <footer class="shell footer"><div><strong>PAPERDESK</strong><br>Independent community software.</div><div>Not affiliated with or endorsed by reMarkable AS. Installing third-party software is unsupported and can require recovery after firmware updates. reMarkable is a trademark of its owner.</div></footer>
+  <script src="/app.js" defer></script>
+</body>
+</html>
