@@ -130,6 +130,13 @@ PHYSICAL=$(cat /sys/class/input/event2/dev)
 echo "$PHYSICAL" >/tmp/paperdesk-e2e-physical-dev
 cp /home/root/.config/remarkable/xochitl.conf /tmp/paperdesk-e2e-xochitl.conf
 systemctl stop xochitl
+awk '\''
+BEGIN { in_e2e=0 }
+/^\[PaperDeskE2E\]$/ { in_e2e=1; next }
+/^\[/ { in_e2e=0 }
+!in_e2e { print }
+'\'' /home/root/.config/remarkable/xochitl.conf > /tmp/paperdesk-e2e-base.conf
+mv /tmp/paperdesk-e2e-base.conf /home/root/.config/remarkable/xochitl.conf
 printf "\n[PaperDeskE2E]\nautostart=true\napplicationId=paperdesk\nscenarioVersion=20260927\ntraceTouches=true\nwebFixture=true\nwebTraceGestures=true\nrssLongArticle=true\nrssStressParser=true\nrssTraceScroll=true\n" >>/home/root/.config/remarkable/xochitl.conf
 rm -f /tmp/paperdesk-touch.fifo /tmp/paperdesk-touch.ready
 nohup /tmp/paperdesk-rm-touchd >/tmp/paperdesk-touch.log 2>&1 &
@@ -197,15 +204,15 @@ case "$TARGET" in
             echo "User journey $journey/$JOURNEY_LOOPS: Terminal"
             tap 360 500
             wait_for_log 'PaperDesk touch launching literm' 10
-            tap 540 50
+            tap 1120 50
             wait_for_log 'PaperDesk Terminal shortcuts opened' 8
             tap 635 150
             wait_for_log 'PaperDesk Terminal shortcut' 8
-            tap 540 50
+            tap 1120 50
             wait_for_log 'PaperDesk Terminal shortcuts closed' 8
-            tap 330 50
+            tap 934 50
             wait_for_log 'PaperDesk Terminal keyboard opened' 8
-            tap 112 52
+            tap 1306 52
             wait_for_log 'PaperDesk Terminal action close' 8
             sleep 2
             assert_tablet_healthy "Terminal journey $journey"
@@ -241,9 +248,9 @@ case "$TARGET" in
             echo "User journey $journey/$JOURNEY_LOOPS: RDP"
             tap 360 1250
             wait_for_log 'PaperDesk touch launching paperrdp-login' 10
-            tap 1280 60
-            wait_for_log 'PaperDesk RDP keyboard opened' 8
             tap 1060 60
+            wait_for_log 'PaperDesk RDP keyboard opened' 8
+            tap 1280 60
             wait_for_log 'PaperDesk RDP action close' 8
             sleep 2
             assert_tablet_healthy "RDP journey $journey"
@@ -293,12 +300,12 @@ case "$TARGET" in
     all)
         tap 360 500
         wait_for_log 'PaperDesk touch launching literm' 10
-        tap 540 50
+        tap 1120 50
         wait_for_log 'PaperDesk Terminal shortcuts opened' 8
         tap 635 150
         wait_for_log 'PaperDesk Terminal shortcut' 8
         capture_screen "$ARTIFACT_DIR/all-terminal.png"
-        tap 112 52
+        tap 1306 52
         wait_for_log 'PaperDesk Terminal action close' 8
         sleep 2
 
@@ -324,10 +331,10 @@ case "$TARGET" in
 
         tap 360 1250
         wait_for_log 'PaperDesk touch launching paperrdp-login' 10
-        tap 1280 60
+        tap 1060 60
         wait_for_log 'PaperDesk RDP keyboard opened' 8
         capture_screen "$ARTIFACT_DIR/all-rdp-keyboard.png"
-        tap 1060 60
+        tap 1280 60
         wait_for_log 'PaperDesk RDP action close' 8
         sleep 2
 
@@ -368,7 +375,7 @@ case "$TARGET" in
         wait_for_log 'PaperDesk touch launching literm' 10
         sleep 3
         capture_screen "$ARTIFACT_DIR/terminal.png"
-        tap 530 50
+        tap 1120 50
         wait_for_log 'PaperDesk Terminal shortcuts opened' 8
         capture_screen "$ARTIFACT_DIR/terminal-shortcuts.png"
         echo "PASS: physical tablet taps opened Terminal and its shortcuts"
@@ -511,7 +518,7 @@ case "$TARGET" in
         wait_for_log 'PaperDesk touch launching paperrdp-login' 10
         sleep 3
         capture_screen "$ARTIFACT_DIR/rdp.png"
-        tap 1280 60
+        tap 1060 60
         wait_for_log 'PaperDesk RDP keyboard opened' 8
         capture_screen "$ARTIFACT_DIR/rdp-keyboard.png"
         echo "PASS: physical tablet taps opened RDP and its keyboard"

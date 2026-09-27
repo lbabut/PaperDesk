@@ -36,7 +36,8 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("if(root.virtualKeyboardRef &&", window)
         self.assertIn('objectName: "paperdeskKeyboardClickTarget"', window)
         self.assertIn('"HIDE KEYBOARD"', window)
-        self.assertIn("if(virtualKeyboardLayout !== null) toggleVirtualKeyboard()", window)
+        self.assertIn("toggleVirtualKeyboard()", window)
+        self.assertNotIn('"MENU"', window)
         for unsupported in (
             "sendFlippedRotationToClient",
             "supportsRotation",
@@ -117,7 +118,8 @@ class PackageRegressionTests(unittest.TestCase):
         web = (apps / "paperweb/ui/main.qml").read_text()
         rss = (apps / "paperrss/ui/main.qml").read_text()
         self.assertIn("readonly property int toolbarButtonWidth: 172", terminal)
-        self.assertGreaterEqual(terminal.count("anchors.leftMargin: 125"), 2)
+        self.assertIn("anchors.right: keyboardButton.left", terminal)
+        self.assertIn("anchors.leftMargin: 24", terminal)
         self.assertIn("readonly property int toolbarButtonWidth: 210", rdp)
         self.assertNotIn("MouseArea {", terminal)
         self.assertNotIn("MouseArea {", web)
@@ -158,7 +160,7 @@ class PackageRegressionTests(unittest.TestCase):
             qml,
         )
 
-    def test_appload_menu_button_is_geometrically_centered(self):
+    def test_appload_keyboard_button_is_geometrically_centered_and_contextual(self):
         qml = (RELEASE / "payload/system/paperdesk-appload-window.qml").read_text()
         button = qml.split('objectName: "paperdeskKeyboardButton"', 1)[1]
         button = button.split("MouseArea {", 1)[0]
@@ -166,6 +168,7 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("width: 210", button)
         self.assertIn("radius: 8", button)
         self.assertIn("border.width: 2", button)
+        self.assertIn("virtualKeyboardLayout !== null", button)
         self.assertNotIn("x:", button)
 
     def test_xovi_autostart_is_packaged_without_an_ordering_cycle(self):
@@ -318,8 +321,17 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("if (!store.scienceStarterAdded)", qml)
         self.assertIn("if (!alreadyPresent)", qml)
         save_state = qml.split("function saveState()", 1)[1].split("function contains", 1)[0]
-        self.assertIn("if (e2eSettings.scenarioVersion === 20260927 && e2eSettings.rssLongArticle)", save_state)
+        self.assertIn("if (e2eScenarioActive() && e2eSettings.rssLongArticle)", save_state)
         self.assertIn("return", save_state)
+        self.assertIn("return e2eSettings.traceTouches && e2eSettings.scenarioVersion === 20260927", qml)
+
+    def test_close_is_rightmost_in_every_qml_app_header(self):
+        terminal = (RELEASE / "payload/apps/literm/ui/main.qml").read_text()
+        rdp_login = (RELEASE / "payload/apps/paperrdp-login/ui/main.qml").read_text()
+        self.assertIn('id: closeButton\n            objectName: "terminalCloseButton"\n            anchors.right: parent.right', terminal)
+        self.assertIn('anchors.right: closeButton.left', terminal)
+        self.assertIn('id: closeButton\n            objectName: "rdpCloseButton"\n            anchors.right: parent.right', rdp_login)
+        self.assertIn('anchors.right: closeButton.left', rdp_login)
 
     def test_release_checksums(self):
         for line in (RELEASE / "SHA256SUMS").read_text().splitlines():

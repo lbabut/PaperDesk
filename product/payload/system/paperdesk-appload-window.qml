@@ -512,7 +512,7 @@ FocusScope {
         border.color: "black"
         border.width: 2
         z: 100000
-        visible: fullscreen && !forceTopBarVisible
+        visible: fullscreen && !forceTopBarVisible && virtualKeyboardLayout !== null
 
         Text {
             anchors.fill: parent
@@ -520,7 +520,7 @@ FocusScope {
             verticalAlignment: Text.AlignVCenter
             text: root.virtualKeyboardRef && root.virtualKeyboardRef.active &&
                   root.virtualKeyboardRef.config === root.keyboardConfig ?
-                  "HIDE KEYBOARD" : (virtualKeyboardLayout !== null ? "KEYBOARD" : "MENU")
+                  "HIDE KEYBOARD" : "KEYBOARD"
             font.pointSize: 16
             font.bold: true
             font.letterSpacing: 1
@@ -533,9 +533,8 @@ FocusScope {
             preventStealing: true
             onPressed: (mouse) => mouse.accepted = true
             onClicked: {
-                console.log("PaperDesk keyboard button clicked", virtualKeyboardLayout !== null);
-                if(virtualKeyboardLayout !== null) toggleVirtualKeyboard();
-                else swipeFromTheTop();
+                console.log("PaperDesk keyboard button clicked");
+                toggleVirtualKeyboard();
             }
         }
     }

@@ -206,7 +206,6 @@ void drawLogin(App& a,bool complete=false) {
     }
     button(a,870,900,464,120,"CONNECT",true);
     text(a,75,1015,a.status,3,70);
-    text(a,75,1120,"SWIPE DOWN FROM THE TOP, THEN TAP THE KEYBOARD ICON",3,0);
     if(complete) {
         a.fb.sendCompleteUpdate();
         a.fb.requestFullRefresh();
@@ -229,7 +228,6 @@ void drawBar(App& a) {
     fill(a,0,BAR_H-4,W,4,0);
     text(a,28,28,"PAPERRDP",4);
     text(a,320,31,a.status,3,70);
-    text(a,510,31,"SWIPE DOWN: KEYBOARD",3,70);
     button(a,930,10,270,70,"SHORTCUTS");
     button(a,1220,10,174,70,"CLOSE",true);
     a.fb.sendPartialUpdate(0,0,W,BAR_H);

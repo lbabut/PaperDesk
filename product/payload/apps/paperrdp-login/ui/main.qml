@@ -112,9 +112,10 @@ Rectangle {
         }
 
         Rectangle {
+            id: closeButton
             objectName: "rdpCloseButton"
-            anchors.right: keyboardButton.left
-            anchors.rightMargin: 14
+            anchors.right: parent.right
+            anchors.rightMargin: 18
             anchors.verticalCenter: parent.verticalCenter
             width: root.toolbarButtonWidth
             height: 70
@@ -129,8 +130,8 @@ Rectangle {
         Rectangle {
             id: keyboardButton
             objectName: "rdpKeyboardButton"
-            anchors.right: parent.right
-            anchors.rightMargin: 18
+            anchors.right: closeButton.left
+            anchors.rightMargin: 14
             anchors.verticalCenter: parent.verticalCenter
             width: root.toolbarButtonWidth
             height: 70

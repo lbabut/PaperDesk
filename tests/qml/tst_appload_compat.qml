@@ -70,6 +70,15 @@ Item {
             compare(keyboard.config, windowLoader.item.keyboardConfig)
         }
 
+        function test_fullscreen_button_is_hidden_without_a_keyboard() {
+            windowLoader.item.virtualKeyboardLayout = null
+            if(!windowLoader.item.fullscreen)
+                windowLoader.item.maximize()
+            const clickTarget = findChild(windowLoader.item, "paperdeskKeyboardButton")
+            verify(clickTarget !== null)
+            verify(!clickTarget.visible)
+        }
+
         function test_inactive_internal_window_does_not_consume_close_signal() {
             const canvas = findChild(windowLoader.item, "paperdeskWindowCanvas")
             verify(canvas !== null)

@@ -70,8 +70,8 @@ Rectangle {
         Rectangle {
             id: closeButton
             objectName: "terminalCloseButton"
-            anchors.left: parent.left
-            anchors.leftMargin: 12
+            anchors.right: parent.right
+            anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             width: root.toolbarButtonWidth
             height: 70
@@ -100,8 +100,8 @@ Rectangle {
         Rectangle {
             id: keyboardButton
             objectName: "terminalKeyboardButton"
-            anchors.left: closeButton.right
-            anchors.leftMargin: 14
+            anchors.right: shortcutsButton.left
+            anchors.rightMargin: 14
             anchors.verticalCenter: parent.verticalCenter
             width: root.toolbarButtonWidth
             height: 70
@@ -130,8 +130,8 @@ Rectangle {
         Rectangle {
             id: shortcutsButton
             objectName: "terminalShortcutsButton"
-            anchors.left: keyboardButton.right
-            anchors.leftMargin: 14
+            anchors.right: closeButton.left
+            anchors.rightMargin: 14
             anchors.verticalCenter: parent.verticalCenter
             width: root.toolbarButtonWidth
             height: 70
@@ -160,10 +160,10 @@ Rectangle {
         Rectangle {
             id: inputFrame
             visible: Qt.inputMethod.visible
-            anchors.left: parent.horizontalCenter
-            anchors.leftMargin: 125
-            anchors.right: parent.right
-            anchors.rightMargin: 18
+            anchors.left: parent.left
+            anchors.leftMargin: 18
+            anchors.right: keyboardButton.left
+            anchors.rightMargin: 14
             anchors.verticalCenter: parent.verticalCenter
             height: 66
             radius: 8
@@ -245,9 +245,9 @@ Rectangle {
         }
 
         Column {
-            anchors.left: parent.horizontalCenter
-            anchors.leftMargin: 125
-            anchors.right: parent.right
+            anchors.left: parent.left
+            anchors.leftMargin: 24
+            anchors.right: keyboardButton.left
             anchors.rightMargin: 24
             anchors.verticalCenter: parent.verticalCenter
             visible: !inputFrame.visible
@@ -259,7 +259,7 @@ Rectangle {
                 font.pointSize: 10
                 font.bold: true
                 font.letterSpacing: 2
-                horizontalAlignment: Text.AlignRight
+                horizontalAlignment: Text.AlignLeft
             }
             Text {
                 width: parent.width
@@ -267,7 +267,7 @@ Rectangle {
                 color: "white"
                 font.pointSize: 24
                 font.bold: true
-                horizontalAlignment: Text.AlignRight
+                horizontalAlignment: Text.AlignLeft
             }
         }
     }

@@ -77,6 +77,7 @@ Rectangle {
         property bool rssLongArticle: false
         property bool rssStressParser: false
         property bool rssTraceScroll: false
+        property bool traceTouches: false
     }
 
     ListModel { id: feedsModel }
@@ -157,7 +158,7 @@ Rectangle {
     }
 
     function saveState() {
-        if (e2eSettings.scenarioVersion === 20260927 && e2eSettings.rssLongArticle)
+        if (e2eScenarioActive() && e2eSettings.rssLongArticle)
             return
         var feeds = []
         for (var i = 0; i < feedsModel.count; ++i)
@@ -167,6 +168,10 @@ Rectangle {
         store.readJson = JSON.stringify(readIds.slice(-1000))
         store.favouritesJson = JSON.stringify(favouriteIds.slice(-1000))
         store.savedZoom = readerZoom
+    }
+
+    function e2eScenarioActive() {
+        return e2eSettings.traceTouches && e2eSettings.scenarioVersion === 20260927
     }
 
     function contains(array, value) {
@@ -1294,7 +1299,7 @@ Rectangle {
 
     Component.onCompleted: {
         loadState()
-        if (e2eSettings.scenarioVersion === 20260927 && e2eSettings.rssStressParser) {
+        if (e2eScenarioActive() && e2eSettings.rssStressParser) {
             var stressBody = ""
             for (var stressWord = 0; stressWord < 400; ++stressWord)
                 stressBody += "bounded parser payload "
@@ -1307,7 +1312,7 @@ Rectangle {
             console.log("PaperRSS E2E stress parser ready", stressParsed.length,
                         stressXml.length, Date.now() - stressStarted)
         }
-        if (e2eSettings.scenarioVersion === 20260927 && e2eSettings.rssLongArticle) {
+        if (e2eScenarioActive() && e2eSettings.rssLongArticle) {
             var paragraphs = ""
             for (var i = 0; i < 120; ++i)
                 paragraphs += "<p><a href='https://example.com/" + i + "'>Hardware full-text paragraph " + i + "</a> with enough words to wrap across the reader.</p>"
