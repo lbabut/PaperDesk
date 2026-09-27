@@ -58,11 +58,9 @@ class Handler(BaseHTTPRequestHandler):
     def send_json(self, code: int, value: dict) -> None:
         self.send_bytes(code, json.dumps(value).encode(), "application/json; charset=utf-8")
 
-    def do_GET(self) -> None:
-        path = unquote(urlsplit(self.path).path)
+    def target_for_path(self, path: str) -> tuple[Path, str] | None:
         if path == "/healthz":
-            self.send_bytes(200, b"ok\n", "text/plain; charset=utf-8")
-            return
+            return None
         if path == "/download/paperdesk-1.0.5.zip":
             target = REPO / "dist" / "paperdesk-1.0.5.zip"
         elif path == "/download/SHA256SUMS":
@@ -71,13 +69,34 @@ class Handler(BaseHTTPRequestHandler):
             relative = "index.html" if path in ("/", "/index.html") else path.lstrip("/")
             target = (ROOT / relative).resolve()
             if ROOT not in target.parents and target != ROOT:
-                self.send_bytes(404, b"not found\n", "text/plain")
-                return
+                return None
         if not target.is_file():
+            return None
+        return target, mimetypes.guess_type(target.name)[0] or "application/octet-stream"
+
+    def do_GET(self) -> None:
+        path = unquote(urlsplit(self.path).path)
+        if path == "/healthz":
+            self.send_bytes(200, b"ok\n", "text/plain; charset=utf-8")
+            return
+        resolved = self.target_for_path(path)
+        if resolved is None:
             self.send_bytes(404, b"not found\n", "text/plain")
             return
-        mime = mimetypes.guess_type(target.name)[0] or "application/octet-stream"
+        target, mime = resolved
         self.send_bytes(200, target.read_bytes(), mime)
+
+    def do_HEAD(self) -> None:
+        path = unquote(urlsplit(self.path).path)
+        if path == "/healthz":
+            self.send_standard_headers(200, "text/plain; charset=utf-8", 3)
+            return
+        resolved = self.target_for_path(path)
+        if resolved is None:
+            self.send_standard_headers(404, "text/plain; charset=utf-8", 0)
+            return
+        target, mime = resolved
+        self.send_standard_headers(200, mime, target.stat().st_size)
 
     def do_POST(self) -> None:
         if urlsplit(self.path).path != "/api/interest":

@@ -60,6 +60,15 @@ class WebsiteTests(unittest.TestCase):
             self.assertGreater(int(response.headers["Content-Length"]), 1_000_000)
             self.assertGreater(len(response.read()), 1_000_000)
 
+    def test_head_supports_health_and_download_monitors(self):
+        for path in ("/healthz", "/", "/download/paperdesk-1.0.5.zip"):
+            request = urllib.request.Request(
+                f"http://127.0.0.1:{self.port}{path}", method="HEAD"
+            )
+            with urllib.request.urlopen(request) as response:
+                self.assertEqual(response.status, 200)
+                self.assertGreater(int(response.headers["Content-Length"]), 0)
+
     def test_interest_form_persists_explicit_consent(self):
         with self.request(
             "/api/interest",
