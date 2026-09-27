@@ -319,6 +319,34 @@ Item {
             mouseClick(control, control.width / 2, control.height / 2, Qt.LeftButton)
         }
 
+        function test_00_internal_and_local_links_cannot_replace_an_article() {
+            var articleUrl = "https://www.sciencedaily.com/releases/2026/09/story.htm"
+            compare(scene.rss.resolveHttpUrl("#main", articleUrl), "")
+            compare(scene.rss.resolveHttpUrl("qrc:/IQQJGFMQIG/ui/main.qml", articleUrl), "")
+            compare(scene.rss.resolveHttpUrl("/news/next.htm", articleUrl),
+                    "https://www.sciencedaily.com/news/next.htm")
+
+            var cleaned = scene.rss.sanitizeArticle(
+                "<p><a href='#main'>Skip</a><a href=qrc:/bad.qml>Bad</a>" +
+                "<a href='/news/next.htm'>Next</a></p>", articleUrl)
+            verify(cleaned.indexOf("#main") < 0)
+            verify(cleaned.indexOf("qrc:") < 0)
+            verify(cleaned.indexOf("https://www.sciencedaily.com/news/next.htm") >= 0)
+
+            var original = scene.rss.articles
+            scene.rss.articles = [{
+                id: articleUrl, title: "Corrupt cache", source: "Tests", date: Date.now(),
+                link: "#", summary: "import QtQuick 2.15 Rectangle {",
+                content: "import QtQuick 2.15\nimport net.asivery.ApploadUtils\nRectangle {",
+                feedUrl: "fixture"
+            }]
+            verify(scene.rss.repairUnsafeCachedArticles())
+            compare(scene.rss.articles[0].link, articleUrl)
+            compare(scene.rss.articles[0].content, "")
+            verify(scene.rss.articles[0].summary.indexOf("repaired") >= 0)
+            scene.rss.articles = original
+        }
+
         function test_01_reader_actions() {
             scene.rss.openArticle(0)
             compare(scene.rss.view, "reader")

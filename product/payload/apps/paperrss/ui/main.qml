@@ -151,6 +151,10 @@ Rectangle {
         for (var i = 0; i < feeds.length; ++i)
             feedsModel.append({ name: String(feeds[i].name), url: String(feeds[i].url) })
         articles = safeParse(store.articlesJson, [])
+        if (repairUnsafeCachedArticles()) {
+            store.articlesJson = JSON.stringify(articles.slice(0, 160))
+            console.log("PaperRSS repaired unsafe cached articles")
+        }
         readIds = safeParse(store.readJson, [])
         favouriteIds = safeParse(store.favouritesJson, [])
         readerZoom = Math.max(1.0, Math.min(2.4, store.savedZoom || 1.0))
@@ -208,13 +212,66 @@ Rectangle {
             .replace(/\"/g, "&quot;")
     }
 
-    function sanitizeArticle(value) {
+    function resolveHttpUrl(value, baseUrl) {
+        var link = htmlDecode(String(value || "").trim())
+        if (!link || link.charAt(0) === "#" || /^(?:javascript|data|file|qrc):/i.test(link))
+            return ""
+        if (/^https?:\/\//i.test(link))
+            return link
+        var base = String(baseUrl || "")
+        var origin = /^(https?:\/\/[^\/?#]+)/i.exec(base)
+        if (!origin)
+            return ""
+        if (/^\/\//.test(link))
+            return origin[1].split(":")[0] + ":" + link
+        if (link.charAt(0) === "/")
+            return origin[1] + link
+        var cleanBase = base.replace(/[?#].*$/, "")
+        var slash = cleanBase.lastIndexOf("/")
+        return cleanBase.substring(0, slash + 1) + link
+    }
+
+    function looksLikeApplicationSource(value) {
+        var text = String(value || "")
+        return /^\s*import\s+QtQuick\b/m.test(text) &&
+            (/\bnet\.asivery\.ApploadUtils\b/.test(text) || /\bRectangle\s*\{/.test(text))
+    }
+
+    function repairUnsafeCachedArticles() {
+        var repaired = false
+        for (var i = 0; i < articles.length; ++i) {
+            var article = articles[i]
+            var safeLink = resolveHttpUrl(article.link, article.id)
+            if (!safeLink)
+                safeLink = resolveHttpUrl(article.id, "")
+            if (article.link !== safeLink) {
+                article.link = safeLink
+                repaired = true
+            }
+            if (looksLikeApplicationSource(article.content) || looksLikeApplicationSource(article.summary)) {
+                article.content = ""
+                article.summary = "Cached full text was repaired. Select Full text to download it again."
+                repaired = true
+            }
+        }
+        return repaired
+    }
+
+    function sanitizeArticle(value, baseUrl) {
         var html = String(value || "")
         html = html.replace(/<!--([\s\S]*?)-->/g, "")
         html = html.replace(/<(script|style|noscript|svg|canvas|video|audio|iframe|object|form)[^>]*>[\s\S]*?<\/\1\s*>/gi, "")
         html = html.replace(/<img\b[^>]*alt=[\"']([^\"']*)[\"'][^>]*>/gi, "<p>[image: $1]</p>")
         html = html.replace(/<img\b[^>]*>/gi, "")
         html = html.replace(/\s(on[a-z]+|style|class|id|src|srcset)\s*=\s*([\"'])[^\"']*\2/gi, "")
+        html = html.replace(/\shref\s*=\s*([\"'])([^\"']*)\1/gi, function(all, quote, href) {
+            var safeHref = resolveHttpUrl(href, baseUrl)
+            return safeHref ? " href=\"" + escapeHtml(safeHref) + "\"" : ""
+        })
+        html = html.replace(/\shref\s*=\s*([^\s\"'<>`]+)/gi, function(all, href) {
+            var safeHref = resolveHttpUrl(href, baseUrl)
+            return safeHref ? " href=\"" + escapeHtml(safeHref) + "\"" : ""
+        })
         html = html.replace(/<(\/?)(article|main|section|header|footer|figure|figcaption|aside|nav)(?:\s[^>]*)?>/gi, "<$1div>")
         html = html.replace(/<(\/?)(?!p\b|br\b|hr\b|h[1-6]\b|b\b|strong\b|i\b|em\b|u\b|ul\b|ol\b|li\b|pre\b|code\b|blockquote\b|a\b|div\b|span\b)[a-z0-9:-]+(?:\s[^>]*)?>/gi, "")
         return html
@@ -285,7 +342,7 @@ Rectangle {
         for (var i = 0; i < nodes.length && i < feedItemLimit; ++i) {
             var node = nodes[i]
             var title = plainText(xmlValue(node, ["title"]))
-            var link = xmlLink(node)
+            var link = resolveHttpUrl(xmlLink(node), feedUrl)
             var body = xmlValue(node, ["content:encoded", "encoded", "content", "description", "summary"])
             if (body.length > feedBodyLimit)
                 body = body.substring(0, feedBodyLimit)
@@ -297,7 +354,7 @@ Rectangle {
                 id: identifier,
                 title: title,
                 link: link,
-                content: sanitizeArticle(body),
+                content: sanitizeArticle(body, link || feedUrl),
                 summary: plainText(body).substring(0, 340),
                 date: timestamp(dateText),
                 source: feedName,
@@ -357,6 +414,14 @@ Rectangle {
         }
         requests = []
         loading = false
+    }
+
+    function forgetRequest(xhr) {
+        var active = requests.slice(0)
+        var index = active.indexOf(xhr)
+        if (index >= 0)
+            active.splice(index, 1)
+        requests = active
     }
 
     function refreshAll() {
@@ -461,40 +526,60 @@ Rectangle {
         rebuildArticles()
     }
 
-    function fetchFullArticle() {
-        if (!currentArticle.link || loading)
+    function fetchFullArticle(targetUrl) {
+        if ((!targetUrl && !currentArticle.link) || loading)
             return
+        var sourceUrl = resolveHttpUrl(targetUrl || currentArticle.link, currentArticle.id)
+        if (!sourceUrl) {
+            readerStatus.text = "Internal page link ignored"
+            console.log("PaperRSS blocked non-web article link", targetUrl || currentArticle.link)
+            return
+        }
         loading = true
         readerStatus.text = "Loading full text..."
         var xhr = new XMLHttpRequest()
+        var owner = root
+        var articleId = currentArticle.id
+        var articleTitle = currentArticle.title
         requests.push(xhr)
         xhr.onreadystatechange = function() {
             if (xhr.readyState !== XMLHttpRequest.DONE)
                 return
-            loading = false
+            if (!owner || owner.disposed || owner.requests.indexOf(xhr) < 0)
+                return
+            owner.forgetRequest(xhr)
+            owner.loading = false
+            if (!owner.currentArticle || owner.currentArticle.id !== articleId)
+                return
             if (xhr.status >= 200 && xhr.status < 400) {
                 var html = String(xhr.responseText || "")
+                if (owner.looksLikeApplicationSource(html)) {
+                    owner.readerStatus.text = "Blocked invalid page response"
+                    console.log("PaperRSS blocked application source response", sourceUrl)
+                    return
+                }
                 var articleMatch = html.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i)
                 var bodyMatch = html.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i)
                 var extracted = articleMatch ? articleMatch[1] : (bodyMatch ? bodyMatch[1] : html)
-                extracted = sanitizeArticle(extracted.substring(0, 600000))
+                extracted = owner.sanitizeArticle(extracted.substring(0, 600000), sourceUrl)
                 extracted = extracted.replace(/^\s*<h1\b[^>]*>[\s\S]*?<\/h1\s*>/i, "")
-                readerText.text = "<h1>" + escapeHtml(currentArticle.title) + "</h1>" + extracted
-                currentArticle.content = extracted
-                for (var i = 0; i < articles.length; ++i) {
-                    if (articles[i].id === currentArticle.id) {
-                        articles[i].content = extracted
-                        articles[i].summary = plainText(extracted).substring(0, 340)
+                owner.readerText.text = "<h1>" + owner.escapeHtml(articleTitle) + "</h1>" + extracted
+                owner.currentArticle.content = extracted
+                for (var i = 0; i < owner.articles.length; ++i) {
+                    if (owner.articles[i].id === articleId) {
+                        owner.articles[i].content = extracted
+                        owner.articles[i].summary = owner.plainText(extracted).substring(0, 340)
                         break
                     }
                 }
-                saveState()
-                readerStatus.text = "Full text saved offline"
+                owner.saveState()
+                owner.readerStatus.text = "Full text saved offline"
             } else {
-                readerStatus.text = "HTTP error " + xhr.status
+                owner.readerStatus.text = "HTTP error " + xhr.status
             }
         }
-        xhr.open("GET", currentArticle.link, true)
+        console.log("PaperRSS full text request", sourceUrl)
+        xhr.open("GET", sourceUrl, true)
         xhr.send()
     }
 
@@ -1102,8 +1187,14 @@ Rectangle {
                                 var localY = (points[i].y + readerFlick.contentY - readerText.y) / root.readerZoom
                                 var link = readerText.linkAt(localX, localY)
                                 if (link && link.length) {
-                                    currentArticle.link = link
-                                    fetchFullArticle()
+                                    var target = root.resolveHttpUrl(link, currentArticle.link || currentArticle.id)
+                                    if (target) {
+                                        console.log("PaperRSS follow article link", target)
+                                        fetchFullArticle(target)
+                                    } else {
+                                        readerStatus.text = "Internal page link ignored"
+                                        console.log("PaperRSS blocked non-web article link", link)
+                                    }
                                 }
                             }
                             delete pointState[points[i].pointId]

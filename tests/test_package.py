@@ -229,6 +229,15 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("readerFlick.contentY = Math.max", qml)
         self.assertIn("interactive: false", qml)
 
+    def test_rss_never_loads_internal_or_qrc_links_as_articles(self):
+        qml = (RELEASE / "payload/apps/paperrss/ui/main.qml").read_text()
+        self.assertIn("function resolveHttpUrl(value, baseUrl)", qml)
+        self.assertIn("function looksLikeApplicationSource(value)", qml)
+        self.assertIn("function repairUnsafeCachedArticles()", qml)
+        self.assertIn("PaperRSS blocked non-web article link", qml)
+        self.assertIn("PaperRSS blocked application source response", qml)
+        self.assertNotIn("currentArticle.link = link", qml)
+
     def test_rss_parser_bounds_large_feeds_for_tablet_watchdog(self):
         qml = (RELEASE / "payload/apps/paperrss/ui/main.qml").read_text()
         self.assertIn("readonly property int feedItemLimit: 12", qml)
