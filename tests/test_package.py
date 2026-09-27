@@ -251,6 +251,7 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("PaperRSS E2E stress parser ready 12", runner)
         self.assertIn("PaperRSS refresh complete 1 0", runner)
         self.assertIn("live Physics World refresh", runner)
+        self.assertIn("paperdesk-e2e-clean.conf", runner)
         self.assertIn("web-live-wp)", runner)
         self.assertIn("PaperWeb HTML reader items", runner)
         self.assertIn("web-live-dynamic)", runner)
@@ -263,7 +264,12 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertNotIn("address.forceActiveFocus()", gained_focus)
         self.assertIn("function dismissKeyboard()", qml)
         self.assertIn("function selectAddressForEditing()", qml)
+        self.assertIn("function finishAddressSelection()", qml)
         self.assertIn("address.selectAll()", qml)
+        self.assertIn("Qt.callLater(finishAddressSelection)", qml)
+        self.assertIn("PaperWeb address selection stable", qml)
+        self.assertIn("selectByMouse: false", qml)
+        self.assertIn("persistentSelection: true", qml)
         self.assertIn("onTapped: root.selectAddressForEditing()", qml)
         self.assertIn("PaperWeb keyboard opened", qml)
         self.assertIn("PaperWeb keyboard hidden", qml)
@@ -341,10 +347,10 @@ class PackageRegressionTests(unittest.TestCase):
             actual = hashlib.sha256(path.read_bytes()).hexdigest()
             self.assertEqual(expected, actual, relative)
 
-    def test_hub_qml_is_embedded_in_resources(self):
+    def test_qml_is_embedded_in_every_app_resource(self):
         rcc = TOOLCACHE / "qt-rcc-pkg/root/usr/lib/qt5/bin/rcc"
         library = TOOLCACHE / "qt-rcc-pkg/root/usr/lib/x86_64-linux-gnu"
-        for app_name in ("paperdesk", "paperrdp-login"):
+        for app_name in ("paperdesk", "literm", "paperweb", "paperrss", "paperrdp-login"):
             app_dir = RELEASE / "payload/apps" / app_name
             with tempfile.TemporaryDirectory() as directory:
                 rebuilt = pathlib.Path(directory) / "resources.rcc"

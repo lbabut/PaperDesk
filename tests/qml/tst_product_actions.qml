@@ -42,9 +42,13 @@ Item {
         function test_00_keyboard_is_contextual() {
             var address = findChild(scene.web, "webAddressInput")
             address.text = "https://example.com/a/long/address"
-            scene.web.selectAddressForEditing()
-            verify(address.activeFocus)
-            compare(address.selectedText, address.text)
+            scene.web.dismissKeyboard()
+
+            // Reproduce a real user tap in the middle of a long URL. The
+            // pointer event must not overwrite the deferred selectAll().
+            mouseClick(address, address.width * 0.65, address.height / 2, Qt.LeftButton)
+            tryCompare(address, "activeFocus", true)
+            tryCompare(address, "selectedText", address.text)
             scene.web.dismissKeyboard()
             verify(!address.activeFocus)
         }

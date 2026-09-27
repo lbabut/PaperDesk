@@ -33,6 +33,13 @@ fi
 if test -f /tmp/paperdesk-e2e-xochitl.conf; then
     cp /tmp/paperdesk-e2e-xochitl.conf /home/root/.config/remarkable/xochitl.conf
 fi
+awk '\''
+BEGIN { in_e2e=0 }
+/^\[PaperDeskE2E\]$/ { in_e2e=1; next }
+/^\[/ { in_e2e=0 }
+!in_e2e { print }
+'\'' /home/root/.config/remarkable/xochitl.conf > /tmp/paperdesk-e2e-clean.conf
+mv /tmp/paperdesk-e2e-clean.conf /home/root/.config/remarkable/xochitl.conf
 printf "quit\n" >/tmp/paperdesk-touch.fifo 2>/dev/null || true
 sleep 1
 killall paperdesk-rm-touchd 2>/dev/null || true
@@ -429,6 +436,7 @@ case "$TARGET" in
         tap 500 160
         wait_for_log 'PaperWeb keyboard opened' 8
         wait_for_log 'PaperWeb address selected' 8
+        wait_for_log 'PaperWeb address selection stable 23 23' 8
         capture_screen "$ARTIFACT_DIR/web-keyboard-open.png"
         tap 700 600
         wait_for_log 'PaperWeb keyboard hidden' 8

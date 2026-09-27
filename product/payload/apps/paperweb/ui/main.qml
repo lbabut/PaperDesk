@@ -96,11 +96,24 @@ Rectangle {
             console.log("PaperWeb keyboard hidden")
     }
 
-    function selectAddressForEditing() {
-        address.forceActiveFocus()
+    function finishAddressSelection() {
+        if (!address.activeFocus)
+            return
         address.selectAll()
         Qt.inputMethod.show()
         console.log("PaperWeb address selected", address.selectedText.length)
+        Qt.callLater(function() {
+            if (address.activeFocus)
+                console.log("PaperWeb address selection stable", address.selectedText.length, address.text.length)
+        })
+    }
+
+    function selectAddressForEditing() {
+        address.forceActiveFocus()
+        // The TextInput also receives the physical tap. Let that event finish
+        // positioning its cursor before selecting the URL, otherwise the tap
+        // can replace selectAll() with a partial selection on the tablet.
+        Qt.callLater(finishAddressSelection)
     }
 
     function configurePageRequest(xhr) {
@@ -929,12 +942,13 @@ Rectangle {
                         font.pointSize: 18
                         color: "black"
                         clip: true
-                        selectByMouse: true
+                        selectByMouse: false
+                        persistentSelection: true
                         inputMethodHints: Qt.ImhUrlCharactersOnly | Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase
                         onActiveFocusChanged: {
                             if (activeFocus) {
-                                selectAll()
                                 Qt.inputMethod.show()
+                                Qt.callLater(root.finishAddressSelection)
                                 console.log("PaperWeb keyboard opened")
                             } else {
                                 Qt.inputMethod.hide()
