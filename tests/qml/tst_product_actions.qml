@@ -347,6 +347,24 @@ Item {
             scene.rss.articles = original
         }
 
+        function test_00b_completed_full_text_response_updates_the_reader() {
+            var original = scene.rss.articles
+            var originalCurrent = scene.rss.currentArticle
+            var articleUrl = "https://www.sciencedaily.com/releases/2026/09/story.htm"
+            scene.rss.articles = [{
+                id: articleUrl, title: "Fetched article", source: "Tests", date: Date.now(),
+                link: articleUrl, summary: "Old summary", content: "", feedUrl: "fixture"
+            }]
+            scene.rss.currentArticle = scene.rss.articles[0]
+            verify(scene.rss.applyFullArticleResponse(
+                "<html><body><article><h1>Duplicate title</h1><p>Fresh full text body.</p></article></body></html>",
+                articleUrl, articleUrl, "Fetched article", false))
+            verify(scene.rss.currentArticle.content.indexOf("Fresh full text body") >= 0)
+            verify(scene.rss.articles[0].summary.indexOf("Fresh full text body") >= 0)
+            scene.rss.articles = original
+            scene.rss.currentArticle = originalCurrent
+        }
+
         function test_01_reader_actions() {
             scene.rss.openArticle(0)
             compare(scene.rss.view, "reader")

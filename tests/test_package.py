@@ -234,6 +234,7 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("function resolveHttpUrl(value, baseUrl)", qml)
         self.assertIn("function looksLikeApplicationSource(value)", qml)
         self.assertIn("function repairUnsafeCachedArticles()", qml)
+        self.assertIn("function applyFullArticleResponse(html, sourceUrl, articleId, articleTitle, persist)", qml)
         self.assertIn("PaperRSS blocked non-web article link", qml)
         self.assertIn("PaperRSS blocked application source response", qml)
         self.assertNotIn("currentArticle.link = link", qml)

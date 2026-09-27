@@ -424,6 +424,34 @@ Rectangle {
         requests = active
     }
 
+    function applyFullArticleResponse(html, sourceUrl, articleId, articleTitle, persist) {
+        if (!currentArticle || currentArticle.id !== articleId)
+            return false
+        if (looksLikeApplicationSource(html)) {
+            readerStatus.text = "Blocked invalid page response"
+            console.log("PaperRSS blocked application source response", sourceUrl)
+            return false
+        }
+        var articleMatch = html.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i)
+        var bodyMatch = html.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i)
+        var extracted = articleMatch ? articleMatch[1] : (bodyMatch ? bodyMatch[1] : html)
+        extracted = sanitizeArticle(extracted.substring(0, 600000), sourceUrl)
+        extracted = extracted.replace(/^\s*<h1\b[^>]*>[\s\S]*?<\/h1\s*>/i, "")
+        readerText.text = "<h1>" + escapeHtml(articleTitle) + "</h1>" + extracted
+        currentArticle.content = extracted
+        for (var i = 0; i < articles.length; ++i) {
+            if (articles[i].id === articleId) {
+                articles[i].content = extracted
+                articles[i].summary = plainText(extracted).substring(0, 340)
+                break
+            }
+        }
+        if (persist !== false)
+            saveState()
+        readerStatus.text = "Full text saved offline"
+        return true
+    }
+
     function refreshAll() {
         abortRequests()
         refreshQueueIndex = 0
@@ -553,29 +581,9 @@ Rectangle {
                 return
             if (xhr.status >= 200 && xhr.status < 400) {
                 var html = String(xhr.responseText || "")
-                if (owner.looksLikeApplicationSource(html)) {
-                    owner.readerStatus.text = "Blocked invalid page response"
-                    console.log("PaperRSS blocked application source response", sourceUrl)
-                    return
-                }
-                var articleMatch = html.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i)
-                var bodyMatch = html.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i)
-                var extracted = articleMatch ? articleMatch[1] : (bodyMatch ? bodyMatch[1] : html)
-                extracted = owner.sanitizeArticle(extracted.substring(0, 600000), sourceUrl)
-                extracted = extracted.replace(/^\s*<h1\b[^>]*>[\s\S]*?<\/h1\s*>/i, "")
-                owner.readerText.text = "<h1>" + owner.escapeHtml(articleTitle) + "</h1>" + extracted
-                owner.currentArticle.content = extracted
-                for (var i = 0; i < owner.articles.length; ++i) {
-                    if (owner.articles[i].id === articleId) {
-                        owner.articles[i].content = extracted
-                        owner.articles[i].summary = owner.plainText(extracted).substring(0, 340)
-                        break
-                    }
-                }
-                owner.saveState()
-                owner.readerStatus.text = "Full text saved offline"
+                owner.applyFullArticleResponse(html, sourceUrl, articleId, articleTitle, true)
             } else {
-                owner.readerStatus.text = "HTTP error " + xhr.status
+                readerStatus.text = "HTTP error " + xhr.status
             }
         }
         console.log("PaperRSS full text request", sourceUrl)
