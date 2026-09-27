@@ -31,19 +31,19 @@ Item {
         }
 
         function test_01_manifest_and_version_comparison() {
-            verify(scene.care.isNewer("1.1.1", "1.1.0"))
+            verify(scene.care.isNewer("1.1.3", "1.1.2"))
             verify(scene.care.isNewer("1.2.0", "1.1.9"))
-            verify(!scene.care.isNewer("1.1.0", "1.1.0"))
+            verify(!scene.care.isNewer("1.1.2", "1.1.2"))
             verify(scene.care.applyManifest({
                 product: "PaperDesk",
-                version: "1.1.1",
+                version: "1.1.3",
                 publishedAt: "2026-09-28",
-                archiveUrl: "/download/paperdesk-1.1.1.zip",
+                archiveUrl: "/download/paperdesk-1.1.3.zip",
                 archiveSha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 releaseNotes: ["A useful change", "A repaired interaction"]
             }))
             compare(scene.care.state, "available")
-            compare(scene.care.latestVersion, "1.1.1")
+            compare(scene.care.latestVersion, "1.1.3")
             verify(scene.care.releaseNotes.indexOf("A useful change") >= 0)
         }
 
@@ -52,7 +52,7 @@ Item {
             wait(50)
             scene.care.requestActive = false
             scene.care.state = "available"
-            scene.care.latestVersion = "1.1.1"
+            scene.care.latestVersion = "1.1.3"
             var installButton = findChild(scene.care, "careInstallButton")
             verify(installButton !== null)
             compare(installButton.available, true)
@@ -67,6 +67,23 @@ Item {
             tap("careCloseButton")
             compare(spy.count, 1)
             spy.destroy()
+        }
+
+        function test_04_uninstall_requires_explicit_confirmation() {
+            scene.care.requestActive = false
+            scene.care.uninstallConfirming = false
+            tap("careUninstallButton")
+            compare(scene.care.uninstallConfirming, true)
+            wait(500)
+            tap("careUninstallCancelButton")
+            compare(scene.care.uninstallConfirming, false)
+
+            tap("careUninstallButton")
+            wait(500)
+            tap("careUninstallConfirmButton")
+            compare(scene.care.uninstallConfirming, false)
+            compare(scene.care.requestActive, true)
+            compare(scene.care.state, "queued")
         }
     }
 }

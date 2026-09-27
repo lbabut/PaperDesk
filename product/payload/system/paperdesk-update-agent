@@ -8,6 +8,7 @@ SETTINGS=${PAPERDESK_UPDATE_SETTINGS:-/home/root/.config/remarkable/xochitl.conf
 PUBLIC_KEY=${PAPERDESK_UPDATE_PUBLIC_KEY:-/home/root/.local/lib/paperdesk/release-public.pem}
 WORK=${PAPERDESK_UPDATE_WORK:-$STATE/update-work}
 LOCK=${PAPERDESK_UPDATE_LOCK:-/run/paperdesk-update.lock}
+UNINSTALLER=${PAPERDESK_UNINSTALLER:-/home/root/.local/lib/paperdesk/paperdesk-uninstall}
 
 read_setting() {
     awk -F= -v wanted="$1" '
@@ -24,6 +25,7 @@ clear_request() {
         /^\[PaperDeskUpdate\]$/ { section=1; print; next }
         /^\[/ { section=0 }
         section && /^installRequested=/ { print "installRequested=false"; next }
+        section && /^uninstallRequested=/ { print "uninstallRequested=false"; next }
         { print }
     ' "$SETTINGS" > "$SETTINGS.paperdesk-update"
     mv "$SETTINGS.paperdesk-update" "$SETTINGS"
@@ -52,12 +54,22 @@ fail() {
 }
 
 REQUESTED=$(read_setting installRequested || true)
-[ "$REQUESTED" = "true" ] || exit 0
+UNINSTALL_REQUESTED=$(read_setting uninstallRequested || true)
+[ "$REQUESTED" = "true" ] || [ "$UNINSTALL_REQUESTED" = "true" ] || exit 0
 REQUESTED_VERSION=$(read_setting requestedVersion || true)
 clear_request
 
 exec 9>"$LOCK"
 flock -n 9 || fail "Another update is already running"
+
+if [ "$UNINSTALL_REQUESTED" = "true" ]; then
+    write_status "uninstalling" "Removing PaperDesk" ""
+    [ -x "$UNINSTALLER" ] || fail "The PaperDesk uninstaller is unavailable"
+    "$UNINSTALLER" --from-care >/tmp/paperdesk-uninstall.log 2>&1 || fail "PaperDesk could not be removed"
+    write_status "success" "PaperDesk removed" ""
+    /home/root/xovi/start >/tmp/paperdesk-uninstall-reload.log 2>&1 || true
+    exit 0
+fi
 
 rm -rf "$WORK"
 mkdir -p "$WORK"

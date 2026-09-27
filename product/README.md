@@ -1,4 +1,4 @@
-# PaperDesk 1.1.0
+# PaperDesk 1.1.2
 
 PaperDesk zmienia reMarkable 2 w spokojne, monochromatyczne stanowisko sieciowe.
 Pakiet dodaje piec aplikacji bezposrednio do listy AppLoad i zachowuje ich
@@ -114,7 +114,7 @@ bezposrednio w paczce.
 
 ## Status wydania
 
-Wydanie 1.1.0 zostalo przetestowane na fizycznym reMarkable 2 z systemem
+Wydanie 1.1.2 zostalo przetestowane na fizycznym reMarkable 2 z systemem
 3.29.0.149: uruchamianie wszystkich modulow, wszystkie bezpieczne akcje menu,
 klawiatura systemowa, zachowanie ustawien, odswiezanie RSS, pobieranie pelnego
 tekstu, czyszczenie okna AppLoad oraz fizyczne gesty przewijania i pinch.

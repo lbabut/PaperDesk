@@ -41,4 +41,6 @@ fi
 
 rm -f "$STATE/current-version"
 echo "PaperDesk usuniety. Dane polaczen i kopie zapasowe pozostaly na tablecie."
-echo "Uruchom ponownie XOVI, aby przeladowac zasoby AppLoad."
+if [ "${1:-}" != "--from-care" ]; then
+    echo "Uruchom ponownie XOVI, aby przeladowac zasoby AppLoad."
+fi

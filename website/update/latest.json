@@ -1,17 +1,15 @@
 {
   "product": "PaperDesk",
   "channel": "stable",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "publishedAt": "2026-09-27",
-  "archiveUrl": "/download/paperdesk-1.1.0.zip",
-  "archiveSha256": "f0826546e3315a335272cfdc7bc0c6025da2c1d0ffb5086735d7742f6ae58655",
-  "archiveSize": 1301623,
+  "archiveUrl": "/download/paperdesk-1.1.2.zip",
+  "archiveSha256": "5185d3d8c3726167b40d9f3bcf7f067e7d3bc47a6d69e84981fc470a6b25e159",
+  "archiveSize": 1303528,
   "releaseNotes": [
-    "Meet PaperDesk Care, a calm home for updates and release information.",
-    "Check the installed and latest versions without opening a terminal.",
-    "Every official release manifest is signed with Ed25519.",
-    "Every downloaded archive and packaged component is verified before installation.",
-    "Automatic backups preserve applications, connections and reader data.",
-    "USB installation can use one private local management-code setting."
+    "PaperDesk Care can now remove the complete suite without opening a terminal.",
+    "Uninstall requires a separate confirmation, preventing accidental removal.",
+    "Saved connections, reader data and backups remain on the tablet.",
+    "The interface and AppLoad resources are reloaded automatically after removal."
   ]
 }

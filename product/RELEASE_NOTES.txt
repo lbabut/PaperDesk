@@ -1,6 +1,4 @@
-Meet PaperDesk Care, a calm home for updates and release information.
-Check the installed and latest versions without opening a terminal.
-Every official release manifest is signed with Ed25519.
-Every downloaded archive and packaged component is verified before installation.
-Automatic backups preserve applications, connections and reader data.
-USB installation can use one private local management-code setting.
+PaperDesk Care can now remove the complete suite without opening a terminal.
+Uninstall requires a separate confirmation, preventing accidental removal.
+Saved connections, reader data and backups remain on the tablet.
+The interface and AppLoad resources are reloaded automatically after removal.

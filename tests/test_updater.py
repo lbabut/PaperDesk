@@ -35,6 +35,7 @@ class UpdaterIntegrationTests(unittest.TestCase):
         self.private_key = self.root / "signing.pem"
         self.public_key = self.root / "public.pem"
         self.marker = self.root / "installed"
+        self.uninstall_marker = self.root / "uninstalled"
         subprocess.run(
             ["openssl", "genpkey", "-algorithm", "ED25519", "-out", self.private_key],
             check=True,
@@ -48,6 +49,12 @@ class UpdaterIntegrationTests(unittest.TestCase):
         fake_systemctl = self.bin / "systemctl"
         fake_systemctl.write_text("#!/bin/sh\nexit 0\n")
         fake_systemctl.chmod(fake_systemctl.stat().st_mode | stat.S_IXUSR)
+        fake_uninstaller = self.bin / "paperdesk-uninstall"
+        fake_uninstaller.write_text('#!/bin/sh\nprintf "%s\\n" "$1" > "$PAPERDESK_TEST_UNINSTALL_MARKER"\n')
+        fake_uninstaller.chmod(fake_uninstaller.stat().st_mode | stat.S_IXUSR)
+        fake_xovi = self.root / "xovi-start"
+        fake_xovi.write_text("#!/bin/sh\nexit 0\n")
+        fake_xovi.chmod(fake_xovi.stat().st_mode | stat.S_IXUSR)
         self.httpd = http.server.ThreadingHTTPServer(
             ("127.0.0.1", 0),
             lambda *args, **kwargs: QuietHandler(*args, directory=self.web, **kwargs),
@@ -113,6 +120,8 @@ class UpdaterIntegrationTests(unittest.TestCase):
                 "PAPERDESK_UPDATE_PUBLIC_KEY": str(self.public_key),
                 "PAPERDESK_UPDATE_WORK": str(self.root / "work"),
                 "PAPERDESK_UPDATE_LOCK": str(self.root / "update.lock"),
+                "PAPERDESK_UNINSTALLER": str(self.bin / "paperdesk-uninstall"),
+                "PAPERDESK_TEST_UNINSTALL_MARKER": str(self.uninstall_marker),
             }
         )
         return subprocess.run(["sh", AGENT], env=env, capture_output=True, text=True)
@@ -136,6 +145,32 @@ class UpdaterIntegrationTests(unittest.TestCase):
         status = json.loads((self.state / "update-status.json").read_text())
         self.assertEqual(status["state"], "error")
         self.assertIn("signature", status["message"].lower())
+
+    def test_uninstall_requires_a_separate_request_and_runs_bundled_uninstaller(self):
+        self.settings.write_text(
+            "[PaperDeskUpdate]\n"
+            "installRequested=false\n"
+            "uninstallRequested=true\n"
+            "requestedVersion=\n"
+        )
+        env = os.environ.copy()
+        env.update(
+            {
+                "PATH": f"{self.bin}:{env['PATH']}",
+                "PAPERDESK_UPDATE_STATE": str(self.state),
+                "PAPERDESK_UPDATE_SETTINGS": str(self.settings),
+                "PAPERDESK_UPDATE_LOCK": str(self.root / "update.lock"),
+                "PAPERDESK_UNINSTALLER": str(self.bin / "paperdesk-uninstall"),
+                "PAPERDESK_TEST_UNINSTALL_MARKER": str(self.uninstall_marker),
+            }
+        )
+        result = subprocess.run(["sh", AGENT], env=env, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.uninstall_marker.read_text().strip(), "--from-care")
+        self.assertIn("uninstallRequested=false", self.settings.read_text())
+        status = json.loads((self.state / "update-status.json").read_text())
+        self.assertEqual(status["state"], "success")
+        self.assertIn("removed", status["message"].lower())
 
 
 if __name__ == "__main__":

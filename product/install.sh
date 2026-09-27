@@ -3,7 +3,7 @@
 set -eu
 
 PRODUCT="PaperDesk"
-VERSION="1.1.0"
+VERSION="1.1.2"
 TARGET="/home/root/xovi/exthome/appload"
 QRR_DIR="/home/root/xovi/exthome/qt-resource-rebuilder"
 STATE="/home/root/.local/share/paperdesk"
@@ -40,7 +40,8 @@ cp "$PAYLOAD/system/paperdesk-update.path" /etc/systemd/system/paperdesk-update.
 mkdir -p /home/root/.local/lib/paperdesk
 cp "$PAYLOAD/system/paperdesk-update-agent" /home/root/.local/lib/paperdesk/paperdesk-update-agent
 cp "$PAYLOAD/system/paperdesk-release-public.pem" /home/root/.local/lib/paperdesk/release-public.pem
-chmod 755 /home/root/.local/lib/paperdesk/paperdesk-update-agent
+cp "$SCRIPT_DIR/uninstall.sh" /home/root/.local/lib/paperdesk/paperdesk-uninstall
+chmod 755 /home/root/.local/lib/paperdesk/paperdesk-update-agent /home/root/.local/lib/paperdesk/paperdesk-uninstall
 chmod 644 /home/root/.local/lib/paperdesk/release-public.pem
 systemctl daemon-reload
 systemctl enable xovi-autostart.service

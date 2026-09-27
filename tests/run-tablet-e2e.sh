@@ -14,6 +14,7 @@ ARTIFACT_DIR=${PAPERDESK_ARTIFACT_DIR:-$WORKDIR/tests/tablet-e2e}
 TOOLCHAIN="$WORKDIR/arm-toolchain/root"
 TARGET=${PAPERDESK_E2E_TARGET:-all}
 JOURNEY_LOOPS=${PAPERDESK_E2E_LOOPS:-2}
+CAPTURE_SCREEN=${PAPERDESK_E2E_CAPTURE:-1}
 BASE_PID=""
 declare -A LOG_EXPECTED=()
 
@@ -105,6 +106,9 @@ pinch() {
 capture_screen() {
     local output=$1
     local pid address skip window attempt
+    if [[ "$CAPTURE_SCREEN" != "1" ]]; then
+        return 0
+    fi
     window=$((1404 * 1872 * 4))
     for attempt in 1 2 3; do
         pid=$(remote "pidof xochitl" | awk '{print $1}')
@@ -606,10 +610,15 @@ case "$TARGET" in
         tap 1117 56
         wait_for_log 'PaperDesk Care action check' 8
         wait_for_log 'PaperDesk Care manifest' 15
+        tap 1174 1402
+        wait_for_log 'PaperDesk Care action uninstall confirmation' 8
+        sleep 1
+        tap 944 1505
+        wait_for_log 'PaperDesk Care action uninstall cancel' 8
         tap 1300 56
         wait_for_log 'PaperDesk Care action close' 8
-        assert_tablet_healthy 'PaperDesk Care check and close'
-        echo "PASS: physical input checked the signed update feed and closed PaperDesk Care"
+        assert_tablet_healthy 'PaperDesk Care check, uninstall cancellation, and close'
+        echo "PASS: physical input checked updates, opened and cancelled uninstall, and closed PaperDesk Care"
         ;;
     *)
         echo "Unknown PAPERDESK_E2E_TARGET: $TARGET" >&2

@@ -1,5 +1,13 @@
 # Historia zmian
 
+## 1.1.2 — 2026-09-27
+
+- dodano bezpieczna deinstalacje calego PaperDesk bez otwierania terminala,
+- akcja Uninstall wymaga osobnego, jednoznacznego potwierdzenia,
+- dane polaczen, dane czytnika i kopie zapasowe pozostaja na tablecie,
+- po usunieciu pakietu zasoby AppLoad sa automatycznie przeladowywane.
+- proces wydawniczy zawsze przebudowuje osadzone zasoby QML, aby paczka nie mogla zawierac starszego interfejsu.
+
 ## 1.1.0 — 2026-09-27
 
 - dodano PaperDesk Care: czytelny ekran wersji, dostepnosci aktualizacji i informacji o wydaniu,

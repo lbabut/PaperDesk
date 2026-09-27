@@ -11,7 +11,7 @@ Rectangle {
 
     signal close
 
-    readonly property string currentVersion: "1.1.0"
+    readonly property string currentVersion: "1.1.2"
     readonly property string manifestUrl: "http://192.168.1.40:8090/update/latest.json"
     property string latestVersion: "—"
     property string publishedAt: ""
@@ -19,6 +19,8 @@ Rectangle {
     property string state: "checking"
     property string statusMessage: "Checking for updates…"
     property bool requestActive: false
+    property bool uninstallConfirming: false
+    property bool uninstallConfirmReady: false
     property var manifestRequest: null
     property var statusRequest: null
 
@@ -51,7 +53,14 @@ Rectangle {
         id: updateSettings
         category: "PaperDeskUpdate"
         property bool installRequested: false
+        property bool uninstallRequested: false
         property string requestedVersion: ""
+    }
+
+    Settings {
+        id: e2eSettings
+        category: "PaperDeskE2E"
+        property bool traceTouches: false
     }
 
     function versionParts(value) {
@@ -92,6 +101,8 @@ Rectangle {
             state = "current"
             statusMessage = "PaperDesk is up to date"
         }
+        if (e2eSettings.traceTouches)
+            e2eGeometryLog.restart()
         console.log("PaperDesk Care manifest", latestVersion, state)
         return true
     }
@@ -139,6 +150,35 @@ Rectangle {
         console.log("PaperDesk Care action install", latestVersion)
     }
 
+    function beginUninstall() {
+        if (requestActive)
+            return
+        uninstallConfirming = true
+        uninstallConfirmReady = false
+        uninstallConfirmDelay.restart()
+        console.log("PaperDesk Care action uninstall confirmation")
+    }
+
+    function cancelUninstall() {
+        uninstallConfirming = false
+        uninstallConfirmReady = false
+        uninstallConfirmDelay.stop()
+        console.log("PaperDesk Care action uninstall cancel")
+    }
+
+    function requestUninstall() {
+        if (!uninstallConfirming || !uninstallConfirmReady || requestActive)
+            return
+        uninstallConfirming = false
+        requestActive = true
+        updateSettings.requestedVersion = ""
+        updateSettings.installRequested = false
+        updateSettings.uninstallRequested = true
+        state = "queued"
+        statusMessage = "Removing PaperDesk…"
+        console.log("PaperDesk Care action uninstall confirmed")
+    }
+
     function pollInstallStatus() {
         if (!requestActive || statusRequest)
             return
@@ -157,7 +197,7 @@ Rectangle {
                         statusMessage = String(result.message || "Update failed")
                         requestActive = false
                     } else if (result.state === "checking" || result.state === "downloading" ||
-                               result.state === "installing") {
+                               result.state === "installing" || result.state === "uninstalling") {
                         state = "queued"
                         statusMessage = String(result.message || "Installing update…")
                     }
@@ -358,8 +398,123 @@ Rectangle {
                         }
                     }
                 }
+
+                Rectangle { width: parent.width; height: 2; color: "black" }
+                Text {
+                    width: parent.width
+                    text: "SYSTEM MANAGEMENT"
+                    color: "black"
+                    font.pointSize: 11
+                    font.bold: true
+                    font.letterSpacing: 2
+                }
+                Rectangle {
+                    width: parent.width
+                    height: root.uninstallConfirming ? 250 : 150
+                    color: "white"
+                    border.color: "black"
+                    border.width: 2
+                    radius: 8
+
+                    Column {
+                        anchors.fill: parent
+                        anchors.margins: 22
+                        spacing: 18
+
+                        RowLayout {
+                            width: parent.width
+                            height: 78
+                            spacing: 24
+                            Column {
+                                Layout.fillWidth: true
+                                spacing: 5
+                                Text { text: "Remove PaperDesk"; color: "black"; font.pointSize: 18; font.bold: true }
+                                Text {
+                                    width: parent.width
+                                    text: "Removes all PaperDesk apps. Saved connections, reader data and backups stay on the tablet."
+                                    color: "black"
+                                    font.pointSize: 13
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+                            ActionButton {
+                                id: uninstallButton
+                                objectName: "careUninstallButton"
+                                label: "Uninstall"
+                                available: !root.requestActive && !root.uninstallConfirming
+                                Layout.preferredWidth: 205
+                                Layout.fillHeight: true
+                                onTriggered: root.beginUninstall()
+                            }
+                        }
+
+                        Row {
+                            visible: root.uninstallConfirming
+                            width: parent.width
+                            height: visible ? 92 : 0
+                            spacing: 18
+                            Text {
+                                width: parent.width - 446
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: "Are you sure? PaperDesk will close and disappear from AppLoad."
+                                color: "black"
+                                font.pointSize: 16
+                                font.bold: true
+                                wrapMode: Text.WordWrap
+                            }
+                            ActionButton {
+                                id: uninstallCancelButton
+                                objectName: "careUninstallCancelButton"
+                                width: 190
+                                height: parent.height
+                                label: "Cancel"
+                                onTriggered: root.cancelUninstall()
+                            }
+                            ActionButton {
+                                id: uninstallConfirmButton
+                                objectName: "careUninstallConfirmButton"
+                                width: 220
+                                height: parent.height
+                                label: "Yes, uninstall"
+                                primary: true
+                                available: root.uninstallConfirmReady
+                                onTriggered: root.requestUninstall()
+                            }
+                        }
+                    }
+                }
             }
         }
+    }
+
+    Timer {
+        id: e2eGeometryLog
+        interval: 800
+        repeat: false
+        onTriggered: {
+            if (!e2eSettings.traceTouches)
+                return
+            var uninstallPoint = uninstallButton.mapToItem(root, 0, 0)
+            console.log("PaperDesk Care E2E uninstall geometry", uninstallPoint.x,
+                        uninstallPoint.y, uninstallButton.width, uninstallButton.height)
+            if (root.uninstallConfirming) {
+                var cancelPoint = uninstallCancelButton.mapToItem(root, 0, 0)
+                console.log("PaperDesk Care E2E cancel geometry", cancelPoint.x,
+                            cancelPoint.y, uninstallCancelButton.width, uninstallCancelButton.height)
+            }
+        }
+    }
+
+    onUninstallConfirmingChanged: {
+        if (e2eSettings.traceTouches)
+            e2eGeometryLog.restart()
+    }
+
+    Timer {
+        id: uninstallConfirmDelay
+        interval: 450
+        repeat: false
+        onTriggered: root.uninstallConfirmReady = root.uninstallConfirming
     }
 
     Timer {
@@ -369,5 +524,9 @@ Rectangle {
         onTriggered: root.pollInstallStatus()
     }
 
-    Component.onCompleted: checkForUpdates()
+    Component.onCompleted: {
+        checkForUpdates()
+        if (e2eSettings.traceTouches)
+            e2eGeometryLog.start()
+    }
 }

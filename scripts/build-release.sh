@@ -7,8 +7,27 @@ OUT="$ROOT/dist/paperdesk-$VERSION.zip"
 MANIFEST="$ROOT/website/update/latest.json"
 SIGNATURE="$ROOT/website/update/latest.json.sig"
 SIGNING_KEY=${PAPERDESK_SIGNING_KEY:-/home/lukasz/.config/paperdesk/release-signing-key.pem}
+RCC_BIN=${PAPERDESK_RCC:-}
 STAGE=$(mktemp -d)
 trap 'rm -rf -- "$STAGE"' EXIT INT TERM
+
+if [ -z "$RCC_BIN" ]; then
+    if command -v rcc >/dev/null 2>&1; then
+        RCC_BIN=$(command -v rcc)
+    elif [ -x /usr/lib/qt5/bin/rcc ]; then
+        RCC_BIN=/usr/lib/qt5/bin/rcc
+    elif [ -x /home/lukasz/Documents/Codex/2026-09-25/m-2/work/qt-rcc-pkg/root/usr/lib/qt5/bin/rcc ]; then
+        RCC_BIN=/home/lukasz/Documents/Codex/2026-09-25/m-2/work/qt-rcc-pkg/root/usr/lib/qt5/bin/rcc
+    else
+        printf 'Qt resource compiler not found; set PAPERDESK_RCC.\n' >&2
+        exit 1
+    fi
+fi
+
+for resource_file in "$ROOT"/product/payload/apps/*/application.qrc; do
+    resource_dir=$(dirname "$resource_file")
+    (cd "$resource_dir" && "$RCC_BIN" --binary application.qrc -o resources.rcc)
+done
 
 mkdir -p "$ROOT/dist"
 rm -f "$OUT"
