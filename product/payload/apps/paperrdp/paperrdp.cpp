@@ -64,6 +64,12 @@ struct App {
     bool shortcutsOpen = false;
     bool running = true;
     bool mouseDown = false;
+    int mouseTouchId = -1;
+    float mouseStartX = 0.0f;
+    float mouseStartY = 0.0f;
+    int mouseLastX = 0;
+    int mouseLastY = 0;
+    std::chrono::steady_clock::time_point lastMouseMove = std::chrono::steady_clock::now();
     float zoom = 1.0f;
     float viewX = 0.0f;
     float viewY = 0.0f;
@@ -453,7 +459,7 @@ void flushRemoteFrame(App& a, bool force=false) {
 }
 
 void maybeCleanRefresh(App& a) {
-    if(!a.cleanRefreshPending || std::chrono::steady_clock::now()<a.cleanRefreshDue) return;
+    if(!a.cleanRefreshPending || a.mouseDown || a.dirty || std::chrono::steady_clock::now()<a.cleanRefreshDue) return;
     // UPDATE_ALL publishes the complete current framebuffer.  The explicit
     // refresh then clears e-ink ghosting left by the fast partial waveform.
     a.fb.sendCompleteUpdate();
@@ -666,6 +672,22 @@ void redrawZoomedView(App& a) {
     drawBar(a);
 }
 
+void remoteMouse(App& a,UINT16 flags,int x,int y) {
+    const int rx=std::clamp<int>(a.viewX+x/a.zoom,0,W-1);
+    const int ry=std::clamp<int>(a.viewY+(y-BAR_H)/a.zoom,0,RDP_H-1);
+    freerdp_input_send_mouse_event(a.rdp->context->input,flags,rx,ry);
+}
+
+void releaseRemoteMouse(App& a,int x,int y) {
+    if(!a.mouseDown) return;
+    remoteMouse(a,PTR_FLAGS_MOVE,x,y);
+    remoteMouse(a,PTR_FLAGS_BUTTON1,x,y);
+    a.mouseDown=false;
+    a.mouseTouchId=-1;
+    a.cleanRefreshPending=true;
+    a.cleanRefreshDue=std::chrono::steady_clock::now()+std::chrono::milliseconds(1100);
+}
+
 void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
     const bool press=u.inputType==INPUT_TOUCH_PRESS;
     const bool move=u.inputType==INPUT_TOUCH_UPDATE;
@@ -673,6 +695,31 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
     if(!press&&!move&&!release) return;
 
     if(press || move) a.touches[u.devId]={float(u.x),float(u.y)};
+    if(press && a.touches.size()==1 && u.y>=BAR_H && !a.shortcutsOpen
+       && a.zoom<=1.001f && a.mouseTouchId<0 && !a.gestureConsumed) {
+        a.mouseTouchId=u.devId;
+        a.mouseStartX=float(u.x);
+        a.mouseStartY=float(u.y);
+        a.mouseLastX=u.x;
+        a.mouseLastY=u.y;
+        a.lastMouseMove=std::chrono::steady_clock::now();
+    }
+    if(move && a.mouseTouchId==u.devId && a.touches.size()==1) {
+        const float dx=float(u.x)-a.mouseStartX,dy=float(u.y)-a.mouseStartY;
+        const auto now=std::chrono::steady_clock::now();
+        if(!a.mouseDown && dx*dx+dy*dy>64.0f) {
+            remoteMouse(a,PTR_FLAGS_MOVE|PTR_FLAGS_DOWN|PTR_FLAGS_BUTTON1,
+                        int(a.mouseStartX),int(a.mouseStartY));
+            a.mouseDown=true;
+            a.lastMouseMove=now-std::chrono::milliseconds(55);
+        }
+        if(a.mouseDown && now-a.lastMouseMove>=std::chrono::milliseconds(55)) {
+            remoteMouse(a,PTR_FLAGS_MOVE,u.x,u.y);
+            a.mouseLastX=u.x;
+            a.mouseLastY=u.y;
+            a.lastMouseMove=now;
+        }
+    }
     if(press && a.touches.size()==1 && u.y>=BAR_H && a.zoom>1.001f) {
         a.panCandidate=true;
         a.panActive=false;
@@ -683,6 +730,8 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
         a.panStartViewY=a.viewY;
     }
     if(press && a.touches.size()==2) {
+        if(a.mouseDown) releaseRemoteMouse(a,a.mouseLastX,a.mouseLastY);
+        a.mouseTouchId=-1;
         a.panCandidate=false;
         a.panActive=false;
         a.panId=-1;
@@ -724,7 +773,13 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
         a.viewY=std::clamp(a.viewY,0.0f,std::max(0.0f,float(RDP_H)-RDP_H/a.zoom));
     }
     if(release) {
+        const bool wasGesture=a.gestureConsumed;
         const bool finishPan=a.panActive && a.panId==u.devId;
+        const bool finishMouse=a.mouseTouchId==u.devId;
+        if(finishMouse) {
+            if(a.mouseDown) releaseRemoteMouse(a,u.x,u.y);
+            else { processRemoteTouch(a,u.x,u.y); a.mouseTouchId=-1; }
+        }
         if(a.panId==u.devId) {
             a.panCandidate=false;
             a.panActive=false;
@@ -733,6 +788,7 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
         a.touches.erase(u.devId);
         if(a.pinchActive && a.touches.size()<2) { a.pinchActive=false; redrawZoomedView(a); }
         else if(finishPan) redrawZoomedView(a);
+        else if(!finishMouse && !wasGesture && !a.gestureConsumed) processRemoteTouch(a,u.x,u.y);
         if(a.touches.empty()) a.gestureConsumed=false;
     }
 }
@@ -743,9 +799,8 @@ void pollInput(App& a) {
         if(msg.type!=MESSAGE_USERINPUT) continue;
         const auto& u=msg.userInput;
         if(a.mode==Mode::Remote && (u.inputType==INPUT_TOUCH_PRESS || u.inputType==INPUT_TOUCH_UPDATE || u.inputType==INPUT_TOUCH_RELEASE)) {
-            const bool wasGesture=a.gestureConsumed;
             processTouchPacket(a,u);
-            if(wasGesture || a.gestureConsumed) continue;
+            continue;
         }
         if(u.inputType==INPUT_TOUCH_RELEASE || u.inputType==INPUT_PEN_RELEASE) {
             if(a.mode==Mode::Login) processLoginTouch(a,u.x,u.y);
