@@ -44,6 +44,11 @@ class WebsiteTests(unittest.TestCase):
             self.assertIn("Your quiet network desk", body)
             self.assertIn("Open source, for real", body)
             self.assertIn("Support development", body)
+            self.assertIn(
+                'href="https://ko-fi.com/lbabut?ref=onboarding_email_founderwelcome"',
+                body,
+            )
+            self.assertIn("Support PaperDesk on Ko-fi", body)
             self.assertIn("Every control earns its place", body)
             self.assertIn('id="tour"', body)
             self.assertNotIn("Founding Edition", body)
