@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.2 — 2026-09-28
+
+- PaperWeb downloads a linked file when the user taps its link.
+- Removed the misleading toolbar action that saved the currently displayed page.
+- Added direct recognition of SVG, GIF, and WebP file links.
+- Replaced the old toolbar test with a physical-tablet test that taps a real file link and verifies the saved file.
+
 ## 1.2.1 — 2026-09-28
 
 - RSS automatically downloads full article text when an article is opened.
