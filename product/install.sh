@@ -11,31 +11,31 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PAYLOAD="$SCRIPT_DIR/payload"
 
 if [ "$(id -u)" != "0" ]; then
-    echo "Uruchom instalator jako root." >&2
+    echo "Run the installer as root." >&2
     exit 1
 fi
 
 if [ ! -d "/home/root/xovi" ] || [ ! -d "$TARGET" ]; then
-    echo "Nie znaleziono aktywnej instalacji XOVI/AppLoad." >&2
+    echo "No active XOVI/AppLoad installation was found." >&2
     exit 1
 fi
 
 for required in paperdesk literm paperweb paperrdp-login paperrdp paperrss papercare shims; do
     if [ ! -d "$PAYLOAD/apps/$required" ]; then
-        echo "Niepelna paczka: brak payload/apps/$required" >&2
+        echo "Incomplete package: missing payload/apps/$required" >&2
         exit 1
     fi
 done
 
 for required in paperdesk-appload-compat.qrr paperdesk-appload-window.qml paperdesk-appload.qml xovi-autostart.service paperdesk-update-agent paperdesk-update.service paperdesk-update.path paperdesk-release-public.pem; do
     if [ ! -f "$PAYLOAD/system/$required" ]; then
-        echo "Niepelna paczka: brak payload/system/$required" >&2
+        echo "Incomplete package: missing payload/system/$required" >&2
         exit 1
     fi
 done
 
 if [ ! -f /home/root/xovi/extensions.d/qt-resource-rebuilder.so ]; then
-    echo "Brak rozszerzenia qt-resource-rebuilder wymaganego przez poprawke AppLoad." >&2
+    echo "The qt-resource-rebuilder extension required by the AppLoad patch is missing." >&2
     exit 1
 fi
 
@@ -85,8 +85,8 @@ BACKUP="$STATE/backups/$STAMP"
 mkdir -p "$BACKUP/apps" "$BACKUP/system" "$TARGET" /home/root/.local/bin \
     /home/root/.config/literm /home/root/.config/rmssh "$QRR_DIR"
 
-echo "$PRODUCT $VERSION — instalacja"
-echo "Kopia poprzedniej wersji: $BACKUP"
+echo "$PRODUCT $VERSION — installation"
+echo "Previous-version backup: $BACKUP"
 
 for app in paperdesk literm paperweb paperrdp-login paperrdp paperrss papercare shims; do
     if [ -e "$TARGET/$app" ]; then
@@ -131,6 +131,6 @@ printf '%s\n' "$VERSION" > "$STATE/current-version"
 printf '%s\n' "$BACKUP" > "$STATE/last-backup"
 
 echo
-echo "Gotowe. Uruchom ponownie XOVI poleceniem /home/root/xovi/start."
-echo "Po restarcie tabletu XOVI i PaperDesk uruchomia sie automatycznie."
-echo "Konfiguracje polaczen i dane aplikacji zostaly zachowane."
+echo "Done. Restart XOVI with /home/root/xovi/start."
+echo "XOVI and PaperDesk will start automatically after a device reboot."
+echo "Connection profiles and app data have been preserved."

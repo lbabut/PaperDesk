@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = (ROOT / "product/VERSION").read_text().strip()
+VERSION = json.loads((ROOT / "website/update/latest.json").read_text())["version"]
 
 
 def load_server():
@@ -56,11 +56,12 @@ class WebsiteTests(unittest.TestCase):
             self.assertNotIn("<form", body)
             for screenshot in (
                 "terminal-shortcuts.png",
-                "web-reader.png",
                 "rss-reading-list.png",
                 "rdp-session.png",
             ):
                 self.assertIn(f"/assets/screens/{screenshot}", body)
+            self.assertIn("web-illustration", body)
+            self.assertNotIn("web-reader.png", body)
         with self.request(f"/download/paperdesk-{VERSION}.zip") as response:
             self.assertEqual(response.status, 200)
             self.assertGreater(int(response.headers["Content-Length"]), 1_000_000)

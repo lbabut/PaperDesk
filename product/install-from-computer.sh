@@ -23,11 +23,11 @@ run_ssh() {
     fi
 }
 
-echo "Wysylam PaperDesk do root@$TABLET..."
+echo "Sending PaperDesk to root@$TABLET..."
 run_ssh "root@$TABLET" "rm -rf '$REMOTE_DIR' && mkdir -p '$REMOTE_DIR'"
 tar -C "$SCRIPT_DIR" --exclude='./paperdesk.local.conf' -cf - . | \
     run_ssh "root@$TABLET" "tar -xf - -C '$REMOTE_DIR'"
 run_ssh "root@$TABLET" "chmod 755 '$REMOTE_DIR/install.sh' && '$REMOTE_DIR/install.sh'"
 run_ssh "root@$TABLET" "/home/root/xovi/start"
 
-echo "PaperDesk jest zainstalowany, a XOVI zostal uruchomiony ponownie."
+echo "PaperDesk is installed, and XOVI has restarted."

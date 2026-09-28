@@ -7,7 +7,7 @@ STATE="/home/root/.local/share/paperdesk"
 QRR_DIR="/home/root/xovi/exthome/qt-resource-rebuilder"
 
 if [ "$(id -u)" != "0" ]; then
-    echo "Uruchom deinstalator jako root." >&2
+    echo "Run the uninstaller as root." >&2
     exit 1
 fi
 
@@ -66,7 +66,7 @@ if [ -f /home/root/.profile ]; then
 fi
 
 rm -f "$STATE/current-version"
-echo "PaperDesk usuniety. Dane polaczen i kopie zapasowe pozostaly na tablecie."
+echo "PaperDesk removed. Connection data and backups remain on the tablet."
 if [ "${1:-}" != "--from-care" ]; then
-    echo "Uruchom ponownie XOVI, aby przeladowac zasoby AppLoad."
+    echo "Restart XOVI to reload the AppLoad resources."
 fi

@@ -1,126 +1,130 @@
-# PaperDesk 1.1.4 (candidate)
+# PaperDesk 1.1.4 (release candidate)
 
-PaperDesk zmienia reMarkable 2 w spokojne, monochromatyczne stanowisko sieciowe.
-Pakiet dodaje piec aplikacji bezposrednio do listy AppLoad i zachowuje ich
-ustawienia pomiedzy uruchomieniami. Redundantny hub oraz techniczny proces RDP
-sa ukryte przed uzytkownikiem.
+PaperDesk turns a reMarkable 2 into a quiet, monochrome network workspace.
+The bundle adds five apps directly to the AppLoad list and keeps their
+settings between sessions. The redundant hub and technical RDP worker are
+hidden from users.
 
-## Moduly
+## Apps
 
-- **Terminal SSH** — natywna klawiatura, przewijanie, gest zmiany rozmiaru,
-  skroty Ctrl i czytelny czarny tekst.
-- **Czytnik WWW** — uproszczone strony bez skryptow, zapamietywane pokazywanie
-  lub ukrywanie obrazkow, kompaktowe karty z tytulem nad grafika, gest
-  powiekszania i e-inkowe przewijanie bez animacji.
-- **Pulpit zdalny** — FreeRDP, dotyk, klawiatura, powiekszanie, przesuwanie
-  obrazu i lokalnie zapisywany profil.
-- **Czytnik RSS** — RSS/Atom, wlasne kanaly, ulubione, przeczytane artykuly,
-  pelny tekst oraz cache offline.
-- **PaperDesk Care** — wersja lokalna i dostepna, informacje o wydaniu oraz
-  aktualizacja z podpisanego i zweryfikowanego pakietu.
+- **SSH Terminal** — native keyboard, scrolling, resize gesture, Ctrl
+  shortcuts, and readable black text.
+- **Web Reader** — simplified pages without scripts, a remembered setting
+  for showing or hiding pictures, compact cards with titles above images,
+  pinch zoom, and e-ink scrolling without animation.
+- **Remote Desktop** — FreeRDP, touch, keyboard, zoom, panning, and a
+  locally stored connection profile.
+- **RSS Reader** — RSS/Atom feeds, custom sources, favourites, read articles,
+  full text, and an offline cache.
+- **PaperDesk Care** — installed and available versions, release notes, and
+  updates from signed, verified packages.
 
-PaperDesk nie odswieza niczego automatycznie w tle. Siec i ekran sa uzywane
-tylko po poleceniu uzytkownika, co ogranicza miganie i zuzycie baterii.
+PaperDesk does not refresh anything automatically in the background.
+The network and display are used only when requested, reducing flashing
+and battery use.
 
-Interfejs korzysta ze wspolnego, monochromatycznego systemu wizualnego:
-redakcyjnej typografii, duzych pol dotykowych, cienkich ramek i spokojnego
-rytmu bez animacji. Strony WWW sa dodatkowo normalizowane do czerni i bieli,
-a dlugie artykuly pozostaja lekkie typograficznie zamiast stalego pogrubienia.
+The interface shares a monochrome visual system: editorial typography,
+large touch targets, thin borders, and a calm layout without animation.
+Web pages are also normalised to black and white; long articles retain
+light, readable typography instead of being permanently bold.
 
-Pakiet zawiera zgodnosciowa poprawke AppLoad 0.6.0. Przy zamykaniu modulu
-odlacza ona klawiature przed zniszczeniem okna, bezpiecznie obsluguje brak
-zaladowanego frontendu i wysyla sygnal zamkniecia tylko raz. Zapobiega to
-pozostawaniu niewidzialnej warstwy z przyciskiem „X”, ktora blokowala dotyk.
-Obsluguje tez nowy sposob raportowania proporcji ekranu w AppLoad 0.6.0.
+The package includes an AppLoad 0.6.0 compatibility patch. When closing
+a module, it detaches the keyboard before destroying the window, safely
+handles an unloaded frontend, and emits the close signal only once. This
+prevents an invisible layer with an X button from blocking touch input.
+It also handles the newer AppLoad 0.6.0 screen-aspect reporting.
 
-## Wymagania
+## Requirements
 
-- reMarkable 2 z reMarkable OS 3.29.x (przetestowano 3.29.0.149),
-- XOVI 0.3.3,
-- rm-xovi-extensions v19,
-- AppLoad 0.6.0,
+- reMarkable 2 running reMarkable OS 3.29.x (tested on 3.29.0.149);
+- XOVI 0.3.3;
+- rm-xovi-extensions v19;
+- AppLoad 0.6.0;
 - LiTerm 0.1.7.
 
-To jest konfiguracja przetestowana; inne wersje moga dzialac, ale nie sa czescia
-tego wydania.
+This is the tested configuration. Other versions may work, but are not
+covered by this release.
 
-Po aktualizacji firmware XOVI musi miec przebudowana tablice symboli dla
-dokladnej wersji systemu. Na testowanym urzadzeniu zrobiono to narzedziem
-`/home/root/xovi/rebuild_hashtable` przed uruchomieniem PaperDesk.
+After a firmware update, XOVI needs a symbol table rebuilt for the exact
+OS version. On the tested device, this was done with
+`/home/root/xovi/rebuild_hashtable` before starting PaperDesk.
 
-## Instalacja z komputera
+## Install from a computer
 
-Graficzny instalator dla Linuxa jest opisany w
-`../INSTALL-DESKTOP.md`. Wykrywa istniejące aplikacje przed instalacją i
-prosi o potwierdzenie podmiany identycznych ID.
+The graphical Linux installer is described in `../INSTALL-DESKTOP.md`.
+It detects existing apps before installation and asks for confirmation
+before replacing matching IDs. Detailed USB/SSH instructions, verification,
+and removal steps are in `MANUAL-INSTALL.md`.
 
-
-Podlacz tablet przez USB, rozpakuj paczke i uruchom:
+Connect the tablet by USB, extract the package, and run:
 
 ```sh
 cp paperdesk.conf.example paperdesk.local.conf
 chmod 600 paperdesk.local.conf
 ```
 
-W `paperdesk.local.conf` wpisz tylko kod zarzadzania USB z ustawien tabletu,
-a nastepnie uruchom:
+Enter only the USB management code from tablet settings in
+`paperdesk.local.conf`, then run:
 
 ```sh
 ./install-from-computer.sh
 ```
 
-Domyslny adres to `10.11.99.1`. Inny adres mozna podac jako argument:
+The default address is `10.11.99.1`. Pass another address as an argument:
 
 ```sh
 ./install-from-computer.sh 192.168.1.50
 ```
 
-Instalator na tablecie tworzy kopie poprzednich wersji w
-`/home/root/.local/share/paperdesk/backups`, zachowuje profile polaczen i nie
-usuwa danych uzytkownika. Instalator komputerowy uruchamia XOVI ponownie, aby
-AppLoad nie korzystal ze starej wersji zasobow. Instalacja wlacza tez usluge
-`xovi-autostart`, dzieki ktorej XOVI i PaperDesk wracaja automatycznie po
-pelnym restarcie urzadzenia.
+The tablet-side installer saves previous versions under
+`/home/root/.local/share/paperdesk/backups`, preserves connection
+profiles, and does not delete user data. The computer installer restarts
+XOVI so AppLoad does not use stale resources. Installation also enables
+`xovi-autostart`, which starts XOVI and PaperDesk after a full device reboot.
 
-## Instalacja bezposrednio na tablecie
+## Install directly on the tablet
 
-Szczegolowa instrukcja reczna (Linux, USB, SSH, weryfikacja i deinstalacja)
-jest w `MANUAL-INSTALL.md`. Skopiuj katalog na tablet i jako root uruchom `./install.sh`, a nastepnie
-`/home/root/xovi/start`. Ponowne uruchomienie XOVI zamyka otwarte aplikacje,
-wiec najpierw zakoncz prace nad dokumentami.
+Copy the directory to the tablet and run `./install.sh` as root, then
+`/home/root/xovi/start`. Restarting XOVI closes open apps, so save any
+work on the tablet first. See `MANUAL-INSTALL.md` for the complete procedure.
 
-## Prywatnosc i bezpieczenstwo
+## Privacy and security
 
-- Terminal weryfikuje klucze hostow SSH i nie zapisuje hasel.
-- PaperRDP zapisuje profil w katalogu roota z uprawnieniami `0600`.
-- RSS przechowuje kanaly i artykuly lokalnie w ustawieniach xochitl.
-- Po wlaczeniu obrazkow PaperWeb przekazuje ich publiczne adresy do
-  `images.weserv.nl`, aby obejsc niezgodny TLS starych bibliotek tabletu,
-  ograniczyc grafike do 760 px i usunac animacje. Nie wysyla tam cookies ani
-  danych logowania.
-- PaperDesk nie ma telemetrii ani zewnetrznego konta.
-- PaperDesk Care przypina klucz publiczny wydan, weryfikuje podpis Ed25519,
-  sume SHA-256 archiwum oraz wewnetrzne sumy plikow przed instalacja.
-- Kod zarzadzania USB pozostaje w ignorowanym przez Git pliku
-  `paperdesk.local.conf`; nie jest kopiowany na tablet ani przekazywany w
-  argumentach procesu.
+- Terminal verifies SSH host keys and does not save passwords.
+- PaperRDP stores its profile in a root-owned directory with mode `0600`.
+- RSS stores feeds and articles locally in xochitl settings.
+- When pictures are enabled, PaperWeb sends their public URLs to
+  `images.weserv.nl` to work around the tablet libraries' outdated TLS,
+  limit images to 760 px, and remove animation. It does not send cookies
+  or login details there.
+- PaperDesk has no telemetry or external account.
+- PaperDesk Care pins the release public key and verifies the Ed25519
+  signature, ZIP SHA-256, and internal file hashes before installation.
+- The USB management code stays in the Git-ignored local file
+  `paperdesk.local.conf`. It is not copied to the tablet or placed in
+  process arguments.
 
-## Usuwanie
+## Uninstall
 
-`./uninstall.sh` usuwa aplikacje, przywraca poprzednie zasoby AppLoad, jezeli
-istnialy, i celowo zachowuje konfiguracje polaczen oraz kopie zapasowe. Po
-operacji uruchom ponownie XOVI.
+`./uninstall.sh` removes PaperDesk apps and restores original AppLoad
+resources when available. The 1.1.4 installer also saves original app
+directories on a first install and restores them on uninstall. Connection
+data and backups are deliberately retained. Restart XOVI afterwards.
+Older installations without the original snapshot may need a separately
+saved copy of LiTerm; see `MANUAL-INSTALL.md`.
 
-## Licencje skladnikow
+## Component licences
 
-Pakiet zawiera teksty licencji LiTerm, AppLoad/QTFB i FreeRDP w katalogu
-`licenses`. Kod zrodlowy dolaczonego shima QTFB jest w `third_party_source`,
-a kod warstwy PaperDesk, poprawki QML AppLoad i klienta PaperRDP znajduje sie
-bezposrednio w paczce.
+The package contains licence texts for LiTerm, AppLoad/QTFB, and FreeRDP
+under `licenses`. The bundled QTFB shim source is in
+`third_party_source`. PaperDesk application code, the AppLoad QML
+compatibility patch, and the PaperRDP client are shipped in the package.
 
-## Status wydania
+## Release status
 
-Wydanie 1.1.3 zostalo przetestowane na fizycznym reMarkable 2 z systemem
-3.29.0.149: uruchamianie wszystkich modulow, wszystkie bezpieczne akcje menu,
-klawiatura systemowa, zachowanie ustawien, odswiezanie RSS, pobieranie pelnego
-tekstu, czyszczenie okna AppLoad oraz fizyczne gesty przewijania i pinch.
+Release 1.1.3 was tested on a physical reMarkable 2 with OS 3.29.0.149:
+all module launches and safe menu actions, system keyboard, persistent
+settings, RSS refresh and full-text retrieval, AppLoad window cleanup,
+and physical scroll and pinch gestures. Version 1.1.4 changes the
+installation flow and still needs clean-device installation and removal
+testing before publication.
