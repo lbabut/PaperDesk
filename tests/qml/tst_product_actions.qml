@@ -63,6 +63,25 @@ Item {
             verify(headers["Accept"].indexOf("text/html") >= 0)
         }
 
+        function test_00_download_detection_and_filename() {
+            verify(scene.web.hasDownloadExtension("https://example.com/manual.pdf?edition=2"))
+            verify(scene.web.hasDownloadExtension("https://example.com/archive.zip"))
+            verify(!scene.web.hasDownloadExtension("https://example.com/article"))
+            compare(scene.web.downloadFilename(null, "https://example.com/files/manual.pdf?x=1"),
+                    "manual.pdf")
+            var attachment = {
+                getResponseHeader: function(name) {
+                    if (name === "Content-Disposition")
+                        return "attachment; filename=guide.epub"
+                    if (name === "Content-Type")
+                        return "application/epub+zip"
+                    return ""
+                }
+            }
+            verify(scene.web.responseWantsDownload(attachment, "https://example.com/get/42"))
+            compare(scene.web.downloadFilename(attachment, "https://example.com/get/42"), "guide.epub")
+        }
+
         function test_00_last_successful_http_address_is_remembered() {
             verify(!scene.web.rememberLastAddress("gopher://example.invalid"))
             verify(scene.web.rememberLastAddress("example.com/remember-me"))

@@ -166,6 +166,7 @@ Item {
         function test_technical_and_redundant_apps_are_hidden_from_launcher() {
             verify(!appLoadLoader.item.isVisibleLauncherApplication({ id: "paperdesk" }))
             verify(!appLoadLoader.item.isVisibleLauncherApplication({ id: "external::paperrdp" }))
+            verify(!appLoadLoader.item.isVisibleLauncherApplication({ id: "external::paperweb-download" }))
             verify(appLoadLoader.item.isVisibleLauncherApplication({ id: "paperrdp-login" }))
             verify(appLoadLoader.item.isVisibleLauncherApplication({ id: "paperweb" }))
         }

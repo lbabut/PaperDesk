@@ -95,6 +95,10 @@ tap() {
     remote "printf 'tap %s %s\\n' '$1' '$2' >/tmp/paperdesk-touch.fifo"
 }
 
+hold() {
+    remote "printf 'hold %s %s %s\\n' '$1' '$2' '$3' >/tmp/paperdesk-touch.fifo"
+}
+
 swipe() {
     remote "printf 'swipe %s %s %s %s %s\\n' '$1' '$2' '$3' '$4' '$5' >/tmp/paperdesk-touch.fifo"
 }
@@ -150,7 +154,7 @@ BEGIN { in_e2e=0 }
 !in_e2e { print }
 '\'' /home/root/.config/remarkable/xochitl.conf > /tmp/paperdesk-e2e-base.conf
 mv /tmp/paperdesk-e2e-base.conf /home/root/.config/remarkable/xochitl.conf
-printf "\n[PaperDeskE2E]\nautostart=true\napplicationId=paperdesk\nscenarioVersion=20260927\ntraceTouches=true\nwebFixture=true\nwebTraceGestures=true\nrssLongArticle=true\nrssStressParser=true\nrssTraceScroll=true\n" >>/home/root/.config/remarkable/xochitl.conf
+printf "\n[PaperDeskE2E]\nautostart=true\napplicationId=paperdesk\nscenarioVersion=20260927\ntraceTouches=true\nwebFixture=true\nwebDownloadFixture=false\nwebTraceGestures=true\nrssLongArticle=true\nrssStressParser=true\nrssTraceScroll=true\n" >>/home/root/.config/remarkable/xochitl.conf
 for helper_pid in $(pidof paperdesk-rm-touchd || true); do
     kill -9 "$helper_pid" 2>/dev/null || true
 done
@@ -180,6 +184,10 @@ systemctl restart xochitl
 sleep 8'
 elif [[ "$TARGET" == "web" || "$TARGET" == "journey" ]]; then
     remote 'printf "\n[PaperWeb]\nsavedMobileMode=true\n" >>/home/root/.config/remarkable/xochitl.conf
+systemctl restart xochitl
+sleep 8'
+elif [[ "$TARGET" == "web-download" ]]; then
+    remote 'printf "\n[PaperDeskE2E]\nwebDownloadFixture=true\n" >>/home/root/.config/remarkable/xochitl.conf
 systemctl restart xochitl
 sleep 8'
 elif [[ "$TARGET" == "web-live-wp" ]]; then
@@ -472,6 +480,23 @@ case "$TARGET" in
         capture_screen "$ARTIFACT_DIR/web-keyboard-hidden.png"
         echo "PASS: physical taps opened and dismissed the contextual keyboard, then requested a mobile document"
         ;;
+    web-download)
+        tap 1040 500
+        wait_for_log 'PaperDesk touch launching paperweb' 10
+        wait_for_log 'PaperWeb E2E download fixture ready' 10
+        tap 1120 160
+        wait_for_log 'PaperWeb action download' 8
+        wait_for_log 'PaperWeb download saved Saved: icon' 30
+        remote 'set -eu
+status=$(cat /home/root/.local/share/paperdesk/download-status)
+saved=${status##*Saved: }
+test -n "$saved"
+test -s "/home/root/Downloads/PaperDesk/$saved"
+grep -q "<svg" "/home/root/Downloads/PaperDesk/$saved"'
+        assert_tablet_healthy 'PaperWeb physical download'
+        capture_screen "$ARTIFACT_DIR/web-download-saved.png"
+        echo "PASS: a physical tablet tap downloaded a real file and PaperWeb reported the saved name"
+        ;;
     web-live-wp)
         tap 1040 500
         wait_for_log 'PaperDesk touch launching paperweb' 10
@@ -609,6 +634,11 @@ case "$TARGET" in
         sleep 12
         remote 'p=$(pidof paperrdp); p=${p%% *}; grep -Eq "[[:space:]]01[[:space:]]" /proc/$p/net/tcp'
         assert_tablet_healthy 'live RDP connection'
+        tap 1240 1540
+        tap 1240 1540
+        wait_for_log 'PaperDesk RDP double click' 8
+        hold 1160 1460 850
+        wait_for_log 'PaperDesk RDP right click' 8
         tap 1095 56
         sleep 3
         remote 'pidof paperrdp >/dev/null'
@@ -627,7 +657,7 @@ case "$TARGET" in
             echo 'Live RDP did not close after the physical Close tap' >&2
             exit 1
         fi
-        echo "PASS: live RDP connected, survived keyboard/shortcut overlays and refresh soak, then closed from a physical tap"
+        echo "PASS: live RDP handled double-click, long-press right-click, overlays and refresh soak, then closed from a physical tap"
         ;;
     rss)
         tap 1040 1250

@@ -11,7 +11,7 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
-for app in paperdesk literm paperweb paperrdp-login paperrdp paperrss papercare shims; do
+for app in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrss papercare shims; do
     rm -rf "$TARGET/$app"
     if [ -f "$STATE/original-recorded" ] && [ -e "$STATE/original/apps/$app" ]; then
         cp -R "$STATE/original/apps/$app" "$TARGET/$app"

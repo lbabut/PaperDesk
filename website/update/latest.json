@@ -1,15 +1,15 @@
 {
   "product": "PaperDesk",
   "channel": "stable",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "publishedAt": "2026-09-28",
-  "archiveUrl": "/download/paperdesk-1.1.7.zip",
-  "archiveSha256": "51d2ecfcba2e95ca451d6674e3ae4111cd04f1ebad344cb7f493e8f15b4994c3",
-  "archiveSize": 1310945,
+  "archiveUrl": "/download/paperdesk-1.1.8.zip",
+  "archiveSha256": "6e075b877409485e31113ef77c43cebcb218d7ccf538603f713f95e05e246020",
+  "archiveSize": 1316278,
   "releaseNotes": [
-    "RDP no longer appears to freeze when the remote desktop changes in several distant places at once.",
-    "Sparse changes are refreshed as small e-ink regions, while dense frames are published atomically at a panel-safe rate.",
-    "Input bursts have a fixed per-frame budget, so touch and FreeRDP network handling remain responsive under load.",
-    "Touch dragging now moves remote windows and other draggable desktop controls."
+    "PaperWeb can now download links and the address currently shown in its toolbar.",
+    "Downloads are saved to Downloads/PaperDesk, never opened automatically, and limited to 100 MB with a free-space safety check.",
+    "PaperWeb recognises common file links and server attachment headers instead of trying to render binary data as a page.",
+    "PaperRDP now sends an explicit double-click for two quick taps and a right-click when one finger is held still."
   ]
 }

@@ -1,0 +1,6 @@
+{
+  "name": "PaperWeb Download Helper",
+  "application": "/home/root/xovi/exthome/appload/paperweb-download/download",
+  "workingDirectory": "/home/root",
+  "qtfb": false
+}

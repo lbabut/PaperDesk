@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQml 2.15
 import Qt.labs.settings 1.1
+import net.asivery.AppLoad 1.0
 import net.asivery.ApploadUtils
 
 Rectangle {
@@ -34,6 +35,8 @@ Rectangle {
     property real contentZoom: 1.0
     property real pendingZoom: 1.0
     property bool e2eScrollLogged: false
+    property bool downloadActive: false
+    property string downloadRequestId: ""
 
     Settings {
         id: webSettings
@@ -48,6 +51,7 @@ Rectangle {
         category: "PaperDeskE2E"
         property int scenarioVersion: 0
         property bool webFixture: false
+        property bool webDownloadFixture: false
         property bool webTraceGestures: false
         property bool webLiveWp: false
         property bool webLiveNineGag: false
@@ -126,6 +130,78 @@ Rectangle {
         } catch (error) {
             console.log("PaperWeb mobile request headers unavailable", error)
         }
+    }
+
+    function hasDownloadExtension(url) {
+        return /\.(?:7z|apk|bz2|csv|deb|doc|docx|epub|gz|iso|mobi|mp3|mp4|odp|ods|odt|pdf|png|jpg|jpeg|rar|tar|tgz|txt|xls|xlsx|zip)(?:[?#]|$)/i.test(String(url || ""))
+    }
+
+    function responseWantsDownload(xhr, url) {
+        var disposition = String(xhr.getResponseHeader("Content-Disposition") || "")
+        var type = String(xhr.getResponseHeader("Content-Type") || "").toLowerCase()
+        return /\battachment\b/i.test(disposition) || hasDownloadExtension(url) ||
+               (/^(?:application\/octet-stream|application\/pdf|application\/zip|application\/epub\+zip|audio\/|video\/)/.test(type))
+    }
+
+    function downloadFilename(xhr, url) {
+        var disposition = xhr ? String(xhr.getResponseHeader("Content-Disposition") || "") : ""
+        var encoded = disposition.match(/filename\*=UTF-8''([^;]+)/i)
+        if (encoded) {
+            try { return decodeURIComponent(encoded[1]) } catch (error) {}
+        }
+        var plain = disposition.match(/filename\s*=\s*["']?([^;"']+)/i)
+        if (plain)
+            return plain[1].trim()
+        var clean = String(url || "").split(/[?#]/)[0]
+        return clean.substring(clean.lastIndexOf("/") + 1)
+    }
+
+    function startDownload(value, suggestedName) {
+        dismissKeyboard()
+        var url = normalizeUrl(value)
+        if (!/^https?:\/\//i.test(url)) {
+            statusText.text = "Downloads require an HTTP or HTTPS address"
+            return
+        }
+        downloadRequestId = String(Date.now())
+        downloadActive = true
+        statusText.text = "Starting download..."
+        console.log("PaperWeb download requested", url)
+        AppLoadLauncher.launchApplication(
+            "external::paperweb-download",
+            [url, downloadRequestId, String(suggestedName || "")], {}, false)
+        downloadStatusTimer.start()
+    }
+
+    function pollDownloadStatus() {
+        if (!downloadActive)
+            return
+        var statusRequest = new XMLHttpRequest()
+        statusRequest.onreadystatechange = function() {
+            if (statusRequest.readyState !== XMLHttpRequest.DONE)
+                return
+            if (statusRequest.status !== 0 && statusRequest.status !== 200)
+                return
+            var parts = String(statusRequest.responseText || "").trim().split("|")
+            if (parts.length < 3 || parts[0] !== downloadRequestId)
+                return
+            statusText.text = parts.slice(2).join("|")
+            if (parts[1] === "saved" || parts[1] === "failed") {
+                downloadActive = false
+                downloadStatusTimer.stop()
+                console.log("PaperWeb download", parts[1], statusText.text)
+            }
+        }
+        statusRequest.open("GET", "file:///home/root/.local/share/paperdesk/download-status", true)
+        statusRequest.send()
+    }
+
+    Timer {
+        id: downloadStatusTimer
+        interval: 800
+        repeat: true
+        running: false
+        onTriggered: root.pollDownloadStatus()
     }
 
     function settlePagePosition() {
@@ -804,6 +880,10 @@ Rectangle {
             showError("PaperWeb supports HTTP and HTTPS addresses only.")
             return
         }
+        if (hasDownloadExtension(url)) {
+            startDownload(url, downloadFilename(null, url))
+            return
+        }
         abortAll()
         var generation = loadGeneration
         currentUrl = url
@@ -816,6 +896,16 @@ Rectangle {
         var xhr = new XMLHttpRequest()
         request = xhr
         xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED && request === xhr &&
+                    responseWantsDownload(xhr, xhr.responseURL || url)) {
+                var downloadUrl = xhr.responseURL || url
+                var suggestedName = downloadFilename(xhr, downloadUrl)
+                request = null
+                xhr.abort()
+                loading = false
+                startDownload(downloadUrl, suggestedName)
+                return
+            }
             if (xhr.readyState !== XMLHttpRequest.DONE)
                 return
             if (request !== xhr)
@@ -978,6 +1068,17 @@ Rectangle {
                     }
                     TapHandler {
                         onTapped: root.selectAddressForEditing()
+                    }
+                }
+                ActionButton {
+                    objectName: "webDownloadButton"
+                    label: root.downloadActive ? "Downloading..." : "Download"
+                    Layout.preferredWidth: 182
+                    Layout.fillHeight: true
+                    enabled: !root.downloadActive && /^https?:\/\//i.test(address.text)
+                    onTriggered: {
+                        console.log("PaperWeb action download")
+                        root.startDownload(address.text, root.downloadFilename(null, address.text))
                     }
                 }
                 ActionButton {
@@ -1282,7 +1383,14 @@ Rectangle {
     }
 
     Component.onCompleted: {
-        if (e2eSettings.scenarioVersion === 20260927 && e2eSettings.webLiveArticleJourney) {
+        if (e2eSettings.scenarioVersion === 20260927 && e2eSettings.webDownloadFixture) {
+            pageText.text = "<h1>PaperWeb download test</h1><p>The address bar contains a safe static file.</p>"
+            pageTitle = "Download test"
+            currentUrl = "https://paperdesk.lukaszbabut.info/assets/icon.svg?paperdesk-e2e=20260928"
+            address.text = currentUrl
+            statusText.text = "Ready to download"
+            console.log("PaperWeb E2E download fixture ready")
+        } else if (e2eSettings.scenarioVersion === 20260927 && e2eSettings.webLiveArticleJourney) {
             mobileMode = true
             showPictures = false
             navigate("https://kryminalne.o2.pl/", true)

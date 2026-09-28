@@ -25,7 +25,7 @@ if [ ! -d "/home/root/xovi" ] || [ ! -d "$TARGET" ]; then
     exit 1
 fi
 
-for required in paperdesk literm paperweb paperrdp-login paperrdp paperrss papercare shims; do
+for required in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrss papercare shims; do
     if [ ! -d "$PAYLOAD/apps/$required" ]; then
         echo "Incomplete package: missing payload/apps/$required" >&2
         exit 1
@@ -48,7 +48,7 @@ fi
 ORIGINAL="$STATE/original"
 if [ ! -f "$STATE/original-recorded" ] && [ ! -f "$STATE/current-version" ]; then
     mkdir -p "$ORIGINAL/apps" "$ORIGINAL/system"
-    for app in paperdesk literm paperweb paperrdp-login paperrdp paperrss papercare shims; do
+    for app in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrss papercare shims; do
         if [ -e "$TARGET/$app" ]; then
             cp -R "$TARGET/$app" "$ORIGINAL/apps/$app"
         fi
@@ -93,7 +93,7 @@ mkdir -p "$BACKUP/apps" "$BACKUP/system" "$TARGET" /home/root/.local/bin \
 echo "$PRODUCT $VERSION — installation"
 echo "Previous-version backup: $BACKUP"
 
-for app in paperdesk literm paperweb paperrdp-login paperrdp paperrss papercare shims; do
+for app in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrss papercare shims; do
     if [ -e "$TARGET/$app" ]; then
         cp -R "$TARGET/$app" "$BACKUP/apps/$app"
     fi
@@ -105,7 +105,8 @@ if [ -f /home/root/.local/bin/rmssh-menu ]; then
     cp /home/root/.local/bin/rmssh-menu "$BACKUP/system/rmssh-menu"
 fi
 cp "$PAYLOAD/system/rmssh-menu" /home/root/.local/bin/rmssh-menu
-chmod 755 /home/root/.local/bin/rmssh-menu "$TARGET/paperrdp/paperrdp"
+chmod 755 /home/root/.local/bin/rmssh-menu "$TARGET/paperrdp/paperrdp" \
+    "$TARGET/paperweb-download/download"
 
 for resource in paperdesk-appload-compat.qrr paperdesk-appload-window.qml paperdesk-appload.qml; do
     if [ -f "$QRR_DIR/$resource" ]; then

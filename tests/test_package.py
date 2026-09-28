@@ -62,6 +62,7 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("stableApplicationId", appload)
         self.assertIn('application.id !== "paperdesk"', appload)
         self.assertIn('application.id !== "external::paperrdp"', appload)
+        self.assertIn('application.id !== "external::paperweb-download"', appload)
         self.assertIn("model: launcherApplications", appload)
         close_handler = appload.split("win.closed.connect(() => {", 1)[1].split("});", 1)[0]
         self.assertLess(
@@ -92,7 +93,7 @@ class PackageRegressionTests(unittest.TestCase):
             "paperweb": (
                 "webBackButton", "webCloseButton",
                 "webAddressInput", "webGoButton", "webZoomOutButton",
-                "webZoomInButton",
+                "webZoomInButton", "webDownloadButton",
             ),
             "paperrdp-login": (
                 "rdpCloseButton", "rdpKeyboardButton", "serverInput",
@@ -250,6 +251,18 @@ class PackageRegressionTests(unittest.TestCase):
         source = (RELEASE / "payload/apps/paperrdp/paperrdp.cpp").read_text()
         self.assertIn("packetBudget<64", source)
 
+    def test_rdp_touch_mouse_gestures_are_explicit(self):
+        source = (RELEASE / "payload/apps/paperrdp/paperrdp.cpp").read_text()
+        self.assertIn("beginDoubleTap", source)
+        self.assertIn("PaperDesk RDP double click", source)
+        self.assertIn("std::chrono::milliseconds(500)", source)
+        self.assertIn("maybeSendLongPress", source)
+        self.assertIn("PTR_FLAGS_BUTTON2", source)
+        self.assertIn("std::chrono::milliseconds(700)", source)
+        runner = (ROOT / "tests/run-tablet-e2e.sh").read_text()
+        self.assertIn("hold 1160 1460 850", runner)
+        self.assertIn("wait_for_log 'PaperDesk RDP right click'", runner)
+
     def test_rdp_gestures_publish_only_the_final_frame(self):
         source = (RELEASE / "payload/apps/paperrdp/paperrdp.cpp").read_text()
         pan_block = source.split("if(a.panActive) {", 1)[1].split("}", 1)[0]
@@ -325,6 +338,8 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("live Physics World refresh", runner)
         self.assertIn("paperdesk-e2e-clean.conf", runner)
         self.assertIn("web-live-wp)", runner)
+        self.assertIn("web-download)", runner)
+        self.assertIn("PaperWeb download saved", runner)
         self.assertIn("PaperWeb HTML reader items", runner)
         self.assertIn("web-live-dynamic)", runner)
         self.assertIn("PaperWeb embedded reader items", runner)
@@ -394,6 +409,30 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("pictureCount >= 12", qml)
         self.assertIn("images.weserv.nl", qml)
         self.assertIn("e2eSettings.scenarioVersion === 20260927 && e2eSettings.webFixture", qml)
+
+    def test_web_downloads_use_a_hidden_bounded_helper(self):
+        apps = RELEASE / "payload/apps"
+        qml = (apps / "paperweb/ui/main.qml").read_text()
+        helper = (apps / "paperweb-download/download").read_text()
+        manifest = json.loads((apps / "paperweb-download/external.manifest.json").read_text())
+        self.assertEqual(manifest["qtfb"], False)
+        self.assertIn('"external::paperweb-download"', qml)
+        self.assertIn("function responseWantsDownload", qml)
+        self.assertIn("Content-Disposition", qml)
+        self.assertIn("application\\/octet-stream", qml)
+        self.assertIn("file:///home/root/.local/share/paperdesk/download-status", qml)
+        self.assertIn("/home/root/Downloads/PaperDesk", helper)
+        self.assertIn('case "$URL" in', helper)
+        self.assertIn("http://*|https://*", helper)
+        self.assertIn('ulimit -f "$MAX_BLOCKS"', helper)
+        self.assertIn("MAX_BLOCKS=204800", helper)
+        self.assertIn("Not enough free space", helper)
+        self.assertNotIn("eval ", helper)
+        self.assertNotIn("sh -c", helper)
+        installer = (RELEASE / "install.sh").read_text()
+        uninstaller = (RELEASE / "uninstall.sh").read_text()
+        self.assertIn("paperweb-download", installer)
+        self.assertIn("paperweb-download", uninstaller)
 
     def test_rss_science_starter_pack_is_non_destructive(self):
         qml = (RELEASE / "payload/apps/paperrss/ui/main.qml").read_text()

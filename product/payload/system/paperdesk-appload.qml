@@ -47,10 +47,11 @@ Rectangle {
     function isVisibleLauncherApplication(application) {
         if(!application || typeof application.id !== "string")
             return false;
-        // PaperDesk is a legacy aggregate hub. The RDP engine is an internal
-        // QTFB worker launched by the visible PaperDesk RDP frontend.
+        // PaperDesk is a legacy aggregate hub. The RDP engine and browser
+        // downloader are internal workers launched by visible frontends.
         return application.id !== "paperdesk" &&
-               application.id !== "external::paperrdp";
+               application.id !== "external::paperrdp" &&
+               application.id !== "external::paperweb-download";
     }
 
     function rebuildLauncherApplications() {

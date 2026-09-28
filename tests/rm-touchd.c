@@ -72,6 +72,12 @@ static void tap(int fd, int x, int y, int tracking_id) {
     touch_up(fd);
 }
 
+static void hold(int fd, int x, int y, int duration_ms, int tracking_id) {
+    touch_down(fd, x, y, tracking_id);
+    usleep((useconds_t)(duration_ms * 1000));
+    touch_up(fd);
+}
+
 static void swipe(int fd, int x1, int y1, int x2, int y2, int duration_ms, int tracking_id) {
     const int steps = 12;
     touch_down(fd, x1, y1, tracking_id);
@@ -201,6 +207,10 @@ int main(void) {
             fprintf(stderr, "tap %d %d\n", x1, y1);
             fflush(stderr);
             tap(touch_fd, x1, y1, tracking_id++);
+        } else if (sscanf(line, "hold %d %d %d", &x1, &y1, &duration) == 3) {
+            fprintf(stderr, "hold %d %d %d\n", x1, y1, duration);
+            fflush(stderr);
+            hold(touch_fd, x1, y1, duration, tracking_id++);
         } else if (sscanf(line, "swipe %d %d %d %d %d", &x1, &y1, &x2, &y2, &duration) == 5) {
             fprintf(stderr, "swipe %d %d %d %d %d\n", x1, y1, x2, y2, duration);
             fflush(stderr);

@@ -75,6 +75,13 @@ struct App {
     int mouseLastX = 0;
     int mouseLastY = 0;
     std::chrono::steady_clock::time_point lastMouseMove = std::chrono::steady_clock::now();
+    bool pendingTap = false;
+    int pendingTapX = 0;
+    int pendingTapY = 0;
+    std::chrono::steady_clock::time_point pendingTapSince = std::chrono::steady_clock::now();
+    int doubleTapTouchId = -1;
+    std::chrono::steady_clock::time_point mousePressSince = std::chrono::steady_clock::now();
+    bool rightClickSent = false;
     float zoom = 1.0f;
     float viewX = 0.0f;
     float viewY = 0.0f;
@@ -686,6 +693,7 @@ void redrawZoomedView(App& a);
 
 void processRemoteTouch(App& a,int x,int y) {
     if(y<BAR_H) {
+        a.pendingTap=false;
         if(x>=CLOSE_X) a.running=false;
         else if(x>=SHORTCUTS_X&&x<SHORTCUTS_X+SHORTCUTS_W) {
             a.shortcutsOpen=!a.shortcutsOpen;
@@ -714,6 +722,84 @@ void processRemoteTouch(App& a,int x,int y) {
     int ry=std::clamp<int>(a.viewY+(y-BAR_H)/a.zoom,0,RDP_H-1);
     freerdp_input_send_mouse_event(a.rdp->context->input,PTR_FLAGS_MOVE|PTR_FLAGS_DOWN|PTR_FLAGS_BUTTON1,rx,ry);
     freerdp_input_send_mouse_event(a.rdp->context->input,PTR_FLAGS_BUTTON1,rx,ry);
+}
+
+void sendRemoteClick(App& a,int x,int y) {
+    const int rx=std::clamp<int>(a.viewX+x/a.zoom,0,W-1);
+    const int ry=std::clamp<int>(a.viewY+(y-BAR_H)/a.zoom,0,RDP_H-1);
+    freerdp_input_send_mouse_event(a.rdp->context->input,
+                                  PTR_FLAGS_MOVE|PTR_FLAGS_DOWN|PTR_FLAGS_BUTTON1,rx,ry);
+    freerdp_input_send_mouse_event(a.rdp->context->input,PTR_FLAGS_BUTTON1,rx,ry);
+}
+
+void sendRemoteRightClick(App& a,int x,int y) {
+    const int rx=std::clamp<int>(a.viewX+x/a.zoom,0,W-1);
+    const int ry=std::clamp<int>(a.viewY+(y-BAR_H)/a.zoom,0,RDP_H-1);
+    freerdp_input_send_mouse_event(a.rdp->context->input,
+                                  PTR_FLAGS_MOVE|PTR_FLAGS_DOWN|PTR_FLAGS_BUTTON2,rx,ry);
+    freerdp_input_send_mouse_event(a.rdp->context->input,PTR_FLAGS_BUTTON2,rx,ry);
+}
+
+void flushPendingTap(App& a,bool force=false) {
+    if(!a.pendingTap) return;
+    const auto elapsed=std::chrono::steady_clock::now()-a.pendingTapSince;
+    if(!force && elapsed<std::chrono::milliseconds(500)) return;
+    sendRemoteClick(a,a.pendingTapX,a.pendingTapY);
+    a.pendingTap=false;
+}
+
+void queueRemoteTap(App& a,int x,int y) {
+    if(y<BAR_H || a.shortcutsOpen) {
+        a.pendingTap=false;
+        processRemoteTouch(a,x,y);
+        return;
+    }
+    // A different tap cannot complete the pending double-click, so preserve
+    // normal ordering by delivering the older single click immediately.
+    if(a.pendingTap) flushPendingTap(a,true);
+    a.pendingTap=true;
+    a.pendingTapX=x;
+    a.pendingTapY=y;
+    a.pendingTapSince=std::chrono::steady_clock::now();
+}
+
+bool beginDoubleTap(App& a,const qtfb::UserInputContents& u) {
+    if(!a.pendingTap || u.y<BAR_H || a.shortcutsOpen) return false;
+    const auto elapsed=std::chrono::steady_clock::now()-a.pendingTapSince;
+    const int dx=u.x-a.pendingTapX,dy=u.y-a.pendingTapY;
+    if(elapsed>std::chrono::milliseconds(500) || dx*dx+dy*dy>40*40) {
+        flushPendingTap(a,true);
+        return false;
+    }
+    // The first tap was deliberately held.  Deliver both click pairs now,
+    // back-to-back, so the remote OS sees a real double-click regardless of
+    // e-ink latency between the user's two physical taps.
+    sendRemoteClick(a,a.pendingTapX,a.pendingTapY);
+    sendRemoteClick(a,u.x,u.y);
+    a.pendingTap=false;
+    a.doubleTapTouchId=u.devId;
+    std::fprintf(stderr,"PaperDesk RDP double click %d %d\n",u.x,u.y);
+    return true;
+}
+
+void maybeSendLongPress(App& a) {
+    if(a.mode!=Mode::Remote || (a.mouseTouchId<0 && !a.panCandidate) ||
+       a.mouseDown || a.rightClickSent ||
+       a.pinchActive || a.panActive || a.touches.size()!=1) return;
+    if(std::chrono::steady_clock::now()-a.mousePressSince<std::chrono::milliseconds(700)) return;
+    const auto point=a.touches.begin()->second;
+    const float dx=point.first-a.mouseStartX,dy=point.second-a.mouseStartY;
+    if(dx*dx+dy*dy>8.0f*8.0f) return;
+    // A long press is an explicit right-click, not the first half of a later
+    // double-click.  Discard any pending single tap before sending it.
+    a.pendingTap=false;
+    sendRemoteRightClick(a,static_cast<int>(point.first),static_cast<int>(point.second));
+    a.rightClickSent=true;
+    a.panCandidate=false;
+    a.panId=-1;
+    a.gestureConsumed=true;
+    std::fprintf(stderr,"PaperDesk RDP right click %d %d\n",
+                 static_cast<int>(point.first),static_cast<int>(point.second));
 }
 
 void redrawZoomedView(App& a) {
@@ -756,6 +842,13 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
     if(!press&&!move&&!release) return;
 
     if(press || move) a.touches[u.devId]={float(u.x),float(u.y)};
+    if(press && a.touches.size()==1 && beginDoubleTap(a,u)) return;
+    if(release && a.doubleTapTouchId==u.devId) {
+        a.touches.erase(u.devId);
+        a.doubleTapTouchId=-1;
+        if(a.touches.empty()) a.gestureConsumed=false;
+        return;
+    }
     if(press && a.touches.size()==1 && u.y>=BAR_H && !a.shortcutsOpen
        && a.zoom<=1.001f && a.mouseTouchId<0 && !a.gestureConsumed) {
         a.mouseTouchId=u.devId;
@@ -764,8 +857,10 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
         a.mouseLastX=u.x;
         a.mouseLastY=u.y;
         a.lastMouseMove=std::chrono::steady_clock::now();
+        a.mousePressSince=a.lastMouseMove;
+        a.rightClickSent=false;
     }
-    if(move && a.mouseTouchId==u.devId && a.touches.size()==1) {
+    if(move && a.mouseTouchId==u.devId && a.touches.size()==1 && !a.rightClickSent) {
         const float dx=float(u.x)-a.mouseStartX,dy=float(u.y)-a.mouseStartY;
         const auto now=std::chrono::steady_clock::now();
         if(!a.mouseDown && dx*dx+dy*dy>64.0f) {
@@ -789,6 +884,8 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
         a.panStartY=float(u.y);
         a.panStartViewX=a.viewX;
         a.panStartViewY=a.viewY;
+        a.mousePressSince=std::chrono::steady_clock::now();
+        a.rightClickSent=false;
     }
     if(press && a.touches.size()==2) {
         if(a.mouseDown) releaseRemoteMouse(a,a.mouseLastX,a.mouseLastY);
@@ -838,8 +935,11 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
         const bool finishPan=a.panActive && a.panId==u.devId;
         const bool finishMouse=a.mouseTouchId==u.devId;
         if(finishMouse) {
-            if(a.mouseDown) releaseRemoteMouse(a,u.x,u.y);
-            else { processRemoteTouch(a,u.x,u.y); a.mouseTouchId=-1; }
+            if(a.rightClickSent) {
+                a.rightClickSent=false;
+                a.mouseTouchId=-1;
+            } else if(a.mouseDown) releaseRemoteMouse(a,u.x,u.y);
+            else { queueRemoteTap(a,u.x,u.y); a.mouseTouchId=-1; }
         }
         if(a.panId==u.devId) {
             a.panCandidate=false;
@@ -849,7 +949,8 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
         a.touches.erase(u.devId);
         if(a.pinchActive && a.touches.size()<2) { a.pinchActive=false; redrawZoomedView(a); }
         else if(finishPan) redrawZoomedView(a);
-        else if(!finishMouse && !wasGesture && !a.gestureConsumed) processRemoteTouch(a,u.x,u.y);
+        else if(!finishMouse && !wasGesture && !a.gestureConsumed) queueRemoteTap(a,u.x,u.y);
+        if(a.rightClickSent) a.rightClickSent=false;
         if(a.touches.empty()) a.gestureConsumed=false;
     }
 }
@@ -999,6 +1100,8 @@ int main(int argc,char** argv) {
     }
     while(app.running) {
         pollInput(app);
+        maybeSendLongPress(app);
+        flushPendingTap(app);
 #ifdef PAPERDESK_E2E
         if(automationFd>=0) pollAutomation(app,automationFd,automationPending);
 #endif
