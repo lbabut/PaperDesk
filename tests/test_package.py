@@ -158,6 +158,11 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertEqual(release["testedWith"]["appLoad"], "0.6.0")
         self.assertEqual(release["testedWith"]["liTerm"], "0.1.7")
 
+    def test_installer_records_the_packaged_version(self):
+        installer = (RELEASE / "install.sh").read_text()
+        self.assertIn('VERSION=$(tr -d \'\\r\\n\' < "$SCRIPT_DIR/VERSION")', installer)
+        self.assertNotIn('VERSION="1.1.4"', installer)
+
     def test_appload_06_accepts_an_unset_aspect_ratio(self):
         qml = (RELEASE / "payload/system/paperdesk-appload.qml").read_text()
         self.assertIn(

@@ -5,7 +5,7 @@ f72b2648de7c5105a65ac08dfaaba712d4dc7baaf61be5ee96bdb8c7a1a90ce1  ./MANUAL-INSTA
 fddf4e4cf86329a0ecd5a8c4796eed8a0c8e9b8e7dab245e59e8b750e872b2bf  ./THIRD-PARTY.md
 f2fb797db5b32c15ac4c67b2180b593bf46c768ba1d69971fecbef1d9afb1975  ./VERSION
 051e3ed1012de0157573b1323e95e342ac398eb52f74b1e0d1ee3128043c753a  ./install-from-computer.sh
-81eea623463aa0ceb92089fafc2f33f28cc8e7cc3d459daafa51d9c0bc8a2c2b  ./install.sh
+11c8ee34bcfd1c4b529bba771d6502656f4d31d885c49b0244d76057f70d5b61  ./install.sh
 3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986  ./licenses/AppLoad-GPL-3.0.txt
 cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30  ./licenses/FreeRDP-Apache-2.0.txt
 8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643  ./licenses/LiTerm-GPL-2.0.txt

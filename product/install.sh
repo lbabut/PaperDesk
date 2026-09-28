@@ -3,12 +3,17 @@
 set -eu
 
 PRODUCT="PaperDesk"
-VERSION="1.1.4"
 TARGET="/home/root/xovi/exthome/appload"
 QRR_DIR="/home/root/xovi/exthome/qt-resource-rebuilder"
 STATE="/home/root/.local/share/paperdesk"
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PAYLOAD="$SCRIPT_DIR/payload"
+VERSION=$(tr -d '\r\n' < "$SCRIPT_DIR/VERSION")
+
+printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || {
+    echo "Invalid PaperDesk package version." >&2
+    exit 1
+}
 
 if [ "$(id -u)" != "0" ]; then
     echo "Run the installer as root." >&2

@@ -4,8 +4,8 @@
   "version": "1.1.7",
   "publishedAt": "2026-09-28",
   "archiveUrl": "/download/paperdesk-1.1.7.zip",
-  "archiveSha256": "63eb776df705e870b9a542495fedb811b36eac71df8287aad8fb1a93eee0ca0c",
-  "archiveSize": 1310885,
+  "archiveSha256": "51d2ecfcba2e95ca451d6674e3ae4111cd04f1ebad344cb7f493e8f15b4994c3",
+  "archiveSize": 1310945,
   "releaseNotes": [
     "RDP no longer appears to freeze when the remote desktop changes in several distant places at once.",
     "Sparse changes are refreshed as small e-ink regions, while dense frames are published atomically at a panel-safe rate.",
