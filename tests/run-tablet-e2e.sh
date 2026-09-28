@@ -437,12 +437,19 @@ case "$TARGET" in
     terminal)
         tap 360 500
         wait_for_log 'PaperDesk touch launching literm' 10
-        sleep 3
+        wait_for_log 'PaperDesk Terminal refresh startup' 8
+        remote 'for terminal_pid in $(pidof rmssh-menu 2>/dev/null || true); do terminal_tty=$(readlink /proc/$terminal_pid/fd/1); printf "\r\nPAPERDESK TERMINAL OUTPUT TEST\r\n" >"$terminal_tty"; done'
+        wait_for_log 'PaperDesk Terminal display changed' 8
         capture_screen "$ARTIFACT_DIR/terminal.png"
         tap 1120 50
         wait_for_log 'PaperDesk Terminal shortcuts opened' 8
+        tap 916 50
+        wait_for_log 'PaperDesk Terminal keyboard opened' 8
         capture_screen "$ARTIFACT_DIR/terminal-shortcuts.png"
-        echo "PASS: physical tablet taps opened Terminal and its shortcuts"
+        tap 1306 52
+        wait_for_log 'PaperDesk Terminal action close' 8
+        assert_tablet_healthy 'Terminal output, shortcuts, keyboard, and close'
+        echo "PASS: physical tablet input rendered terminal output and covered shortcuts, keyboard, and close"
         ;;
     web)
         tap 1040 500

@@ -1,5 +1,12 @@
 # Historia zmian
 
+## 1.1.3 — 2026-09-28
+
+- Terminal wymusza kilka ograniczonych odswiezen podczas startu, aby aktywne menu SSH nie pozostawalo pustym panelem e-ink,
+- kazda zmiana bufora PTY uruchamia kontrolowane odrysowanie warstwy terminala,
+- test sprzetowy wstrzykuje prawdziwy tekst do PTY i sprawdza odswiezenie, skroty, klawiature oraz zamkniecie,
+- PaperWeb zapamietuje ostatni poprawnie otwarty adres HTTP lub HTTPS i przywraca go po ponownym uruchomieniu.
+
 ## 1.1.2 — 2026-09-27
 
 - dodano bezpieczna deinstalacje calego PaperDesk bez otwierania terminala,

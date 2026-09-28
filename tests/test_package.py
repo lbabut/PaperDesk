@@ -151,7 +151,7 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("AppLoad 0.6.0", readme)
         self.assertIn("LiTerm 0.1.7", readme)
         release = json.loads((RELEASE / "release.json").read_text())
-        self.assertEqual(release["releaseDate"], "2026-09-27")
+        self.assertEqual(release["releaseDate"], "2026-09-28")
         self.assertEqual(release["testedWith"]["remarkableOS"], "3.29.0.149")
         self.assertEqual(release["testedWith"]["appLoad"], "0.6.0")
         self.assertEqual(release["testedWith"]["liTerm"], "0.1.7")
@@ -311,13 +311,20 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("address.selectAll()", qml)
         self.assertIn("Qt.callLater(finishAddressSelection)", qml)
         self.assertIn("PaperWeb address selection stable", qml)
+        self.assertIn("PaperWeb address selected", qml)
         self.assertIn("selectByMouse: false", qml)
         self.assertIn("persistentSelection: true", qml)
         self.assertIn("onTapped: root.selectAddressForEditing()", qml)
         self.assertIn("PaperWeb keyboard opened", qml)
         self.assertIn("PaperWeb keyboard hidden", qml)
-        self.assertIn("PaperWeb address selected", qml)
         self.assertIn("onPressed: function(points) {\n                    root.dismissKeyboard()", qml)
+
+    def test_terminal_forces_initial_and_output_refreshes(self):
+        qml = (RELEASE / "payload/apps/literm/ui/main.qml").read_text()
+        self.assertIn('root.refreshTerminal("component ready")', qml)
+        self.assertIn('root.refreshTerminal("startup")', qml)
+        self.assertIn('root.refreshTerminal("output")', qml)
+        self.assertIn("PaperDesk Terminal display changed", qml)
 
     def test_web_requests_mobile_documents_by_default(self):
         qml = (RELEASE / "payload/apps/paperweb/ui/main.qml").read_text()

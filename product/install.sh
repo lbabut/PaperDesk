@@ -3,7 +3,7 @@
 set -eu
 
 PRODUCT="PaperDesk"
-VERSION="1.1.2"
+VERSION="1.1.3"
 TARGET="/home/root/xovi/exthome/appload"
 QRR_DIR="/home/root/xovi/exthome/qt-resource-rebuilder"
 STATE="/home/root/.local/share/paperdesk"

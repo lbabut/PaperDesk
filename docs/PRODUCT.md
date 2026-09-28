@@ -27,6 +27,6 @@ payment.
 
 ## Current boundary
 
-Release 1.1.2 is validated only on reMarkable 2 with reMarkable OS 3.29.0.149,
+Release 1.1.3 is validated only on reMarkable 2 with reMarkable OS 3.29.0.149,
 XOVI 0.3.3, AppLoad 0.6.0, rm-xovi-extensions v19, and LiTerm 0.1.7. Public
 copy must say this clearly and must not imply official support from reMarkable.

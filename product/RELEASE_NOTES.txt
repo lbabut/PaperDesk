@@ -1,4 +1,4 @@
-PaperDesk Care can now remove the complete suite without opening a terminal.
-Uninstall requires a separate confirmation, preventing accidental removal.
-Saved connections, reader data and backups remain on the tablet.
-The interface and AppLoad resources are reloaded automatically after removal.
+PaperDesk Terminal now forces a reliable initial e-ink refresh after opening.
+Terminal output triggers a bounded refresh so a live PTY cannot remain visually blank.
+PaperWeb remembers the last successfully opened HTTP or HTTPS address.
+The remembered page opens automatically the next time PaperWeb starts.

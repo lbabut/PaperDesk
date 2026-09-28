@@ -7,7 +7,7 @@
 - [x] Clear compatibility and unofficial-software warnings
 - [x] Community and paid offer structure
 - [x] Local interest capture with explicit consent
-- [x] Downloadable 1.1.2 package and SHA-256 checksum
+- [x] Downloadable 1.1.3 package and SHA-256 checksum
 - [x] Automated local UI/package tests and physical tablet journey
 - [x] Local Git repository independent of GitHub
 - [x] Deployment on Lola and entry in Lola Command Center

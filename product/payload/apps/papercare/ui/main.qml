@@ -11,7 +11,7 @@ Rectangle {
 
     signal close
 
-    readonly property string currentVersion: "1.1.2"
+    readonly property string currentVersion: "1.1.3"
     readonly property string manifestUrl: "http://192.168.1.40:8090/update/latest.json"
     property string latestVersion: "—"
     property string publishedAt: ""

@@ -63,6 +63,14 @@ Item {
             verify(headers["Accept"].indexOf("text/html") >= 0)
         }
 
+        function test_00_last_successful_http_address_is_remembered() {
+            verify(!scene.web.rememberLastAddress("gopher://example.invalid"))
+            verify(scene.web.rememberLastAddress("example.com/remember-me"))
+            verify(scene.web.restoreLastAddress())
+            compare(scene.web.currentUrl, "https://example.com/remember-me")
+            scene.web.abortAll()
+        }
+
         function test_00_mobile_reader_discards_site_columns() {
             var html = "<html><head><title>Columns</title><style>.layout{display:grid;grid-template-columns:1fr 1fr}</style></head>" +
                        "<body><div class='layout'><section>First</section><section>Second</section></div></body></html>"

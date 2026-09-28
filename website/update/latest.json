@@ -1,15 +1,15 @@
 {
   "product": "PaperDesk",
   "channel": "stable",
-  "version": "1.1.2",
-  "publishedAt": "2026-09-27",
-  "archiveUrl": "/download/paperdesk-1.1.2.zip",
-  "archiveSha256": "5185d3d8c3726167b40d9f3bcf7f067e7d3bc47a6d69e84981fc470a6b25e159",
-  "archiveSize": 1303528,
+  "version": "1.1.3",
+  "publishedAt": "2026-09-28",
+  "archiveUrl": "/download/paperdesk-1.1.3.zip",
+  "archiveSha256": "10ba9413a28a546e6b9f4d2522e02666791fa764011c816731252d3a90a7e689",
+  "archiveSize": 1304312,
   "releaseNotes": [
-    "PaperDesk Care can now remove the complete suite without opening a terminal.",
-    "Uninstall requires a separate confirmation, preventing accidental removal.",
-    "Saved connections, reader data and backups remain on the tablet.",
-    "The interface and AppLoad resources are reloaded automatically after removal."
+    "PaperDesk Terminal now forces a reliable initial e-ink refresh after opening.",
+    "Terminal output triggers a bounded refresh so a live PTY cannot remain visually blank.",
+    "PaperWeb remembers the last successfully opened HTTP or HTTPS address.",
+    "The remembered page opens automatically the next time PaperWeb starts."
   ]
 }

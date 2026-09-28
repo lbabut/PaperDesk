@@ -40,6 +40,7 @@ Rectangle {
         category: "PaperWeb"
         property bool savedMobileMode: true
         property bool savedShowPictures: false
+        property string savedLastUrl: ""
     }
 
     Settings {
@@ -586,6 +587,24 @@ Rectangle {
         return "https://" + url
     }
 
+    function rememberLastAddress(value) {
+        var url = normalizeUrl(value)
+        if (!/^https?:\/\//i.test(url))
+            return false
+        webSettings.savedLastUrl = url
+        console.log("PaperWeb remembered address", url)
+        return true
+    }
+
+    function restoreLastAddress() {
+        var url = String(webSettings.savedLastUrl || "").trim()
+        if (!/^https?:\/\//i.test(url))
+            return false
+        navigate(url, true)
+        console.log("PaperWeb restored address", url)
+        return true
+    }
+
     function resolveUrl(link, base) {
         link = decodeHtmlEntities(String(link || "")).trim()
         if (link.length === 0)
@@ -805,6 +824,7 @@ Rectangle {
             if (xhr.status >= 200 && xhr.status < 400) {
                 currentUrl = finalUrl
                 address.text = finalUrl
+                rememberLastAddress(finalUrl)
                 statusText.text = "Style..."
                 fetchStylesheets(xhr.responseText, finalUrl, function(css) {
                     if (generation !== loadGeneration)
@@ -1298,6 +1318,8 @@ Rectangle {
             historyIndex = 1
             statusText.text = "100%  " + pageTitle
             console.log("PaperWeb E2E fixture ready")
+        } else {
+            restoreLastAddress()
         }
     }
 

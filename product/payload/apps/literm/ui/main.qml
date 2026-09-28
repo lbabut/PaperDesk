@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Window 2.15
+import Qt.labs.settings 1.1
 import literm 1.0
 
 Rectangle {
@@ -13,6 +14,7 @@ Rectangle {
     property bool shortcutsOpen: false
     property real terminalFontSize: Math.max(26, Util.fontSize)
     property real pendingFontSize: terminalFontSize
+    property int terminalUpdateCount: 0
     property real keyboardInset: Qt.inputMethod.visible
         ? Math.max(0, Qt.inputMethod.keyboardRectangle.height) : 0
     property var shortcutKeys: [
@@ -29,6 +31,21 @@ Rectangle {
     ]
 
     readonly property int toolbarButtonWidth: 172
+
+    Settings {
+        id: e2eSettings
+        category: "PaperDeskE2E"
+        property bool traceTouches: false
+    }
+
+    function refreshTerminal(reason) {
+        terminal.redraw()
+        terminalContent.opacity = terminalContent.opacity === 1.0 ? 0.999 : 1.0
+        if (root.Window.window !== null)
+            root.Window.window.update()
+        if (e2eSettings.traceTouches)
+            console.log("PaperDesk Terminal refresh", reason, root.terminalUpdateCount)
+    }
 
     function unloading() {
         Qt.inputMethod.hide()
@@ -350,6 +367,9 @@ Rectangle {
             // the e-ink panel. Batch output and nudge the whole terminal layer
             // at most four times per second.
             onDisplayBufferChanged: {
+                root.terminalUpdateCount += 1
+                if (e2eSettings.traceTouches)
+                    console.log("PaperDesk Terminal display changed", root.terminalUpdateCount)
                 if (!screenRefreshTimer.running)
                     screenRefreshTimer.start()
             }
@@ -404,6 +424,7 @@ Rectangle {
             Component.onCompleted: {
                 setBackgroundWhite(true)
                 forceActiveFocus()
+                Qt.callLater(function() { root.refreshTerminal("component ready") })
             }
 
             onHeightChanged: Qt.callLater(function() { terminal.redraw() })
@@ -554,15 +575,26 @@ Rectangle {
 
     Timer {
         id: screenRefreshTimer
-        interval: 250
+        interval: 180
         repeat: false
+        onTriggered: root.refreshTerminal("output")
+    }
+
+    Timer {
+        id: startupRefreshTimer
+        interval: 700
+        repeat: true
+        property int remaining: 3
         onTriggered: {
-            terminal.redraw()
-            terminalContent.opacity = terminalContent.opacity === 1.0 ? 0.999 : 1.0
-            if (root.Window.window !== null)
-                root.Window.window.update()
+            root.refreshTerminal("startup")
+            remaining -= 1
+            if (remaining <= 0)
+                stop()
         }
     }
 
-    Component.onCompleted: terminal.forceActiveFocus()
+    Component.onCompleted: {
+        terminal.forceActiveFocus()
+        startupRefreshTimer.start()
+    }
 }
