@@ -2,3 +2,4 @@ PaperDesk RSS now downloads the full article automatically when it is opened.
 Previously downloaded full text opens immediately from the tablet and is preserved across feed refreshes.
 If a page cannot be downloaded, the feed copy remains readable and the status explains the fallback.
 The redundant Full text / Stop button has been removed from the article header.
+PaperWeb now downloads files when their links are tapped; the misleading page-saving Download button has been removed.

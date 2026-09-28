@@ -503,8 +503,9 @@ case "$TARGET" in
         tap 1040 500
         wait_for_log 'PaperDesk touch launching paperweb' 10
         wait_for_log 'PaperWeb E2E download fixture ready' 10
-        tap 1120 160
-        wait_for_log 'PaperWeb action download' 8
+        tap 190 315
+        wait_for_log 'PaperWeb link activated https://paperdesk.lukaszbabut.info/assets/icon.svg' 8
+        wait_for_log 'PaperWeb download requested https://paperdesk.lukaszbabut.info/assets/icon.svg' 8
         wait_for_log 'PaperWeb download saved Saved: icon' 30
         remote 'set -eu
 status=$(cat /home/root/.local/share/paperdesk/download-status)
@@ -514,7 +515,7 @@ test -s "/home/root/Downloads/PaperDesk/$saved"
 grep -q "<svg" "/home/root/Downloads/PaperDesk/$saved"'
         assert_tablet_healthy 'PaperWeb physical download'
         capture_screen "$ARTIFACT_DIR/web-download-saved.png"
-        echo "PASS: a physical tablet tap downloaded a real file and PaperWeb reported the saved name"
+        echo "PASS: a physical tablet tap on a file link downloaded it and PaperWeb reported the saved name"
         ;;
     web-live-wp)
         tap 1040 500

@@ -98,7 +98,7 @@ class PackageRegressionTests(unittest.TestCase):
             "paperweb": (
                 "webBackButton", "webCloseButton",
                 "webAddressInput", "webGoButton", "webZoomOutButton",
-                "webZoomInButton", "webDownloadButton",
+                "webZoomInButton",
             ),
             "paperrdp-login": (
                 "rdpCloseButton", "rdpKeyboardButton", "serverInput",
@@ -121,6 +121,8 @@ class PackageRegressionTests(unittest.TestCase):
             qml = (apps / app_name / "ui/main.qml").read_text()
             for target in targets:
                 self.assertIn(target, qml, f"{app_name}: missing action target {target}")
+        web = (apps / "paperweb/ui/main.qml").read_text()
+        self.assertNotIn('objectName: "webDownloadButton"', web)
 
     def test_product_menus_use_touch_native_consistent_controls(self):
         apps = RELEASE / "payload/apps"

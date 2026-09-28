@@ -133,7 +133,7 @@ Rectangle {
     }
 
     function hasDownloadExtension(url) {
-        return /\.(?:7z|apk|bz2|csv|deb|doc|docx|epub|gz|iso|mobi|mp3|mp4|odp|ods|odt|pdf|png|jpg|jpeg|rar|tar|tgz|txt|xls|xlsx|zip)(?:[?#]|$)/i.test(String(url || ""))
+        return /\.(?:7z|apk|bz2|csv|deb|doc|docx|epub|gif|gz|iso|mobi|mp3|mp4|odp|ods|odt|pdf|png|jpg|jpeg|rar|svg|tar|tgz|txt|webp|xls|xlsx|zip)(?:[?#]|$)/i.test(String(url || ""))
     }
 
     function responseWantsDownload(xhr, url) {
@@ -1071,17 +1071,6 @@ Rectangle {
                     }
                 }
                 ActionButton {
-                    objectName: "webDownloadButton"
-                    label: root.downloadActive ? "Downloading..." : "Download"
-                    Layout.preferredWidth: 182
-                    Layout.fillHeight: true
-                    enabled: !root.downloadActive && /^https?:\/\//i.test(address.text)
-                    onTriggered: {
-                        console.log("PaperWeb action download")
-                        root.startDownload(address.text, root.downloadFilename(null, address.text))
-                    }
-                }
-                ActionButton {
                     objectName: "webGoButton"
                     label: loading ? "Stop" : "Go"
                     primary: true
@@ -1384,11 +1373,13 @@ Rectangle {
 
     Component.onCompleted: {
         if (e2eSettings.scenarioVersion === 20260927 && e2eSettings.webDownloadFixture) {
-            pageText.text = "<h1>PaperWeb download test</h1><p>The address bar contains a safe static file.</p>"
+            var fixtureDownloadUrl = "https://paperdesk.lukaszbabut.info/assets/icon.svg?paperdesk-e2e=20260928"
+            pageText.text = "<p><a href='" + fixtureDownloadUrl + "'><b>Download test file</b></a></p>" +
+                            "<p>Tap the file link to save it in Downloads.</p>"
             pageTitle = "Download test"
-            currentUrl = "https://paperdesk.lukaszbabut.info/assets/icon.svg?paperdesk-e2e=20260928"
+            currentUrl = "https://paperdesk.lukaszbabut.info/download-test"
             address.text = currentUrl
-            statusText.text = "Ready to download"
+            statusText.text = "Tap a file link to download"
             console.log("PaperWeb E2E download fixture ready")
         } else if (e2eSettings.scenarioVersion === 20260927 && e2eSettings.webLiveArticleJourney) {
             mobileMode = true

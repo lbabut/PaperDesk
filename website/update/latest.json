@@ -4,12 +4,13 @@
   "version": "1.2.1",
   "publishedAt": "2026-09-28",
   "archiveUrl": "/download/paperdesk-1.2.1.zip",
-  "archiveSha256": "75d012d9b85981b966e95038965df7dc91a7f20e0e99f118a7d9a3b7482b619c",
-  "archiveSize": 1336962,
+  "archiveSha256": "1288cb3ae129ef4f1508740c2c55805c57eef494352dac6c0a9bb26802509953",
+  "archiveSize": 1336956,
   "releaseNotes": [
     "PaperDesk RSS now downloads the full article automatically when it is opened.",
     "Previously downloaded full text opens immediately from the tablet and is preserved across feed refreshes.",
     "If a page cannot be downloaded, the feed copy remains readable and the status explains the fallback.",
-    "The redundant Full text / Stop button has been removed from the article header."
+    "The redundant Full text / Stop button has been removed from the article header.",
+    "PaperWeb now downloads files when their links are tapped; the misleading page-saving Download button has been removed."
   ]
 }

@@ -66,6 +66,7 @@ Item {
         function test_00_download_detection_and_filename() {
             verify(scene.web.hasDownloadExtension("https://example.com/manual.pdf?edition=2"))
             verify(scene.web.hasDownloadExtension("https://example.com/archive.zip"))
+            verify(scene.web.hasDownloadExtension("https://example.com/image.svg?download=1"))
             verify(!scene.web.hasDownloadExtension("https://example.com/article"))
             compare(scene.web.downloadFilename(null, "https://example.com/files/manual.pdf?x=1"),
                     "manual.pdf")
