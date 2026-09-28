@@ -91,8 +91,11 @@ if [ -f "$STATE/current-version" ] && [ -f /etc/systemd/system/xovi-autostart.se
    grep -Fxq 'Description=Start Xovi extensions after the reMarkable interface' /etc/systemd/system/xovi-autostart.service &&
    grep -Fxq 'ExecStart=/home/root/xovi/start' /etc/systemd/system/xovi-autostart.service; then
     systemctl disable xovi-autostart.service 2>/dev/null || true
-    rm -f /etc/systemd/system/xovi-autostart.service
-    systemctl daemon-reload
+    # Updaters through 1.1.8 use this disabled unit once, immediately after
+    # install, to reload XOVI. Delay deleting its file so that safe one-shot
+    # handoff can finish; disabling above already removes boot persistence.
+    systemd-run --unit="paperdesk-remove-legacy-autostart-$$" --collect \
+        --on-active=30s /bin/rm -f /etc/systemd/system/xovi-autostart.service >/dev/null
     touch "$STATE/legacy-autostart-removed"
 fi
 

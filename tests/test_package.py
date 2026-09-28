@@ -189,6 +189,11 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn('grep -Fxq \'Description=Start Xovi extensions after the reMarkable interface\'', installer)
         self.assertIn("legacy-autostart-removed", installer)
         self.assertIn('if [ -f "$STATE/current-version" ]', installer)
+        self.assertIn('systemd-run --unit="paperdesk-remove-legacy-autostart-$$"', installer)
+        self.assertLess(
+            installer.index("systemctl disable xovi-autostart.service"),
+            installer.index("paperdesk-remove-legacy-autostart-$$"),
+        )
         uninstaller = (RELEASE / "uninstall.sh").read_text()
         self.assertNotIn("xovi-autostart.service", uninstaller)
 

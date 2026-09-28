@@ -4,8 +4,8 @@
   "version": "1.1.9",
   "publishedAt": "2026-09-28",
   "archiveUrl": "/download/paperdesk-1.1.9.zip",
-  "archiveSha256": "588727f238d082d5e35a51cf717a64426efff99d5587670660d2c3e4380a2c6c",
-  "archiveSize": 1316422,
+  "archiveSha256": "97a8c0959a17c9b64764e18279f716f17f73c90ed4867efffd01d13df764d6ae",
+  "archiveSize": 1316571,
   "releaseNotes": [
     "PaperDesk no longer starts XOVI automatically during device boot.",
     "Updating removes only the legacy autostart unit previously installed by PaperDesk; unrelated user services are left untouched.",
