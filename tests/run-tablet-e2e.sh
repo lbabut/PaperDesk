@@ -166,7 +166,7 @@ BEGIN { in_e2e=0 }
 !in_e2e { print }
 '\'' /home/root/.config/remarkable/xochitl.conf > /tmp/paperdesk-e2e-base.conf
 mv /tmp/paperdesk-e2e-base.conf /home/root/.config/remarkable/xochitl.conf
-printf "\n[PaperDeskE2E]\nautostart=true\napplicationId=paperdesk\nscenarioVersion=20260927\ntraceTouches=true\nwebFixture=true\nwebDownloadFixture=false\nwebTraceGestures=true\nrssLongArticle=true\nrssStressParser=true\nrssTraceScroll=true\n" >>/home/root/.config/remarkable/xochitl.conf
+printf "\n[PaperDeskE2E]\nautostart=true\napplicationId=paperdesk\nscenarioVersion=20260927\ntraceTouches=true\nwebFixture=true\nwebDownloadFixture=false\nwebTraceGestures=true\nrssLongArticle=true\nrssAutoFullText=false\nrssStressParser=true\nrssTraceScroll=true\n" >>/home/root/.config/remarkable/xochitl.conf
 for helper_pid in $(pidof paperdesk-rm-touchd || true); do
     kill -9 "$helper_pid" 2>/dev/null || true
 done
@@ -228,6 +228,11 @@ systemctl restart xochitl
 sleep 8'
 elif [[ "$TARGET" == "web-live-polish-text" ]]; then
     remote 'printf "\n[PaperWeb]\nsavedShowPictures=false\nsavedMobileMode=true\n[PaperDeskE2E]\nwebLivePolishText=true\n" >>/home/root/.config/remarkable/xochitl.conf
+systemctl restart xochitl
+sleep 8'
+elif [[ "$TARGET" == "rss-auto-full" ]]; then
+    remote 'sed -i '\''s/^rssLongArticle=true$/rssLongArticle=false/; s/^rssStressParser=true$/rssStressParser=false/'\'' /home/root/.config/remarkable/xochitl.conf
+printf "\n[PaperDeskE2E]\nrssAutoFullText=true\n" >>/home/root/.config/remarkable/xochitl.conf
 systemctl restart xochitl
 sleep 8'
 elif [[ "$TARGET" == "care" ]]; then
@@ -699,6 +704,16 @@ grep -q "<svg" "/home/root/Downloads/PaperDesk/$saved"'
         sleep 2
         capture_screen "$ARTIFACT_DIR/rss-add-feed.png"
         echo "PASS: physical input covered RSS reader, scroll, list, and add-feed view"
+        ;;
+    rss-auto-full)
+        tap 1040 1250
+        wait_for_log 'PaperDesk touch launching paperrss' 10
+        wait_for_log 'PaperRSS E2E automatic full text ready' 15
+        wait_for_log 'PaperRSS full text request https://example.com' 15
+        assert_tablet_healthy 'RSS automatic full-text request'
+        tap 1304 52
+        wait_for_log 'PaperRSS action close' 15
+        echo "PASS: opening an RSS article with a physical tablet tap requested its full text automatically"
         ;;
     care)
         wait_for_log 'PaperDesk Care action check' 15

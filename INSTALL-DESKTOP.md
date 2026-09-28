@@ -23,7 +23,7 @@ see [the manual installation guide](product/MANUAL-INSTALL.md).
 ## Make the Linux bundle
 
 Run `./scripts/build-linux-installer.sh` from the repository. It creates
-`dist/paperdesk-linux-installer-1.2.0.tar.gz` and a SHA-256 file.
+`dist/paperdesk-linux-installer-1.2.1.tar.gz` and a SHA-256 file.
 Extract the bundle, then launch `PaperDesk-Installer.sh`.
 Zenity, OpenSSH, GNU coreutils and tar are required on the Linux computer.
 

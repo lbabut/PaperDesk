@@ -1,4 +1,4 @@
-# PaperDesk 1.2.0
+# PaperDesk 1.2.1
 
 PaperDesk turns a reMarkable 2 into a quiet, monochrome network workspace.
 The bundle adds five apps directly to the AppLoad list and keeps their
@@ -124,7 +124,7 @@ compatibility patch, and the PaperRDP client are shipped in the package.
 
 ## Release status
 
-Release 1.2.0 was tested on a physical reMarkable 2 with OS 3.29.0.149:
+Release 1.2.1 was tested on a physical reMarkable 2 with OS 3.29.0.149:
 all module launches and safe menu actions, system keyboard, persistent
 settings, RSS refresh and full-text retrieval, AppLoad window cleanup,
 physical scroll and pinch gestures, and scaled RDP sessions.

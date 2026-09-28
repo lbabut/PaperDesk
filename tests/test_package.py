@@ -109,7 +109,7 @@ class PackageRegressionTests(unittest.TestCase):
             "paperrss": (
                 "rssRefreshButton", "rssAddFeedViewButton", "rssCloseButton",
                 "rssAllArticlesButton", "rssDeleteFeedButton_", "readerTouch",
-                "rssBackButton", "rssFavouriteButton", "rssFullTextButton",
+                "rssBackButton", "rssFavouriteButton",
                 "rssCancelAddButton", "rssAddButton", "rssFeedNameInput",
                 "rssFeedUrlInput",
             ),
@@ -353,6 +353,14 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("MultiPointTouchArea", qml)
         self.assertIn("readerFlick.contentY = Math.max", qml)
         self.assertIn("interactive: false", qml)
+        self.assertIn("signal fullTextRequested(string url)", qml)
+        self.assertIn("if (currentArticle.fullText)", qml)
+        self.assertIn("Qt.callLater(function()", qml)
+        self.assertIn("articles[i].fullText = true", qml)
+        self.assertNotIn('objectName: "rssFullTextButton"', qml)
+        runner = (ROOT / "tests/run-tablet-e2e.sh").read_text()
+        self.assertIn("rss-auto-full)", runner)
+        self.assertIn("PaperRSS full text request https://example.com", runner)
 
     def test_rss_never_loads_internal_or_qrc_links_as_articles(self):
         qml = (RELEASE / "payload/apps/paperrss/ui/main.qml").read_text()

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.1 — 2026-09-28
+
+- RSS automatically downloads full article text when an article is opened.
+- Cached full text opens immediately offline and survives later feed refreshes.
+- The feed copy remains visible when a full page cannot be downloaded.
+- Removed the redundant manual Full text / Stop action from the article header.
+
 ## 1.2.0 — 2026-09-28
 
 - Added a touch-first list of up to eight recent RDP connection profiles.

@@ -1,4 +1,4 @@
-PaperDesk RDP now keeps a touch-friendly list of up to eight recent connection profiles.
-Each profile remembers Scale (50%, 75%, or 100%) and Colors (256, 65K, or 16M).
-Lower settings negotiate fewer remote pixels and less colour data for a faster e-ink session; 75% and 256 colours are recommended.
-Scaled sessions fill the screen and keep clicks, double-clicks, right-clicks, pan, and pinch aligned.
+PaperDesk RSS now downloads the full article automatically when it is opened.
+Previously downloaded full text opens immediately from the tablet and is preserved across feed refreshes.
+If a page cannot be downloaded, the feed copy remains readable and the status explains the fallback.
+The redundant Full text / Stop button has been removed from the article header.

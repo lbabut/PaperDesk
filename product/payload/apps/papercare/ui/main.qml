@@ -11,7 +11,7 @@ Rectangle {
 
     signal close
 
-    readonly property string currentVersion: "1.2.0"
+    readonly property string currentVersion: "1.2.1"
     readonly property string manifestUrl: "https://paperdesk.lukaszbabut.info/update/latest.json"
     property string latestVersion: "—"
     property string publishedAt: ""

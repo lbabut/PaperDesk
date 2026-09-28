@@ -1,15 +1,15 @@
 {
   "product": "PaperDesk",
   "channel": "stable",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "publishedAt": "2026-09-28",
-  "archiveUrl": "/download/paperdesk-1.2.0.zip",
-  "archiveSha256": "c5a45102955bf4aa6c0bb0883c76fc65c73a8717059c4ff7b3701d9b78d37643",
-  "archiveSize": 1336069,
+  "archiveUrl": "/download/paperdesk-1.2.1.zip",
+  "archiveSha256": "75d012d9b85981b966e95038965df7dc91a7f20e0e99f118a7d9a3b7482b619c",
+  "archiveSize": 1336962,
   "releaseNotes": [
-    "PaperDesk RDP now keeps a touch-friendly list of up to eight recent connection profiles.",
-    "Each profile remembers Scale (50%, 75%, or 100%) and Colors (256, 65K, or 16M).",
-    "Lower settings negotiate fewer remote pixels and less colour data for a faster e-ink session; 75% and 256 colours are recommended.",
-    "Scaled sessions fill the screen and keep clicks, double-clicks, right-clicks, pan, and pinch aligned."
+    "PaperDesk RSS now downloads the full article automatically when it is opened.",
+    "Previously downloaded full text opens immediately from the tablet and is preserved across feed refreshes.",
+    "If a page cannot be downloaded, the feed copy remains readable and the status explains the fallback.",
+    "The redundant Full text / Stop button has been removed from the article header."
   ]
 }

@@ -12,6 +12,7 @@ Rectangle {
     focus: true
 
     signal close
+    signal fullTextRequested(string url)
 
     property string view: "list"
     property string selectedFeedUrl: ""
@@ -30,6 +31,8 @@ Rectangle {
     readonly property int feedItemLimit: 12
     readonly property int feedBodyLimit: 12000
     property bool loading: false
+    property bool fullTextLoading: false
+    property var fullTextRequest: null
     property bool disposed: false
     property bool e2eScrollLogged: false
     property real keyboardInset: Qt.inputMethod.visible
@@ -75,6 +78,7 @@ Rectangle {
         property bool autostart: false
         property int scenarioVersion: 0
         property bool rssLongArticle: false
+        property bool rssAutoFullText: false
         property bool rssStressParser: false
         property bool rssTraceScroll: false
         property bool traceTouches: false
@@ -250,7 +254,8 @@ Rectangle {
             }
             if (looksLikeApplicationSource(article.content) || looksLikeApplicationSource(article.summary)) {
                 article.content = ""
-                article.summary = "Cached full text was repaired. Select Full text to download it again."
+                article.fullText = false
+                article.summary = "Cached full text was repaired. It will download again when opened."
                 repaired = true
             }
         }
@@ -355,6 +360,7 @@ Rectangle {
                 title: title,
                 link: link,
                 content: sanitizeArticle(body, link || feedUrl),
+                fullText: false,
                 summary: plainText(body).substring(0, 340),
                 date: timestamp(dateText),
                 source: feedName,
@@ -366,9 +372,18 @@ Rectangle {
     }
 
     function mergeArticles(incoming) {
+        var previousById = ({})
+        for (var previousIndex = 0; previousIndex < articles.length; ++previousIndex)
+            previousById[articles[previousIndex].id] = articles[previousIndex]
         var byId = ({})
         var merged = []
         for (var i = 0; i < incoming.length; ++i) {
+            var previous = previousById[incoming[i].id]
+            if (previous && previous.fullText) {
+                incoming[i].content = previous.content
+                incoming[i].summary = previous.summary
+                incoming[i].fullText = true
+            }
             byId[incoming[i].id] = true
             merged.push(incoming[i])
         }
@@ -409,11 +424,14 @@ Rectangle {
     }
 
     function abortRequests() {
-        for (var i = 0; i < requests.length; ++i) {
-            try { requests[i].abort() } catch (error) {}
-        }
+        var activeRequests = requests.slice(0)
         requests = []
         loading = false
+        fullTextLoading = false
+        fullTextRequest = null
+        for (var i = 0; i < activeRequests.length; ++i) {
+            try { activeRequests[i].abort() } catch (error) {}
+        }
     }
 
     function forgetRequest(xhr) {
@@ -439,10 +457,12 @@ Rectangle {
         extracted = extracted.replace(/^\s*<h1\b[^>]*>[\s\S]*?<\/h1\s*>/i, "")
         readerText.text = "<h1>" + escapeHtml(articleTitle) + "</h1>" + extracted
         currentArticle.content = extracted
+        currentArticle.fullText = true
         for (var i = 0; i < articles.length; ++i) {
             if (articles[i].id === articleId) {
                 articles[i].content = extracted
                 articles[i].summary = plainText(extracted).substring(0, 340)
+                articles[i].fullText = true
                 break
             }
         }
@@ -536,6 +556,17 @@ Rectangle {
         Qt.inputMethod.hide()
         saveState()
         rebuildArticles()
+        if (currentArticle.fullText) {
+            readerStatus.text = "Full text saved offline"
+        } else if (resolveHttpUrl(currentArticle.link, currentArticle.id)) {
+            var openedArticleId = currentArticle.id
+            Qt.callLater(function() {
+                if (currentArticle && currentArticle.id === openedArticleId)
+                    fetchFullArticle()
+            })
+        } else {
+            readerStatus.text = "Feed text"
+        }
     }
 
     function toggleFavourite() {
@@ -555,7 +586,7 @@ Rectangle {
     }
 
     function fetchFullArticle(targetUrl) {
-        if ((!targetUrl && !currentArticle.link) || loading)
+        if (!targetUrl && !currentArticle.link)
             return
         var sourceUrl = resolveHttpUrl(targetUrl || currentArticle.link, currentArticle.id)
         if (!sourceUrl) {
@@ -563,12 +594,19 @@ Rectangle {
             console.log("PaperRSS blocked non-web article link", targetUrl || currentArticle.link)
             return
         }
-        loading = true
+        if (fullTextRequest) {
+            var previousRequest = fullTextRequest
+            fullTextRequest = null
+            forgetRequest(previousRequest)
+            try { previousRequest.abort() } catch (error) {}
+        }
+        fullTextLoading = true
         readerStatus.text = "Loading full text..."
         var xhr = new XMLHttpRequest()
         var owner = root
         var articleId = currentArticle.id
         var articleTitle = currentArticle.title
+        fullTextRequest = xhr
         requests.push(xhr)
         xhr.onreadystatechange = function() {
             if (xhr.readyState !== XMLHttpRequest.DONE)
@@ -576,17 +614,21 @@ Rectangle {
             if (!owner || owner.disposed || owner.requests.indexOf(xhr) < 0)
                 return
             owner.forgetRequest(xhr)
-            owner.loading = false
+            if (owner.fullTextRequest === xhr) {
+                owner.fullTextRequest = null
+                owner.fullTextLoading = false
+            }
             if (!owner.currentArticle || owner.currentArticle.id !== articleId)
                 return
             if (xhr.status >= 200 && xhr.status < 400) {
                 var html = String(xhr.responseText || "")
                 owner.applyFullArticleResponse(html, sourceUrl, articleId, articleTitle, true)
             } else {
-                readerStatus.text = "HTTP error " + xhr.status
+                readerStatus.text = "Full text unavailable · feed copy shown"
             }
         }
         console.log("PaperRSS full text request", sourceUrl)
+        fullTextRequested(sourceUrl)
         xhr.open("GET", sourceUrl, true)
         xhr.send()
     }
@@ -984,6 +1026,7 @@ Rectangle {
                     }
                     Column {
                         Layout.fillWidth: true
+                        Layout.minimumWidth: 0
                         spacing: 1
                         Text {
                             text: "PAPERDESK  /  ARTICLE"
@@ -1011,16 +1054,6 @@ Rectangle {
                         onTriggered: {
                             console.log("PaperRSS action favourite")
                             toggleFavourite()
-                        }
-                    }
-                    ActionButton {
-                        objectName: "rssFullTextButton"
-                        label: loading ? "Stop" : "Full text"
-                        Layout.preferredWidth: 176
-                        Layout.fillHeight: true
-                        onTriggered: {
-                            console.log("PaperRSS action", loading ? "stop full text" : "full text")
-                            loading ? abortRequests() : fetchFullArticle()
                         }
                     }
                     ActionButton {
@@ -1421,13 +1454,22 @@ Rectangle {
             console.log("PaperRSS E2E stress parser ready", stressParsed.length,
                         stressXml.length, Date.now() - stressStarted)
         }
-        if (e2eScenarioActive() && e2eSettings.rssLongArticle) {
+        if (e2eScenarioActive() && e2eSettings.rssAutoFullText) {
+            articles = [{ id: "hardware-auto-full-text", title: "Automatic full text test",
+                source: "PaperDesk E2E", date: Date.now(), link: "https://example.com",
+                summary: "Feed copy remains visible while the page downloads.",
+                content: "<p>Feed copy remains visible while the page downloads.</p>",
+                fullText: false, feedUrl: "e2e" }]
+            openArticle(0)
+            console.log("PaperRSS E2E automatic full text ready")
+        } else if (e2eScenarioActive() && e2eSettings.rssLongArticle) {
             var paragraphs = ""
             for (var i = 0; i < 120; ++i)
                 paragraphs += "<p><a href='https://example.com/" + i + "'>Hardware full-text paragraph " + i + "</a> with enough words to wrap across the reader.</p>"
             articles = [{ id: "hardware-scroll", title: "Hardware scroll test",
                 source: "PaperDesk E2E", date: Date.now(), link: "https://example.com",
-                summary: "Hardware scroll test", content: paragraphs, feedUrl: "e2e" }]
+                summary: "Hardware scroll test", content: paragraphs, fullText: true,
+                feedUrl: "e2e" }]
             openArticle(0)
             console.log("PaperRSS E2E full text ready", readerFlick.contentHeight)
         } else if (articles.length === 0) {

@@ -28,6 +28,7 @@ Item {
                 link: "https://example.com/article",
                 summary: "Test",
                 content: paragraphs,
+                fullText: true,
                 feedUrl: "test"
             }]
             scene.app.openArticle(0)

@@ -327,7 +327,7 @@ Item {
             scene.rss.articles = [{
                 id: "action-test", title: "Action test", source: "Tests",
                 date: Date.now(), link: "https://example.invalid/article",
-                summary: "Fixture", content: "<p>Fixture article body.</p>",
+                summary: "Fixture", content: "<p>Fixture article body.</p>", fullText: true,
                 feedUrl: "fixture"
             }]
             scene.rss.favouriteIds = []
@@ -388,8 +388,41 @@ Item {
                 articleUrl, articleUrl, "Fetched article", false))
             verify(scene.rss.currentArticle.content.indexOf("Fresh full text body") >= 0)
             verify(scene.rss.articles[0].summary.indexOf("Fresh full text body") >= 0)
+            verify(scene.rss.currentArticle.fullText)
             scene.rss.articles = original
             scene.rss.currentArticle = originalCurrent
+        }
+
+        function test_00c_opening_an_uncached_article_requests_full_text_automatically() {
+            var original = scene.rss.articles
+            var originalCurrent = scene.rss.currentArticle
+            var spy = Qt.createQmlObject(
+                'import QtTest 1.3; SignalSpy { signalName: "fullTextRequested" }', scene)
+            spy.target = scene.rss
+            scene.rss.articles = [{
+                id: "auto-full-text", title: "Automatic full text", source: "Tests",
+                date: Date.now(), link: "https://example.invalid/auto-full-text",
+                summary: "Feed copy", content: "<p>Feed copy.</p>", fullText: false,
+                feedUrl: "fixture"
+            }]
+            scene.rss.openArticle(0)
+            tryCompare(spy, "count", 1, 1000)
+            compare(spy.signalArguments[0][0], "https://example.invalid/auto-full-text")
+            scene.rss.abortRequests()
+
+            spy.clear()
+            scene.rss.articles[0].fullText = true
+            scene.rss.openArticle(0)
+            wait(100)
+            compare(spy.count, 0)
+            compare(scene.rss.fullTextLoading, false)
+
+            scene.rss.abortRequests()
+            scene.rss.articles = original
+            scene.rss.currentArticle = originalCurrent
+            scene.rss.rebuildArticles()
+            scene.rss.view = "list"
+            spy.destroy()
         }
 
         function test_01_reader_actions() {
@@ -397,11 +430,32 @@ Item {
             compare(scene.rss.view, "reader")
             tap("rssFavouriteButton")
             verify(scene.rss.favouriteIds.indexOf("action-test") >= 0)
-            scene.rss.loading = true
-            tap("rssFullTextButton")
-            compare(scene.rss.loading, false)
             tap("rssBackButton")
             compare(scene.rss.view, "list")
+        }
+
+        function test_01b_long_article_title_keeps_every_reader_action_on_screen() {
+            scene.rss.articles = [{
+                id: "long-title-test",
+                title: new Array(40).join("A very long article title "),
+                source: "Tests", date: Date.now(),
+                link: "https://example.invalid/long-title",
+                summary: "Fixture", content: "<p>Fixture article body.</p>",
+                fullText: true, feedUrl: "fixture"
+            }]
+            scene.rss.openArticle(0)
+            waitForRendering(scene.rss)
+
+            var names = ["rssBackButton", "rssFavouriteButton", "rssReaderCloseButton"]
+            for (var i = 0; i < names.length; ++i) {
+                var control = findChild(scene.rss, names[i])
+                verify(control !== null, "Missing reader action: " + names[i])
+                var position = control.mapToItem(scene.rss, 0, 0)
+                verify(position.x >= 0, names[i] + " starts outside the screen")
+                verify(position.x + control.width <= scene.rss.width,
+                       names[i] + " ends outside the screen at " +
+                       (position.x + control.width))
+            }
         }
 
         function test_02_filter_and_add_cancel() {
