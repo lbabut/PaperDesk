@@ -35,8 +35,8 @@ e6697ea54cd4b98947040f0bee3ca8ede20817f8e3ba3024d83ba7c181821605  ./payload/apps
 177125ab23376557ade3a1a9e123df4eecf7fcb07f3ebcc931bad4d2750060fc  ./payload/apps/paperrdp/common.h
 56caf91524bde993f2abf56e162b4f4228bea08d9b3d64b61ff1ab02d479f53f  ./payload/apps/paperrdp/external.manifest.json
 674a51c78fdb101a355f5d3fa8b09d7f3a3c5dbfc654dde07c45e1d6142f8a9e  ./payload/apps/paperrdp/icon.png
-3859a42d5cfc9a8a0dfe0fb6567e5274a3abea747e755382643136f4720f0cdc  ./payload/apps/paperrdp/paperrdp
-7d31e297bc4b58f8a4daafda668553ce5efb8e50d470614bab6fd70bb6a9aa07  ./payload/apps/paperrdp/paperrdp.cpp
+18c303f21d2d43c10f4b2b1bd0161e3ba8a1b9b0b89a0d869c3983e760d5f6b5  ./payload/apps/paperrdp/paperrdp
+e5c2ec9f8c97209d87f68e79849b55aded0ed54a3eb840c1730a596767c79982  ./payload/apps/paperrdp/paperrdp.cpp
 3f2b68110570bb401036e1bda5bbaec60be3f809c03dd35ca8a113ac5fb25462  ./payload/apps/paperrdp/qtfb-client.cpp
 be5d2a20274eb40be456bae0a1c99b16937673c3246fa9cedb24f7328f717b7d  ./payload/apps/paperrdp/qtfb-client.h
 9295d91067ec6062a96c4b2971cd2dd750f25a7da85aff85c23ae39b5aee9625  ./payload/apps/paperrss/README.md
