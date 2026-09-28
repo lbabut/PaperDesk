@@ -2,7 +2,7 @@
 
 set -eu
 
-BASE_URL=${PAPERDESK_UPDATE_BASE_URL:-http://192.168.1.40:8090}
+BASE_URL=${PAPERDESK_UPDATE_BASE_URL:-https://paperdesk.lukaszbabut.info}
 STATE=${PAPERDESK_UPDATE_STATE:-/home/root/.local/share/paperdesk}
 SETTINGS=${PAPERDESK_UPDATE_SETTINGS:-/home/root/.config/remarkable/xochitl.conf}
 PUBLIC_KEY=${PAPERDESK_UPDATE_PUBLIC_KEY:-/home/root/.local/lib/paperdesk/release-public.pem}

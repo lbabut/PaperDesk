@@ -4,11 +4,12 @@
   "version": "1.1.5",
   "publishedAt": "2026-09-28",
   "archiveUrl": "/download/paperdesk-1.1.5.zip",
-  "archiveSha256": "d4097be59bdb4da5f17b02bd535e15ff2839725d01c54c4e8422f36168895afc",
-  "archiveSize": 1307189,
+  "archiveSha256": "61296e2c3499ce70ce77591928a718b88f1f53350d26c2e2a56a0ec784c51da6",
+  "archiveSize": 1307237,
   "releaseNotes": [
     "PaperDesk RDP now uses one polished header and action-button style before, during, and after a connection.",
     "RDP button labels now keep the same size, weight, spacing, and rounded shape throughout the app.",
-    "Close remains the rightmost action and all RDP touch targets stay e-ink friendly."
+    "Close remains the rightmost action and all RDP touch targets stay e-ink friendly.",
+    "Care now uses the official HTTPS release feed instead of a development-server address."
   ]
 }

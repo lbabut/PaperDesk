@@ -189,6 +189,12 @@ class PackageRegressionTests(unittest.TestCase):
     def test_updater_requires_signed_and_hashed_official_packages(self):
         system = RELEASE / "payload/system"
         agent = (system / "paperdesk-update-agent").read_text()
+        care = (RELEASE / "payload/apps/papercare/ui/main.qml").read_text()
+        official_url = "https://paperdesk.lukaszbabut.info"
+        self.assertIn(f'{official_url}/update/latest.json', care)
+        self.assertIn(f"PAPERDESK_UPDATE_BASE_URL:-{official_url}", agent)
+        self.assertNotIn("192.168.1.40:8090", care)
+        self.assertNotIn("192.168.1.40:8090", agent)
         self.assertIn("openssl pkeyutl -verify -rawin -pubin", agent)
         self.assertIn("sha256sum -c -", agent)
         self.assertIn("sha256sum -c SHA256SUMS", agent)

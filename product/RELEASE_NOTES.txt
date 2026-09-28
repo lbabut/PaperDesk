@@ -1,3 +1,4 @@
 PaperDesk RDP now uses one polished header and action-button style before, during, and after a connection.
 RDP button labels now keep the same size, weight, spacing, and rounded shape throughout the app.
 Close remains the rightmost action and all RDP touch targets stay e-ink friendly.
+Care now uses the official HTTPS release feed instead of a development-server address.

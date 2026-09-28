@@ -1,7 +1,7 @@
 bb8634bf60e35153e183842cf5537bfc875442422d23ce16de1941513754293a  ./CHANGELOG.md
 f72b2648de7c5105a65ac08dfaaba712d4dc7baaf61be5ee96bdb8c7a1a90ce1  ./MANUAL-INSTALL.md
 45d9f198eea3ff342d8163c42ccf5b1a0e673f3172ccc7149c7706bd889422c0  ./README.md
-33f5463e333adea11d6ce2c9d427f882090c03a7f76f6b4399df36cf90015612  ./RELEASE_NOTES.txt
+a2e199f685048ec5230e3ff364f46d86eb616acb8af2f2a55393d552cc014243  ./RELEASE_NOTES.txt
 fddf4e4cf86329a0ecd5a8c4796eed8a0c8e9b8e7dab245e59e8b750e872b2bf  ./THIRD-PARTY.md
 1c60df040a80b6d2e3f56442b17d127d8620cd773873e6e1353362f989b1deca  ./VERSION
 051e3ed1012de0157573b1323e95e342ac398eb52f74b1e0d1ee3128043c753a  ./install-from-computer.sh
@@ -18,8 +18,8 @@ bf297d318bc379ed4a18f3906dd654b46ff615ba16d39e40184d7722f8f2d855  ./payload/apps
 6320faec7dad854348925847e01fc26e5c6a14b9d7202d2f9d8d179feb64b131  ./payload/apps/papercare/application.qrc
 2489f30b561ab50c17a72a23227e64879a8ad5ce40db3c153b82a3752d4847c5  ./payload/apps/papercare/icon.png
 0741c03fba719a3eea3a610fa6a2dd13ef6c87c5b27699bad2cea742e73f955b  ./payload/apps/papercare/manifest.json
-cc7931df6d48e8b9ca634ea93fb0dce84ce19f58e315e9777266fbc25b53a3b0  ./payload/apps/papercare/resources.rcc
-eb5f86d693254a54611477a57a0d019bbbe0948e48b1dde8a0d38f8ff7403c76  ./payload/apps/papercare/ui/main.qml
+40f2ee0574b23de4d6a292267287362112b496605a4086cc1dbee2d69eeaefd2  ./payload/apps/papercare/resources.rcc
+28834e8db34acb98710370194363caedc2a3ae12b2ea09da8ec2033e005d74f3  ./payload/apps/papercare/ui/main.qml
 ad585de93a3d49046a71f03643a9c4309e0e58bccb43308bae703d072e4287da  ./payload/apps/paperdesk/application.qrc
 b157df4ec15601380ea0cafcfaa3b41762886491c3e5562d2244d57de0d0c9b0  ./payload/apps/paperdesk/icon.png
 4644cc6adf117535f5a2e1a5da3a403921e9184b5f4f5b5f3a492be10220dfc8  ./payload/apps/paperdesk/icon.svg
@@ -58,7 +58,7 @@ f7c5cde238252871560f0cbb8a4b46726ed7b3e4f45900b66fbb5c23c2babf17  ./payload/apps
 3a8c52e0146b1cc9b416e541232e9e4f817a4300ed0229d2ce8ba0f13b10b743  ./payload/system/paperdesk-appload-window.qml
 8c485fb6a400979f514d49021262ac61cd88f864e929f063d40232ab3f42af5d  ./payload/system/paperdesk-appload.qml
 bf826622f18ac3004df7087f2bd99534272d225cbbe7cbfb3a7edf7ae540c992  ./payload/system/paperdesk-release-public.pem
-9dc38e727e33cddb6fe2b6e128f0c4b2575411f87c10a6825ce8559821f8e97d  ./payload/system/paperdesk-update-agent
+43356ae26f1034f513433cfa00966a194ece608dbc937edc17289323429e5d7c  ./payload/system/paperdesk-update-agent
 973a721d5aad4b64f52c6eeb3ce3b313da0bd066821ffbf8d2c6e443516bd58b  ./payload/system/paperdesk-update.path
 e7beb1bdca6d8ac65ef9c0caf96189db5640dbfc3469cdf17e42b5390ff21ea8  ./payload/system/paperdesk-update.service
 ed534a03958e509c1686e3e58bcb449c9055079aa3d3c1cccb3eedbb5e792af6  ./payload/system/profile-hook.sh
