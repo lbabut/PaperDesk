@@ -1,5 +1,10 @@
 # Historia zmian
 
+## 1.1.4 — candidate
+
+- Graficzny instalator na Linux i Windows rozpoznaje istniejace aplikacje,
+- pierwsza instalacja zapisuje pierwotne katalogi aplikacji i przy odinstalowaniu je przywraca.
+
 ## 1.1.3 — 2026-09-28
 
 - Terminal wymusza kilka ograniczonych odswiezen podczas startu, aby aktywne menu SSH nie pozostawalo pustym panelem e-ink,

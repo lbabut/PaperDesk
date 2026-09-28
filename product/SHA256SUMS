@@ -1,10 +1,10 @@
-822d5ae307d7a6919248ef97cc81cf97aa9f9f4e253807c590dd35f9194f3aad  ./CHANGELOG.md
-561dcfa4f04877d1599053ca3abbb1211d76e2cf0aafd7751bc91f3a32b53605  ./README.md
-1ecf798faa08925cb5f1609b8b9466e3dc786e86d3005e5a29aef7abafe33aaa  ./RELEASE_NOTES.txt
+db9d617592462141369530fbfa893c6759c46630272fb7b34ef4d61de7810b09  ./CHANGELOG.md
+93f9cfbf0cab66a24b2f02c682a1d47bbdedcde2888bb883d79f3cd30319c6c3  ./README.md
+3b933698d95d803bae6bc973bcdc5d1592baa60b89a45cbc8331d82d6efa83ce  ./RELEASE_NOTES.txt
 f6842ec6c4119728c0f77a3a404389b1c7ee8035e74224595cf6160d239bcb6c  ./THIRD-PARTY.md
-5dae0c0a5ed3cdaa78704e25bb38d72c31018311e933283d06ed4f93360bfc6c  ./VERSION
+2bde3ae39f59ee21201f87089cf7d215cf58ea437711e3d8e3e65fbc3078c798  ./VERSION
 704620cc6a50d400c628bd7feac86e9044739441ab6a3f6d0f570d0e48a77ff8  ./install-from-computer.sh
-787b702d5f4f025dbf8defdd4062c63ff00296be0e75eda3f943d1a61dd7504d  ./install.sh
+d0c89134ed9d57aa6c29b3c3d04f3851f51699346d862f46a2e24b7653f89763  ./install.sh
 3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986  ./licenses/AppLoad-GPL-3.0.txt
 cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30  ./licenses/FreeRDP-Apache-2.0.txt
 8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643  ./licenses/LiTerm-GPL-2.0.txt
@@ -64,7 +64,7 @@ ed534a03958e509c1686e3e58bcb449c9055079aa3d3c1cccb3eedbb5e792af6  ./payload/syst
 d1b3a23163d6e93736d8f7a0f0ffceab0ec2da878909c0a000af88b95033ef91  ./payload/system/profiles.example
 b4328982f877dc8c6b85085250cdbe3effe06135fbe3e16c8f3663cd71baf513  ./payload/system/rmssh-menu
 ba05d7a22a2ce23e18c21f193210f9533d07bd74c1f190e56e25d1310e5850c8  ./payload/system/xovi-autostart.service
-48f83876de026dc24255310daac16015d0a41ab2f0405f6a50538697f27f7481  ./release.json
+3b32b4f31f9ffd262de0d2ac81e4571b33642f4d3759b9657402d34fd1d2a1e5  ./release.json
 588b775f13b24608e6903dd0b6a543b6e9314e5ef60d5c7920760190abf7a71c  ./third_party_source/qtfb-shim/CMakeLists.txt
 3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986  ./third_party_source/qtfb-shim/LICENSE
 15a156a971001856348398eeab1a4eec5abb55feecd82adc0080cf4e787b84b0  ./third_party_source/qtfb-shim/README.MD
@@ -79,5 +79,5 @@ d7a5b776cf7cc53dbfa588948600a53f9c2a39353b66246686b33c3517007f43  ./third_party_
 520ea333cdcb62f0bea6460cf0a8a2f14f9a606e4464be5f3d3b73f06f553dce  ./third_party_source/qtfb-shim/src/mxcfb.h
 5e226118818811e2ce4c9398e50025851e160dc0fd4cc71202756e2c791c89cd  ./third_party_source/qtfb-shim/src/shim.cpp
 b62df26c6c1a05a26b050982a3b562b506938ae7cb2309881775e848c8bbaca2  ./third_party_source/qtfb-shim/src/shim.h
-e326e436c523b9363aa97fcf99a936b5c0802299fc2cdfaae269b469ba7592fd  ./uninstall.sh
+be31d8bf5bed0ed9d898f301daab815a853b7a22ddd45fa83c7c35dbd5aba4ce  ./uninstall.sh
 c9a12402100b7b53eeee09d496d3cb94b5dbf0deb84d74098d20cd3875bbe773  ./usb-askpass.sh

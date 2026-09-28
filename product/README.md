@@ -1,4 +1,4 @@
-# PaperDesk 1.1.3
+# PaperDesk 1.1.4 (candidate)
 
 PaperDesk zmienia reMarkable 2 w spokojne, monochromatyczne stanowisko sieciowe.
 Pakiet dodaje piec aplikacji bezposrednio do listy AppLoad i zachowuje ich
@@ -49,6 +49,11 @@ dokladnej wersji systemu. Na testowanym urzadzeniu zrobiono to narzedziem
 `/home/root/xovi/rebuild_hashtable` przed uruchomieniem PaperDesk.
 
 ## Instalacja z komputera
+
+Graficzny instalator dla Linuxa i Windows jest opisany w
+`../INSTALL-DESKTOP.md`. Wykrywa istniejące aplikacje przed instalacją i
+prosi o potwierdzenie podmiany identycznych ID.
+
 
 Podlacz tablet przez USB, rozpakuj paczke i uruchom:
 

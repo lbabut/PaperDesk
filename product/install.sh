@@ -3,7 +3,7 @@
 set -eu
 
 PRODUCT="PaperDesk"
-VERSION="1.1.3"
+VERSION="1.1.4"
 TARGET="/home/root/xovi/exthome/appload"
 QRR_DIR="/home/root/xovi/exthome/qt-resource-rebuilder"
 STATE="/home/root/.local/share/paperdesk"
@@ -34,6 +34,39 @@ for required in paperdesk-appload-compat.qrr paperdesk-appload-window.qml paperd
     fi
 done
 
+if [ ! -f /home/root/xovi/extensions.d/qt-resource-rebuilder.so ]; then
+    echo "Brak rozszerzenia qt-resource-rebuilder wymaganego przez poprawke AppLoad." >&2
+    exit 1
+fi
+
+# Capture the original installation once. Later upgrades must not replace this baseline.
+ORIGINAL="$STATE/original"
+if [ ! -f "$STATE/original-recorded" ] && [ ! -f "$STATE/current-version" ]; then
+    mkdir -p "$ORIGINAL/apps" "$ORIGINAL/system"
+    for app in paperdesk literm paperweb paperrdp-login paperrdp paperrss papercare shims; do
+        if [ -e "$TARGET/$app" ]; then
+            cp -R "$TARGET/$app" "$ORIGINAL/apps/$app"
+        fi
+    done
+    for resource in paperdesk-appload-compat.qrr paperdesk-appload-window.qml paperdesk-appload.qml; do
+        if [ -f "$QRR_DIR/$resource" ]; then
+            cp "$QRR_DIR/$resource" "$ORIGINAL/system/$resource"
+        fi
+    done
+    for service in xovi-autostart.service paperdesk-update.service paperdesk-update.path; do
+        if [ -f "/etc/systemd/system/$service" ]; then
+            cp "/etc/systemd/system/$service" "$ORIGINAL/system/$service"
+            if systemctl is-enabled --quiet "$service"; then
+                touch "$ORIGINAL/system/$service.enabled"
+            fi
+        fi
+    done
+    if [ -f /home/root/.local/bin/rmssh-menu ]; then
+        cp /home/root/.local/bin/rmssh-menu "$ORIGINAL/system/rmssh-menu"
+    fi
+    touch "$STATE/original-recorded"
+fi
+
 cp "$PAYLOAD/system/xovi-autostart.service" /etc/systemd/system/xovi-autostart.service
 cp "$PAYLOAD/system/paperdesk-update.service" /etc/systemd/system/paperdesk-update.service
 cp "$PAYLOAD/system/paperdesk-update.path" /etc/systemd/system/paperdesk-update.path
@@ -46,11 +79,6 @@ chmod 644 /home/root/.local/lib/paperdesk/release-public.pem
 systemctl daemon-reload
 systemctl enable xovi-autostart.service
 systemctl enable --now paperdesk-update.path
-
-if [ ! -f /home/root/xovi/extensions.d/qt-resource-rebuilder.so ]; then
-    echo "Brak rozszerzenia qt-resource-rebuilder wymaganego przez poprawke AppLoad." >&2
-    exit 1
-fi
 
 STAMP=$(date +%Y%m%d-%H%M%S)
 BACKUP="$STATE/backups/$STAMP"

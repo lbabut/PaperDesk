@@ -22,6 +22,12 @@ The currently validated release is **1.1.3**, tested on reMarkable OS
 - `scripts/` — repeatable build and verification helpers.
 - `dist/` — checksums for distributable artifacts. Release archives are built locally.
 
+## Install from a Linux or Windows computer
+
+See [the desktop installer guide](INSTALL-DESKTOP.md) for the graphical
+installer. The tablet-side and command-line instructions remain in
+[product/README.md](product/README.md).
+
 ## Verify
 
 ```sh
