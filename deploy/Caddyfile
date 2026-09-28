@@ -7,3 +7,8 @@ paperdesk.lukaszbabut.info {
 		Referrer-Policy "strict-origin-when-cross-origin"
 	}
 }
+
+# Keep the original production IP usable while DNS caches are propagating.
+http://128.251.8.232 {
+	reverse_proxy 127.0.0.1:8090
+}
