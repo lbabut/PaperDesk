@@ -33,7 +33,7 @@ def make_archive():
     with tarfile.open(fileobj=data, mode="w:gz") as archive:
         for path in sorted(PRODUCT.rglob("*")):
             if path.is_file() and path.name != "paperdesk.local.conf":
-                archive.add(path, arcname=path.relative_to(PRODUCT))
+                archive.add(path, arcname=path.relative_to(PRODUCT).as_posix())
     data.seek(0)
     return data
 
