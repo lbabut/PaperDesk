@@ -1,15 +1,15 @@
 {
   "product": "PaperDesk",
   "channel": "stable",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "publishedAt": "2026-09-28",
-  "archiveUrl": "/download/paperdesk-1.1.8.zip",
-  "archiveSha256": "6e075b877409485e31113ef77c43cebcb218d7ccf538603f713f95e05e246020",
-  "archiveSize": 1316278,
+  "archiveUrl": "/download/paperdesk-1.1.9.zip",
+  "archiveSha256": "588727f238d082d5e35a51cf717a64426efff99d5587670660d2c3e4380a2c6c",
+  "archiveSize": 1316422,
   "releaseNotes": [
-    "PaperWeb can now download links and the address currently shown in its toolbar.",
-    "Downloads are saved to Downloads/PaperDesk, never opened automatically, and limited to 100 MB with a free-space safety check.",
-    "PaperWeb recognises common file links and server attachment headers instead of trying to render binary data as a page.",
-    "PaperRDP now sends an explicit double-click for two quick taps and a right-click when one finger is held still."
+    "PaperDesk no longer starts XOVI automatically during device boot.",
+    "Updating removes only the legacy autostart unit previously installed by PaperDesk; unrelated user services are left untouched.",
+    "After a reboot, start XOVI deliberately over SSH or with the community xovi-tripletap tool.",
+    "The updater still reloads XOVI once after installation through a non-persistent transient service."
   ]
 }

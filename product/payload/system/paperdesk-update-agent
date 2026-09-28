@@ -113,4 +113,7 @@ chmod 755 "$RELEASE_DIR/install.sh"
 "$RELEASE_DIR/install.sh" --from-updater >/tmp/paperdesk-update-install.log 2>&1 || fail "Installation failed; the previous version is still available"
 
 write_status "success" "PaperDesk $LATEST_VERSION installed" "$LATEST_VERSION"
-systemctl --no-block restart xovi-autostart.service
+# Reload the current UI once without creating any boot-time persistence.
+# A unique transient unit lets this update job finish before XOVI restarts.
+systemd-run --unit="paperdesk-xovi-reload-$$" --collect --on-active=2s \
+    /home/root/xovi/start >/dev/null

@@ -22,13 +22,11 @@ rm -f /home/root/.local/bin/rmssh-menu
 if [ -f "$STATE/original-recorded" ] && [ -f "$STATE/original/system/rmssh-menu" ]; then
     cp "$STATE/original/system/rmssh-menu" /home/root/.local/bin/rmssh-menu
 fi
-systemctl disable xovi-autostart.service 2>/dev/null || true
 systemctl disable --now paperdesk-update.path 2>/dev/null || true
-rm -f /etc/systemd/system/xovi-autostart.service
 rm -f /etc/systemd/system/paperdesk-update.path /etc/systemd/system/paperdesk-update.service
 rm -rf /home/root/.local/lib/paperdesk
 if [ -f "$STATE/original-recorded" ]; then
-    for service in xovi-autostart.service paperdesk-update.service paperdesk-update.path; do
+    for service in paperdesk-update.service paperdesk-update.path; do
         if [ -f "$STATE/original/system/$service" ]; then
             cp "$STATE/original/system/$service" "/etc/systemd/system/$service"
         fi
@@ -36,7 +34,7 @@ if [ -f "$STATE/original-recorded" ]; then
 fi
 systemctl daemon-reload
 if [ -f "$STATE/original-recorded" ]; then
-    for service in xovi-autostart.service paperdesk-update.service paperdesk-update.path; do
+    for service in paperdesk-update.service paperdesk-update.path; do
         if [ -f "$STATE/original/system/$service.enabled" ]; then
             systemctl enable "$service"
         fi

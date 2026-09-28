@@ -32,7 +32,7 @@ for required in paperdesk literm paperweb paperweb-download paperrdp-login paper
     fi
 done
 
-for required in paperdesk-appload-compat.qrr paperdesk-appload-window.qml paperdesk-appload.qml xovi-autostart.service paperdesk-update-agent paperdesk-update.service paperdesk-update.path paperdesk-release-public.pem; do
+for required in paperdesk-appload-compat.qrr paperdesk-appload-window.qml paperdesk-appload.qml paperdesk-update-agent paperdesk-update.service paperdesk-update.path paperdesk-release-public.pem; do
     if [ ! -f "$PAYLOAD/system/$required" ]; then
         echo "Incomplete package: missing payload/system/$required" >&2
         exit 1
@@ -58,7 +58,7 @@ if [ ! -f "$STATE/original-recorded" ] && [ ! -f "$STATE/current-version" ]; the
             cp "$QRR_DIR/$resource" "$ORIGINAL/system/$resource"
         fi
     done
-    for service in xovi-autostart.service paperdesk-update.service paperdesk-update.path; do
+    for service in paperdesk-update.service paperdesk-update.path; do
         if [ -f "/etc/systemd/system/$service" ]; then
             cp "/etc/systemd/system/$service" "$ORIGINAL/system/$service"
             if systemctl is-enabled --quiet "$service"; then
@@ -72,7 +72,6 @@ if [ ! -f "$STATE/original-recorded" ] && [ ! -f "$STATE/current-version" ]; the
     touch "$STATE/original-recorded"
 fi
 
-cp "$PAYLOAD/system/xovi-autostart.service" /etc/systemd/system/xovi-autostart.service
 cp "$PAYLOAD/system/paperdesk-update.service" /etc/systemd/system/paperdesk-update.service
 cp "$PAYLOAD/system/paperdesk-update.path" /etc/systemd/system/paperdesk-update.path
 mkdir -p /home/root/.local/lib/paperdesk
@@ -82,8 +81,20 @@ cp "$SCRIPT_DIR/uninstall.sh" /home/root/.local/lib/paperdesk/paperdesk-uninstal
 chmod 755 /home/root/.local/lib/paperdesk/paperdesk-update-agent /home/root/.local/lib/paperdesk/paperdesk-uninstall
 chmod 644 /home/root/.local/lib/paperdesk/release-public.pem
 systemctl daemon-reload
-systemctl enable xovi-autostart.service
 systemctl enable --now paperdesk-update.path
+
+# PaperDesk 1.0.5 through 1.1.8 installed this exact boot service. On an rM2,
+# a broken XOVI extension can then repeat on every boot while hardware recovery
+# requires a pogo-pin adapter. Remove only PaperDesk's known legacy unit; never
+# touch a differently described service belonging to the user.
+if [ -f "$STATE/current-version" ] && [ -f /etc/systemd/system/xovi-autostart.service ] &&
+   grep -Fxq 'Description=Start Xovi extensions after the reMarkable interface' /etc/systemd/system/xovi-autostart.service &&
+   grep -Fxq 'ExecStart=/home/root/xovi/start' /etc/systemd/system/xovi-autostart.service; then
+    systemctl disable xovi-autostart.service 2>/dev/null || true
+    rm -f /etc/systemd/system/xovi-autostart.service
+    systemctl daemon-reload
+    touch "$STATE/legacy-autostart-removed"
+fi
 
 STAMP=$(date +%Y%m%d-%H%M%S)
 BACKUP="$STATE/backups/$STAMP"
@@ -138,5 +149,6 @@ printf '%s\n' "$BACKUP" > "$STATE/last-backup"
 
 echo
 echo "Done. Restart XOVI with /home/root/xovi/start."
-echo "XOVI and PaperDesk will start automatically after a device reboot."
+echo "For recovery safety, PaperDesk does not start XOVI automatically after reboot."
+echo "Start it deliberately with /home/root/xovi/start or xovi-tripletap."
 echo "Connection profiles and app data have been preserved."

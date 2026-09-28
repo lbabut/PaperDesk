@@ -182,15 +182,15 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("virtualKeyboardLayout !== null", button)
         self.assertNotIn("x:", button)
 
-    def test_xovi_autostart_is_packaged_without_an_ordering_cycle(self):
-        service = (RELEASE / "payload/system/xovi-autostart.service").read_text()
-        self.assertIn("ExecStart=/home/root/xovi/start", service)
-        self.assertIn("After=local-fs.target", service)
-        self.assertNotIn("After=xovi-tripletap.service", service)
+    def test_legacy_xovi_autostart_is_removed_without_touching_user_services(self):
+        self.assertFalse((RELEASE / "payload/system/xovi-autostart.service").exists())
         installer = (RELEASE / "install.sh").read_text()
-        self.assertIn("systemctl enable xovi-autostart.service", installer)
+        self.assertNotIn("systemctl enable xovi-autostart.service", installer)
+        self.assertIn('grep -Fxq \'Description=Start Xovi extensions after the reMarkable interface\'', installer)
+        self.assertIn("legacy-autostart-removed", installer)
+        self.assertIn('if [ -f "$STATE/current-version" ]', installer)
         uninstaller = (RELEASE / "uninstall.sh").read_text()
-        self.assertIn("systemctl disable xovi-autostart.service", uninstaller)
+        self.assertNotIn("xovi-autostart.service", uninstaller)
 
     def test_updater_requires_signed_and_hashed_official_packages(self):
         system = RELEASE / "payload/system"
@@ -207,7 +207,9 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("version_is_newer", agent)
         self.assertIn("52428800", agent)
         self.assertIn("The update size does not match", agent)
-        self.assertIn("systemctl --no-block restart xovi-autostart.service", agent)
+        self.assertIn('systemd-run --unit="paperdesk-xovi-reload-$$"', agent)
+        self.assertIn("--on-active=2s", agent)
+        self.assertNotIn("restart xovi-autostart.service", agent)
         self.assertIn("^/download/paperdesk-", agent)
         self.assertNotIn("eval ", agent)
         self.assertTrue((system / "paperdesk-release-public.pem").is_file())

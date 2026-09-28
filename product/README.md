@@ -79,8 +79,9 @@ The default address is `10.11.99.1`. Pass another address as an argument:
 The tablet-side installer saves previous versions under
 `/home/root/.local/share/paperdesk/backups`, preserves connection
 profiles, and does not delete user data. The computer installer restarts
-XOVI so AppLoad does not use stale resources. Installation also enables
-`xovi-autostart`, which starts XOVI and PaperDesk after a full device reboot.
+XOVI so AppLoad does not use stale resources. For recovery safety on rM2,
+PaperDesk deliberately does not start XOVI during boot. After a reboot, run
+`/home/root/xovi/start` over SSH or use the community `xovi-tripletap` tool.
 
 ## Install directly on the tablet
 

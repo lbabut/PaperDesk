@@ -99,15 +99,17 @@ up the previous state before replacing modules. After XOVI restarts, open
 AppLoad on the tablet. Terminal, Web, RDP, RSS, and Care should appear.
 Confirm that other apps remain visible, then open all five PaperDesk modules.
 
-Check the installed version and automatic startup:
+Check the installed version, update watcher, and absence of PaperDesk's old
+boot-time XOVI service:
 
 ```sh
 ssh root@10.11.99.1 'cat /home/root/.local/share/paperdesk/current-version;
-  systemctl is-enabled xovi-autostart.service;
+  systemctl is-enabled xovi-autostart.service 2>/dev/null || true;
   systemctl is-enabled paperdesk-update.path'
 ```
 
-The version should be `1.1.4`; both services should report `enabled`.
+The version should be `1.1.9`; `xovi-autostart.service` should report
+`disabled` or `not-found`, while `paperdesk-update.path` should report `enabled`.
 Connection profiles remain in user data directories on the tablet.
 
 ## Uninstall and return to the previous state

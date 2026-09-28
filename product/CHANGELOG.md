@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.9 — 2026-09-28
+
+- Removed PaperDesk's automatic XOVI startup during boot to preserve a stock-UI recovery path on reMarkable 2.
+- Existing installations remove only PaperDesk's known legacy systemd unit during update.
+- Signed updates use a one-shot transient reload and do not create boot persistence.
+- Documented deliberate SSH or xovi-tripletap startup after a reboot.
+
 ## 1.1.4 — release candidate
 
 - The graphical Linux installer detects existing apps.

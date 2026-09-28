@@ -49,6 +49,9 @@ class UpdaterIntegrationTests(unittest.TestCase):
         fake_systemctl = self.bin / "systemctl"
         fake_systemctl.write_text("#!/bin/sh\nexit 0\n")
         fake_systemctl.chmod(fake_systemctl.stat().st_mode | stat.S_IXUSR)
+        fake_systemd_run = self.bin / "systemd-run"
+        fake_systemd_run.write_text("#!/bin/sh\nexit 0\n")
+        fake_systemd_run.chmod(fake_systemd_run.stat().st_mode | stat.S_IXUSR)
         fake_uninstaller = self.bin / "paperdesk-uninstall"
         fake_uninstaller.write_text('#!/bin/sh\nprintf "%s\\n" "$1" > "$PAPERDESK_TEST_UNINSTALL_MARKER"\n')
         fake_uninstaller.chmod(fake_uninstaller.stat().st_mode | stat.S_IXUSR)
