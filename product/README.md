@@ -84,7 +84,8 @@ pelnym restarcie urzadzenia.
 
 ## Instalacja bezposrednio na tablecie
 
-Skopiuj katalog na tablet i jako root uruchom `./install.sh`, a nastepnie
+Szczegolowa instrukcja reczna (Linux, USB, SSH, weryfikacja i deinstalacja)
+jest w `MANUAL-INSTALL.md`. Skopiuj katalog na tablet i jako root uruchom `./install.sh`, a nastepnie
 `/home/root/xovi/start`. Ponowne uruchomienie XOVI zamyka otwarte aplikacje,
 wiec najpierw zakoncz prace nad dokumentami.
 

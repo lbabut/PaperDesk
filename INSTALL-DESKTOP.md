@@ -17,7 +17,8 @@ have that original snapshot, so preserve their existing backups.
 
 The code stays in process memory. It is not copied to the tablet or stored
 in the installer package. The old command-line installer in
-`product/install-from-computer.sh` remains available.
+`product/install-from-computer.sh` remains available. For every manual step,
+see [the manual installation guide](product/MANUAL-INSTALL.md).
 
 ## Make the Linux bundle
 

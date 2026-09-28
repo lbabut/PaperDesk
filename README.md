@@ -26,7 +26,8 @@ The currently validated release is **1.1.3**, tested on reMarkable OS
 
 See [the desktop installer guide](INSTALL-DESKTOP.md) for the graphical
 installer. The tablet-side and command-line instructions remain in
-[product/README.md](product/README.md).
+[product/README.md](product/README.md). Step-by-step USB/SSH instructions are in
+[the manual installation guide](product/MANUAL-INSTALL.md).
 
 ## Verify
 
