@@ -38,6 +38,11 @@ constexpr int CLOSE_X = 1210;
 constexpr int CLOSE_W = 176;
 constexpr int SHORTCUTS_X = 980;
 constexpr int SHORTCUTS_W = 216;
+constexpr int DAMAGE_TILE_W = 176;
+constexpr int DAMAGE_TILE_H = 176;
+constexpr int DAMAGE_COLS = (W + DAMAGE_TILE_W - 1) / DAMAGE_TILE_W;
+constexpr int DAMAGE_ROWS = (RDP_H + DAMAGE_TILE_H - 1) / DAMAGE_TILE_H;
+constexpr int DAMAGE_TILE_COUNT = DAMAGE_COLS * DAMAGE_ROWS;
 
 struct App;
 struct PaperContext {
@@ -92,6 +97,8 @@ struct App {
     int dirtyY1 = RDP_H;
     int dirtyX2 = 0;
     int dirtyY2 = 0;
+    std::array<uint8_t,DAMAGE_TILE_COUNT> dirtyTiles{};
+    int dirtyTileCount = 0;
     std::chrono::steady_clock::time_point lastFrame = std::chrono::steady_clock::now();
     std::chrono::steady_clock::time_point dirtySince = std::chrono::steady_clock::now();
     std::chrono::steady_clock::time_point lastDirty = std::chrono::steady_clock::now();
@@ -384,6 +391,19 @@ BOOL endPaint(rdpContext* c) {
         a.lastDirty=now;
         a.dirtyX1=std::min(a.dirtyX1,x); a.dirtyY1=std::min(a.dirtyY1,y);
         a.dirtyX2=std::max(a.dirtyX2,x2); a.dirtyY2=std::max(a.dirtyY2,y2);
+        const int firstCol=x/DAMAGE_TILE_W;
+        const int lastCol=(x2-1)/DAMAGE_TILE_W;
+        const int firstRow=y/DAMAGE_TILE_H;
+        const int lastRow=(y2-1)/DAMAGE_TILE_H;
+        for(int row=firstRow;row<=lastRow;++row) {
+            for(int col=firstCol;col<=lastCol;++col) {
+                const int tile=row*DAMAGE_COLS+col;
+                if(!a.dirtyTiles[tile]) {
+                    a.dirtyTiles[tile]=1;
+                    ++a.dirtyTileCount;
+                }
+            }
+        }
         a.dirty=true;
     };
     if(wnd->ninvalid>0 && wnd->cinvalid) {
@@ -406,15 +426,15 @@ void flushRemoteFrame(App& a, bool force=false) {
         // Large desktop changes are deliberately much slower: QTFB/e-ink can
         // display them reliably, but cannot consume several full frames per
         // second without composing pieces of different frames on screen.
-        const int dirtyW=std::max(0,a.dirtyX2-a.dirtyX1);
-        const int dirtyH=std::max(0,a.dirtyY2-a.dirtyY1);
-        const bool largeFrame=static_cast<int64_t>(dirtyW)*dirtyH>
-                              static_cast<int64_t>(W)*RDP_H/3;
-        const auto minFrameGap=largeFrame ? std::chrono::milliseconds(1400)
+        const bool largeFrame=a.dirtyTileCount>DAMAGE_TILE_COUNT/3;
+        // Dense frames are one atomic e-ink transaction.  Publishing them
+        // faster than the panel consumes them queues stale frames and makes a
+        // healthy RDP session look frozen.
+        const auto minFrameGap=largeFrame ? std::chrono::milliseconds(3200)
                                           : std::chrono::milliseconds(300);
-        const auto quietPeriod=largeFrame ? std::chrono::milliseconds(260)
+        const auto quietPeriod=largeFrame ? std::chrono::milliseconds(420)
                                           : std::chrono::milliseconds(120);
-        const auto maxLatency=largeFrame ? std::chrono::milliseconds(2200)
+        const auto maxLatency=largeFrame ? std::chrono::milliseconds(4200)
                                          : std::chrono::milliseconds(900);
         if(now-a.lastFrame<minFrameGap) return;
         const bool burstSettled=now-a.lastDirty>=quietPeriod;
@@ -425,36 +445,75 @@ void flushRemoteFrame(App& a, bool force=false) {
     if(!gdi->primary_buffer) return;
     const float vx=a.viewX, vy=a.viewY, z=a.zoom;
     const float visibleW=W/z, visibleH=RDP_H/z;
-    const int sx1=std::clamp<int>(std::floor(std::max<float>(a.dirtyX1,vx)),0,gdi->width);
-    const int sy1=std::clamp<int>(std::floor(std::max<float>(a.dirtyY1,vy)),0,gdi->height);
-    const int sx2=std::clamp<int>(std::ceil(std::min<float>(a.dirtyX2,vx+visibleW)),sx1,gdi->width);
-    const int sy2=std::clamp<int>(std::ceil(std::min<float>(a.dirtyY2,vy+visibleH)),sy1,gdi->height);
-    const int dx1=std::clamp<int>(std::floor((sx1-vx)*z),0,W);
-    const int dy1=std::clamp<int>(std::floor((sy1-vy)*z),0,RDP_H);
-    const int dx2=std::clamp<int>(std::ceil((sx2-vx)*z),dx1,W);
-    const int dy2=std::clamp<int>(std::ceil((sy2-vy)*z),dy1,RDP_H);
     auto* dst=reinterpret_cast<uint16_t*>(a.fb.shm);
-    int changedX1=W, changedY1=RDP_H, changedX2=0, changedY2=0;
-    for(int dy=dy1;dy<dy2;++dy) {
-        int sy=std::clamp<int>(vy+dy/z,0,gdi->height-1);
-        uint16_t* out=dst+(dy+BAR_H)*W+dx1;
-        for(int dx=dx1;dx<dx2;++dx,++out) {
-            int sx=std::clamp<int>(vx+dx/z,0,gdi->width-1);
-            const uint8_t* src=gdi->primary_buffer+sy*gdi->stride+sx*4;
-            const uint8_t lum=static_cast<uint8_t>((77*src[2]+150*src[1]+29*src[0])>>8);
-            const uint16_t pixel=gray565(lum);
-            if(*out!=pixel) {
-                *out=pixel;
-                changedX1=std::min(changedX1,dx); changedY1=std::min(changedY1,dy);
-                changedX2=std::max(changedX2,dx+1); changedY2=std::max(changedY2,dy+1);
+    struct ChangedRow { int x1=W,y1=RDP_H,x2=0,y2=0; bool changed=false; };
+    std::array<ChangedRow,DAMAGE_ROWS> changedRows{};
+    int changedTileCount=0;
+    for(int tile=0;tile<DAMAGE_TILE_COUNT;++tile) {
+        if(!a.dirtyTiles[tile]) continue;
+        const int tileRow=tile/DAMAGE_COLS;
+        const int tileCol=tile%DAMAGE_COLS;
+        const int tx1=tileCol*DAMAGE_TILE_W;
+        const int ty1=tileRow*DAMAGE_TILE_H;
+        const int tx2=std::min(W,tx1+DAMAGE_TILE_W);
+        const int ty2=std::min(RDP_H,ty1+DAMAGE_TILE_H);
+        const int sx1=std::clamp<int>(std::floor(std::max<float>(tx1,vx)),0,gdi->width);
+        const int sy1=std::clamp<int>(std::floor(std::max<float>(ty1,vy)),0,gdi->height);
+        const int sx2=std::clamp<int>(std::ceil(std::min<float>(tx2,vx+visibleW)),sx1,gdi->width);
+        const int sy2=std::clamp<int>(std::ceil(std::min<float>(ty2,vy+visibleH)),sy1,gdi->height);
+        const int dx1=std::clamp<int>(std::floor((sx1-vx)*z),0,W);
+        const int dy1=std::clamp<int>(std::floor((sy1-vy)*z),0,RDP_H);
+        const int dx2=std::clamp<int>(std::ceil((sx2-vx)*z),dx1,W);
+        const int dy2=std::clamp<int>(std::ceil((sy2-vy)*z),dy1,RDP_H);
+        int changedX1=W,changedY1=RDP_H,changedX2=0,changedY2=0;
+        for(int dy=dy1;dy<dy2;++dy) {
+            const int sy=std::clamp<int>(vy+dy/z,0,gdi->height-1);
+            uint16_t* out=dst+(dy+BAR_H)*W+dx1;
+            for(int dx=dx1;dx<dx2;++dx,++out) {
+                const int sx=std::clamp<int>(vx+dx/z,0,gdi->width-1);
+                const uint8_t* src=gdi->primary_buffer+sy*gdi->stride+sx*4;
+                const uint8_t lum=static_cast<uint8_t>((77*src[2]+150*src[1]+29*src[0])>>8);
+                const uint16_t pixel=gray565(lum);
+                if(*out!=pixel) {
+                    *out=pixel;
+                    changedX1=std::min(changedX1,dx); changedY1=std::min(changedY1,dy);
+                    changedX2=std::max(changedX2,dx+1); changedY2=std::max(changedY2,dy+1);
+                }
             }
         }
+        if(changedX2>changedX1 && changedY2>changedY1) {
+            auto& row=changedRows[tileRow];
+            row.changed=true;
+            row.x1=std::min(row.x1,changedX1); row.y1=std::min(row.y1,changedY1);
+            row.x2=std::max(row.x2,changedX2); row.y2=std::max(row.y2,changedY2);
+            ++changedTileCount;
+        }
     }
-    if(changedX2>changedX1 && changedY2>changedY1) {
-        a.fb.sendPartialUpdate(changedX1,changedY1+BAR_H,
-                               changedX2-changedX1,changedY2-changedY1);
+    if(changedTileCount>DAMAGE_TILE_COUNT/3) {
+        // One complete notification is cheaper and atomic for a dense frame.
+        a.fb.sendCompleteUpdate();
+    } else {
+        // Sparse, distant changes stay sparse instead of becoming one giant
+        // bounding rectangle.  Pairing adjacent rows caps the QTFB message
+        // count at five per flush.
+        for(int row=0;row<DAMAGE_ROWS;) {
+            if(!changedRows[row].changed) { ++row; continue; }
+            ChangedRow merged=changedRows[row];
+            int next=row+1;
+            while(next<DAMAGE_ROWS && changedRows[next].changed && next-row<2) {
+                merged.x1=std::min(merged.x1,changedRows[next].x1);
+                merged.y1=std::min(merged.y1,changedRows[next].y1);
+                merged.x2=std::max(merged.x2,changedRows[next].x2);
+                merged.y2=std::max(merged.y2,changedRows[next].y2);
+                ++next;
+            }
+            a.fb.sendPartialUpdate(merged.x1,merged.y1+BAR_H,
+                                   merged.x2-merged.x1,merged.y2-merged.y1);
+            row=next;
+        }
     }
     a.dirty=false; a.dirtyX1=W; a.dirtyY1=RDP_H; a.dirtyX2=0; a.dirtyY2=0;
+    a.dirtyTiles.fill(0); a.dirtyTileCount=0;
     a.lastFrame=now;
 }
 
@@ -667,6 +726,8 @@ void redrawZoomedView(App& a) {
     a.dirtyY1=std::max(0,int(std::floor(a.viewY)));
     a.dirtyX2=std::min(W,int(std::ceil(a.viewX+W/a.zoom)));
     a.dirtyY2=std::min(RDP_H,int(std::ceil(a.viewY+RDP_H/a.zoom)));
+    a.dirtyTiles.fill(1);
+    a.dirtyTileCount=DAMAGE_TILE_COUNT;
     flushRemoteFrame(a,true);
     a.status="CONNECTED  "+std::to_string(int(std::lround(a.zoom*100)))+"%";
     drawBar(a);
@@ -795,7 +856,9 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
 
 void pollInput(App& a) {
     qtfb::ServerMessage msg{};
-    while(a.fb.pollServerPacket(msg)) {
+    // A repaint/input storm must not starve FreeRDP network processing.
+    // Remaining packets are handled on the next 12 ms event-loop turn.
+    for(int packetBudget=0;packetBudget<64 && a.fb.pollServerPacket(msg);++packetBudget) {
         if(msg.type!=MESSAGE_USERINPUT) continue;
         const auto& u=msg.userInput;
         if(a.mode==Mode::Remote && (u.inputType==INPUT_TOUCH_PRESS || u.inputType==INPUT_TOUCH_UPDATE || u.inputType==INPUT_TOUCH_RELEASE)) {

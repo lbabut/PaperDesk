@@ -595,6 +595,40 @@ case "$TARGET" in
         capture_screen "$ARTIFACT_DIR/rdp-keyboard.png"
         echo "PASS: physical tablet taps opened RDP and its keyboard"
         ;;
+    rdp-live)
+        tap 360 1250
+        wait_for_log 'PaperDesk touch launching paperrdp-login' 10
+        sleep 3
+        tap 700 880
+        wait_for_log 'PaperDesk RDP action connect' 10
+        for n in $(seq 1 30); do
+            if remote 'pidof paperrdp >/dev/null'; then break; fi
+            sleep 1
+        done
+        remote 'pidof paperrdp >/dev/null'
+        sleep 12
+        remote 'p=$(pidof paperrdp); p=${p%% *}; grep -Eq "[[:space:]]01[[:space:]]" /proc/$p/net/tcp'
+        assert_tablet_healthy 'live RDP connection'
+        tap 1095 56
+        sleep 3
+        remote 'pidof paperrdp >/dev/null'
+        tap 1095 56
+        sleep 2
+        tap 870 56
+        sleep 3
+        remote 'pidof paperrdp >/dev/null'
+        tap 702 1690
+        sleep 12
+        assert_tablet_healthy 'live RDP overlay and refresh soak'
+        remote 'pidof paperrdp >/dev/null'
+        tap 1295 56
+        sleep 3
+        if remote 'pidof paperrdp >/dev/null'; then
+            echo 'Live RDP did not close after the physical Close tap' >&2
+            exit 1
+        fi
+        echo "PASS: live RDP connected, survived keyboard/shortcut overlays and refresh soak, then closed from a physical tap"
+        ;;
     rss)
         tap 1040 1250
         wait_for_log 'PaperDesk touch launching paperrss' 10

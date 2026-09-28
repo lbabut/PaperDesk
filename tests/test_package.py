@@ -233,9 +233,17 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("burstSettled", source)
         self.assertIn("maxLatencyReached", source)
         self.assertIn("largeFrame", source)
-        self.assertIn("std::chrono::milliseconds(1400)", source)
+        self.assertIn("DAMAGE_TILE_COUNT", source)
+        self.assertIn("std::chrono::milliseconds(3200)", source)
+        self.assertIn("changedTileCount>DAMAGE_TILE_COUNT/3", source)
+        self.assertIn("a.fb.sendCompleteUpdate();", source)
+        self.assertIn("next-row<2", source)
         self.assertIn("if(*out!=pixel)", source)
-        self.assertIn("changedX2-changedX1,changedY2-changedY1", source)
+        self.assertIn("merged.x2-merged.x1,merged.y2-merged.y1", source)
+
+    def test_rdp_event_storm_has_a_per_turn_budget(self):
+        source = (RELEASE / "payload/apps/paperrdp/paperrdp.cpp").read_text()
+        self.assertIn("packetBudget<64", source)
 
     def test_rdp_gestures_publish_only_the_final_frame(self):
         source = (RELEASE / "payload/apps/paperrdp/paperrdp.cpp").read_text()
