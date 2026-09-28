@@ -53,6 +53,9 @@ Decision: the browser keyboard appears only when editing the address. Mobile rem
 | --- | --- | --- | --- |
 | Server / user / password | Yes | Required connection credentials | Explain local profile storage |
 | Port | Yes | Support non-default RDP endpoints | Documentation only; advanced field |
+| Saved profiles | Yes | Switch between recent computers without retyping credentials | Explain local-only storage |
+| Scale | Yes | Lower the negotiated desktop resolution for faster rendering | Yes; recommend 75% on rM2 |
+| Colors | Yes | Reduce RDP colour depth and bandwidth | Yes; recommend 256 colours on e-ink |
 | Connect | Yes | Primary login action | No |
 | Keyboard | Yes | Recover or summon native AppLoad input | Yes; key usability feature |
 | Close | Yes | Always-visible escape from login/session/error states | No |
@@ -63,7 +66,7 @@ Decision: the browser keyboard appears only when editing the address. Mobile rem
 | Pan / pinch | Yes | Move around and resize a desktop larger than the tablet | Yes |
 | Back in shortcut/error views | Yes | Return without dropping the session | No |
 
-Decision: keep the connected-session chrome to two primary buttons: Shortcuts and Close. Keyboard access remains in the AppLoad pull-down because drawing a second keyboard caused duplication and stale overlays.
+Decision: keep the connected-session chrome to two primary buttons: Shortcuts and Close. Keyboard access remains in the AppLoad pull-down because drawing a second keyboard caused duplication and stale overlays. Connection profiles retain their own Scale and Colors choices; lower values reduce remote pixels and bandwidth without changing the monochrome panel output.
 
 ## RSS
 

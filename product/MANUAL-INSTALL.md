@@ -1,9 +1,7 @@
 # PaperDesk Apps — manual installation on reMarkable 2
 
-These instructions cover manual installation of PaperDesk 1.1.4 from a Linux
+These instructions cover manual installation of PaperDesk 1.2.0 from a Linux
 computer over USB and SSH. The graphical installer is not required.
-Version 1.1.4 is a release candidate; installation on a clean physical tablet
-has not yet been fully tested.
 
 ## 1. Prepare the tablet and computer
 
@@ -28,9 +26,9 @@ unexpectedly, stop the installation.
 In the directory containing the downloaded archive:
 
 ```sh
-sha256sum paperdesk-linux-installer-1.1.4.tar.gz
-tar -xzf paperdesk-linux-installer-1.1.4.tar.gz
-cd paperdesk-linux-installer-1.1.4/product
+sha256sum paperdesk-linux-installer-1.2.0.tar.gz
+tar -xzf paperdesk-linux-installer-1.2.0.tar.gz
+cd paperdesk-linux-installer-1.2.0/product
 sha256sum -c SHA256SUMS
 ```
 
@@ -62,7 +60,7 @@ ssh root@10.11.99.1 'cat /home/root/.local/share/paperdesk/current-version 2>/de
 ```
 
 PaperDesk replaces only those AppLoad IDs. Other apps stay on the tablet.
-On a first installation of 1.1.4, originals of replaced directories are
+On a first installation, originals of replaced directories are
 saved in `/home/root/.local/share/paperdesk/original`. If you are upgrading
 an older PaperDesk installation without `original-recorded`, keep its
 earlier backups. The new installer cannot reconstruct the original LiTerm
@@ -108,7 +106,7 @@ ssh root@10.11.99.1 'cat /home/root/.local/share/paperdesk/current-version;
   systemctl is-enabled paperdesk-update.path'
 ```
 
-The version should be `1.1.9`; `xovi-autostart.service` should report
+The version should be `1.2.0`; `xovi-autostart.service` should report
 `disabled` or `not-found`, while `paperdesk-update.path` should report `enabled`.
 Connection profiles remain in user data directories on the tablet.
 
@@ -122,7 +120,7 @@ ssh root@10.11.99.1 'sh /home/root/paperdesk-install-manual/uninstall.sh'
 ssh root@10.11.99.1 '/home/root/xovi/start'
 ```
 
-The uninstaller restores apps that existed before the first 1.1.4 install
+The uninstaller restores apps that existed before the first PaperDesk install
 and have an original snapshot. Connection data and backups remain. If an
 older PaperDesk installation has no `original-recorded` file, do not assume
 that uninstall will restore stock LiTerm; use a saved copy or the

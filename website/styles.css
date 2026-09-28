@@ -81,6 +81,9 @@ a{color:inherit}
 .download{display:flex;align-items:center;justify-content:space-between;gap:30px;padding:34px 0;border-bottom:1px solid var(--ink)}
 .download h3{margin:0 0 6px;font:500 28px Georgia,serif}
 .download p{margin:0;color:var(--muted)}
+.download-actions{display:flex;flex-direction:column;align-items:flex-end}
+.download-actions .hero-actions{margin-top:0}
+.download-count{margin-top:12px;color:var(--muted);font:700 13px ui-monospace,monospace;letter-spacing:.04em}
 .footer{padding:38px 0 60px;display:flex;justify-content:space-between;gap:30px;color:var(--muted);font-size:12px;line-height:1.5}
 .footer strong{color:var(--ink);letter-spacing:.14em}
 .footer div:last-child{text-align:right;max-width:520px}
@@ -106,6 +109,7 @@ a{color:inherit}
 .tour-shot,.tour-shot.portrait{height:320px;min-height:0}
 .feature{min-height:250px}
 .download{align-items:flex-start;flex-direction:column}
+.download-actions{align-items:flex-start}
 .footer{flex-direction:column}
 .footer div:last-child{text-align:left}
 }

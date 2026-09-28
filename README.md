@@ -5,11 +5,11 @@ It bundles five touch-first tools designed around the limits of e-ink:
 
 - Terminal — SSH, system keyboard, gestures, and common shortcuts.
 - Web — static, reader-first browsing with mobile mode and optional images.
-- RDP — a monochrome FreeRDP client with pan, zoom, and keyboard shortcuts.
+- RDP — FreeRDP with saved profiles, performance presets, pan, zoom, and shortcuts.
 - RSS — RSS/Atom feeds, full-text reading, favourites, and offline cache.
 - Care — signed updates, release notes, automatic verification, and rollback backups.
 
-The currently validated release is **1.1.9**, tested on reMarkable OS
+The currently validated release is **1.2.0**, tested on reMarkable OS
 3.29.0.149 with XOVI 0.3.3, AppLoad 0.6.0, and LiTerm 0.1.7.
 
 ## Repository layout

@@ -13,6 +13,7 @@ Rectangle {
     property var windowArchetype: Qt.createComponent("window.qml")
     property var absoluteRoot: _appLoadView
     property var virtualKeyboardRef: null
+    property var paperdeskWindowStack: []
 
     signal requestClose
 
@@ -109,6 +110,43 @@ Rectangle {
         };
     }
 
+    function registerPaperDeskWindow(win) {
+        let next = [];
+        for(let existing of paperdeskWindowStack) {
+            if(existing && !existing.closing)
+                next.push(existing);
+        }
+        if(next.length > 0) {
+            const previous = next[next.length - 1];
+            if(previous.deactivateVirtualKeyboard)
+                previous.deactivateVirtualKeyboard();
+            if(previous.hideSystemKeyboard)
+                previous.hideSystemKeyboard();
+            // A fullscreen AppLoad window remains rendered below the next one.
+            // Disable it as well, otherwise passive pointer handlers in both
+            // applications can react to one physical touch.
+            previous.enabled = false;
+        }
+        next.push(win);
+        paperdeskWindowStack = next;
+    }
+
+    function unregisterPaperDeskWindow(win) {
+        let next = [];
+        for(let existing of paperdeskWindowStack) {
+            if(existing && existing !== win && !existing.closing)
+                next.push(existing);
+        }
+        paperdeskWindowStack = next;
+        if(next.length === 0)
+            return;
+        const previous = next[next.length - 1];
+        previous.enabled = true;
+        if(previous.notifyGainedFocus)
+            previous.notifyGainedFocus();
+        previous.forceActiveFocus();
+    }
+
     function launchWindow(modelData, extraArgs, extraEnv) {
         const application = snapshotApplication(modelData);
         if(application === null) {
@@ -164,6 +202,7 @@ Rectangle {
             win.closed.connect(() => {
                 const closingWindow = win;
                 const keyboardConfig = closingWindow.keyboardConfig;
+                unregisterPaperDeskWindow(closingWindow);
                 if(_appLoadView.virtualKeyboardRef &&
                         _appLoadView.virtualKeyboardRef.active &&
                         _appLoadView.virtualKeyboardRef.config === keyboardConfig) {
@@ -182,6 +221,7 @@ Rectangle {
                     library.reloadList();
                 });
             });
+            registerPaperDeskWindow(win);
 
         }
         if(application.externalType == 0 /* INTERNAL */) {

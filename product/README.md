@@ -1,4 +1,4 @@
-# PaperDesk 1.1.4 (release candidate)
+# PaperDesk 1.2.0
 
 PaperDesk turns a reMarkable 2 into a quiet, monochrome network workspace.
 The bundle adds five apps directly to the AppLoad list and keeps their
@@ -12,8 +12,8 @@ hidden from users.
 - **Web Reader** — simplified pages without scripts, a remembered setting
   for showing or hiding pictures, compact cards with titles above images,
   pinch zoom, and e-ink scrolling without animation.
-- **Remote Desktop** — FreeRDP, touch, keyboard, zoom, panning, and a
-  locally stored connection profile.
+- **Remote Desktop** — FreeRDP, touch, keyboard, zoom, panning, recent
+  profiles, and per-profile resolution and colour-depth presets.
 - **RSS Reader** — RSS/Atom feeds, custom sources, favourites, read articles,
   full text, and an offline cache.
 - **PaperDesk Care** — installed and available versions, release notes, and
@@ -92,7 +92,8 @@ work on the tablet first. See `MANUAL-INSTALL.md` for the complete procedure.
 ## Privacy and security
 
 - Terminal verifies SSH host keys and does not save passwords.
-- PaperRDP stores its profile in a root-owned directory with mode `0600`.
+- PaperRDP stores up to eight recent profiles in a root-owned directory with
+  mode `0600`. Saved passwords are locally obfuscated, not encrypted.
 - RSS stores feeds and articles locally in xochitl settings.
 - When pictures are enabled, PaperWeb sends their public URLs to
   `images.weserv.nl` to work around the tablet libraries' outdated TLS,
@@ -108,7 +109,7 @@ work on the tablet first. See `MANUAL-INSTALL.md` for the complete procedure.
 ## Uninstall
 
 `./uninstall.sh` removes PaperDesk apps and restores original AppLoad
-resources when available. The 1.1.4 installer also saves original app
+resources when available. The installer also saves original app
 directories on a first install and restores them on uninstall. Connection
 data and backups are deliberately retained. Restart XOVI afterwards.
 Older installations without the original snapshot may need a separately
@@ -123,9 +124,7 @@ compatibility patch, and the PaperRDP client are shipped in the package.
 
 ## Release status
 
-Release 1.1.3 was tested on a physical reMarkable 2 with OS 3.29.0.149:
+Release 1.2.0 was tested on a physical reMarkable 2 with OS 3.29.0.149:
 all module launches and safe menu actions, system keyboard, persistent
 settings, RSS refresh and full-text retrieval, AppLoad window cleanup,
-and physical scroll and pinch gestures. Version 1.1.4 changes the
-installation flow and still needs clean-device installation and removal
-testing before publication.
+physical scroll and pinch gestures, and scaled RDP sessions.

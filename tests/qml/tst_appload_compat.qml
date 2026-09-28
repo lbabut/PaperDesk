@@ -163,6 +163,39 @@ Item {
             compare(appLoadLoader.item.children.length, childCount)
         }
 
+        function test_window_stack_blocks_background_input_and_restores_focus() {
+            const first = Qt.createQmlObject(
+                'import QtQuick 2.15; Item {' +
+                ' property bool closing: false; property bool resumed: false;' +
+                ' function deactivateVirtualKeyboard() {}' +
+                ' function hideSystemKeyboard() {}' +
+                ' function notifyGainedFocus() { resumed = true }' +
+                '}', scene)
+            const second = Qt.createQmlObject(
+                'import QtQuick 2.15; Item {' +
+                ' property bool closing: false;' +
+                ' function deactivateVirtualKeyboard() {}' +
+                ' function hideSystemKeyboard() {}' +
+                '}', scene)
+
+            appLoadLoader.item.paperdeskWindowStack = []
+            appLoadLoader.item.registerPaperDeskWindow(first)
+            verify(first.enabled)
+            appLoadLoader.item.registerPaperDeskWindow(second)
+            verify(!first.enabled)
+            verify(second.enabled)
+
+            second.closing = true
+            appLoadLoader.item.unregisterPaperDeskWindow(second)
+            verify(first.enabled)
+            verify(first.resumed)
+            compare(appLoadLoader.item.paperdeskWindowStack.length, 1)
+
+            appLoadLoader.item.paperdeskWindowStack = []
+            first.destroy()
+            second.destroy()
+        }
+
         function test_technical_and_redundant_apps_are_hidden_from_launcher() {
             verify(!appLoadLoader.item.isVisibleLauncherApplication({ id: "paperdesk" }))
             verify(!appLoadLoader.item.isVisibleLauncherApplication({ id: "external::paperrdp" }))

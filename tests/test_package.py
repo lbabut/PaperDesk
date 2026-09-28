@@ -37,6 +37,7 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn('objectName: "paperdeskKeyboardClickTarget"', window)
         self.assertIn('"HIDE KEYBOARD"', window)
         self.assertIn("toggleVirtualKeyboard()", window)
+        self.assertIn("function notifyGainedFocus()", window)
         self.assertNotIn('"MENU"', window)
         for unsupported in (
             "sendFlippedRotationToClient",
@@ -59,6 +60,10 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn('category: "PaperDeskE2E"', appload)
         self.assertIn("PaperDesk E2E autostart", appload)
         self.assertIn("library.reloadList()", appload)
+        self.assertIn("registerPaperDeskWindow(win)", appload)
+        self.assertIn("unregisterPaperDeskWindow(closingWindow)", appload)
+        self.assertIn("previous.enabled = false", appload)
+        self.assertIn("previous.notifyGainedFocus()", appload)
         self.assertIn("stableApplicationId", appload)
         self.assertIn('application.id !== "paperdesk"', appload)
         self.assertIn('application.id !== "external::paperrdp"', appload)
@@ -98,6 +103,8 @@ class PackageRegressionTests(unittest.TestCase):
             "paperrdp-login": (
                 "rdpCloseButton", "rdpKeyboardButton", "serverInput",
                 "usernameInput", "passwordInput", "portInput", "connectButton",
+                "rdpSavedProfilesList", "rdpSavedProfileButton_",
+                "rdpScaleButton_", "rdpColorDepthButton_",
             ),
             "paperrss": (
                 "rssRefreshButton", "rssAddFeedViewButton", "rssCloseButton",
@@ -163,6 +170,11 @@ class PackageRegressionTests(unittest.TestCase):
         installer = (RELEASE / "install.sh").read_text()
         self.assertIn('VERSION=$(tr -d \'\\r\\n\' < "$SCRIPT_DIR/VERSION")', installer)
         self.assertNotIn('VERSION="1.1.4"', installer)
+
+    def test_care_displays_the_packaged_version(self):
+        version = (RELEASE / "VERSION").read_text().strip()
+        care = (RELEASE / "payload/apps/papercare/ui/main.qml").read_text()
+        self.assertIn(f'readonly property string currentVersion: "{version}"', care)
 
     def test_appload_06_accepts_an_unset_aspect_ratio(self):
         qml = (RELEASE / "payload/system/paperdesk-appload.qml").read_text()
@@ -258,6 +270,32 @@ class PackageRegressionTests(unittest.TestCase):
         source = (RELEASE / "payload/apps/paperrdp/paperrdp.cpp").read_text()
         self.assertIn("packetBudget<64", source)
 
+    def test_rdp_profiles_scale_and_color_depth_are_end_to_end(self):
+        source = (RELEASE / "payload/apps/paperrdp/paperrdp.cpp").read_text()
+        login = (RELEASE / "payload/apps/paperrdp-login/ui/main.qml").read_text()
+        for value in ("scale_percent", "color_depth", "--scale-percent", "--color-depth", "--domain-hex"):
+            self.assertIn(value, source)
+            self.assertIn(value, login)
+        self.assertIn('/home/root/.config/paperrdp/profiles', source)
+        self.assertIn("profiles.size()>8", source)
+        self.assertIn("writePrivateFile(profilesPath,profilesTemp,listData)", source)
+        self.assertIn("0600", source)
+        self.assertIn("sessionWidth=static_cast<UINT32>(W*a.profile.scalePercent/100)", source)
+        self.assertIn("sessionHeight=static_cast<UINT32>(RDP_H*a.profile.scalePercent/100)", source)
+        self.assertIn("FreeRDP_ColorDepth,a.profile.colorDepth", source)
+        self.assertIn("FreeRDP_AllowUnanouncedOrdersFromServer,TRUE", source)
+        self.assertIn("const int rx=remoteX(a,x)", source)
+        self.assertIn("const int ry=remoteY(a,y)", source)
+        self.assertIn("outputScaleX(a)", source)
+        self.assertNotIn("FreeRDP_DesktopScaleFactor", source)
+        for flag in (
+            "FreeRDP_DisableWallpaper", "FreeRDP_AllowFontSmoothing",
+            "FreeRDP_DisableFullWindowDrag", "FreeRDP_DisableMenuAnims",
+            "FreeRDP_DisableThemes", "FreeRDP_AllowDesktopComposition",
+        ):
+            self.assertIn(flag, source)
+        self.assertIn("Lower values are faster", login)
+
     def test_rdp_touch_mouse_gestures_are_explicit(self):
         source = (RELEASE / "payload/apps/paperrdp/paperrdp.cpp").read_text()
         self.assertIn("beginDoubleTap", source)
@@ -266,6 +304,11 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("maybeSendLongPress", source)
         self.assertIn("PTR_FLAGS_BUTTON2", source)
         self.assertIn("std::chrono::milliseconds(700)", source)
+        zoomed_press = source.split(
+            "if(press && a.touches.size()==1 && u.y>=BAR_H && a.zoom>1.001f)", 1
+        )[1].split("if(press && a.touches.size()==2)", 1)[0]
+        self.assertIn("a.mouseStartX=float(u.x)", zoomed_press)
+        self.assertIn("a.mouseStartY=float(u.y)", zoomed_press)
         runner = (ROOT / "tests/run-tablet-e2e.sh").read_text()
         self.assertIn("hold 1160 1460 850", runner)
         self.assertIn("wait_for_log 'PaperDesk RDP right click'", runner)

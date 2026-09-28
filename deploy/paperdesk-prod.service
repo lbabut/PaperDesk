@@ -19,6 +19,8 @@ ProtectHome=read-only
 ProtectKernelModules=true
 ProtectKernelTunables=true
 ProtectSystem=strict
+StateDirectory=paperdesk
+StateDirectoryMode=0750
 UMask=0027
 
 [Install]

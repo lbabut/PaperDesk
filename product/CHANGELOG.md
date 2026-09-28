@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0 — 2026-09-28
+
+- Added a touch-first list of up to eight recent RDP connection profiles.
+- Each RDP profile remembers 50%, 75%, or 100% session scale and 256, 65K, or 16M colours.
+- Lower scale presets negotiate a smaller remote desktop and fit it to the full tablet screen, reducing remote pixels by up to 75%.
+- RDP disables wallpaper, animation, themes, font smoothing, and desktop composition to reduce unnecessary e-ink and network work.
+- Mouse, double-click, right-click, pan, and pinch coordinates now follow the negotiated remote resolution.
+
 ## 1.1.9 — 2026-09-28
 
 - Removed PaperDesk's automatic XOVI startup during boot to preserve a stock-UI recovery path on reMarkable 2.

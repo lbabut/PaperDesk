@@ -15,6 +15,11 @@ TOOLCHAIN="$WORKDIR/arm-toolchain/root"
 TARGET=${PAPERDESK_E2E_TARGET:-all}
 JOURNEY_LOOPS=${PAPERDESK_E2E_LOOPS:-2}
 CAPTURE_SCREEN=${PAPERDESK_E2E_CAPTURE:-1}
+RDP_SCALE_75_X=439
+RDP_COLOR_256_X=796
+RDP_PERFORMANCE_Y=1081
+RDP_CONNECT_X=702
+RDP_CONNECT_Y=1248
 BASE_PID=""
 declare -A LOG_EXPECTED=()
 
@@ -105,6 +110,13 @@ swipe() {
 
 pinch() {
     remote "printf 'pinch %s %s %s %s %s %s %s %s %s\\n' '$1' '$2' '$3' '$4' '$5' '$6' '$7' '$8' '$9' >/tmp/paperdesk-touch.fifo"
+}
+
+select_rdp_performance_profile() {
+    tap "$RDP_SCALE_75_X" "$RDP_PERFORMANCE_Y"
+    wait_for_log 'PaperDesk RDP scale 75' 8
+    tap "$RDP_COLOR_256_X" "$RDP_PERFORMANCE_Y"
+    wait_for_log 'PaperDesk RDP colors 8' 8
 }
 
 capture_screen() {
@@ -320,6 +332,7 @@ case "$TARGET" in
             echo "User journey $journey/$JOURNEY_LOOPS: RDP"
             tap 360 1250
             wait_for_log 'PaperDesk touch launching paperrdp-login' 10
+            select_rdp_performance_profile
             tap 1060 60
             wait_for_log 'PaperDesk RDP keyboard opened' 8
             tap 1280 60
@@ -403,6 +416,7 @@ case "$TARGET" in
 
         tap 360 1250
         wait_for_log 'PaperDesk touch launching paperrdp-login' 10
+        select_rdp_performance_profile
         tap 1060 60
         wait_for_log 'PaperDesk RDP keyboard opened' 8
         capture_screen "$ARTIFACT_DIR/all-rdp-keyboard.png"
@@ -615,30 +629,41 @@ grep -q "<svg" "/home/root/Downloads/PaperDesk/$saved"'
         wait_for_log 'PaperDesk touch launching paperrdp-login' 10
         sleep 3
         capture_screen "$ARTIFACT_DIR/rdp.png"
+        select_rdp_performance_profile
+        capture_screen "$ARTIFACT_DIR/rdp-performance.png"
         tap 1060 60
         wait_for_log 'PaperDesk RDP keyboard opened' 8
         capture_screen "$ARTIFACT_DIR/rdp-keyboard.png"
-        echo "PASS: physical tablet taps opened RDP and its keyboard"
+        echo "PASS: physical tablet taps selected RDP 75% scale and 256 colors, then opened its keyboard"
         ;;
     rdp-live)
         tap 360 1250
         wait_for_log 'PaperDesk touch launching paperrdp-login' 10
         sleep 3
-        tap 700 880
+        select_rdp_performance_profile
+        tap "$RDP_CONNECT_X" "$RDP_CONNECT_Y"
         wait_for_log 'PaperDesk RDP action connect' 10
         for n in $(seq 1 30); do
             if remote 'pidof paperrdp >/dev/null'; then break; fi
             sleep 1
         done
         remote 'pidof paperrdp >/dev/null'
+        wait_for_log 'PaperDesk RDP performance scale=75 colors=8' 15
         sleep 12
         remote 'p=$(pidof paperrdp); p=${p%% *}; grep -Eq "[[:space:]]01[[:space:]]" /proc/$p/net/tcp'
         assert_tablet_healthy 'live RDP connection'
+        capture_screen "$ARTIFACT_DIR/rdp-live-scaled.png"
         tap 1240 1540
         tap 1240 1540
         wait_for_log 'PaperDesk RDP double click' 8
         hold 1160 1460 850
         wait_for_log 'PaperDesk RDP right click' 8
+        pinch 600 900 800 900 450 900 950 900 700
+        sleep 3
+        hold 700 1000 850
+        wait_for_log 'PaperDesk RDP right click' 8
+        pinch 450 900 950 900 600 900 800 900 700
+        sleep 3
         tap 1095 56
         sleep 3
         remote 'pidof paperrdp >/dev/null'
@@ -657,7 +682,7 @@ grep -q "<svg" "/home/root/Downloads/PaperDesk/$saved"'
             echo 'Live RDP did not close after the physical Close tap' >&2
             exit 1
         fi
-        echo "PASS: live RDP handled double-click, long-press right-click, overlays and refresh soak, then closed from a physical tap"
+        echo "PASS: live RDP used 75% scale and 256 colors, handled double-click, zoomed and unzoomed right-clicks, overlays and refresh soak, then closed from a physical tap"
         ;;
     rss)
         tap 1040 1250

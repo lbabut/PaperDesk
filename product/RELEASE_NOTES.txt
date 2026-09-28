@@ -1,4 +1,4 @@
-PaperDesk no longer starts XOVI automatically during device boot.
-Updating removes only the legacy autostart unit previously installed by PaperDesk; unrelated user services are left untouched.
-After a reboot, start XOVI deliberately over SSH or with the community xovi-tripletap tool.
-The updater still reloads XOVI once after installation through a non-persistent transient service.
+PaperDesk RDP now keeps a touch-friendly list of up to eight recent connection profiles.
+Each profile remembers Scale (50%, 75%, or 100%) and Colors (256, 65K, or 16M).
+Lower settings negotiate fewer remote pixels and less colour data for a faster e-ink session; 75% and 256 colours are recommended.
+Scaled sessions fill the screen and keep clicks, double-clicks, right-clicks, pan, and pinch aligned.

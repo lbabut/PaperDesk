@@ -126,6 +126,11 @@ FocusScope {
     function loadApplication(appId) {
         coord.loadApplication(appId);
     }
+    function notifyGainedFocus() {
+        const applicationItem = supportsScaling ? loader.item : loaderScaled.item;
+        if(applicationItem && applicationItem.gainedFocus)
+            applicationItem.gainedFocus();
+    }
     function maximize() {
         if(fullscreen) {
             // Is it already maximized?

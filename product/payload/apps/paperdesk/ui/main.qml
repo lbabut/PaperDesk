@@ -173,7 +173,7 @@ Rectangle {
                     radius: 31
                     Text {
                         anchors.centerIn: parent
-                        text: "V 1.0.5"
+                        text: "V 1.2.0"
                         color: "white"
                         font.pointSize: 13
                         font.bold: true

@@ -58,6 +58,8 @@ struct Profile {
     std::string domain;
     std::string password;
     int port = 3389;
+    int scalePercent = 100;
+    int colorDepth = 16;
 };
 
 struct App {
@@ -338,17 +340,63 @@ bool hexDecode(const std::string& value,std::string& result) {
     return true;
 }
 
-bool saveProfile(const Profile& p) {
-    constexpr const char* dir="/home/root/.config/paperrdp";
-    constexpr const char* path="/home/root/.config/paperrdp/profile";
-    constexpr const char* temp="/home/root/.config/paperrdp/profile.tmp";
-    if(::mkdir("/home/root/.config",0700)<0 && errno!=EEXIST) return false;
-    if(::mkdir(dir,0700)<0 && errno!=EEXIST) return false;
-    ::chmod(dir,0700);
+int normalizeScalePercent(int value) {
+    if(value==50 || value==75 || value==100) return value;
+    return 100;
+}
+
+int normalizeColorDepth(int value) {
+    if(value==8 || value==16 || value==24) return value;
+    return 16;
+}
+
+bool parsePort(const std::string& value,int& port) {
+    if(value.empty() || value.size()>5) return false;
+    char* end=nullptr;
+    errno=0;
+    const long parsed=std::strtol(value.c_str(),&end,10);
+    if(errno!=0 || !end || *end!='\0' || parsed<1 || parsed>65535) return false;
+    port=static_cast<int>(parsed);
+    return true;
+}
+
+bool sameProfile(const Profile& a,const Profile& b) {
+    return a.host==b.host && a.user==b.user && a.domain==b.domain && a.port==b.port;
+}
+
+std::string profileListLine(const Profile& p) {
+    return "v1\t"+hexEncode(p.host)+"\t"+hexEncode(p.user)+"\t"+hexEncode(p.domain)+"\t"+
+           std::to_string(p.port)+"\t"+hexEncode(p.password)+"\t"+
+           std::to_string(normalizeScalePercent(p.scalePercent))+"\t"+
+           std::to_string(normalizeColorDepth(p.colorDepth))+"\n";
+}
+
+bool parseProfileListLine(const std::string& line,Profile& profile) {
+    if(line.size()>8192) return false;
+    std::vector<std::string> parts;
+    size_t begin=0;
+    while(begin<=line.size()) {
+        const size_t end=line.find('\t',begin);
+        parts.push_back(line.substr(begin,end==std::string::npos ? std::string::npos : end-begin));
+        if(end==std::string::npos) break;
+        begin=end+1;
+    }
+    if(parts.size()!=8 || parts[0]!="v1") return false;
+    for(size_t i=1;i<=5;++i) if(parts[i].size()>4096) return false;
+    Profile parsed;
+    if(!hexDecode(parts[1],parsed.host) || !hexDecode(parts[2],parsed.user) ||
+       !hexDecode(parts[3],parsed.domain) || !hexDecode(parts[5],parsed.password)) return false;
+    if(!parsePort(parts[4],parsed.port)) return false;
+    parsed.scalePercent=normalizeScalePercent(std::atoi(parts[6].c_str()));
+    parsed.colorDepth=normalizeColorDepth(std::atoi(parts[7].c_str()));
+    if(parsed.host.empty() || parsed.user.empty()) return false;
+    profile=std::move(parsed);
+    return true;
+}
+
+bool writePrivateFile(const char* path,const char* temp,const std::string& data) {
     const int fd=::open(temp,O_WRONLY|O_CREAT|O_TRUNC,0600);
     if(fd<0) return false;
-    const std::string data="host="+p.host+"\nuser="+p.user+"\ndomain="+p.domain+
-                           "\nport="+std::to_string(p.port)+"\npassword_hex="+hexEncode(p.password)+"\n";
     size_t written=0;
     while(written<data.size()) {
         const ssize_t n=::write(fd,data.data()+written,data.size()-written);
@@ -363,6 +411,36 @@ bool saveProfile(const Profile& p) {
     return true;
 }
 
+bool saveProfile(const Profile& p) {
+    constexpr const char* dir="/home/root/.config/paperrdp";
+    constexpr const char* path="/home/root/.config/paperrdp/profile";
+    constexpr const char* temp="/home/root/.config/paperrdp/profile.tmp";
+    constexpr const char* profilesPath="/home/root/.config/paperrdp/profiles";
+    constexpr const char* profilesTemp="/home/root/.config/paperrdp/profiles.tmp";
+    if(::mkdir("/home/root/.config",0700)<0 && errno!=EEXIST) return false;
+    if(::mkdir(dir,0700)<0 && errno!=EEXIST) return false;
+    ::chmod(dir,0700);
+    const std::string data="host="+p.host+"\nuser="+p.user+"\ndomain="+p.domain+
+                           "\nport="+std::to_string(p.port)+"\npassword_hex="+hexEncode(p.password)+
+                           "\nscale_percent="+std::to_string(normalizeScalePercent(p.scalePercent))+
+                           "\ncolor_depth="+std::to_string(normalizeColorDepth(p.colorDepth))+"\n";
+    if(!writePrivateFile(path,temp,data)) return false;
+
+    std::vector<Profile> profiles;
+    std::ifstream saved(profilesPath);
+    std::string line;
+    while(std::getline(saved,line)) {
+        Profile candidate;
+        if(parseProfileListLine(line,candidate) && !sameProfile(candidate,p))
+            profiles.push_back(std::move(candidate));
+    }
+    profiles.insert(profiles.begin(),p);
+    if(profiles.size()>8) profiles.resize(8);
+    std::string listData;
+    for(const Profile& profile:profiles) listData+=profileListLine(profile);
+    return writePrivateFile(profilesPath,profilesTemp,listData);
+}
+
 void loadProfile(Profile& p) {
     std::ifstream f("/home/root/.config/paperrdp/profile");
     std::string line;
@@ -370,9 +448,45 @@ void loadProfile(Profile& p) {
         auto pos=line.find('='); if(pos==std::string::npos) continue;
         auto k=line.substr(0,pos), v=line.substr(pos+1);
         if(k=="host") p.host=v; else if(k=="user") p.user=v; else if(k=="domain") p.domain=v;
-        else if(k=="port") p.port=std::max(1,std::atoi(v.c_str()));
+        else if(k=="port") { int port=0; if(parsePort(v,port)) p.port=port; }
         else if(k=="password_hex") hexDecode(v,p.password);
+        else if(k=="scale_percent") p.scalePercent=normalizeScalePercent(std::atoi(v.c_str()));
+        else if(k=="color_depth") p.colorDepth=normalizeColorDepth(std::atoi(v.c_str()));
     }
+}
+
+float outputScaleX(const App& a) {
+    if(!a.rdp || !a.rdp->context || !a.rdp->context->gdi || a.rdp->context->gdi->width<=0) return a.zoom;
+    return (static_cast<float>(W)/a.rdp->context->gdi->width)*a.zoom;
+}
+
+float outputScaleY(const App& a) {
+    if(!a.rdp || !a.rdp->context || !a.rdp->context->gdi || a.rdp->context->gdi->height<=0) return a.zoom;
+    return (static_cast<float>(RDP_H)/a.rdp->context->gdi->height)*a.zoom;
+}
+
+float maxViewX(const App& a) {
+    if(!a.rdp || !a.rdp->context || !a.rdp->context->gdi) return 0.0f;
+    const float width=static_cast<float>(a.rdp->context->gdi->width);
+    return std::max(0.0f,width-width/a.zoom);
+}
+
+float maxViewY(const App& a) {
+    if(!a.rdp || !a.rdp->context || !a.rdp->context->gdi) return 0.0f;
+    const float height=static_cast<float>(a.rdp->context->gdi->height);
+    return std::max(0.0f,height-height/a.zoom);
+}
+
+int remoteX(const App& a,int screenX) {
+    const auto* gdi=a.rdp && a.rdp->context ? a.rdp->context->gdi : nullptr;
+    const int limit=gdi ? std::max(1,gdi->width) : W;
+    return std::clamp<int>(a.viewX+screenX/std::max(0.001f,outputScaleX(a)),0,limit-1);
+}
+
+int remoteY(const App& a,int screenY) {
+    const auto* gdi=a.rdp && a.rdp->context ? a.rdp->context->gdi : nullptr;
+    const int limit=gdi ? std::max(1,gdi->height) : RDP_H;
+    return std::clamp<int>(a.viewY+(screenY-BAR_H)/std::max(0.001f,outputScaleY(a)),0,limit-1);
 }
 
 BOOL beginPaint(rdpContext* c) {
@@ -388,20 +502,26 @@ BOOL endPaint(rdpContext* c) {
     HGDI_WND wnd=gdi->primary->hdc->hwnd;
     if(!wnd->invalid || wnd->invalid->null) return TRUE;
 
-    auto addDirty=[&a](int x,int y,int w,int h) {
+    auto addDirty=[&a,gdi](int x,int y,int w,int h) {
         if(w<=0 || h<=0) return;
-        x=std::clamp(x,0,W); y=std::clamp(y,0,RDP_H);
-        int x2=std::clamp(x+w,0,W), y2=std::clamp(y+h,0,RDP_H);
+        x=std::clamp(x,0,gdi->width); y=std::clamp(y,0,gdi->height);
+        int x2=std::clamp(x+w,0,gdi->width), y2=std::clamp(y+h,0,gdi->height);
         if(x2<=x || y2<=y) return;
+        const float scaleX=outputScaleX(a),scaleY=outputScaleY(a);
+        const int dx1=std::clamp<int>(std::floor((x-a.viewX)*scaleX),0,W);
+        const int dy1=std::clamp<int>(std::floor((y-a.viewY)*scaleY),0,RDP_H);
+        const int dx2=std::clamp<int>(std::ceil((x2-a.viewX)*scaleX),dx1,W);
+        const int dy2=std::clamp<int>(std::ceil((y2-a.viewY)*scaleY),dy1,RDP_H);
+        if(dx2<=dx1 || dy2<=dy1) return;
         const auto now=std::chrono::steady_clock::now();
         if(!a.dirty) a.dirtySince=now;
         a.lastDirty=now;
         a.dirtyX1=std::min(a.dirtyX1,x); a.dirtyY1=std::min(a.dirtyY1,y);
         a.dirtyX2=std::max(a.dirtyX2,x2); a.dirtyY2=std::max(a.dirtyY2,y2);
-        const int firstCol=x/DAMAGE_TILE_W;
-        const int lastCol=(x2-1)/DAMAGE_TILE_W;
-        const int firstRow=y/DAMAGE_TILE_H;
-        const int lastRow=(y2-1)/DAMAGE_TILE_H;
+        const int firstCol=dx1/DAMAGE_TILE_W;
+        const int lastCol=(dx2-1)/DAMAGE_TILE_W;
+        const int firstRow=dy1/DAMAGE_TILE_H;
+        const int lastRow=(dy2-1)/DAMAGE_TILE_H;
         for(int row=firstRow;row<=lastRow;++row) {
             for(int col=firstCol;col<=lastCol;++col) {
                 const int tile=row*DAMAGE_COLS+col;
@@ -450,8 +570,8 @@ void flushRemoteFrame(App& a, bool force=false) {
     }
     auto* gdi=a.rdp->context->gdi;
     if(!gdi->primary_buffer) return;
-    const float vx=a.viewX, vy=a.viewY, z=a.zoom;
-    const float visibleW=W/z, visibleH=RDP_H/z;
+    const float vx=a.viewX, vy=a.viewY;
+    const float scaleX=outputScaleX(a),scaleY=outputScaleY(a);
     auto* dst=reinterpret_cast<uint16_t*>(a.fb.shm);
     struct ChangedRow { int x1=W,y1=RDP_H,x2=0,y2=0; bool changed=false; };
     std::array<ChangedRow,DAMAGE_ROWS> changedRows{};
@@ -464,20 +584,12 @@ void flushRemoteFrame(App& a, bool force=false) {
         const int ty1=tileRow*DAMAGE_TILE_H;
         const int tx2=std::min(W,tx1+DAMAGE_TILE_W);
         const int ty2=std::min(RDP_H,ty1+DAMAGE_TILE_H);
-        const int sx1=std::clamp<int>(std::floor(std::max<float>(tx1,vx)),0,gdi->width);
-        const int sy1=std::clamp<int>(std::floor(std::max<float>(ty1,vy)),0,gdi->height);
-        const int sx2=std::clamp<int>(std::ceil(std::min<float>(tx2,vx+visibleW)),sx1,gdi->width);
-        const int sy2=std::clamp<int>(std::ceil(std::min<float>(ty2,vy+visibleH)),sy1,gdi->height);
-        const int dx1=std::clamp<int>(std::floor((sx1-vx)*z),0,W);
-        const int dy1=std::clamp<int>(std::floor((sy1-vy)*z),0,RDP_H);
-        const int dx2=std::clamp<int>(std::ceil((sx2-vx)*z),dx1,W);
-        const int dy2=std::clamp<int>(std::ceil((sy2-vy)*z),dy1,RDP_H);
         int changedX1=W,changedY1=RDP_H,changedX2=0,changedY2=0;
-        for(int dy=dy1;dy<dy2;++dy) {
-            const int sy=std::clamp<int>(vy+dy/z,0,gdi->height-1);
-            uint16_t* out=dst+(dy+BAR_H)*W+dx1;
-            for(int dx=dx1;dx<dx2;++dx,++out) {
-                const int sx=std::clamp<int>(vx+dx/z,0,gdi->width-1);
+        for(int dy=ty1;dy<ty2;++dy) {
+            const int sy=std::clamp<int>(vy+dy/scaleY,0,gdi->height-1);
+            uint16_t* out=dst+(dy+BAR_H)*W+tx1;
+            for(int dx=tx1;dx<tx2;++dx,++out) {
+                const int sx=std::clamp<int>(vx+dx/scaleX,0,gdi->width-1);
                 const uint8_t* src=gdi->primary_buffer+sy*gdi->stride+sx*4;
                 const uint8_t lum=static_cast<uint8_t>((77*src[2]+150*src[1]+29*src[0])>>8);
                 const uint16_t pixel=gray565(lum);
@@ -535,8 +647,17 @@ void maybeCleanRefresh(App& a) {
 }
 
 BOOL resizeDesktop(rdpContext* c) {
-    return gdi_resize(c->gdi, freerdp_settings_get_uint32(c->settings,FreeRDP_DesktopWidth),
-                      freerdp_settings_get_uint32(c->settings,FreeRDP_DesktopHeight));
+    if(!gdi_resize(c->gdi, freerdp_settings_get_uint32(c->settings,FreeRDP_DesktopWidth),
+                   freerdp_settings_get_uint32(c->settings,FreeRDP_DesktopHeight))) return FALSE;
+    auto* pc=reinterpret_cast<PaperContext*>(c);
+    App& a=*pc->app;
+    a.viewX=std::clamp(a.viewX,0.0f,maxViewX(a));
+    a.viewY=std::clamp(a.viewY,0.0f,maxViewY(a));
+    a.dirty=true;
+    a.dirtyTiles.fill(1);
+    a.dirtyTileCount=DAMAGE_TILE_COUNT;
+    a.dirtySince=a.lastDirty=std::chrono::steady_clock::now();
+    return TRUE;
 }
 
 BOOL postConnect(freerdp* instance) {
@@ -718,23 +839,23 @@ void processRemoteTouch(App& a,int x,int y) {
         }
         return;
     }
-    int rx=std::clamp<int>(a.viewX+x/a.zoom,0,W-1);
-    int ry=std::clamp<int>(a.viewY+(y-BAR_H)/a.zoom,0,RDP_H-1);
+    const int rx=remoteX(a,x);
+    const int ry=remoteY(a,y);
     freerdp_input_send_mouse_event(a.rdp->context->input,PTR_FLAGS_MOVE|PTR_FLAGS_DOWN|PTR_FLAGS_BUTTON1,rx,ry);
     freerdp_input_send_mouse_event(a.rdp->context->input,PTR_FLAGS_BUTTON1,rx,ry);
 }
 
 void sendRemoteClick(App& a,int x,int y) {
-    const int rx=std::clamp<int>(a.viewX+x/a.zoom,0,W-1);
-    const int ry=std::clamp<int>(a.viewY+(y-BAR_H)/a.zoom,0,RDP_H-1);
+    const int rx=remoteX(a,x);
+    const int ry=remoteY(a,y);
     freerdp_input_send_mouse_event(a.rdp->context->input,
                                   PTR_FLAGS_MOVE|PTR_FLAGS_DOWN|PTR_FLAGS_BUTTON1,rx,ry);
     freerdp_input_send_mouse_event(a.rdp->context->input,PTR_FLAGS_BUTTON1,rx,ry);
 }
 
 void sendRemoteRightClick(App& a,int x,int y) {
-    const int rx=std::clamp<int>(a.viewX+x/a.zoom,0,W-1);
-    const int ry=std::clamp<int>(a.viewY+(y-BAR_H)/a.zoom,0,RDP_H-1);
+    const int rx=remoteX(a,x);
+    const int ry=remoteY(a,y);
     freerdp_input_send_mouse_event(a.rdp->context->input,
                                   PTR_FLAGS_MOVE|PTR_FLAGS_DOWN|PTR_FLAGS_BUTTON2,rx,ry);
     freerdp_input_send_mouse_event(a.rdp->context->input,PTR_FLAGS_BUTTON2,rx,ry);
@@ -804,14 +925,15 @@ void maybeSendLongPress(App& a) {
 
 void redrawZoomedView(App& a) {
     if(!a.rdp || !a.rdp->context || !a.rdp->context->gdi) return;
-    const float maxX=std::max(0.0f,float(W)-W/a.zoom);
-    const float maxY=std::max(0.0f,float(RDP_H)-RDP_H/a.zoom);
-    a.viewX=std::clamp(a.viewX,0.0f,maxX); a.viewY=std::clamp(a.viewY,0.0f,maxY);
+    a.viewX=std::clamp(a.viewX,0.0f,maxViewX(a));
+    a.viewY=std::clamp(a.viewY,0.0f,maxViewY(a));
     a.dirty=true;
     a.dirtyX1=std::max(0,int(std::floor(a.viewX)));
     a.dirtyY1=std::max(0,int(std::floor(a.viewY)));
-    a.dirtyX2=std::min(W,int(std::ceil(a.viewX+W/a.zoom)));
-    a.dirtyY2=std::min(RDP_H,int(std::ceil(a.viewY+RDP_H/a.zoom)));
+    a.dirtyX2=std::min(a.rdp->context->gdi->width,
+                       int(std::ceil(a.viewX+a.rdp->context->gdi->width/a.zoom)));
+    a.dirtyY2=std::min(a.rdp->context->gdi->height,
+                       int(std::ceil(a.viewY+a.rdp->context->gdi->height/a.zoom)));
     a.dirtyTiles.fill(1);
     a.dirtyTileCount=DAMAGE_TILE_COUNT;
     flushRemoteFrame(a,true);
@@ -820,8 +942,8 @@ void redrawZoomedView(App& a) {
 }
 
 void remoteMouse(App& a,UINT16 flags,int x,int y) {
-    const int rx=std::clamp<int>(a.viewX+x/a.zoom,0,W-1);
-    const int ry=std::clamp<int>(a.viewY+(y-BAR_H)/a.zoom,0,RDP_H-1);
+    const int rx=remoteX(a,x);
+    const int ry=remoteY(a,y);
     freerdp_input_send_mouse_event(a.rdp->context->input,flags,rx,ry);
 }
 
@@ -882,6 +1004,11 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
         a.panId=u.devId;
         a.panStartX=float(u.x);
         a.panStartY=float(u.y);
+        // Long-press remains a right click while zoomed.  The long-press
+        // movement threshold uses mouseStart*, so refresh that origin for
+        // the zoomed/pan-candidate path as well as the unzoomed mouse path.
+        a.mouseStartX=float(u.x);
+        a.mouseStartY=float(u.y);
         a.panStartViewX=a.viewX;
         a.panStartViewY=a.viewY;
         a.mousePressSince=std::chrono::steady_clock::now();
@@ -899,7 +1026,8 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
             a.pinchDistance=std::max(20.0f,std::sqrt(dx*dx+dy*dy));
             a.pinchStartZoom=a.zoom;
             const float cx=(p1.first+p2.first)*0.5f,cy=(p1.second+p2.second)*0.5f-BAR_H;
-            a.pinchAnchorX=a.viewX+cx/a.zoom; a.pinchAnchorY=a.viewY+cy/a.zoom;
+            a.pinchAnchorX=a.viewX+cx/outputScaleX(a);
+            a.pinchAnchorY=a.viewY+cy/outputScaleY(a);
             a.pinchActive=true; a.gestureConsumed=true;
         }
     }
@@ -910,10 +1038,10 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
             a.gestureConsumed=true;
         }
         if(a.panActive) {
-            a.viewX=a.panStartViewX-dx/a.zoom;
-            a.viewY=a.panStartViewY-dy/a.zoom;
-            a.viewX=std::clamp(a.viewX,0.0f,std::max(0.0f,float(W)-W/a.zoom));
-            a.viewY=std::clamp(a.viewY,0.0f,std::max(0.0f,float(RDP_H)-RDP_H/a.zoom));
+            a.viewX=a.panStartViewX-dx/outputScaleX(a);
+            a.viewY=a.panStartViewY-dy/outputScaleY(a);
+            a.viewX=std::clamp(a.viewX,0.0f,maxViewX(a));
+            a.viewY=std::clamp(a.viewY,0.0f,maxViewY(a));
             // Do not publish intermediate pan frames.  A single coherent
             // frame is drawn on release below; live 320 ms redraws overflowed
             // the e-ink queue and produced duplicated/torn desktop halves.
@@ -926,9 +1054,10 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
         const float dist=std::max(20.0f,std::sqrt(dx*dx+dy*dy));
         a.zoom=std::clamp(a.pinchStartZoom*dist/a.pinchDistance,1.0f,3.0f);
         const float cx=(p1.first+p2.first)*0.5f,cy=(p1.second+p2.second)*0.5f-BAR_H;
-        a.viewX=a.pinchAnchorX-cx/a.zoom; a.viewY=a.pinchAnchorY-cy/a.zoom;
-        a.viewX=std::clamp(a.viewX,0.0f,std::max(0.0f,float(W)-W/a.zoom));
-        a.viewY=std::clamp(a.viewY,0.0f,std::max(0.0f,float(RDP_H)-RDP_H/a.zoom));
+        a.viewX=a.pinchAnchorX-cx/outputScaleX(a);
+        a.viewY=a.pinchAnchorY-cy/outputScaleY(a);
+        a.viewX=std::clamp(a.viewX,0.0f,maxViewX(a));
+        a.viewY=std::clamp(a.viewY,0.0f,maxViewY(a));
     }
     if(release) {
         const bool wasGesture=a.gestureConsumed;
@@ -1033,12 +1162,27 @@ bool connectRdp(App& a) {
     ok &= freerdp_settings_set_string(s,FreeRDP_Username,a.profile.user.c_str());
     ok &= freerdp_settings_set_string(s,FreeRDP_Password,a.profile.password.c_str());
     if(!a.profile.domain.empty()) ok &= freerdp_settings_set_string(s,FreeRDP_Domain,a.profile.domain.c_str());
-    ok &= freerdp_settings_set_uint32(s,FreeRDP_DesktopWidth,W);
-    ok &= freerdp_settings_set_uint32(s,FreeRDP_DesktopHeight,RDP_H);
-    ok &= freerdp_settings_set_uint32(s,FreeRDP_ColorDepth,16);
+    const UINT32 sessionWidth=static_cast<UINT32>(W*a.profile.scalePercent/100);
+    const UINT32 sessionHeight=static_cast<UINT32>(RDP_H*a.profile.scalePercent/100);
+    ok &= freerdp_settings_set_uint32(s,FreeRDP_DesktopWidth,sessionWidth);
+    ok &= freerdp_settings_set_uint32(s,FreeRDP_DesktopHeight,sessionHeight);
+    ok &= freerdp_settings_set_uint32(s,FreeRDP_ColorDepth,a.profile.colorDepth);
+    // Some older xrdp servers send a palette order without advertising it.
+    // FreeRDP's command-line client exposes the same compatibility behaviour
+    // as /relax-order-checks; without it an 8-bit session disconnects as soon
+    // as the first colour table arrives.
+    ok &= freerdp_settings_set_bool(s,FreeRDP_AllowUnanouncedOrdersFromServer,TRUE);
+    ok &= freerdp_settings_set_bool(s,FreeRDP_DisableWallpaper,TRUE);
+    ok &= freerdp_settings_set_bool(s,FreeRDP_AllowFontSmoothing,FALSE);
+    ok &= freerdp_settings_set_bool(s,FreeRDP_DisableFullWindowDrag,TRUE);
+    ok &= freerdp_settings_set_bool(s,FreeRDP_DisableMenuAnims,TRUE);
+    ok &= freerdp_settings_set_bool(s,FreeRDP_DisableThemes,TRUE);
+    ok &= freerdp_settings_set_bool(s,FreeRDP_AllowDesktopComposition,FALSE);
     ok &= freerdp_settings_set_bool(s,FreeRDP_AutoAcceptCertificate,TRUE);
     ok &= freerdp_settings_set_bool(s,FreeRDP_AudioPlayback,FALSE);
     ok &= freerdp_settings_set_bool(s,FreeRDP_AudioCapture,FALSE);
+    std::fprintf(stderr,"PaperDesk RDP performance scale=%d colors=%d size=%ux%u\n",
+                 a.profile.scalePercent,a.profile.colorDepth,sessionWidth,sessionHeight);
     if(!ok || !freerdp_connect(r)) {
         freerdp_context_free(r); freerdp_free(r); a.rdp=nullptr; return false;
     }
@@ -1074,11 +1218,22 @@ int main(int argc,char** argv) {
         };
         if(arg=="--host") takeValue(app.profile.host);
         else if(arg=="--user") takeValue(app.profile.user);
+        else if(arg=="--domain-hex") {
+            std::string encoded;
+            if(takeValue(encoded)) hexDecode(encoded,app.profile.domain);
+        }
         else if(arg=="--password-hex") {
             std::string encoded;
             if(takeValue(encoded)) hexDecode(encoded,app.profile.password);
         } else if(arg=="--port" && i+1<argc) {
-            app.profile.port=std::max(1,std::atoi(argv[++i]));
+            int port=0;
+            if(parsePort(argv[++i],port)) app.profile.port=port;
+            autoConnect=true;
+        } else if(arg=="--scale-percent" && i+1<argc) {
+            app.profile.scalePercent=normalizeScalePercent(std::atoi(argv[++i]));
+            autoConnect=true;
+        } else if(arg=="--color-depth" && i+1<argc) {
+            app.profile.colorDepth=normalizeColorDepth(std::atoi(argv[++i]));
             autoConnect=true;
         } else if(arg=="--connect") autoConnect=true;
     }
