@@ -30,17 +30,22 @@ mv '$NEXT' '$DEST'
 
 scp -i "$KEY" -o StrictHostKeyChecking=accept-new \
     "$ROOT/deploy/paperdesk-prod.service" "$HOST:/tmp/paperdesk-prod.service"
+scp -i "$KEY" -o StrictHostKeyChecking=accept-new \
+    "$ROOT/deploy/Caddyfile" "$HOST:/tmp/paperdesk-Caddyfile"
 $SSH "$HOST" '
 set -eu
 sudo install -o root -g root -m 0644 /tmp/paperdesk-prod.service /etc/systemd/system/paperdesk-prod.service
-rm -f /tmp/paperdesk-prod.service
+sudo install -o root -g root -m 0644 /tmp/paperdesk-Caddyfile /etc/caddy/Caddyfile
+rm -f /tmp/paperdesk-prod.service /tmp/paperdesk-Caddyfile
 sudo systemctl daemon-reload
 sudo systemctl enable paperdesk-prod.service >/dev/null
 sudo systemctl restart paperdesk-prod.service
+sudo systemctl enable caddy >/dev/null
+sudo systemctl reload-or-restart caddy
 '
 
 attempt=0
-until $SSH "$HOST" 'curl -fsS http://127.0.0.1/healthz >/dev/null'; do
+until $SSH "$HOST" 'curl -fsS http://127.0.0.1:8090/healthz >/dev/null'; do
     attempt=$((attempt + 1))
     if test "$attempt" -ge 20; then
         $SSH "$HOST" 'sudo systemctl status paperdesk-prod.service --no-pager -l' >&2
@@ -49,5 +54,5 @@ until $SSH "$HOST" 'curl -fsS http://127.0.0.1/healthz >/dev/null'; do
     sleep 1
 done
 
-curl -fsS "http://${HOST#*@}/healthz"
-printf 'PaperDesk production deployed to http://%s/\n' "${HOST#*@}"
+curl -fsS "https://paperdesk.lukaszbabut.info/healthz"
+printf 'PaperDesk production deployed to https://paperdesk.lukaszbabut.info/\n'
