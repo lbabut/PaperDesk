@@ -43,10 +43,13 @@ Item {
 
         function init() {
             if(windowLoader.item) {
+                windowLoader.item.appName = "<AppLoad Window>"
                 windowLoader.item.closing = false
                 windowLoader.item.enabled = true
                 windowLoader.item.visible = true
                 windowLoader.item.z = 100
+                windowLoader.item.systemKeyboardActive = false
+                windowLoader.item.rdpShortcutsOpen = false
                 keyboard.config = windowLoader.item.keyboardConfig
                 keyboard.active = true
             }
@@ -77,6 +80,70 @@ Item {
             const clickTarget = findChild(windowLoader.item, "paperdeskKeyboardButton")
             verify(clickTarget !== null)
             verify(!clickTarget.visible)
+        }
+
+        function test_rdp_uses_system_keyboard_and_one_button_font() {
+            windowLoader.item.appName = "PaperDesk RDP Engine"
+            windowLoader.item.virtualKeyboardLayout = ({ columns: 1 })
+            if(!windowLoader.item.fullscreen)
+                windowLoader.item.maximize()
+
+            const genericButton = findChild(windowLoader.item, "paperdeskKeyboardButton")
+            const toolbar = findChild(windowLoader.item, "paperdeskRdpToolbar")
+            const keyboardButton = findChild(windowLoader.item, "paperdeskRdpKeyboardButton")
+            const closeLabel = findChild(windowLoader.item, "paperdeskRdpCloseLabel")
+            const keyboardLabel = findChild(windowLoader.item, "paperdeskRdpKeyboardLabel")
+            const shortcutsLabel = findChild(windowLoader.item, "paperdeskRdpShortcutsLabel")
+            verify(!genericButton.visible)
+            verify(toolbar.visible)
+            compare(toolbar.height, 112)
+            compare(closeLabel.font.pointSize, 16)
+            compare(keyboardLabel.font.pointSize, closeLabel.font.pointSize)
+            compare(shortcutsLabel.font.pointSize, closeLabel.font.pointSize)
+
+            waitForRendering(windowLoader.item)
+            mouseClick(keyboardButton, keyboardButton.width / 2,
+                       keyboardButton.height / 2, Qt.LeftButton)
+            verify(windowLoader.item.systemKeyboardActive)
+            verify(!keyboard.active)
+        }
+
+        function test_rdp_shortcut_panel_sends_reserved_engine_action() {
+            windowLoader.item.appName = "PaperDesk RDP Engine"
+            if(!windowLoader.item.fullscreen)
+                windowLoader.item.maximize()
+            const canvas = findChild(windowLoader.item, "paperdeskWindowCanvas")
+            const shortcuts = findChild(windowLoader.item, "paperdeskRdpShortcutsButton")
+            const panel = findChild(windowLoader.item, "paperdeskRdpShortcutsPanel")
+            const beforeDown = canvas.keyDownCount
+            waitForRendering(windowLoader.item)
+            mouseClick(shortcuts, shortcuts.width / 2, shortcuts.height / 2, Qt.LeftButton)
+            verify(panel.visible)
+            windowLoader.item.sendRdpShortcut(0)
+            compare(canvas.keyDownCount, beforeDown + 1)
+            compare(canvas.lastKeyDown, 0x02ff0000)
+            verify(!panel.visible)
+        }
+
+        function test_rdp_system_editor_forwards_text_enter_and_backspace() {
+            windowLoader.item.appName = "PaperDesk RDP Engine"
+            if(!windowLoader.item.fullscreen)
+                windowLoader.item.maximize()
+            const canvas = findChild(windowLoader.item, "paperdeskWindowCanvas")
+            const editor = findChild(windowLoader.item, "paperdeskRdpSystemKeyboardInput")
+            editor.forceActiveFocus()
+
+            editor.text = "a"
+            compare(canvas.lastKeyDown, 0x02000061)
+            compare(editor.text, "")
+
+            keyClick(Qt.Key_Backspace)
+            compare(canvas.lastKeyDown, Qt.Key_Backspace)
+            compare(canvas.lastKeyUp, Qt.Key_Backspace)
+
+            keyClick(Qt.Key_Return)
+            compare(canvas.lastKeyDown, Qt.Key_Return)
+            compare(canvas.lastKeyUp, Qt.Key_Return)
         }
 
         function test_inactive_internal_window_does_not_consume_close_signal() {

@@ -538,8 +538,14 @@ void remoteKey(App& a,int key,bool down) {
 }
 
 void sendUnicode(App& a,uint16_t ch);
+void sendShortcut(App& a,int index);
 
 void remoteInputKey(App& a,int rawKey,bool down) {
+    constexpr int shortcutPrefix=0x02ff0000;
+    if((rawKey&0xffff0000)==shortcutPrefix) {
+        if(down) sendShortcut(a,rawKey&0xff);
+        return;
+    }
     const bool encodedUnicode=(rawKey&0xFF000000)==0x02000000;
     const int key=encodedUnicode ? rawKey&0xFFFF : rawKey;
     if(specialKeyToScan(key)) {

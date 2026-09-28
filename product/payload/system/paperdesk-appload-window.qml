@@ -31,6 +31,10 @@ FocusScope {
     property bool forceTopBarVisible: false
     property bool closing: false
     property bool framebufferWasActive: false
+    property bool systemKeyboardActive: false
+    property bool systemKeyboardClearing: false
+    property bool rdpShortcutsOpen: false
+    readonly property bool paperdeskRdp: appName === "PaperDesk RDP Engine"
     // This is defined like that so as it doesn't interfere with minimization
     property var _height: root.globalHeight / 3
     property var beforeFullscreenData: null
@@ -64,10 +68,38 @@ FocusScope {
             root.virtualKeyboardRef.active = true;
         }
     }
+    function hideSystemKeyboard() {
+        systemKeyboardActive = false;
+        paperdeskSystemKeyboardInput.focus = false;
+        Qt.inputMethod.hide();
+    }
+    function toggleKeyboardInput() {
+        if(!paperdeskRdp) {
+            toggleVirtualKeyboard();
+            return;
+        }
+        if(systemKeyboardActive) {
+            hideSystemKeyboard();
+            return;
+        }
+        deactivateVirtualKeyboard();
+        paperdeskSystemKeyboardInput.forceActiveFocus();
+        Qt.inputMethod.show();
+        systemKeyboardActive = true;
+    }
+    function sendRdpShortcut(index) {
+        // Reserved QTFB key range handled by PaperDesk RDP.  Keeping shortcut
+        // composition in the engine guarantees correct press/release order.
+        windowCanvas.virtualKeyboardKeyDown(0x02ff0000 | index);
+        windowCanvas.virtualKeyboardKeyUp(0x02ff0000 | index);
+        rdpShortcutsOpen = false;
+    }
     function completeClose() {
         if(root.closing) return;
         root.closing = true;
         deactivateVirtualKeyboard();
+        hideSystemKeyboard();
+        rdpShortcutsOpen = false;
         // Remove the window from both rendering and hit testing immediately.
         // Resource unloading may finish one event-loop turn later, and leaving
         // this FocusScope alive for that turn produced the orphaned "X" overlay.
@@ -361,7 +393,7 @@ FocusScope {
             MouseArea {
                 anchors.fill: parent
                 onClicked: () => {
-                    toggleVirtualKeyboard();
+                    toggleKeyboardInput();
                 }
             }
         }
@@ -512,7 +544,7 @@ FocusScope {
         border.color: "black"
         border.width: 2
         z: 100000
-        visible: fullscreen && !forceTopBarVisible && virtualKeyboardLayout !== null
+        visible: fullscreen && !forceTopBarVisible && virtualKeyboardLayout !== null && !root.paperdeskRdp
 
         Text {
             anchors.fill: parent
@@ -534,7 +566,257 @@ FocusScope {
             onPressed: (mouse) => mouse.accepted = true
             onClicked: {
                 console.log("PaperDesk keyboard button clicked");
-                toggleVirtualKeyboard();
+                toggleKeyboardInput();
+            }
+        }
+    }
+
+    TextInput {
+        id: paperdeskSystemKeyboardInput
+        objectName: "paperdeskRdpSystemKeyboardInput"
+        x: 0
+        y: 113
+        width: 2
+        height: 2
+        opacity: 0.01
+        visible: root.paperdeskRdp && root.fullscreen
+        enabled: visible
+        clip: true
+        inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase | Qt.ImhSensitiveData
+
+        onTextChanged: {
+            if(root.systemKeyboardClearing || text.length === 0)
+                return;
+            for(var i = 0; i < text.length; ++i) {
+                var encoded = 0x02000000 | text.charCodeAt(i);
+                windowCanvas.virtualKeyboardKeyDown(encoded);
+                windowCanvas.virtualKeyboardKeyUp(encoded);
+            }
+            root.systemKeyboardClearing = true;
+            text = "";
+            root.systemKeyboardClearing = false;
+        }
+
+        Keys.onPressed: (event) => {
+            var special = event.key === Qt.Key_Return ||
+                          event.key === Qt.Key_Enter ||
+                          event.key === Qt.Key_Backspace ||
+                          event.key === Qt.Key_Delete ||
+                          event.key === Qt.Key_Tab ||
+                          event.key === Qt.Key_Escape ||
+                          event.key === Qt.Key_Left ||
+                          event.key === Qt.Key_Right ||
+                          event.key === Qt.Key_Up ||
+                          event.key === Qt.Key_Down;
+            if(special) {
+                windowCanvas.virtualKeyboardKeyDown(event.key);
+                windowCanvas.virtualKeyboardKeyUp(event.key);
+                event.accepted = true;
+            }
+        }
+    }
+
+    Connections {
+        target: Qt.inputMethod
+        function onVisibleChanged() {
+            if(!Qt.inputMethod.visible)
+                root.systemKeyboardActive = false;
+        }
+    }
+
+    Rectangle {
+        id: rdpToolbarOverlay
+        objectName: "paperdeskRdpToolbar"
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 112
+        color: "black"
+        z: 100001
+        visible: root.paperdeskRdp && root.fullscreen && !root.forceTopBarVisible
+
+        Column {
+            anchors.left: parent.left
+            anchors.leftMargin: 28
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 2
+            Text {
+                text: "PAPERDESK  /  REMOTE ACCESS"
+                color: "white"
+                font.pointSize: 10
+                font.bold: true
+                font.letterSpacing: 2
+            }
+            Text {
+                text: "Remote desktop"
+                color: "white"
+                font.pointSize: 25
+                font.bold: true
+            }
+        }
+
+        Rectangle {
+            id: rdpOverlayCloseButton
+            objectName: "paperdeskRdpCloseButton"
+            anchors.right: parent.right
+            anchors.rightMargin: 18
+            anchors.verticalCenter: parent.verticalCenter
+            width: 176
+            height: 68
+            radius: 8
+            color: rdpCloseTap.pressed ? "black" : "white"
+            border.color: "white"
+            border.width: 2
+            Text {
+                objectName: "paperdeskRdpCloseLabel"
+                anchors.centerIn: parent
+                text: "Close"
+                color: rdpCloseTap.pressed ? "white" : "black"
+                font.pointSize: 16
+                font.bold: true
+            }
+            MouseArea {
+                id: rdpCloseTap
+                anchors.fill: parent
+                onClicked: root.requestClose(true)
+            }
+        }
+
+        Rectangle {
+            id: rdpOverlayKeyboardButton
+            objectName: "paperdeskRdpKeyboardButton"
+            anchors.right: rdpOverlayCloseButton.left
+            anchors.rightMargin: 14
+            anchors.verticalCenter: parent.verticalCenter
+            width: 202
+            height: 68
+            radius: 8
+            color: rdpKeyboardTap.pressed ? "black" : "white"
+            border.color: "white"
+            border.width: 2
+            Text {
+                objectName: "paperdeskRdpKeyboardLabel"
+                anchors.centerIn: parent
+                text: root.systemKeyboardActive ? "Hide keyboard" : "Keyboard"
+                color: rdpKeyboardTap.pressed ? "white" : "black"
+                font.pointSize: 16
+                font.bold: true
+            }
+            MouseArea {
+                id: rdpKeyboardTap
+                anchors.fill: parent
+                onClicked: root.toggleKeyboardInput()
+            }
+        }
+
+        Rectangle {
+            id: rdpOverlayShortcutsButton
+            objectName: "paperdeskRdpShortcutsButton"
+            anchors.right: rdpOverlayKeyboardButton.left
+            anchors.rightMargin: 14
+            anchors.verticalCenter: parent.verticalCenter
+            width: 216
+            height: 68
+            radius: 8
+            color: rdpShortcutsTap.pressed ? "black" : "white"
+            border.color: "white"
+            border.width: 2
+            Text {
+                objectName: "paperdeskRdpShortcutsLabel"
+                anchors.centerIn: parent
+                text: "Shortcuts"
+                color: rdpShortcutsTap.pressed ? "white" : "black"
+                font.pointSize: 16
+                font.bold: true
+            }
+            MouseArea {
+                id: rdpShortcutsTap
+                anchors.fill: parent
+                onClicked: {
+                    root.hideSystemKeyboard();
+                    root.rdpShortcutsOpen = !root.rdpShortcutsOpen;
+                }
+            }
+        }
+    }
+
+    Rectangle {
+        id: rdpShortcutsPanel
+        objectName: "paperdeskRdpShortcutsPanel"
+        anchors.top: rdpToolbarOverlay.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        color: "white"
+        z: 100000
+        visible: rdpToolbarOverlay.visible && root.rdpShortcutsOpen
+
+        Text {
+            id: rdpShortcutsTitle
+            anchors.top: parent.top
+            anchors.topMargin: 48
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: "Keyboard shortcuts"
+            color: "black"
+            font.pointSize: 29
+            font.bold: true
+        }
+
+        Grid {
+            anchors.top: rdpShortcutsTitle.bottom
+            anchors.topMargin: 42
+            anchors.horizontalCenter: parent.horizontalCenter
+            columns: 3
+            spacing: 22
+
+            Repeater {
+                model: ["Ctrl+C", "Ctrl+V", "Ctrl+X", "Ctrl+A", "Alt+Tab",
+                        "Ctrl+Alt+Del", "Windows", "Escape", "Tab"]
+                delegate: Rectangle {
+                    width: 406
+                    height: 145
+                    radius: 8
+                    color: shortcutTap.pressed ? "black" : "white"
+                    border.color: "black"
+                    border.width: 2
+                    Text {
+                        anchors.centerIn: parent
+                        text: modelData
+                        color: shortcutTap.pressed ? "white" : "black"
+                        font.pointSize: 16
+                        font.bold: true
+                    }
+                    MouseArea {
+                        id: shortcutTap
+                        anchors.fill: parent
+                        onClicked: root.sendRdpShortcut(index)
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            objectName: "paperdeskRdpShortcutsBackButton"
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 90
+            width: 310
+            height: 68
+            radius: 8
+            color: shortcutsBackTap.pressed ? "white" : "black"
+            border.color: "black"
+            border.width: 2
+            Text {
+                anchors.centerIn: parent
+                text: "Back"
+                color: shortcutsBackTap.pressed ? "black" : "white"
+                font.pointSize: 16
+                font.bold: true
+            }
+            MouseArea {
+                id: shortcutsBackTap
+                anchors.fill: parent
+                onClicked: root.rdpShortcutsOpen = false
             }
         }
     }

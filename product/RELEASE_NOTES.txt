@@ -1,4 +1,4 @@
-PaperDesk RDP now uses one polished header and action-button style before, during, and after a connection.
-RDP button labels now keep the same size, weight, spacing, and rounded shape throughout the app.
-Close remains the rightmost action and all RDP touch targets stay e-ink friendly.
-Care now uses the official HTTPS release feed instead of a development-server address.
+RDP now opens the reMarkable system keyboard instead of the separate AppLoad keyboard.
+The live RDP toolbar uses the same Qt typeface, 16-point weight, spacing, and rounded controls as the login screen.
+Shortcuts now open in a consistent touch panel while retaining Ctrl, Alt, Windows, Escape, and Tab actions.
+Close remains the rightmost action and the old floating keyboard button is hidden in RDP.

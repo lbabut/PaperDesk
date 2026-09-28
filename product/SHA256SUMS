@@ -1,9 +1,9 @@
 bb8634bf60e35153e183842cf5537bfc875442422d23ce16de1941513754293a  ./CHANGELOG.md
 f72b2648de7c5105a65ac08dfaaba712d4dc7baaf61be5ee96bdb8c7a1a90ce1  ./MANUAL-INSTALL.md
 45d9f198eea3ff342d8163c42ccf5b1a0e673f3172ccc7149c7706bd889422c0  ./README.md
-a2e199f685048ec5230e3ff364f46d86eb616acb8af2f2a55393d552cc014243  ./RELEASE_NOTES.txt
+f9bd53486bd7fb0baf1ca1a99e36ad74d860968a595d977816e6fd6a57ba9a13  ./RELEASE_NOTES.txt
 fddf4e4cf86329a0ecd5a8c4796eed8a0c8e9b8e7dab245e59e8b750e872b2bf  ./THIRD-PARTY.md
-1c60df040a80b6d2e3f56442b17d127d8620cd773873e6e1353362f989b1deca  ./VERSION
+2f66e2158a2645e2455e374272c8deb113173dca586f9159f813519a50436c32  ./VERSION
 051e3ed1012de0157573b1323e95e342ac398eb52f74b1e0d1ee3128043c753a  ./install-from-computer.sh
 81eea623463aa0ceb92089fafc2f33f28cc8e7cc3d459daafa51d9c0bc8a2c2b  ./install.sh
 3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986  ./licenses/AppLoad-GPL-3.0.txt
@@ -35,8 +35,8 @@ e6697ea54cd4b98947040f0bee3ca8ede20817f8e3ba3024d83ba7c181821605  ./payload/apps
 177125ab23376557ade3a1a9e123df4eecf7fcb07f3ebcc931bad4d2750060fc  ./payload/apps/paperrdp/common.h
 56caf91524bde993f2abf56e162b4f4228bea08d9b3d64b61ff1ab02d479f53f  ./payload/apps/paperrdp/external.manifest.json
 674a51c78fdb101a355f5d3fa8b09d7f3a3c5dbfc654dde07c45e1d6142f8a9e  ./payload/apps/paperrdp/icon.png
-e4d7f88d1b84a0a27aa190f9a20561506b63b1c4d5d4f25971b6fd7998185548  ./payload/apps/paperrdp/paperrdp
-3cff3aead365574128b86792570cc833322ef4bbac4ad8a77b316353b69a0be6  ./payload/apps/paperrdp/paperrdp.cpp
+3859a42d5cfc9a8a0dfe0fb6567e5274a3abea747e755382643136f4720f0cdc  ./payload/apps/paperrdp/paperrdp
+7d31e297bc4b58f8a4daafda668553ce5efb8e50d470614bab6fd70bb6a9aa07  ./payload/apps/paperrdp/paperrdp.cpp
 3f2b68110570bb401036e1bda5bbaec60be3f809c03dd35ca8a113ac5fb25462  ./payload/apps/paperrdp/qtfb-client.cpp
 be5d2a20274eb40be456bae0a1c99b16937673c3246fa9cedb24f7328f717b7d  ./payload/apps/paperrdp/qtfb-client.h
 9295d91067ec6062a96c4b2971cd2dd750f25a7da85aff85c23ae39b5aee9625  ./payload/apps/paperrss/README.md
@@ -55,7 +55,7 @@ f7c5cde238252871560f0cbb8a4b46726ed7b3e4f45900b66fbb5c23c2babf17  ./payload/apps
 4eab5f8f54d5fbaaba86497128b3b5029dc07033ac9dd499a226638cc255e9d2  ./payload/apps/shims/qtfb-shim.so
 250f8340a6747eb9b83929bf9b8d5110391592d859365e397d5b3f0020e2e035  ./payload/system/literm-settings.ini
 867beb968b33ce3323ec4107929517d851c21ee08ed67ef915077382172fefae  ./payload/system/paperdesk-appload-compat.qrr
-3a8c52e0146b1cc9b416e541232e9e4f817a4300ed0229d2ce8ba0f13b10b743  ./payload/system/paperdesk-appload-window.qml
+3c6b5ca9da22ac6f0e9f332ac10450bbe19f4f0b6fb45a5dcbb9ceab142b75e2  ./payload/system/paperdesk-appload-window.qml
 8c485fb6a400979f514d49021262ac61cd88f864e929f063d40232ab3f42af5d  ./payload/system/paperdesk-appload.qml
 bf826622f18ac3004df7087f2bd99534272d225cbbe7cbfb3a7edf7ae540c992  ./payload/system/paperdesk-release-public.pem
 43356ae26f1034f513433cfa00966a194ece608dbc937edc17289323429e5d7c  ./payload/system/paperdesk-update-agent
@@ -65,7 +65,7 @@ ed534a03958e509c1686e3e58bcb449c9055079aa3d3c1cccb3eedbb5e792af6  ./payload/syst
 d1b3a23163d6e93736d8f7a0f0ffceab0ec2da878909c0a000af88b95033ef91  ./payload/system/profiles.example
 b4328982f877dc8c6b85085250cdbe3effe06135fbe3e16c8f3663cd71baf513  ./payload/system/rmssh-menu
 ba05d7a22a2ce23e18c21f193210f9533d07bd74c1f190e56e25d1310e5850c8  ./payload/system/xovi-autostart.service
-f52b1dd2bc096f42bb6258156899f4acd4904d2c56d9aa4548b8ec63261baf53  ./release.json
+ba8e0e68a1f9d99c098c73de642890d9a7adf8813676c123194c9d3e019a0d55  ./release.json
 588b775f13b24608e6903dd0b6a543b6e9314e5ef60d5c7920760190abf7a71c  ./third_party_source/qtfb-shim/CMakeLists.txt
 3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986  ./third_party_source/qtfb-shim/LICENSE
 15a156a971001856348398eeab1a4eec5abb55feecd82adc0080cf4e787b84b0  ./third_party_source/qtfb-shim/README.MD
