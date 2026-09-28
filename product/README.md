@@ -50,7 +50,7 @@ dokladnej wersji systemu. Na testowanym urzadzeniu zrobiono to narzedziem
 
 ## Instalacja z komputera
 
-Graficzny instalator dla Linuxa i Windows jest opisany w
+Graficzny instalator dla Linuxa jest opisany w
 `../INSTALL-DESKTOP.md`. Wykrywa istniejące aplikacje przed instalacją i
 prosi o potwierdzenie podmiany identycznych ID.
 

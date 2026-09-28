@@ -2,7 +2,7 @@
 
 ## 1.1.4 — candidate
 
-- Graficzny instalator na Linux i Windows rozpoznaje istniejace aplikacje,
+- Graficzny instalator na Linux rozpoznaje istniejace aplikacje,
 - pierwsza instalacja zapisuje pierwotne katalogi aplikacji i przy odinstalowaniu je przywraca.
 
 ## 1.1.3 — 2026-09-28
