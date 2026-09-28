@@ -10,7 +10,9 @@ Rectangle {
     focus: true
     signal close
     property bool profileLoaded: false
-    readonly property int toolbarButtonWidth: 210
+    readonly property int toolbarButtonWidth: 176
+    readonly property int toolbarButtonHeight: 68
+    readonly property int actionFontPointSize: 16
 
     function unloading() { Qt.inputMethod.hide() }
 
@@ -99,14 +101,14 @@ Rectangle {
             Text {
                 text: "PAPERDESK  /  REMOTE ACCESS"
                 color: "white"
-                font.pointSize: 11
+                font.pointSize: 10
                 font.bold: true
                 font.letterSpacing: 2
             }
             Text {
                 text: "Remote desktop"
                 color: "white"
-                font.pointSize: 27
+                font.pointSize: 25
                 font.bold: true
             }
         }
@@ -118,12 +120,19 @@ Rectangle {
             anchors.rightMargin: 18
             anchors.verticalCenter: parent.verticalCenter
             width: root.toolbarButtonWidth
-            height: 70
+            height: root.toolbarButtonHeight
             radius: 8
             border.color: "white"
             border.width: 2
             color: closeMouse.pressed ? "black" : "white"
-            Text { anchors.centerIn: parent; text: "Close"; color: closeMouse.pressed ? "white" : "black"; font.pointSize: 18; font.bold: true }
+            Text {
+                objectName: "rdpCloseLabel"
+                anchors.centerIn: parent
+                text: "Close"
+                color: closeMouse.pressed ? "white" : "black"
+                font.pointSize: root.actionFontPointSize
+                font.bold: true
+            }
             TapHandler { id: closeMouse; onTapped: { console.log("PaperDesk RDP action close"); root.close() } }
         }
 
@@ -134,12 +143,19 @@ Rectangle {
             anchors.rightMargin: 14
             anchors.verticalCenter: parent.verticalCenter
             width: root.toolbarButtonWidth
-            height: 70
+            height: root.toolbarButtonHeight
             radius: 8
             border.color: "white"
             border.width: 2
             color: keyboardMouse.pressed ? "black" : "white"
-            Text { anchors.centerIn: parent; text: "Keyboard"; color: keyboardMouse.pressed ? "white" : "black"; font.pointSize: 18; font.bold: true }
+            Text {
+                objectName: "rdpKeyboardLabel"
+                anchors.centerIn: parent
+                text: "Keyboard"
+                color: keyboardMouse.pressed ? "white" : "black"
+                font.pointSize: root.actionFontPointSize
+                font.bold: true
+            }
             TapHandler {
                 id: keyboardMouse
                 onTapped: {
@@ -242,8 +258,15 @@ Rectangle {
 
         Rectangle {
             objectName: "connectButton"
-            width: parent.width; height: 96; radius: 8; color: connectMouse.pressed ? "white" : "black"; border.color: "black"; border.width: 2
-            Text { anchors.centerIn: parent; text: "Connect"; color: connectMouse.pressed ? "black" : "white"; font.pointSize: 24; font.bold: true }
+            width: parent.width; height: 82; radius: 8; color: connectMouse.pressed ? "white" : "black"; border.color: "black"; border.width: 2
+            Text {
+                objectName: "rdpConnectLabel"
+                anchors.centerIn: parent
+                text: "Connect"
+                color: connectMouse.pressed ? "black" : "white"
+                font.pointSize: root.actionFontPointSize
+                font.bold: true
+            }
             TapHandler { id: connectMouse; onTapped: { console.log("PaperDesk RDP action connect"); root.connectRdp() } }
         }
 

@@ -30,8 +30,14 @@
 namespace {
 constexpr int W = 1404;
 constexpr int H = 1872;
-constexpr int BAR_H = 92;
+constexpr int BAR_H = 112;
 constexpr int RDP_H = H - BAR_H;
+constexpr int ACTION_H = 68;
+constexpr int ACTION_Y = 22;
+constexpr int CLOSE_X = 1210;
+constexpr int CLOSE_W = 176;
+constexpr int SHORTCUTS_X = 980;
+constexpr int SHORTCUTS_W = 216;
 
 struct App;
 struct PaperContext {
@@ -156,6 +162,21 @@ void rect(App& a, int x, int y, int w, int h, uint8_t gray, int t = 3) {
     fill(a,x,y,t,h,gray); fill(a,x+w-t,y,t,h,gray);
 }
 
+void roundedFill(App& a, int x, int y, int w, int h, int radius, uint8_t gray) {
+    radius = std::max(0, std::min(radius, std::min(w, h) / 2));
+    for (int row = 0; row < h; ++row) {
+        int inset = 0;
+        if (row < radius) {
+            const int dy = radius - row - 1;
+            inset = radius - static_cast<int>(std::sqrt(std::max(0, radius * radius - dy * dy)));
+        } else if (row >= h - radius) {
+            const int dy = row - (h - radius);
+            inset = radius - static_cast<int>(std::sqrt(std::max(0, radius * radius - dy * dy)));
+        }
+        fill(a, x + inset, y + row, w - 2 * inset, 1, gray);
+    }
+}
+
 void text(App& a, int x, int y, const std::string& s, int scale = 4, uint8_t gray = 0) {
     auto* p = reinterpret_cast<uint16_t*>(a.fb.shm);
     const uint16_t c = gray565(gray);
@@ -177,11 +198,20 @@ void text(App& a, int x, int y, const std::string& s, int scale = 4, uint8_t gra
 }
 
 void button(App& a, int x, int y, int w, int h, const std::string& label, bool dark=false) {
-    fill(a,x,y,w,h,dark?30:248);
-    rect(a,x,y,w,h,0,4);
-    int scale = label.size() > 8 ? 3 : 4;
+    constexpr int radius = 8;
+    constexpr int border = 3;
+    constexpr int scale = 3;
+    roundedFill(a,x,y,w,h,radius,0);
+    roundedFill(a,x+border,y+border,w-2*border,h-2*border,radius-border,dark?24:255);
     int tw = static_cast<int>(label.size()) * 6 * scale;
     text(a,x+(w-tw)/2,y+(h-7*scale)/2,label,scale,dark?255:0);
+}
+
+void headerTitle(App& a, const std::string& status) {
+    fill(a,0,0,W,BAR_H,0);
+    text(a,28,18,"PAPERDESK / REMOTE ACCESS",2,255);
+    text(a,28,53,"REMOTE DESKTOP",4,255);
+    if (!status.empty()) text(a,430,57,status,3,220);
 }
 
 std::string& activeField(App& a) {
@@ -192,9 +222,8 @@ std::string& activeField(App& a) {
 
 void drawLogin(App& a,bool complete=false) {
     fill(a,0,0,W,H,255);
-    text(a,70,75,"PAPERRDP",9);
-    text(a,72,165,"RDP FOR REMARKABLE 2",4,70);
-    button(a,1140,40,194,90,"CLOSE");
+    headerTitle(a,"CONNECTION PROFILE");
+    button(a,CLOSE_X,ACTION_Y,CLOSE_W,ACTION_H,"CLOSE");
     const char* names[]={"SERVER","USERNAME","PASSWORD"};
     int ys[]={300,520,740};
     for(int i=0;i<3;++i) {
@@ -214,22 +243,19 @@ void drawLogin(App& a,bool complete=false) {
 
 void drawConnecting(App& a) {
     fill(a,0,0,W,H,255);
-    text(a,70,75,"PAPERRDP",9);
+    headerTitle(a,"CONNECTING...");
+    button(a,CLOSE_X,ACTION_Y,CLOSE_W,ACTION_H,"CLOSE");
     text(a,72,210,"CONNECTING TO REMOTE COMPUTER...",5,0);
     text(a,72,300,a.profile.host,4,70);
     text(a,72,390,"PLEASE WAIT",4,70);
-    button(a,1140,40,194,90,"CLOSE");
     a.fb.sendCompleteUpdate();
     a.fb.requestFullRefresh();
 }
 
 void drawBar(App& a) {
-    fill(a,0,0,W,BAR_H,245);
-    fill(a,0,BAR_H-4,W,4,0);
-    text(a,28,28,"PAPERRDP",4);
-    text(a,320,31,a.status,3,70);
-    button(a,930,10,270,70,"SHORTCUTS");
-    button(a,1220,10,174,70,"CLOSE",true);
+    headerTitle(a,a.status);
+    button(a,SHORTCUTS_X,ACTION_Y,SHORTCUTS_W,ACTION_H,"SHORTCUTS");
+    button(a,CLOSE_X,ACTION_Y,CLOSE_W,ACTION_H,"CLOSE");
     a.fb.sendPartialUpdate(0,0,W,BAR_H);
 }
 
@@ -253,10 +279,11 @@ void drawShortcuts(App& a) {
 void drawError(App& a, const std::string& message) {
     a.mode=Mode::Error; a.status=message;
     fill(a,0,0,W,H,255);
-    text(a,70,110,"CONNECTION FAILED",6);
+    headerTitle(a,"CONNECTION FAILED");
+    button(a,CLOSE_X,ACTION_Y,CLOSE_W,ACTION_H,"CLOSE");
+    text(a,70,190,"CONNECTION FAILED",6);
     text(a,70,235,message,4,80);
     button(a,70,360,520,120,"BACK",true);
-    button(a,1140,30,194,90,"CLOSE");
     a.fb.sendCompleteUpdate();
 }
 
@@ -574,7 +601,7 @@ void editChar(App& a,char ch) {
 }
 
 void processLoginTouch(App& a,int x,int y) {
-    if(x>=1140&&y<150) { a.running=false; return; }
+    if(x>=CLOSE_X&&y>=ACTION_Y&&y<ACTION_Y+ACTION_H) { a.running=false; return; }
     if(x>=870&&y>=900&&y<1020) {
         if(a.profile.host.empty()||a.profile.user.empty()) a.status="SERVER AND USERNAME ARE REQUIRED";
         else { saveProfile(a.profile); a.mode=Mode::Connecting; a.status="CONNECTING..."; drawLogin(a); return; }
@@ -588,8 +615,8 @@ void redrawZoomedView(App& a);
 
 void processRemoteTouch(App& a,int x,int y) {
     if(y<BAR_H) {
-        if(x>=1220) a.running=false;
-        else if(x>=930&&x<1200) {
+        if(x>=CLOSE_X) a.running=false;
+        else if(x>=SHORTCUTS_X&&x<SHORTCUTS_X+SHORTCUTS_W) {
             a.shortcutsOpen=!a.shortcutsOpen;
             if(a.shortcutsOpen) drawShortcuts(a); else redrawZoomedView(a);
         }
@@ -717,7 +744,7 @@ void pollInput(App& a) {
         if(u.inputType==INPUT_TOUCH_RELEASE || u.inputType==INPUT_PEN_RELEASE) {
             if(a.mode==Mode::Login) processLoginTouch(a,u.x,u.y);
             else if(a.mode==Mode::Error) {
-                if(u.x>=1140&&u.y<150) a.running=false;
+                if(u.x>=CLOSE_X&&u.y>=ACTION_Y&&u.y<ACTION_Y+ACTION_H) a.running=false;
                 else if(u.x<650&&u.y>=330&&u.y<520) {
                     if(a.launchedFromNativeLogin) a.running=false;
                     else {a.mode=Mode::Login;a.status="ENTER CONNECTION DETAILS";drawLogin(a,true);}

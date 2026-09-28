@@ -78,5 +78,26 @@ Item {
             for (var name of ["serverInput", "usernameInput", "passwordInput", "portInput"])
                 verify(findChild(scene.app, name) !== null, name)
         }
+
+        function test_actions_share_one_visual_system() {
+            var close = findChild(scene.app, "rdpCloseButton")
+            var keyboard = findChild(scene.app, "rdpKeyboardButton")
+            var closeLabel = findChild(scene.app, "rdpCloseLabel")
+            var keyboardLabel = findChild(scene.app, "rdpKeyboardLabel")
+            var connectLabel = findChild(scene.app, "rdpConnectLabel")
+            verify(close !== null && keyboard !== null)
+            compare(close.width, 176)
+            compare(keyboard.width, close.width)
+            compare(close.height, 68)
+            compare(keyboard.height, close.height)
+            compare(close.radius, 8)
+            compare(keyboard.radius, close.radius)
+            compare(closeLabel.font.pointSize, 16)
+            compare(keyboardLabel.font.pointSize, closeLabel.font.pointSize)
+            compare(connectLabel.font.pointSize, closeLabel.font.pointSize)
+            verify(closeLabel.font.bold)
+            verify(keyboardLabel.font.bold)
+            verify(connectLabel.font.bold)
+        }
     }
 }

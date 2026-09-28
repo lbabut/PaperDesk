@@ -1,2 +1,3 @@
-Desktop installer previews existing app IDs before replacing them.
-First installs save original app folders and restore them on uninstall.
+PaperDesk RDP now uses one polished header and action-button style before, during, and after a connection.
+RDP button labels now keep the same size, weight, spacing, and rounded shape throughout the app.
+Close remains the rightmost action and all RDP touch targets stay e-ink friendly.

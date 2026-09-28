@@ -123,7 +123,9 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("readonly property int toolbarButtonWidth: 172", terminal)
         self.assertIn("anchors.right: keyboardButton.left", terminal)
         self.assertIn("anchors.leftMargin: 24", terminal)
-        self.assertIn("readonly property int toolbarButtonWidth: 210", rdp)
+        self.assertIn("readonly property int toolbarButtonWidth: 176", rdp)
+        self.assertIn("readonly property int toolbarButtonHeight: 68", rdp)
+        self.assertIn("readonly property int actionFontPointSize: 16", rdp)
         self.assertNotIn("MouseArea {", terminal)
         self.assertNotIn("MouseArea {", web)
         self.assertNotIn("MouseArea {", rss)
@@ -234,6 +236,16 @@ class PackageRegressionTests(unittest.TestCase):
         pan_block = source.split("if(a.panActive) {", 1)[1].split("}", 1)[0]
         self.assertNotIn("redrawZoomedView", pan_block)
         self.assertIn("else if(finishPan) redrawZoomedView(a);", source)
+
+    def test_rdp_native_header_uses_the_product_action_style(self):
+        source = (RELEASE / "payload/apps/paperrdp/paperrdp.cpp").read_text()
+        self.assertIn("constexpr int BAR_H = 112;", source)
+        self.assertIn("constexpr int ACTION_H = 68;", source)
+        self.assertIn("constexpr int CLOSE_W = 176;", source)
+        self.assertIn("constexpr int scale = 3;", source)
+        self.assertIn('text(a,28,18,"PAPERDESK / REMOTE ACCESS",2,255);', source)
+        self.assertIn("roundedFill(a,x,y,w,h,radius,0);", source)
+        self.assertNotIn("label.size() > 8", source)
 
     def test_rdp_maps_both_return_and_enter(self):
         source = (RELEASE / "payload/apps/paperrdp/paperrdp.cpp").read_text()
