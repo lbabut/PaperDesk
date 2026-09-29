@@ -1,0 +1,115 @@
+#!/bin/sh
+
+set -eu
+
+SETTINGS=${PAPERDESK_DOWNLOAD_SETTINGS:-/home/root/.config/remarkable/xochitl.conf}
+STATE=${PAPERDESK_DOWNLOAD_STATE:-/home/root/.local/share/paperdesk}
+DOWNLOAD_DIR=${PAPERDESK_DOWNLOAD_DIR:-/home/root/Downloads/PaperDesk}
+LOCK=${PAPERDESK_DOWNLOAD_LOCK:-/run/paperdesk-download.lock}
+WGET=${PAPERDESK_DOWNLOAD_WGET:-wget}
+STATUS_FILE=$STATE/download-status
+MAX_BLOCKS=204800
+
+read_setting() {
+    awk -F= -v wanted="$1" '
+        BEGIN { section=0 }
+        /^\[PaperWebDownload\]$/ { section=1; next }
+        /^\[/ { section=0 }
+        section && $1 == wanted { sub(/^[^=]*=/, ""); print; exit }
+    ' "$SETTINGS"
+}
+
+clear_request() {
+    awk '
+        BEGIN { section=0 }
+        /^\[PaperWebDownload\]$/ { section=1; print; next }
+        /^\[/ { section=0 }
+        section && /^requested=/ { print "requested=false"; next }
+        { print }
+    ' "$SETTINGS" > "$SETTINGS.paperdesk-download"
+    mv "$SETTINGS.paperdesk-download" "$SETTINGS"
+}
+
+write_status() {
+    mkdir -p "$STATE"
+    status_tmp="$STATUS_FILE.$$"
+    printf '%s|%s|%s\n' "$REQUEST_ID" "$1" "$2" > "$status_tmp"
+    mv "$status_tmp" "$STATUS_FILE"
+}
+
+fail() {
+    rm -f "${PART_FILE:-}"
+    write_status failed "$1"
+    exit 1
+}
+
+[ -f "$SETTINGS" ] || exit 0
+[ "$(read_setting requested || true)" = "true" ] || exit 0
+REQUEST_ID=$(read_setting requestId || true)
+URL=$(read_setting requestUrl || true)
+SUGGESTED=$(read_setting suggestedName || true)
+clear_request
+
+# QSettings quotes strings containing URL punctuation. Remove only the
+# matching outer quotes; the URL is still validated before it reaches wget.
+case "$URL" in
+    \"*\") URL=${URL#\"}; URL=${URL%\"} ;;
+esac
+case "$SUGGESTED" in
+    \"*\") SUGGESTED=${SUGGESTED#\"}; SUGGESTED=${SUGGESTED%\"} ;;
+esac
+
+printf '%s' "$REQUEST_ID" | grep -Eq '^[0-9]{8,20}$' || exit 0
+case "$URL" in
+    http://*|https://*) ;;
+    *) fail "Unsupported download address" ;;
+esac
+if printf '%s' "$URL" | grep -q '[[:cntrl:]]'; then
+    fail "Invalid download address"
+fi
+
+mkdir -p "$STATE" "$DOWNLOAD_DIR"
+exec 9>"$LOCK"
+flock -n 9 || fail "Another download is already running"
+
+if [ -z "$SUGGESTED" ]; then
+    SUGGESTED=${URL%%\?*}
+    SUGGESTED=${SUGGESTED%%\#*}
+    SUGGESTED=${SUGGESTED##*/}
+fi
+SUGGESTED=$(printf '%s' "$SUGGESTED" | sed 's/%[0-9A-Fa-f][0-9A-Fa-f]/_/g; s/[^A-Za-z0-9._-]/_/g; s/^\.*//; s/_\{2,\}/_/g' | cut -c1-96)
+if [ -z "$SUGGESTED" ]; then
+    SUGGESTED="download-$(date +%Y%m%d-%H%M%S)"
+fi
+
+DESTINATION="$DOWNLOAD_DIR/$SUGGESTED"
+if [ -e "$DESTINATION" ]; then
+    STEM=$SUGGESTED
+    EXT=
+    case "$SUGGESTED" in
+        *.*) STEM=${SUGGESTED%.*}; EXT=.${SUGGESTED##*.} ;;
+    esac
+    INDEX=2
+    while [ -e "$DOWNLOAD_DIR/$STEM-$INDEX$EXT" ]; do
+        INDEX=$((INDEX + 1))
+    done
+    DESTINATION="$DOWNLOAD_DIR/$STEM-$INDEX$EXT"
+fi
+
+AVAILABLE_KB=$(df -Pk "$DOWNLOAD_DIR" | awk 'NR==2 {print $4}')
+if [ "${AVAILABLE_KB:-0}" -lt 131072 ]; then
+    fail "Not enough free space (128 MB required)"
+fi
+
+PART_FILE="$DESTINATION.part.$$"
+write_status downloading "Downloading $(basename "$DESTINATION")"
+ulimit -f "$MAX_BLOCKS"
+if ! "$WGET" -q -T 45 -U "PaperWeb/1.2 (reMarkable 2)" -O "$PART_FILE" "$URL"; then
+    fail "Download failed or exceeded 100 MB"
+fi
+if [ ! -s "$PART_FILE" ]; then
+    fail "The server returned an empty file"
+fi
+mv "$PART_FILE" "$DESTINATION"
+PART_FILE=
+write_status saved "Saved: $(basename "$DESTINATION")"

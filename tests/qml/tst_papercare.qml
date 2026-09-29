@@ -32,18 +32,18 @@ Item {
 
         function test_01_manifest_and_version_comparison() {
             verify(scene.care.isNewer("1.1.3", "1.1.2"))
-            verify(scene.care.isNewer("1.2.3", "1.2.2"))
+            verify(scene.care.isNewer("1.2.4", "1.2.3"))
             verify(!scene.care.isNewer("1.1.2", "1.1.2"))
             verify(scene.care.applyManifest({
                 product: "PaperDesk",
-                version: "1.2.3",
+                version: "1.2.4",
                 publishedAt: "2026-09-28",
-                archiveUrl: "/download/paperdesk-1.2.3.zip",
+                archiveUrl: "/download/paperdesk-1.2.4.zip",
                 archiveSha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 releaseNotes: ["A useful change", "A repaired interaction"]
             }))
             compare(scene.care.state, "available")
-            compare(scene.care.latestVersion, "1.2.3")
+            compare(scene.care.latestVersion, "1.2.4")
             verify(scene.care.releaseNotes.indexOf("A useful change") >= 0)
         }
 
@@ -52,7 +52,7 @@ Item {
             wait(50)
             scene.care.requestActive = false
             scene.care.state = "available"
-            scene.care.latestVersion = "1.2.3"
+            scene.care.latestVersion = "1.2.4"
             var installButton = findChild(scene.care, "careInstallButton")
             verify(installButton !== null)
             compare(installButton.available, true)

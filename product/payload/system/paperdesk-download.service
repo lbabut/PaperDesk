@@ -1,0 +1,12 @@
+[Unit]
+Description=Download a PaperWeb file outside Xochitl
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStart=/home/root/.local/lib/paperdesk/paperdesk-download-agent
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=180

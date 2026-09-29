@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.3 — 2026-09-29
+
+- Moved PaperWeb downloads out of AppLoad and Xochitl into an isolated systemd worker.
+- Fixed a reproducible Xochitl segmentation fault when two file links were downloaded in quick succession.
+- Added unit tests for repeated downloads, safe duplicate names, and rejected local-file URLs.
+- The physical-tablet test now downloads two real files in sequence and verifies that Xochitl keeps the same process.
+
 ## 1.2.2 — 2026-09-28
 
 - PaperWeb downloads a linked file when the user taps its link.

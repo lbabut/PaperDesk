@@ -1,6 +1,6 @@
 {
   "product": "PaperDesk",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "releaseDate": "2026-09-28",
   "device": "reMarkable 2",
   "components": [
@@ -11,8 +11,7 @@
     { "id": "papercare", "name": "PaperDesk Care" }
   ],
   "internalComponents": [
-    { "id": "external::paperrdp", "name": "PaperDesk RDP Engine", "role": "hidden FreeRDP/QTFB worker" },
-    { "id": "external::paperweb-download", "name": "PaperWeb Download Helper", "role": "hidden bounded download worker" }
+    { "id": "external::paperrdp", "name": "PaperDesk RDP Engine", "role": "hidden FreeRDP/QTFB worker" }
   ],
   "testedWith": {
     "remarkableOS": "3.29.0.149",

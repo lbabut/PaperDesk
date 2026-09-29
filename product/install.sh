@@ -25,14 +25,14 @@ if [ ! -d "/home/root/xovi" ] || [ ! -d "$TARGET" ]; then
     exit 1
 fi
 
-for required in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrss papercare shims; do
+for required in paperdesk literm paperweb paperrdp-login paperrdp paperrss papercare shims; do
     if [ ! -d "$PAYLOAD/apps/$required" ]; then
         echo "Incomplete package: missing payload/apps/$required" >&2
         exit 1
     fi
 done
 
-for required in paperdesk-appload-compat.qrr paperdesk-appload-window.qml paperdesk-appload.qml paperdesk-update-agent paperdesk-update.service paperdesk-update.path paperdesk-release-public.pem; do
+for required in paperdesk-appload-compat.qrr paperdesk-appload-window.qml paperdesk-appload.qml paperdesk-update-agent paperdesk-update.service paperdesk-update.path paperdesk-download-agent paperdesk-download.service paperdesk-download.path paperdesk-release-public.pem; do
     if [ ! -f "$PAYLOAD/system/$required" ]; then
         echo "Incomplete package: missing payload/system/$required" >&2
         exit 1
@@ -58,7 +58,7 @@ if [ ! -f "$STATE/original-recorded" ] && [ ! -f "$STATE/current-version" ]; the
             cp "$QRR_DIR/$resource" "$ORIGINAL/system/$resource"
         fi
     done
-    for service in paperdesk-update.service paperdesk-update.path; do
+    for service in paperdesk-update.service paperdesk-update.path paperdesk-download.service paperdesk-download.path; do
         if [ -f "/etc/systemd/system/$service" ]; then
             cp "/etc/systemd/system/$service" "$ORIGINAL/system/$service"
             if systemctl is-enabled --quiet "$service"; then
@@ -74,14 +74,20 @@ fi
 
 cp "$PAYLOAD/system/paperdesk-update.service" /etc/systemd/system/paperdesk-update.service
 cp "$PAYLOAD/system/paperdesk-update.path" /etc/systemd/system/paperdesk-update.path
+cp "$PAYLOAD/system/paperdesk-download.service" /etc/systemd/system/paperdesk-download.service
+cp "$PAYLOAD/system/paperdesk-download.path" /etc/systemd/system/paperdesk-download.path
 mkdir -p /home/root/.local/lib/paperdesk
 cp "$PAYLOAD/system/paperdesk-update-agent" /home/root/.local/lib/paperdesk/paperdesk-update-agent
+cp "$PAYLOAD/system/paperdesk-download-agent" /home/root/.local/lib/paperdesk/paperdesk-download-agent
 cp "$PAYLOAD/system/paperdesk-release-public.pem" /home/root/.local/lib/paperdesk/release-public.pem
 cp "$SCRIPT_DIR/uninstall.sh" /home/root/.local/lib/paperdesk/paperdesk-uninstall
-chmod 755 /home/root/.local/lib/paperdesk/paperdesk-update-agent /home/root/.local/lib/paperdesk/paperdesk-uninstall
+chmod 755 /home/root/.local/lib/paperdesk/paperdesk-update-agent \
+    /home/root/.local/lib/paperdesk/paperdesk-download-agent \
+    /home/root/.local/lib/paperdesk/paperdesk-uninstall
 chmod 644 /home/root/.local/lib/paperdesk/release-public.pem
 systemctl daemon-reload
 systemctl enable --now paperdesk-update.path
+systemctl enable --now paperdesk-download.path
 
 # PaperDesk 1.0.5 through 1.1.8 installed this exact boot service. On an rM2,
 # a broken XOVI extension can then repeat on every boot while hardware recovery
@@ -107,7 +113,11 @@ mkdir -p "$BACKUP/apps" "$BACKUP/system" "$TARGET" /home/root/.local/bin \
 echo "$PRODUCT $VERSION — installation"
 echo "Previous-version backup: $BACKUP"
 
-for app in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrss papercare shims; do
+if [ -e "$TARGET/paperweb-download" ]; then
+    cp -R "$TARGET/paperweb-download" "$BACKUP/apps/paperweb-download"
+    rm -rf "$TARGET/paperweb-download"
+fi
+for app in paperdesk literm paperweb paperrdp-login paperrdp paperrss papercare shims; do
     if [ -e "$TARGET/$app" ]; then
         cp -R "$TARGET/$app" "$BACKUP/apps/$app"
     fi
@@ -119,8 +129,7 @@ if [ -f /home/root/.local/bin/rmssh-menu ]; then
     cp /home/root/.local/bin/rmssh-menu "$BACKUP/system/rmssh-menu"
 fi
 cp "$PAYLOAD/system/rmssh-menu" /home/root/.local/bin/rmssh-menu
-chmod 755 /home/root/.local/bin/rmssh-menu "$TARGET/paperrdp/paperrdp" \
-    "$TARGET/paperweb-download/download"
+chmod 755 /home/root/.local/bin/rmssh-menu "$TARGET/paperrdp/paperrdp"
 
 for resource in paperdesk-appload-compat.qrr paperdesk-appload-window.qml paperdesk-appload.qml; do
     if [ -f "$QRR_DIR/$resource" ]; then

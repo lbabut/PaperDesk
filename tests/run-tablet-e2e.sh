@@ -501,21 +501,31 @@ case "$TARGET" in
         ;;
     web-download)
         tap 1040 500
-        wait_for_log 'PaperDesk touch launching paperweb' 10
-        wait_for_log 'PaperWeb E2E download fixture ready' 10
+        wait_for_log 'PaperDesk touch launching paperweb' 10 || exit 1
+        wait_for_log 'PaperWeb E2E download fixture ready' 10 || exit 1
         tap 190 315
-        wait_for_log 'PaperWeb link activated https://paperdesk.lukaszbabut.info/assets/icon.svg' 8
-        wait_for_log 'PaperWeb download requested https://paperdesk.lukaszbabut.info/assets/icon.svg' 8
-        wait_for_log 'PaperWeb download saved Saved: icon' 30
+        wait_for_log 'PaperWeb link activated https://paperdesk.lukaszbabut.info/assets/icon.svg' 8 || exit 1
+        wait_for_log 'PaperWeb download requested https://paperdesk.lukaszbabut.info/assets/icon.svg' 8 || exit 1
+        wait_for_log 'PaperWeb download saved Saved: icon' 30 || exit 1
         remote 'set -eu
 status=$(cat /home/root/.local/share/paperdesk/download-status)
 saved=${status##*Saved: }
 test -n "$saved"
 test -s "/home/root/Downloads/PaperDesk/$saved"
 grep -q "<svg" "/home/root/Downloads/PaperDesk/$saved"'
-        assert_tablet_healthy 'PaperWeb physical download'
+        assert_tablet_healthy 'first PaperWeb physical download' || exit 1
+        tap 190 315
+        wait_for_log 'PaperWeb link activated https://paperdesk.lukaszbabut.info/assets/paperdesk-rdp.png' 8 || exit 1
+        wait_for_log 'PaperWeb download requested https://paperdesk.lukaszbabut.info/assets/paperdesk-rdp.png' 8 || exit 1
+        wait_for_log 'PaperWeb download saved Saved: paperdesk-rdp' 30 || exit 1
+        remote 'set -eu
+status=$(cat /home/root/.local/share/paperdesk/download-status)
+saved=${status##*Saved: }
+test -n "$saved"
+test -s "/home/root/Downloads/PaperDesk/$saved"'
+        assert_tablet_healthy 'two sequential PaperWeb physical downloads' || exit 1
         capture_screen "$ARTIFACT_DIR/web-download-saved.png"
-        echo "PASS: a physical tablet tap on a file link downloaded it and PaperWeb reported the saved name"
+        echo "PASS: two rapid physical file-link downloads completed without restarting Xochitl"
         ;;
     web-live-wp)
         tap 1040 500

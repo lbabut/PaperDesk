@@ -3,7 +3,6 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtQml 2.15
 import Qt.labs.settings 1.1
-import net.asivery.AppLoad 1.0
 import net.asivery.ApploadUtils
 
 Rectangle {
@@ -44,6 +43,15 @@ Rectangle {
         property bool savedMobileMode: true
         property bool savedShowPictures: false
         property string savedLastUrl: ""
+    }
+
+    Settings {
+        id: downloadSettings
+        category: "PaperWebDownload"
+        property bool requested: false
+        property string requestId: ""
+        property string requestUrl: ""
+        property string suggestedName: ""
     }
 
     Settings {
@@ -167,9 +175,20 @@ Rectangle {
         downloadActive = true
         statusText.text = "Starting download..."
         console.log("PaperWeb download requested", url)
-        AppLoadLauncher.launchApplication(
-            "external::paperweb-download",
-            [url, downloadRequestId, String(suggestedName || "")], {}, false)
+        // The download worker is triggered by systemd from this settings
+        // request. Never launch a short-lived process through AppLoad: a
+        // second rapid launch can crash the host Xochitl process.
+        downloadSettings.requested = false
+        downloadSettings.requestUrl = url
+        downloadSettings.suggestedName = String(suggestedName || "")
+        downloadSettings.requestId = downloadRequestId
+        downloadSettings.requested = true
+        downloadSettings.sync()
+        if (e2eSettings.scenarioVersion === 20260927 && e2eSettings.webDownloadFixture &&
+                url.indexOf("/assets/icon.svg") >= 0) {
+            pageText.text = "<p><a href='https://paperdesk.lukaszbabut.info/assets/paperdesk-rdp.png?paperdesk-e2e=20260929'>" +
+                            "<b>Download PNG test file</b></a></p>"
+        }
         downloadStatusTimer.start()
     }
 
@@ -1374,12 +1393,11 @@ Rectangle {
     Component.onCompleted: {
         if (e2eSettings.scenarioVersion === 20260927 && e2eSettings.webDownloadFixture) {
             var fixtureDownloadUrl = "https://paperdesk.lukaszbabut.info/assets/icon.svg?paperdesk-e2e=20260928"
-            pageText.text = "<p><a href='" + fixtureDownloadUrl + "'><b>Download test file</b></a></p>" +
-                            "<p>Tap the file link to save it in Downloads.</p>"
+            pageText.text = "<p><a href='" + fixtureDownloadUrl + "'><b>Download SVG test file</b></a></p>"
             pageTitle = "Download test"
             currentUrl = "https://paperdesk.lukaszbabut.info/download-test"
             address.text = currentUrl
-            statusText.text = "Tap a file link to download"
+            statusText.text = "Tap both file links to download"
             console.log("PaperWeb E2E download fixture ready")
         } else if (e2eSettings.scenarioVersion === 20260927 && e2eSettings.webLiveArticleJourney) {
             mobileMode = true

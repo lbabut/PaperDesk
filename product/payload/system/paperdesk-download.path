@@ -1,0 +1,10 @@
+[Unit]
+Description=Watch for PaperWeb download requests
+
+[Path]
+PathChanged=/home/root/.config/remarkable/xochitl.conf
+Unit=paperdesk-download.service
+TriggerLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target

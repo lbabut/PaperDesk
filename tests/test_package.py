@@ -470,13 +470,17 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("images.weserv.nl", qml)
         self.assertIn("e2eSettings.scenarioVersion === 20260927 && e2eSettings.webFixture", qml)
 
-    def test_web_downloads_use_a_hidden_bounded_helper(self):
+    def test_web_downloads_use_an_isolated_bounded_service(self):
         apps = RELEASE / "payload/apps"
+        system = RELEASE / "payload/system"
         qml = (apps / "paperweb/ui/main.qml").read_text()
-        helper = (apps / "paperweb-download/download").read_text()
-        manifest = json.loads((apps / "paperweb-download/external.manifest.json").read_text())
-        self.assertEqual(manifest["qtfb"], False)
-        self.assertIn('"external::paperweb-download"', qml)
+        helper = (system / "paperdesk-download-agent").read_text()
+        service = (system / "paperdesk-download.service").read_text()
+        path = (system / "paperdesk-download.path").read_text()
+        self.assertNotIn("AppLoadLauncher", qml)
+        self.assertNotIn('"external::paperweb-download"', qml)
+        self.assertIn('category: "PaperWebDownload"', qml)
+        self.assertIn("downloadSettings.requested = true", qml)
         self.assertIn("function responseWantsDownload", qml)
         self.assertIn("Content-Disposition", qml)
         self.assertIn("application\\/octet-stream", qml)
@@ -489,9 +493,12 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("Not enough free space", helper)
         self.assertNotIn("eval ", helper)
         self.assertNotIn("sh -c", helper)
+        self.assertIn("ExecStart=/home/root/.local/lib/paperdesk/paperdesk-download-agent", service)
+        self.assertIn("PathChanged=/home/root/.config/remarkable/xochitl.conf", path)
         installer = (RELEASE / "install.sh").read_text()
         uninstaller = (RELEASE / "uninstall.sh").read_text()
-        self.assertIn("paperweb-download", installer)
+        self.assertIn("systemctl enable --now paperdesk-download.path", installer)
+        self.assertIn('rm -rf "$TARGET/paperweb-download"', installer)
         self.assertIn("paperweb-download", uninstaller)
 
     def test_rss_science_starter_pack_is_non_destructive(self):

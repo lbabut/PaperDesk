@@ -1,14 +1,14 @@
 {
   "product": "PaperDesk",
   "channel": "stable",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "publishedAt": "2026-09-28",
-  "archiveUrl": "/download/paperdesk-1.2.2.zip",
-  "archiveSha256": "0d21300f75473a3cb5fdbcb37f8cf22e856c09dfde54b25252ef78e830c0afce",
-  "archiveSize": 1336997,
+  "archiveUrl": "/download/paperdesk-1.2.3.zip",
+  "archiveSha256": "698414a6e68585461e7f4177c8f35574738a98809982d4c881c1b0783dcf5312",
+  "archiveSize": 1338713,
   "releaseNotes": [
-    "PaperWeb now downloads files when their links are tapped; the misleading page-saving Download button has been removed.",
-    "Direct links to SVG, GIF, and WebP images are now recognised as downloadable files too.",
-    "Downloaded files are saved in the tablet's /home/root/Downloads/PaperDesk directory."
+    "PaperWeb downloads now run in an isolated system service instead of inside the tablet interface.",
+    "Downloading two files in quick succession no longer restarts Xochitl.",
+    "Files are still saved in the tablet's /home/root/Downloads/PaperDesk directory."
   ]
 }

@@ -1,3 +1,3 @@
-PaperWeb now downloads files when their links are tapped; the misleading page-saving Download button has been removed.
-Direct links to SVG, GIF, and WebP images are now recognised as downloadable files too.
-Downloaded files are saved in the tablet's /home/root/Downloads/PaperDesk directory.
+PaperWeb downloads now run in an isolated system service instead of inside the tablet interface.
+Downloading two files in quick succession no longer restarts Xochitl.
+Files are still saved in the tablet's /home/root/Downloads/PaperDesk directory.

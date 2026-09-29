@@ -1,6 +1,6 @@
 # PaperDesk Apps — manual installation on reMarkable 2
 
-These instructions cover manual installation of PaperDesk 1.2.2 from a Linux
+These instructions cover manual installation of PaperDesk 1.2.3 from a Linux
 computer over USB and SSH. The graphical installer is not required.
 
 ## 1. Prepare the tablet and computer
@@ -26,9 +26,9 @@ unexpectedly, stop the installation.
 In the directory containing the downloaded archive:
 
 ```sh
-sha256sum paperdesk-linux-installer-1.2.2.tar.gz
-tar -xzf paperdesk-linux-installer-1.2.2.tar.gz
-cd paperdesk-linux-installer-1.2.2/product
+sha256sum paperdesk-linux-installer-1.2.3.tar.gz
+tar -xzf paperdesk-linux-installer-1.2.3.tar.gz
+cd paperdesk-linux-installer-1.2.3/product
 sha256sum -c SHA256SUMS
 ```
 
@@ -103,11 +103,12 @@ boot-time XOVI service:
 ```sh
 ssh root@10.11.99.1 'cat /home/root/.local/share/paperdesk/current-version;
   systemctl is-enabled xovi-autostart.service 2>/dev/null || true;
-  systemctl is-enabled paperdesk-update.path'
+  systemctl is-enabled paperdesk-update.path;
+  systemctl is-enabled paperdesk-download.path'
 ```
 
-The version should be `1.2.2`; `xovi-autostart.service` should report
-`disabled` or `not-found`, while `paperdesk-update.path` should report `enabled`.
+The version should be `1.2.3`; `xovi-autostart.service` should report
+`disabled` or `not-found`, while both PaperDesk path units should report `enabled`.
 Connection profiles remain in user data directories on the tablet.
 
 ## Uninstall and return to the previous state
