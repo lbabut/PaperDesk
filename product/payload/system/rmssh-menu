@@ -1,0 +1,140 @@
+#!/bin/sh
+
+# RMSSH: a deliberately small SSH launcher for the reMarkable 2 LiTerm app.
+set -u
+umask 077
+
+CONFIG_DIR="${HOME:-/home/root}/.config/rmssh"
+KNOWN_HOSTS="${HOME:-/home/root}/.ssh/known_hosts"
+
+mkdir -p "$CONFIG_DIR" "${HOME:-/home/root}/.ssh"
+chmod 700 "$CONFIG_DIR"
+chmod 700 "${HOME:-/home/root}/.ssh"
+touch "$KNOWN_HOSTS"
+chmod 600 "$KNOWN_HOSTS"
+
+# The graphical session picker must never type a connection command into an
+# active remote shell. This local, owner-only state is checked before sending.
+set_state() {
+    printf '%s %s\n' "$1" "$$" > "$CONFIG_DIR/state.$$"
+    mv "$CONFIG_DIR/state.$$" "$CONFIG_DIR/state"
+}
+cleanup() {
+    if [ "$(awk '{print $2}' "$CONFIG_DIR/state" 2>/dev/null)" = "$$" ]; then
+        rm -f "$CONFIG_DIR/state"
+    fi
+    rm -f "$CONFIG_DIR/state.$$"
+}
+trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+saved_connection() {
+    # Deliberately not eval/source: all fields are values in a small protocol,
+    # not commands. Hosts/usernames are ASCII SSH identifiers, never options.
+    IFS=' ' read -r _verb _host _user _port _extra <<EOF
+$1
+EOF
+    case $_host in ''|-*|*[!a-zA-Z0-9._:%-]*) return ;; esac
+    case $_user in ''|-*|*[!a-zA-Z0-9_.@-]*) return ;; esac
+    case $_port in ''|*[!0-9]*) return ;; esac
+    [ "${#_host}" -le 255 ] && [ "${#_user}" -le 128 ] &&
+        [ "${#_port}" -le 5 ] && [ "$_port" -ge 1 ] && [ "$_port" -le 65535 ] &&
+        [ -z "$_extra" ] || return
+    connect_profile "$_user@$_host" "$_user" "$_host" "$_port"
+}
+
+clear_screen() {
+    printf '\033[2J\033[H'
+}
+
+pause() {
+    printf '\nPress Enter to return to the menu...'
+    IFS= read -r _answer
+}
+
+connect_profile() {
+    set_state busy
+    _name=$1
+    _user=$2
+    _host=$3
+    _port=${4:-22}
+    _identity=${5:-}
+    _command=${6:-}
+    _terminal=${7:-xterm-256color}
+    _compression=${8:-no}
+
+    clear_screen
+    printf 'RMSSH — %s\n\n' "$_name"
+    printf 'Connecting to %s@%s:%s\n\n' "$_user" "$_host" "$_port"
+    printf 'Terminal: %s   Compression: %s\n\n' "$_terminal" "$_compression"
+
+    set -- ssh -tt \
+        -o StrictHostKeyChecking=ask \
+        -o ServerAliveInterval=30 \
+        -p "$_port"
+    case "$_compression" in
+        yes|true|1) set -- "$@" -C ;;
+    esac
+    if [ -n "$_identity" ]; then
+        set -- "$@" -i "$_identity"
+    fi
+    # Treat both user input fields as values, never as ssh command options.
+    set -- "$@" -l "$_user" -- "$_host"
+    if [ -n "$_command" ]; then
+        set -- "$@" "$_command"
+    fi
+    TERM=$_terminal
+    export TERM
+    "$@"
+    _status=$?
+    set_state closed
+    printf '\nConnection closed (code %s).\n' "$_status"
+    pause
+}
+
+quick_connect() {
+    set_state busy
+    clear_screen
+    printf 'RMSSH — quick connection\n\n'
+    printf 'Host or IP address: '
+    IFS= read -r _host
+    [ -n "$_host" ] || return
+    printf 'Username: '
+    IFS= read -r _user
+    [ -n "$_user" ] || return
+    printf 'Port [22]: '
+    IFS= read -r _port
+    _port=${_port:-22}
+    connect_profile "$_user@$_host" "$_user" "$_host" "$_port" "" "" "xterm-256color" "no"
+}
+
+# LiTerm may start the command a fraction of a second before its QML render
+# delegates are connected. Delay the first menu draw so its initial output is
+# never lost on the e-ink surface. Tests may explicitly set this to zero.
+sleep "${PAPERDESK_RMSSH_START_DELAY:-1}"
+
+while :; do
+    clear_screen
+    printf 'RMSSH — SSH terminal for reMarkable 2\n'
+    printf '====================================\n\n'
+    printf '\n  n) New connection\n'
+    printf '  l) Local recovery shell\n'
+    printf '  q) Close application\n\n'
+    printf 'Choice: '
+    set_state ready
+    IFS= read -r _choice || exit 0
+    case "$_choice" in
+        n|N) quick_connect ;;
+        'c '*) saved_connection "$_choice" ;;
+        l|L)
+            set_state busy
+            clear_screen
+            printf 'Local shell. Type exit to return to RMSSH.\n\n'
+            /bin/sh -l
+            ;;
+        q|Q) exit 0 ;;
+        *) ;;
+    esac
+done

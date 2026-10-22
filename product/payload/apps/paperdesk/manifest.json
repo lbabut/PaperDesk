@@ -1,0 +1,8 @@
+{
+  "name": "PaperDesk",
+  "loadsBackend": false,
+  "entry": "/ui/main.qml",
+  "id": "paperdesk",
+  "supportsScaling": true,
+  "canHaveMultipleFrontends": false
+}

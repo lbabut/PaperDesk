@@ -1,0 +1,8 @@
+{
+  "name": "PaperDesk RDP Profile Manager",
+  "application": "/home/root/xovi/exthome/appload/paperrdp-profile/profile-manager",
+  "workingDirectory": "/home/root/xovi/exthome/appload/paperrdp-profile",
+  "qtfb": false,
+  "supportsVirtualKeyboard": false,
+  "disablesWindowedMode": false
+}

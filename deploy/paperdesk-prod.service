@@ -1,0 +1,27 @@
+[Unit]
+Description=PaperDesk Apps production website
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=azureuser
+Group=azureuser
+WorkingDirectory=/home/azureuser/PaperDesk
+ExecStart=/usr/bin/python3 /home/azureuser/PaperDesk/website/server.py --host 127.0.0.1 --port 8090
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectControlGroups=true
+ProtectHome=read-only
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+StateDirectory=paperdesk
+StateDirectoryMode=0750
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,20 @@
+paperdesk.lukaszbabut.info {
+	@stats path /api/download-count /api/download-countries
+	header @stats Cache-Control no-store
+	reverse_proxy 127.0.0.1:8090 {
+		header_up X-PaperDesk-Client-IP {remote_host}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}
+
+# Keep the original production IP usable while DNS caches are propagating.
+http://128.251.8.232 {
+	reverse_proxy 127.0.0.1:8090 {
+		header_up X-PaperDesk-Client-IP {remote_host}
+	}
+}

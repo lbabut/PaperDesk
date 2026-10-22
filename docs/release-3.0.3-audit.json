@@ -1,0 +1,62 @@
+{
+  "version": "3.0.3",
+  "date": "2026-10-20",
+  "status": "Published and externally verified",
+  "changes": [
+    "RDP landscape keeps its raster, toolbar, shortcuts and real system keyboard aligned",
+    "Native panel geometry and original bindings are restored on hide, focus loss, close and unexpected window destruction",
+    "Bounded lazy keyboard discovery, stationary touch targets and updated orientation guidance",
+    "Care version, release notes, project package, source-first guides and website release section updated"
+  ],
+  "tests": {
+    "pythonPassed": 105,
+    "qmlPassed": 165,
+    "windowsPassed": 42,
+    "windowsSkipped": 2,
+    "failed": 0,
+    "releaseDateRegression": "Replaced a fixed historical release date assertion with ISO date validation and agreement between release metadata, signed feed and changelog",
+    "hardwareEvidence": "rdp-landscape-layout-audit-2026-10-20.json",
+    "tabletVersionMarkerBeforePublication": "3.0.2",
+    "tabletRdpSourceHashMatchesPublishedPayload": true,
+    "tablet303InstalledDuringPublication": false,
+    "payloadSourceArchiveParity": true,
+    "manifestSignaturesVerified": true,
+    "published302ArchivesUnchanged": true
+  },
+  "distribution": {
+    "sourceArchive": "paperdesk-sources-3.0.3.tar.gz",
+    "sourceSha256": "81a905141a9812a96e497183ad59179bf083a5bf7cb9d1ccb5f85016885711ae",
+    "sourceBytes": 3731784,
+    "careArchive": "paperdesk-3.0.3.zip",
+    "careSha256": "bbfdf893ad018d63204a40afdc81994823ed00f9a0b051c38523687d46cb3ecc",
+    "careBytes": 2529613,
+    "feeds": {"stable": "3.0.3", "latest": "3.0.3"},
+    "publicInstallerLinks": 0,
+    "oldArchivesRetained": true,
+    "packageDelta": "Only release metadata/docs/checksums, Care version resources, RDP login guidance/resources and the AppLoad window keyboard fix differ from 3.0.2; no payload files were added or removed"
+  },
+  "production": {
+    "url": "https://paperdesk.lukaszbabut.info/",
+    "initialWebsiteContentsMatchedCanonical": true,
+    "preReleaseWebsiteDigest": "6d35ddf2dcf3a84f6dc4af0255d048a0ed5b482fd6eb1203a2c781fbf8e678c2",
+    "downloadCountBefore": 146,
+    "downloadCountAfter": 146,
+    "countryRowsBefore": 40,
+    "countryRowsAfter": 40,
+    "sqliteIntegrity": "ok",
+    "statisticsBackup": "/var/lib/paperdesk/backups/stats-before-20261020T104222Z.sqlite3",
+    "rollbackDirectory": "/home/azureuser/PaperDesk.backup-20261020T104222Z",
+    "globalCaddyConfigUnchanged": true,
+    "serviceUnitUnchanged": true,
+    "publicVerification": "Health, homepage, both guides, both manifests, signatures and source checksum match local artifacts. Both archives return HTTP 200 to HEAD with correct lengths; server archive hashes match. Browser shows version 3.0.3 and counter 146.",
+    "counterSafeChecks": "No production archive GET was used; only HEAD and non-counted metadata endpoints",
+    "privateScreenshot": "work/release-303/production.png"
+  },
+  "lola": {
+    "websiteVersion": "3.0.3",
+    "health": "ok",
+    "manifestVersionVerified": true,
+    "rollbackDirectory": "/home/lukasz/PaperDesk.backup-20261020T104215Z"
+  },
+  "scope": "Explicitly approved production release. No unrelated Git staging/commits, firmware restart or tablet package installation was performed. Source snapshot synchronization remains separate from website deployments."
+}

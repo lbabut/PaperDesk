@@ -1,0 +1,5 @@
+RDP now keeps the remote desktop, toolbar and shortcuts in the same landscape orientation while typing.
+The real system keyboard follows landscape sessions and returns to its original layout when hidden or when you leave RDP. No replacement keyboard or global tablet rotation change.
+Keyboard and Close buttons stay in place; shortcuts remain reachable. Saved profiles, passwords and app settings are preserved.
+Verified on reMarkable 2 with physical touch: typing, Backspace, Enter, shortcuts, Close, portrait restoration and reconnecting. Expanded automated layout and lifecycle regression tests.
+All seven apps remain included, including six Books sources and bounded PDF/EPUB downloads to My files. Update to signed version 3.0.3 in Care or install the project package over SSH. XOVI boot autostart stays disabled.

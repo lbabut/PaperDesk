@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-18",
+  "feature": "Per-profile RDP Portrait / Landscape",
+  "production_deployed": false,
+  "compatibility": {
+    "legacy_v1_profiles": "Portrait; readable alongside v2 records",
+    "v2_profiles": "Persist and validate portrait / landscape",
+    "physical_qtfb_surface": [1404, 1872],
+    "portrait_desktop_viewport": [1404, 1760],
+    "landscape_desktop_viewport": [1872, 1292],
+    "rotation": "Clockwise raster; inverse touch/pen mapping; turn tablet left",
+    "partial_refresh": "Transpose only damaged rectangles; retain existing batching and idle refresh policy",
+    "system_keyboard": "Native portrait layout. Toolbar moves to physical top while typing; delayed dismissal avoids moving a button between press and release.",
+    "global_orientation_and_boot_settings": "Unchanged"
+  },
+  "input_fixes": [
+    "Exclusive TapHandlers for rotated toolbar and shortcut controls",
+    "Modal shortcut panel blocks input to the remote desktop underneath",
+    "Native-login sessions cannot reopen the obsolete bitmap toolbar via forwarded overlay touches"
+  ],
+  "automated_verification": {
+    "python_passed": 88,
+    "qml_passed": 146,
+    "windows_passed": 42,
+    "windows_skipped": 2,
+    "native_arm_on_tablet": "PASS: legacy/v2 profiles, every rotated pixel and touch point, sparse damage rectangle bounds, passwords, certificates and special keys",
+    "physical_targets": {
+      "rdp-landscape": "PASS twice: real RDP connection; taps, double-click, long-press, pinch, pan, native keyboard visibility, Escape shortcut, Back, Close. Extended run returned to profile Edit/Cancel, closed login, opened and closed SSH without restarting xochitl.",
+      "rdp": "PASS: New, Cancel, Save, Edit, confirmed Delete and Connect",
+      "all": "PASS: SSH shortcuts and Close; Web navigation, scrolling and zoom; RDP login keyboard and Close; RSS full-text scrolling, zoom, refresh, add-feed cancellation and Close"
+    },
+    "state_groups_preserved_after_completed_targets": 9,
+    "state_includes": ["Books", "Dots", "SSH", "RSS", "Web", "Terminal", "Care", "E2E settings", "RDP profiles"]
+  },
+  "evidence_directory": "work/tests/rdp-orientation/",
+  "installed_verification": "14 runtime file hashes match canonical source. xochitl active, physical input event restored, failure service mask restored, Wi-Fi up, no test touch helper running.",
+  "native_raster_capture": "Read the running paperrdp process shm mapping, not a wildcard that may select an orphan from an earlier failed connection",
+  "physical_test_command": "PAPERDESK_WORKDIR=/path/to/toolcache PAPERDESK_RDP_PROFILE_INDEX=1 PAPERDESK_E2E_TARGET=rdp-landscape PAPERDESK_E2E_CAPTURE=0 bash tests/run-tablet-e2e.sh",
+  "release_note": "Installed only on the development tablet. Retained private source and tablet rollback copies. No website, public archive or production update manifest was changed."
+}

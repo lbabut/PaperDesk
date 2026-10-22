@@ -1,0 +1,66 @@
+{
+  "product": "PaperDesk",
+  "version": "3.0.3",
+  "status": "Reddit update verified previously. My Deep Guide email sent with Gmail SENT receipt. Discord announcement published and visually verified in reMarkable #general on 2026-10-20. User submitted a Facebook post after the original linked post was blocked; group shows one post pending admin approval. eWritable form remains pending human verification, not confirmed sent.",
+  "outreach_execution": {
+    "date": "2026-10-20",
+    "my_deep_guide": {
+      "status": "sent",
+      "recipient": "promo@mydeepguide.com",
+      "contact_source": "https://www.mydeepguide.com/contact",
+      "subject": "I made some apps for my reMarkable 2 :-)",
+      "gmail_message_id": "1a1592702b523589",
+      "verified_label": "SENT",
+      "do_not_resend": true
+    },
+    "facebook": {
+      "status": "user_submitted_pending_admin_approval",
+      "group": "reMarkable Planners, Journals & Tools User Group",
+      "url": "https://www.facebook.com/groups/1128547078784840/",
+      "error": "Your post couldn't be shared, because this link goes against our Community Standards",
+      "blocked_domain": "paperdesk.lukaszbabut.info",
+      "evidence": "/tmp/paperdesk-facebook-blocked.png",
+      "note": "Original linked submission by agent was blocked. User independently edited and submitted a post; user reports awaiting approval and group UI confirms Pending admin approval: 1 post. Do not edit, duplicate or add a comment automatically. Do not evade the link block."
+    },
+    "ewritable": {
+      "status": "pending_human_verification_not_sent",
+      "url": "https://ewritable.net/contact/",
+      "subject": "I made some apps for my reMarkable 2 :-)",
+      "note": "Official contact form filled; Submit returned Please verify that you are human. Checkbox still unchecked after user reported clicking; user directed to the visible IAB tab to complete verification and Submit themselves before expiry. No success confirmation."
+    },
+    "discord": {
+      "status": "published",
+      "source_clarification": {
+        "status": "published_and_visually_verified",
+        "published_at": "2026-10-20T13:58:00Z",
+        "url": "https://discord.com/channels/385916768696139794/385916768696139799/1562102730099785800",
+        "copy": "Yep, SSH from the tablet to another machine :-) A graphical client/terminal, not adding an SSH server to the tablet.\n\nAnd fair point about the source link. It was buried under \"project package\", my bad. Here it is:\nhttps://paperdesk.lukaszbabut.info/download/paperdesk-sources-3.0.3.tar.gz\n\nQML/C++, installers and tests; the prebuilt ARM files are in the same archive. I've made the source buttons more obvious on the site too. Thanks for pointing it out :-)",
+        "evidence": "/tmp/paperdesk-discord-source-clarification.png",
+        "do_not_resend": true
+      },
+      "server": "reMarkable",
+      "channel": "general",
+      "permalink": "https://discord.com/channels/385916768696139794/385916768696139799/1562073606765281281",
+      "evidence": "/tmp/paperdesk-discord-published.png",
+      "copy": "Hi :-) I got a bit carried away with my reMarkable 2 and ended up vibe-coding seven apps for it. It's called PaperDesk :-D\n\nSSH, Web, RDP, RSS, Books (free books and papers), Dots (a little pen-and-paper game) and Care for updates. Free and open source. Version 3.0.3 is out now, with fixes for RDP landscape and the system keyboard.\n\nSource + prebuilt ARM files, screenshots and the manual USB/SSH guide:\nhttps://paperdesk.lukaszbabut.info/\n\nIt's unofficial and only tested on rM2 / OS 3.29.0.149. XOVI and AppLoad need to be working first. Please check the prerequisites and back up. XOVI boot autostart is off.\n\nI'd love to know what works for you, what breaks, and which bits of the installation guide make no sense outside my own setup :-)",
+      "note": "Joined through invitation linked by remarkable.guide. Read welcome rules and general-chat-info before posting. One announcement sent as LukaszBabut at 14:02; message and link preview visibly confirmed."
+    }
+  },
+  "reddit_published_copy": "Small update: PaperDesk 3.0.3 is out :-) In v3 I also vibe-coded Dots (a simple pen-and-paper game) and Books (download public-domain titles). The latest fix is RDP landscape + the system keyboard.\n\nThe site has source + prebuilt ARM files and a manual USB/SSH installation guide. No Windows EXE needed. XOVI boot autostart stays off.\n\nAnyone here using XOVI/AppLoad on an rM2 and willing to give it a go? I'd love to know if the guide makes sense outside my own setup :-D Tested on OS 3.29.0.149 only - check the requirements and back up first.\n\nhttps://paperdesk.lukaszbabut.info/",
+  "website": "https://paperdesk.lukaszbabut.info/",
+  "social_image": "https://paperdesk.lukaszbabut.info/assets/press/paperdesk-social.png",
+  "reddit_existing_discussion": "https://www.reddit.com/r/RemarkableTablet/comments/1wsejm9/i_built_paperdesk_terminal_web_rdp_and_rss_apps/",
+  "reddit_update": "A little PaperDesk update :-) Version 3.0.3 is out: seven free, open-source apps for reMarkable 2 — SSH, Web, RDP, RSS, Books, Dots and Care. The latest update fixes RDP landscape controls and the native keyboard. Thanks for the feedback here, especially on startup/recovery: the installer no longer enables XOVI at boot. Installation is manual over SSH from the project package (source + prepared ARM files, no Windows EXE needed). This is unofficial software for experienced users; tested on rM2 / OS 3.29.0.149, and other configurations aren't validated. Back up first and read the prerequisites/recovery notes. I'd love a few independent testers on the supported setup — especially feedback on where the installation guide is confusing. https://paperdesk.lukaszbabut.info/",
+  "discord_introduction": "Hi! I'm building PaperDesk, a free/open-source suite for reMarkable 2: SSH, Web, RDP, RSS, Books, Dots and Care. I'm looking for experienced users to review the documented install and compatibility assumptions, not to try it blindly. Tested setup: rM2 / OS 3.29.0.149 / XOVI 0.3.3 / AppLoad 0.6.0 / LiTerm 0.1.7. The installer does not enable XOVI boot autostart. Source + prepared ARM files and a manual SSH guide: https://paperdesk.lukaszbabut.info/ . Is there an appropriate channel for a short demo and tester feedback?",
+  "moderator_question": "Hi! I'm the author of PaperDesk, a free/open-source collection of apps for reMarkable 2. I already have a discussion in the subreddit and would like to share a short real-device demo plus invite experienced testers. What's the appropriate current thread/flair, and would you prefer an update to the existing discussion rather than a new post? I'll include firmware requirements, unofficial-modification risks and installation/recovery documentation. Thanks!",
+  "outreach_subject": "PaperDesk: seven free open-source apps for reMarkable 2",
+  "outreach_body": "Hi! I built PaperDesk for my reMarkable 2: SSH, remote desktop, reader-first Web, RSS, Books, a Dots game and an update app. It's free/open-source community software, with manual installation over SSH. I thought the practical on-device workflows might interest your audience. Here's the project, screenshots and compatibility/recovery notes: https://paperdesk.lukaszbabut.info/ . It is currently tested on rM2 / OS 3.29.0.149; other configurations are not validated. Happy to answer technical questions. This isn't a sponsored pitch and there's no expectation of positive coverage. Thanks, Lukasz",
+  "publishing_checks": [
+    "Read the existing discussion to avoid duplicate announcements.",
+    "Check current channel rules before posting.",
+    "Use the owner's existing account; do not create accounts or accept terms automatically.",
+    "Never claim official endorsement or universal firmware compatibility.",
+    "Do not lead with donations or ask for artificial votes.",
+    "Record a genuine unaccelerated device demo before pitching video coverage."
+  ]
+}

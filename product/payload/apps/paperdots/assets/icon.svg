@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>PaperDesk Dots</title>
+  <rect width="256" height="256" fill="white"/>
+  <rect x="12" y="12" width="232" height="232" rx="34" fill="white" stroke="black" stroke-width="14"/>
+  <path d="M128 57L199 128L128 199L57 128Z" fill="none" stroke="black" stroke-width="9" stroke-linejoin="round"/>
+  <g fill="black"><circle cx="128" cy="57" r="15"/><circle cx="199" cy="128" r="15"/><circle cx="128" cy="199" r="15"/><circle cx="57" cy="128" r="15"/></g>
+  <circle cx="128" cy="128" r="17" fill="white" stroke="black" stroke-width="9"/>
+</svg>

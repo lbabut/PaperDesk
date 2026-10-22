@@ -1,0 +1,34 @@
+{
+  "version": "3.0.3",
+  "completed_at": "2026-10-20T13:59:41Z",
+  "scope": "Homepage source-code discoverability and one authorized Discord clarification. No application release or version change.",
+  "website": {
+    "url": "https://paperdesk.lukaszbabut.info/",
+    "changes": ["Direct Source code link in top navigation", "Visible outlined Source code hero button", "Download source code button and explicit archive contents", "SSH described as graphical client and terminal connecting to other computers"],
+    "deployed_files": ["website/index.html"],
+    "before_sha256": "82f90e77cd39d151ddbd621162531f169e60b70dafcd227bd6afae7b7ed2da77",
+    "after_sha256": "b48d59dc7125121e96dde65e64fe23dfb29cfdda1da812745b90bc75bda915b7",
+    "rollback_file": "/home/azureuser/PaperDesk.index-before-sources.AnglWI",
+    "deployment": "Exclusive existing release lock, current-file baseline guard, verified staged hash, atomic file replacement, health and served-body hash verification. No restart.",
+    "service_pid_before": 242733,
+    "service_pid_after": 242733,
+    "download_count_before_promotion": 151,
+    "download_count_after_promotion": 151,
+    "download_count_at_completion": 153,
+    "state_database_touched": false,
+    "archive_files_changed": false,
+    "verified_source_archive_sha256": "81a905141a9812a96e497183ad59179bf083a5bf7cb9d1ccb5f85016885711ae",
+    "source_url_head_status": 200,
+    "source_archive_bytes": 3731784,
+    "desktop_proof": "/tmp/paperdesk-source-visible-desktop.png",
+    "mobile_proof": "/tmp/paperdesk-source-visible-mobile.png",
+    "mobile_qa": {"viewport_width": 320, "document_scroll_width": 305, "horizontal_overflow": false, "navigation_source_link_visible": true, "viewport_override_reset": true}
+  },
+  "tests": {"test_source_visibility": 3, "test_website_design": 4, "test_source_distribution": 4, "test_website": 11, "test_download_stats": 4, "total_passed": 26},
+  "discord_reply": {
+    "url": "https://discord.com/channels/385916768696139794/385916768696139799/1562102730099785800",
+    "status": "published_and_visually_verified",
+    "evidence": "/tmp/paperdesk-discord-source-clarification.png",
+    "desktop_session_released": true
+  }
+}

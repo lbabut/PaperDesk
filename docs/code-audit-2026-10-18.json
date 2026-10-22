@@ -1,0 +1,181 @@
+{
+  "project": "PaperDesk",
+  "date": "2026-10-18",
+  "status": "completed_with_documented_followups_no_production_deployment",
+  "scope": {
+    "reviewed": [
+      "PaperDesk SSH launcher and terminal input/display lifecycle",
+      "PaperWeb networking, cancellation, HTML/CSS pipeline and controls",
+      "PaperRSS networking, full-text caching, parsing and controls",
+      "PaperRDP native engine, profiles, keyboard/touch input and QML frontend",
+      "PaperBooks storage, reader, search and existing regressions",
+      "PaperDots rules, persistence, bounded AI and existing regressions",
+      "PaperDesk Care, update agent and signature verification",
+      "Shared AppLoad window lifecycle and launcher",
+      "Installer, uninstaller, source sync, release/deployment scripts",
+      "Windows installer, preflight and preparation recovery tests",
+      "Website backend, assets, download statistics and public routing",
+      "Host and real-touch tablet test infrastructure"
+    ],
+    "limitations": [
+      "This is a first-party source, regression and reliability audit, not a formal security certification.",
+      "Upstream FreeRDP, XOVI, LiTerm, Qt and operating-system internals were not exhaustively audited.",
+      "No production deployment, public release archive or signed release manifest was changed.",
+      "No authenticated live remote desktop was manipulated during this audit. Native RDP logic and isolated profile UI were tested separately."
+    ]
+  },
+  "fixed_findings": [
+    {
+      "id": "PD-A01",
+      "severity": "high",
+      "area": "Website",
+      "problem": "Arbitrary files inside website/, including source and a legacy private database when present, were publicly routable.",
+      "fix": "Explicit public entrypoint/asset routing, hidden/traversal/NUL rejection and HTTP regressions.",
+      "files": ["website/server.py", "tests/test_website.py"]
+    },
+    {
+      "id": "PD-A02",
+      "severity": "medium",
+      "area": "Website downloads",
+      "problem": "Each concurrent archive download allocated the entire file in memory; HEAD APIs did not match GET.",
+      "fix": "64 KiB streaming, opened-file size headers, disconnected-client handling and consistent HEAD APIs."
+    },
+    {
+      "id": "PD-A03",
+      "severity": "high",
+      "area": "RSS",
+      "problem": "A stalled feed blocked the queue indefinitely; abort callbacks and already-scheduled continuations could mutate a newer refresh.",
+      "fix": "Per-request timeout, generation/identity ownership, silent cancellation, completed-request release, article-switch cancellation and empty-address validation."
+    },
+    {
+      "id": "PD-A04",
+      "severity": "medium",
+      "area": "Web",
+      "problem": "Page/CSS requests could remain pending indefinitely and deferred file rejection could replace a newer page.",
+      "fix": "Bounded page timeout, six-second optional CSS fallback, generation checks and callback detachment before abort."
+    },
+    {
+      "id": "PD-A05",
+      "severity": "medium",
+      "area": "Care",
+      "problem": "Stale persistent status could be attributed to the wrong operation; successful/current terminal statuses were not consumed; checks could hang.",
+      "fix": "Correlated request IDs, terminal-state handling, manifest validation, request timeout and unload ownership checks."
+    },
+    {
+      "id": "PD-A06",
+      "severity": "high",
+      "area": "RDP password storage",
+      "problem": "The native engine stored a connection password even when the profile editor disabled Remember password.",
+      "fix": "Explicit --no-save-password propagation and a separate sanitized persistence copy while retaining the current in-memory session password."
+    },
+    {
+      "id": "PD-A07",
+      "severity": "high",
+      "area": "RDP server identity",
+      "problem": "The changed-certificate callback silently accepted a different known server certificate.",
+      "fix": "Persist first-use trust through FreeRDP, reject changed certificates and show a specific connection error. First-use trust still requires a trusted network."
+    },
+    {
+      "id": "PD-A08",
+      "severity": "high",
+      "area": "Updater",
+      "problem": "The configured work directory was recursively removed; competing runs could clear requests or overwrite active status.",
+      "fix": "Unique private temporary workspace, early lock ownership, validated request metadata, request-correlated status and exit-on-signal cleanup."
+    },
+    {
+      "id": "PD-A09",
+      "severity": "high",
+      "area": "Installer",
+      "problem": "Existing app files were removed before the replacement copy completed; backups could share a timestamp; manual installs lacked an internal checksum gate.",
+      "fix": "Verify checksums before mutations, acquire an install lock, stage all apps first, rename prepared replacements, restore the displaced app after failure/signal and create unique private backups."
+    },
+    {
+      "id": "PD-A10",
+      "severity": "high",
+      "area": "Tablet test safety",
+      "problem": "A local build failure could invoke device cleanup; cleanup modified restored E2E settings, could block on an orphan FIFO and could trigger firmware failure reboot during maintenance.",
+      "fix": "Setup ownership gating, bounded FIFO shutdown, exact settings restoration, cleanup error propagation, input-test lock, scoped runtime failure-service masking and default-disabled screen capture. RDP/Care tests now use live geometry instead of stale coordinates."
+    },
+    {
+      "id": "PD-A11",
+      "severity": "medium",
+      "area": "Source package",
+      "problem": "The bundled QTFB shim referenced a broken source symlink and could not build independently.",
+      "fix": "Bundle the matching client sources, require C++17, test source parity and build both shim targets."
+    },
+    {
+      "id": "PD-A12",
+      "severity": "medium",
+      "area": "SSH and Windows preflight",
+      "problem": "SSH user/host input could be interpreted as an option; Windows free-space checks omitted Books/Dots and did not require the new temporary-directory tool.",
+      "fix": "Pass username through -l and terminate SSH options with --; include all app directories and mktemp in preflight fixtures and checks."
+    },
+    {
+      "id": "PD-A13",
+      "severity": "high",
+      "area": "Dots large saved games",
+      "problem": "The real tablet failed to finish opening a 431-move saved game while synchronous replay occupied the UI thread. Large Undo used the same blocking replay path.",
+      "fix": "Incremental replay with bounded slices, throttled progress text, disabled board mutation until complete, and Close that never saves a partial reconstructed game. Large Undo uses the same incremental path."
+    }
+  ],
+  "remaining_risks": [
+    {
+      "priority": "next",
+      "area": "RDP connection responsiveness",
+      "detail": "freerdp_connect still runs synchronously. The connecting screen can stop reacting during DNS/TLS/authentication waits. Moving connection setup off the UI loop needs a separate, carefully tested cancellation/thread-ownership change."
+    },
+    {
+      "priority": "documented",
+      "area": "Stored credentials",
+      "detail": "Remembered RDP passwords are hexadecimal, not encrypted. Root-only files limit access but do not protect against someone with root/physical access."
+    },
+    {
+      "priority": "next",
+      "area": "Network resource limits",
+      "detail": "Qt XMLHttpRequest buffers replies before first-party parsing limits apply. Pathological large HTML/feed/book responses still need a streaming or transport-level byte budget."
+    },
+    {
+      "priority": "next",
+      "area": "Dots replay latency",
+      "detail": "Incremental replay keeps the native UI responsive, but the actual 431-move game still took about 40 seconds to reconstruct on the tablet (large Undo about 36 seconds). A validated snapshot/checkpoint cache would reduce subsequent cold-load latency without changing the rules."
+    },
+    {
+      "priority": "documented",
+      "area": "Install recovery",
+      "detail": "Each app replacement is staged and recoverable, but the complete multi-app/service update is not an all-or-nothing transaction. Earlier app replacements may remain after a later failure; retained backups are the recovery path."
+    },
+    {
+      "priority": "before_release",
+      "area": "Release validation",
+      "detail": "Review upstream compiler warnings, test authenticated RDP and certificate changes against a controlled server, then build a new versioned signed release. Do not deploy by overwriting the currently published version."
+    }
+  ],
+  "verification": {
+    "host_python": {"passed": 81, "failed": 0},
+    "host_qml": {"passed": 118, "failed": 0},
+    "windows_python_on_linux": {"passed": 42, "skipped_windows_only": 2, "failed": 0},
+    "native_arm_rdp_regressions_on_tablet": "passed",
+    "native_arm_rdp_client_build": "passed",
+    "self_contained_shim_build_both_targets": "passed",
+    "real_touch_journey_terminal_web_rdp_rss": "passed",
+    "real_touch_rdp_profile_crud": "passed",
+    "real_touch_care": "passed_including_scrolling_and_uninstall_cancellation",
+    "real_touch_books": "passed_including_swipe_pinch_and_saved_position",
+    "real_touch_dots": "passed_all_boards_all_player_modes_large_restore_large_undo_and_persistence",
+    "all_app_user_settings_and_rdp_profiles_preserved": true,
+    "source_and_installed_code_consistency": "passed_11_runtime_artifacts",
+    "tablet_final_state": "xochitl_active_physical_input_restored_wifi_up_no_touch_helper_failure_service_static",
+    "final_real_touch_journey_after_all_code_updates": "passed",
+    "production_read_only_head_checks": {
+      "server_source_http_status": 200,
+      "legacy_private_database_http_status": 404,
+      "note": "HEAD only; no database content was requested. The public server-source route still needs the separately approved website security deployment."
+    }
+  },
+  "recovery": {
+    "source_backup": "/home/lukasz/Documents/Codex/PaperDesk-backups/code-audit-20261018-fnzAcB/source-before.tar.gz",
+    "tablet_original_code_backup": "/home/root/.local/state/paperdesk-code-audit.fWfX6u",
+    "tablet_second_code_backup": "/home/root/.local/state/paperdesk-code-audit.OObLoG",
+    "tablet_dots_original_code_backup": "/home/root/.local/state/paperdesk-code-audit.IIgY6W/apps/paperdots"
+  }
+}

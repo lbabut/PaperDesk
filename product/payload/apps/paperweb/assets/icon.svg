@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>Paper Web</title>
+  <rect width="256" height="256" fill="white"/>
+  <rect x="12" y="12" width="232" height="232" rx="34" fill="white" stroke="black" stroke-width="14"/>
+  <circle cx="128" cy="128" r="75" fill="none" stroke="black" stroke-width="14"/>
+  <path d="M54 128h148M65 92h126M65 164h126" fill="none" stroke="black" stroke-width="12" stroke-linecap="round"/>
+  <path d="M128 53c-25 24-35 51-35 75s10 51 35 75M128 53c25 24 35 51 35 75s-10 51-35 75" fill="none" stroke="black" stroke-width="12" stroke-linecap="round"/>
+</svg>

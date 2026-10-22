@@ -1,0 +1,41 @@
+{
+  "version": "3.0.1",
+  "date": "2026-10-18",
+  "distribution": {
+    "publicPackage": "paperdesk-sources-3.0.1.tar.gz",
+    "contents": "Application and installer source, tests, licences, website source and prepared ARM tablet files. No Windows EXE; not a from-scratch toolchain.",
+    "publicGraphicalInstallerLinks": 0,
+    "historicalInstallerArtifactsRetained": true,
+    "manualGuides": ["guide-en.html", "guide.html"],
+    "tabletUpdateFeeds": {"latest": "3.0.1", "stable": "3.0.1"},
+    "signedTabletArchive": "paperdesk-3.0.1.zip",
+    "marketingAssets": "Care screenshot refreshed after publication so it shows the live 3.0.1 offer. The immutable project archive retains its pre-publication marketing snapshot. Application payload is identical in the source and Care archives."
+  },
+  "verification": {
+    "pythonTestsPassed": 98,
+    "qmlTestsPassed": 147,
+    "windowsSourceTestsPassed": 42,
+    "windowsSourceTestsSkipped": 2,
+    "manualPayloadTarRoundtrip": true,
+    "archiveChecksumsAndManifestSignatures": true,
+    "physicalTabletCaptures": ["ssh", "web", "rdp", "rss", "books", "dots", "care"],
+    "physicalTabletSettingsAndRdpProfilesRestored": true,
+    "physicalInputRestored": true,
+    "legacyCareObservedOffering301": true,
+    "tabletApplicationUpdatePerformed": false
+  },
+  "production": {
+    "url": "https://paperdesk.lukaszbabut.info/",
+    "downloadCounterBefore": 134,
+    "downloadCounterAfter": 134,
+    "historicalStatisticsRowsPreserved": 31,
+    "sqliteIntegrityCheck": "ok",
+    "globalProxyAndSystemdUnitUnchanged": true,
+    "rollbackDirectory": "/home/azureuser/PaperDesk.backup-20261018T122843Z"
+  },
+  "lola": {
+    "deployedVersion": "3.0.1",
+    "health": "ok",
+    "rollbackDirectory": "/home/lukasz/PaperDesk.backup-20261018T123034Z"
+  }
+}

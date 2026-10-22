@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>Paper RSS</title>
+  <rect width="256" height="256" fill="white"/>
+  <rect x="12" y="12" width="232" height="232" rx="34" fill="white" stroke="black" stroke-width="14"/>
+  <circle cx="76" cy="180" r="15" fill="black"/>
+  <path d="M76 124a56 56 0 0 1 56 56M76 72a108 108 0 0 1 108 108" fill="none" stroke="black" stroke-width="16" stroke-linecap="round"/>
+</svg>

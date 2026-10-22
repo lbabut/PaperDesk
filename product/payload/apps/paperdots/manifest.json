@@ -1,0 +1,10 @@
+{
+  "name": "PaperDesk Dots",
+  "description": "Offline Kropki with human or computer players",
+  "icon": "icon.png",
+  "entry": "/ui/main.qml",
+  "id": "paperdots",
+  "loadsBackend": false,
+  "supportsScaling": true,
+  "canHaveMultipleFrontends": false
+}

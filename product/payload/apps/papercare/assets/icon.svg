@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>Paper Care</title>
+  <rect width="256" height="256" fill="white"/>
+  <rect x="12" y="12" width="232" height="232" rx="34" fill="white" stroke="black" stroke-width="14"/>
+  <path d="M128 51l58 23v48c0 39-22 68-58 87-36-19-58-48-58-87V74z" fill="none" stroke="black" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M96 127l22 22 43-47" fill="none" stroke="black" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-20",
+  "scope": "Unreleased RDP landscape keyboard and chrome fix; installed on the owner's RM2 only",
+  "installed_version_marker": "3.0.2",
+  "production_deployment": false,
+  "cause": "The native input panel stayed portrait while rdpChromeLandscape deliberately switched only the toolbar to portrait. The engine raster stayed landscape, exposing the underlying bitmap header and moving tap targets.",
+  "changes": [
+    "Keep raster, toolbar and shortcuts in the same landscape coordinate space, including during native keyboard dismissal",
+    "Find the existing firmware keyboard panel by its explicit virtualkeyboard/window/main view identity and required panel interface",
+    "Temporarily rotate and resize the real native panel with reversible QML state changes, without reparenting or replacing firmware resources",
+    "Restore original geometry and bindings on hide, foreground loss, close and unexpected RDP window destruction",
+    "Bound lazy discovery to 20 attempts at 50 ms; no scene traversal continues during normal typing",
+    "Avoid re-entering Qt's global input context from the component destructor; deactivate the borrowed layout state directly instead",
+    "Update the connection-screen orientation hint and the physical landscape regression assertion"
+  ],
+  "automated_tests": {
+    "command": "bash tests/run-ui-tests.sh",
+    "python_passed": 105,
+    "qml_passed": 165,
+    "qml_failed": 0,
+    "focused_appload_tests_passed": 22,
+    "new_regressions": [
+      "Native panel geometry and binding restoration on foreground loss and Close",
+      "Lazy panel discovery and cancellation",
+      "Unexpected window destruction restores the borrowed panel",
+      "Only RDP owns landscape rotation; unsupported-panel discovery stops after one second",
+      "All shortcuts fit and toolbar positions remain unchanged when hiding the keyboard"
+    ],
+    "private_log": "work/rdp-layout-20261020/verified-tests.log"
+  },
+  "physical_tablet": {
+    "input": "Kernel touch events through the existing pt_mt/uinput tablet harness, not direct handler invocation",
+    "native_keyboard_layout_observed": "90 degrees; 1872 x 1404",
+    "checks_passed": [
+      "Landscape keyboard and toolbar visually inspected in captured device frames",
+      "Physical native x key entered x in an initially empty remote spreadsheet cell",
+      "Native Backspace removed that character",
+      "Native Enter committed the empty cell and moved to the next row; no file was saved",
+      "Shortcuts opened with one physical touch while keyboard was visible",
+      "Rotated shortcuts and Back remained reachable",
+      "Close worked while the native keyboard was visible",
+      "Underlying profile editor remained clickable with no orphan X overlay",
+      "Profile editing showed the restored portrait system keyboard; Cancel preserved the profile",
+      "RDP reconnected and displayed the landscape keyboard again without an intervening interface restart"
+    ],
+    "stable_pid_during_final_touch_journey": 6635,
+    "intermediate_candidate_note": "One earlier candidate encountered SIGSEGV during controlled Xochitl shutdown. Global input-context calls were removed from destruction handling. The final candidate passed ordinary Close, reopen and controlled shutdown; the retained private logs preserve the earlier incident rather than treating it as a passed test.",
+    "final_controlled_shutdown_result": "success"
+  },
+  "final_cleanup": {
+    "xochitl_active": true,
+    "xochitl_pid": 6980,
+    "xochitl_result": "success",
+    "physical_input": "d:42 (13:66)",
+    "test_touch_daemon_running": false,
+    "failure_unit_original_state_restored": "static",
+    "test_settings_restored": true,
+    "app_settings_preserved": ["PaperDeskBooks", "PaperDeskDots", "PaperDeskSSH", "PaperRSS", "PaperWeb", "PaperTerminal", "PaperDeskUpdate"],
+    "rdp_profile_and_profiles_byte_identical": true,
+    "installed_hashes_match_canonical": ["paperdesk-appload-window.qml", "paperrdp-login/ui/main.qml", "paperrdp-login/resources.rcc", "paperrdp/paperrdp"],
+    "global_orientation_or_boot_configuration_changed": false
+  },
+  "canonical_payload_hashes": {
+    "paperdesk-appload-window.qml": "1637ac3e2b2d7fdda4ff1789c2c403c06603f4948506de2b204f4750f8bde967",
+    "paperrdp-login/ui/main.qml": "45f6683625905e9f916664cb7be020c351b061eedd7466503a8f7341b29ac0be",
+    "paperrdp-login/resources.rcc": "cb6b3e7ab88d55c85eca1d71e6895aea3c1911cf30fe84085c8f72501f1a9a56"
+  }
+}

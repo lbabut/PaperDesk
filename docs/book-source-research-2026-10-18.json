@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-18",
+  "scope": "Additional free/legal providers for PaperBooks; research, not new enabled integrations",
+  "current_reader": "Offline plain text; complete Gutenberg texts and Europe PMC JATS XML. No native PDF/EPUB import yet.",
+  "recommendation": "Wolne Lektury first. Add a bounded, cached metadata index before integration so searches do not download a multi-megabyte catalogue repeatedly. arXiv is the best later addition for physics, alongside a real PDF/HTML article reader.",
+  "candidates": [
+    {
+      "name": "Wolne Lektury",
+      "priority": 1,
+      "fit": "Excellent: public JSON API, direct complete TXT downloads, Polish literature, no account needed for tested endpoints.",
+      "verified_live": "Catalogue returned 7660 records / 5110820 bytes. Studnia i wahadlo detail and complete TXT fetched successfully; attribution and licence footer retained.",
+      "implementation_requirements": ["Cache and bound the large catalogue; do not refetch it per query", "Resolve details before download and verify actual language, preview flag, TXT URL and book identity", "Retain publisher attribution, translators and licence/footer without stripping them"],
+      "sources": ["https://wolnelektury.pl/api/", "https://wolnelektury.pl/info/zasady-wykorzystania/", "https://wolnelektury.pl/api/books/studnia-i-wahadlo/"]
+    },
+    {
+      "name": "arXiv",
+      "priority": 2,
+      "fit": "Physics, quantum physics, mathematics and computer science; searchable metadata API and article links.",
+      "implementation_requirements": ["A real PDF/HTML article path; metadata/abstract must never be presented as full text", "Follow API terms, request pacing and caching", "Preserve licence and author attribution; free reading is not a blanket redistribution licence"],
+      "source": "https://info.arxiv.org/help/api/user-manual.html"
+    },
+    {
+      "name": "OpenStax / OpenStax Poland",
+      "priority": 3,
+      "fit": "Free academic textbooks, including physics; online reading and free PDF downloads.",
+      "implementation_requirements": ["PDF import/opening rather than flattening formulas and diagrams into plain text", "Check the specific book licence and retain attribution; do not assume every title has the same licence"],
+      "sources": ["https://openstax.org/higher-education", "https://openstax.pl/en/faq"]
+    },
+    {
+      "name": "DOAB / OAPEN",
+      "priority": 4,
+      "fit": "Open-access scholarly books; useful broader academic coverage.",
+      "caution": "An official API search page is indexed, but direct retrieval returned 404 and the legacy REST endpoint returned 403 in this environment. Not validated as an immediately usable connector.",
+      "implementation_requirements": ["Confirm the current supported public API with the provider", "Resolve actual full-text files and per-book licences", "PDF/EPUB reader integration"],
+      "source": "https://www.doabooks.org/en/article/api-search-doab"
+    },
+    {
+      "name": "Standard Ebooks",
+      "priority": 5,
+      "fit": "High-quality public-domain ebook editions, but not a universally anonymous/free OPDS endpoint.",
+      "caution": "Official instructions use Patrons Circle authentication. The project documents feed access for qualifying open-source projects; eligibility/approval must be checked, not bypassed.",
+      "implementation_requirements": ["Confirm open-source feed eligibility", "EPUB reader/import support", "Respect access conditions and applicable copyright jurisdiction"],
+      "sources": ["https://standardebooks.org/help/how-to-add-an-opds-feed-to-your-ereader", "https://standardebooks.org/collections/glad-books/feeds"]
+    },
+    {
+      "name": "Open Library",
+      "priority": 6,
+      "fit": "Good discovery metadata, but catalogue presence does not mean unrestricted full-text download.",
+      "implementation_requirements": ["Filter to genuinely accessible public-domain/openly licensed full text", "Do not treat lending/login-controlled scans as free downloadable files", "Observe documented rate limits and identify the client"],
+      "source": "https://openlibrary.org/developers/api"
+    }
+  ]
+}

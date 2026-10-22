@@ -1,0 +1,8 @@
+{
+  "name": "PaperDesk Books Download Worker",
+  "application": "/home/root/xovi/exthome/appload/paperbooks-download/book-download",
+  "workingDirectory": "/home/root/xovi/exthome/appload/paperbooks-download",
+  "qtfb": false,
+  "supportsVirtualKeyboard": false,
+  "disablesWindowedMode": false
+}

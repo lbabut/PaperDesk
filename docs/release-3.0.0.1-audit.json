@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-18",
+  "version": "3.0.0.1",
+  "production_url": "https://paperdesk.lukaszbabut.info/",
+  "lola_url": "http://192.168.1.40:8090/",
+  "deployment_scope": "Website, release artifacts and signed update feeds; no tablet installation or reboot in this task",
+  "changes": [
+    "Seven-app collection with current capabilities and original app icon assets",
+    "Simplified editorial layout, reduced repeated copy, four reviewed physical-tablet captures, responsive navigation and download cards",
+    "Updated English and Polish guides and current manual installer instructions",
+    "Explicit browser limitations, image proxy disclosure, RDP password storage warning and separate Windows signature notice",
+    "Four-part versions in Care, updater, Windows installer, tablet installer and website download routing",
+    "Signed three-part 3.0.0 compatibility release for old Care; current clients use /update/stable.json",
+    "Windows PE version metadata, no-UPX build, optional verified Authenticode signing and rebuildable source ZIP",
+    "Country database loading accelerated without changing any of 717170 ranges",
+    "Production deployment now retains rollback directories, uses SQLite online backup, detects concurrent site edits and leaves Caddy/service configuration alone"
+  ],
+  "verification": {
+    "python_tests": {"passed": 94, "failed": 0},
+    "qml_tests": {"passed": 147, "failed": 0},
+    "windows_tests_on_linux": {"passed": 42, "skipped": 2},
+    "windows_tests_under_wine": {"passed": 30, "skipped": 14},
+    "frozen_exe_self_test": "PaperDesk 3.0.0.1 package OK 2397311 bytes",
+    "frozen_exe_ui_smoke": "passed under Wine 10 with isolated Xvfb; not a native Windows 11 UI test",
+    "legacy_updater": "Actual pre-release updater accepted official signed 3.0.0 manifest, archive and internal hashes. Installer execution was replaced with a marker; no tablet writes.",
+    "browser": "Reviewed 390px, normal preview and 1440px layouts; no horizontal overflow, no missing images; map open/close and Windows notice expansion verified",
+    "geoip": {"all_ranges_identical": true, "before_seconds_local": 6.735, "after_seconds_local": 1.346},
+    "production_download_counter_before": 134,
+    "production_download_counter_after": 134,
+    "public_download_checks": "HEAD used to avoid inflating download statistics",
+    "caddy_configuration_sha256_unchanged": "337a04d584480ea9feabaab942a365181dbabc29ccf689678d93c91c97f12786",
+    "production_service_unit_sha256_unchanged": "07c0c23c8a372a083b8ebb81d5d76dfabf037298668932e76c6c0177c81a4bff"
+  },
+  "recovery": {
+    "first_attempt": "Readiness limit was too short for country CSV loading; automatic rollback succeeded. Optimized loading and extended the readiness budget before retrying.",
+    "production_site_backup": "/home/azureuser/PaperDesk.backup-20261018T120611Z",
+    "production_database_backup": "/var/lib/paperdesk/backups/stats-before-20261018T120611Z.sqlite3",
+    "lola_site_backup": "/home/lukasz/PaperDesk.backup-20261018T120629Z"
+  },
+  "source_sync_method": "scripts/sync-sources-lola.sh --apply followed by --check; source snapshot is separate from both website deployments",
+  "windows_signing": "EXE remains unsigned. No paid service was created. See windows-signing-plan.json for current options and eligibility limits."
+}

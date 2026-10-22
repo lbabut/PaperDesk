@@ -1,0 +1,4 @@
+module net.asivery.AppLoad
+singleton AppLoadLauncher 1.0 AppLoadLauncher.qml
+AppLoadLibrary 1.0 AppLoadLibrary.qml
+AppLoadCoordinator 1.0 AppLoadCoordinator.qml

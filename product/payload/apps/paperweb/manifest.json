@@ -1,0 +1,8 @@
+{
+  "name": "PaperDesk Web",
+  "loadsBackend": false,
+  "entry": "/ui/main.qml",
+  "id": "paperweb",
+  "supportsScaling": true,
+  "canHaveMultipleFrontends": false
+}

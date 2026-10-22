@@ -1,0 +1,3 @@
+module literm
+TextRender 1.0 TextRender.qml
+singleton Util 1.0 Util.qml

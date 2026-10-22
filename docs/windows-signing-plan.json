@@ -1,0 +1,44 @@
+{
+  "checked_at": "2026-10-18",
+  "current_release": "3.0.0.1",
+  "current_executable_has_authenticode_signature": false,
+  "already_implemented": [
+    "PE product, publisher and four-part file/product version metadata",
+    "No UPX compression in the build",
+    "Optional certificate-store Authenticode signing with SHA-256 and RFC3161 timestamp",
+    "SignTool policy verification and Get-AuthenticodeSignature validation before packaging when signing is enabled",
+    "Rebuildable installer and verified product source included in the Windows ZIP",
+    "Separate, clearly labelled SHA-256 download checksums and Ed25519 tablet-update signatures"
+  ],
+  "not_performed": [
+    "No self-signed public certificate created",
+    "No paid service, subscription or signing account created",
+    "No identity documents requested or submitted",
+    "No claim of Defender/SmartScreen approval",
+    "No new native Windows 11 end-to-end installation test; this build was exercised under Wine"
+  ],
+  "options": [
+    {
+      "name": "SignPath Foundation",
+      "cost": "Free for accepted open-source projects",
+      "next_steps": "Clarify the installer and original-code licence grant, publish a verifiable source/build process, define signing roles and policy, then apply. Acceptance is not guaranteed.",
+      "source": "https://signpath.org/terms.html"
+    },
+    {
+      "name": "Azure Artifact Signing",
+      "cost": "Basic advertised at USD 9.99/month for up to 5000 signatures; verify local billing before purchase",
+      "eligibility": "Public trust supports organizations in the EU and Norway among other listed locations. Individual developers are currently limited to the USA and Canada. Azure account ownership alone does not establish eligibility.",
+      "sources": [
+        "https://azure.microsoft.com/en-us/products/artifact-signing",
+        "https://learn.microsoft.com/en-us/azure/artifact-signing/quickstart"
+      ]
+    },
+    {
+      "name": "Microsoft Store MSIX",
+      "notes": "Store certification and packaging work are required. Microsoft re-signs MSIX packages. This is different from submitting an existing EXE/MSI, which still needs publisher signing.",
+      "source": "https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options"
+    }
+  ],
+  "important": "A trusted Authenticode signature identifies the publisher and protects the EXE. It does not guarantee immediate SmartScreen reputation or absence of antivirus false positives; EV is not an instant bypass.",
+  "reputation_source": "https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation"
+}

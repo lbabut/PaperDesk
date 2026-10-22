@@ -1,0 +1,8 @@
+{
+  "name": "PaperDesk SSH",
+  "loadsBackend": false,
+  "entry": "/ui/main.qml",
+  "id": "literm",
+  "supportsScaling": true,
+  "canHaveMultipleFrontends": false
+}

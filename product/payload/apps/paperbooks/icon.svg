@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>PaperDesk Books</title>
+  <rect width="256" height="256" fill="white"/>
+  <rect x="12" y="12" width="232" height="232" rx="34" fill="white" stroke="black" stroke-width="14"/>
+  <path d="M128 80Q92 56 57 67V184Q92 173 128 197Q164 173 199 184V67Q164 56 128 80ZM128 80V197" fill="white" stroke="black" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M76 98Q92 97 109 106M76 127Q92 126 109 135M147 106Q164 97 180 98M147 135Q164 126 180 127" fill="none" stroke="black" stroke-width="7" stroke-linecap="round"/>
+</svg>

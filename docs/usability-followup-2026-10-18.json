@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-18",
+  "status": "completed_with_documented_audit_followups_no_production_deployment",
+  "production_deployment": false,
+  "public_release_changed": false,
+  "changes": {
+    "ssh": {
+      "features": ["Graphical saved connections: New, Open, Edit, Delete with confirmation", "Native keyboard and keyboard-aware fixed Save/Cancel dock", "Persistent name, server, username and port; up to 32 connections"],
+      "security": ["No saved SSH passwords", "Normal SSH host-key verification retained", "Local launcher state checked before sending a value-only connection protocol", "Active SSH/recovery shells are never deliberately interrupted or sent launcher commands", "Pending requests cancelled on close; bounded local-state wait"]
+    },
+    "books": {
+      "fixes": ["Offline-save roles update in place instead of clearing the result model", "Structural list updates retain the visible book and offset", "Delegate reuse, bounded flick velocity and cached offscreen rows", "Reader swipe inertia; new touches and pinch cancel motion", "Explicit position sync deferred past the gesture; close flushes it"],
+      "verified_live_download_viewport_px": {"before": 791, "after": 791},
+      "earlier_independent_live_runs_px": [[769, 769], [790, 790]],
+      "additional_services_researched": "docs/book-source-research-2026-10-18.json",
+      "new_services_enabled": []
+    },
+    "rdp": {
+      "fixes": ["Keyboard-aware scrollable profile form", "Save and Cancel fixed above the native keyboard", "Focused fields scrolled into view", "Toolbar keyboard button also hides the keyboard"],
+      "native_test": "passed: real system keyboard, physical form swipe, Port focus, Save dock geometry, complete profile CRUD and Connect using isolated fixtures"
+    },
+    "dots": {
+      "optimizations": ["Bounded derived board checkpoint with hash, move-log identity and structural validation", "Portable move log retained as fallback for old/corrupt caches", "Recent in-memory Undo uses immutable prior states instead of replay", "Explicit settings sync batched rather than forced after every move"],
+      "checkpoint_rules": "Bump the cache version if capture rules or board-state semantics change.",
+      "native_large_fixture": {"moves": 431, "checkpoint_state_restore_ms": 96, "original_user_game_preserved": true},
+      "limitation": "First opening of an old move-only save still requires incremental replay; Undo outside the recent in-memory cache may also replay."
+    }
+  },
+  "tablet_observation": {
+    "cpu_idle_percent": 95,
+    "available_memory_kib": 733624,
+    "xochitl_settings_bytes": 2132937,
+    "conclusion": "No general CPU or memory saturation in the idle sample. Optimizations target costly app operations and synchronous disk writes, not overclocking or system power policy."
+  },
+  "verification": {
+    "host_python_passed": 85,
+    "host_qml_passed": 126,
+    "windows_preparation_passed": 42,
+    "windows_only_skipped": 2,
+    "real_books_download_reader_swipe_bookmark_pinch": "passed",
+    "real_rdp_keyboard_and_profile_crud": "passed",
+    "final_real_touch_journeys": "passed: SSH CRUD/open/native keyboard; Books live download/list position/reader swipe; Dots small and 431-move checkpoint cold loads",
+    "final_installed_hashes_and_device_health": "passed: 11 runtime artifacts match source; xochitl active; physical input 13:66 restored; Wi-Fi up; no touch helper; failure unit static",
+    "user_state_preserved": "passed: all nine app-settings/profile comparisons after every final scenario; original books, reading positions and game restored"
+  },
+  "remaining_audit_followups": [
+    "RDP connection setup still calls freerdp_connect synchronously; DNS/TLS/authentication waits require a separate cancellation/thread-ownership change.",
+    "Network response byte budgets need transport-level enforcement before Qt buffers complete replies.",
+    "Earlier website security fixes remain local: no production deployment was authorized in this turn.",
+    "Build a new versioned signed release only after tablet acceptance; do not overwrite the published 2.0.5 archive."
+  ],
+  "artifacts": [
+    "work/tests/usability-final-host.log",
+    "work/tests/usability-windows.log",
+    "work/tests/usability-hardware-rdp.log",
+    "work/tests/usability-hardware-books.log",
+    "work/tests/usability-books-report.json",
+    "work/tests/usability-state-report.json",
+    "work/tests/usability-state-books-live-dots-cache-large.json",
+    "work/tests/usability-state-ssh-sessions.json",
+    "work/tests/usability-final-dots-cache-large.log",
+    "work/tests/usability-final-installed.log"
+  ],
+  "source_backup": "PaperDesk-backups/usability-20261018-3Taxe9/source-before.tar.gz",
+  "latest_tablet_code_backup": "/home/root/.local/state/paperdesk-usability.9PNI4T",
+  "source_sync_log": "work/tests/usability-source-sync.log"
+}

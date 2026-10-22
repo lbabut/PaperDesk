@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f2efe6"/>
+  <g fill="#161813" font-family="DejaVu Sans, sans-serif">
+    <text x="64" y="70" font-size="20" font-weight="bold" letter-spacing="4">PAPERDESK</text>
+    <text x="64" y="124" font-size="15" fill="#254bdb" letter-spacing="1.8">SEVEN FREE APPS FOR REMARKABLE 2</text>
+    <g font-family="DejaVu Serif, serif" font-size="61" letter-spacing="-2">
+      <text x="60" y="222">Your quiet</text>
+      <text x="60" y="296">network desk.</text>
+    </g>
+    <text x="64" y="358" font-size="22" fill="#595d53">SSH · Web · RDP · RSS · Books · Dots · Care</text>
+    <rect x="64" y="398" width="256" height="48" rx="8" fill="#254bdb"/>
+    <text x="85" y="429" font-size="17" font-weight="bold" fill="#fffdf8">Free and open source</text>
+    <text x="64" y="497" font-size="17" fill="#595d53">Manual SSH installation · Check compatibility first</text>
+    <path d="M64 535H1136" stroke="#c6c8bb"/>
+    <text x="64" y="580" font-size="22">paperdesk.lukaszbabut.info</text>
+    <text x="1136" y="580" font-size="14" text-anchor="end" fill="#595d53">Independent community software</text>
+  </g>
+  <g transform="translate(820 48)">
+    <rect x="14" y="14" width="295" height="414" rx="20" fill="#dddfd2"/>
+    <rect width="295" height="414" rx="20" fill="#242620"/>
+    <rect x="22" y="13" width="260" height="388" rx="8" fill="#fff"/>
+    <image x="22" y="13" width="260" height="388" preserveAspectRatio="xMidYMid meet" xlink:href="dots-301.png"/>
+  </g>
+</svg>

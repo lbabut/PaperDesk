@@ -1,0 +1,134 @@
+#!/bin/sh
+set -eu
+
+CONFIG_DIR=${PAPERDESK_RDP_CONFIG_DIR:-/home/root/.config/paperrdp}
+PROFILES="$CONFIG_DIR/profiles"
+LOCK="$CONFIG_DIR/.profile-manager.lock"
+
+usage() {
+    printf 'Usage: %s --save INDEX HOST_HEX USER_HEX DOMAIN_HEX PORT PASSWORD_HEX SCALE DEPTH [ORIENTATION] VERSION\n' "$0" >&2
+    printf '       %s --delete INDEX\n' "$0" >&2
+    exit 64
+}
+
+is_hex() {
+    case $1 in
+        *[!0123456789abcdefABCDEF]*) return 1 ;;
+    esac
+    [ $(( ${#1} % 2 )) -eq 0 ]
+}
+
+valid_index() {
+    case $1 in
+        -1|0|1|2|3|4|5|6|7) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+valid_port() {
+    case $1 in
+        ''|*[!0-9]*) return 1 ;;
+    esac
+    [ "$1" -ge 1 ] && [ "$1" -le 65535 ]
+}
+
+mkdir -p "$CONFIG_DIR"
+chmod 0700 "$CONFIG_DIR"
+if ! mkdir "$LOCK" 2>/dev/null; then
+    printf 'Another profile update is already running.\n' >&2
+    exit 75
+fi
+cleanup() {
+    rmdir "$LOCK" 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
+TMP="$CONFIG_DIR/profiles.tmp.$$"
+trap 'rm -f "$TMP"; cleanup' EXIT INT TERM
+
+case ${1:-} in
+    --save)
+        [ "$#" -eq 10 ] || [ "$#" -eq 11 ] || usage
+        INDEX=$2
+        HOST_HEX=$3
+        USER_HEX=$4
+        DOMAIN_HEX=$5
+        PORT=$6
+        PASSWORD_HEX=$7
+        SCALE=$8
+        DEPTH=$9
+        # The final fixed argument is a format guard. It makes truncated calls
+        # fail closed before a credentials file can be replaced.
+        if [ "$#" -eq 10 ]; then
+            [ "${10}" = v1 ] || usage
+            ORIENTATION=portrait
+        else
+            ORIENTATION=${10}
+            [ "${11}" = v2 ] || usage
+            case $ORIENTATION in portrait|landscape) ;; *) usage ;; esac
+        fi
+        valid_index "$INDEX" || usage
+        [ -n "$HOST_HEX" ] && [ -n "$USER_HEX" ] || usage
+        is_hex "$HOST_HEX" && is_hex "$USER_HEX" && is_hex "$DOMAIN_HEX" &&
+            is_hex "$PASSWORD_HEX" || usage
+        valid_port "$PORT" || usage
+        case $SCALE in 50|75|100) ;; *) usage ;; esac
+        case $DEPTH in 8|16|24) ;; *) usage ;; esac
+        NEW_LINE=$(printf 'v2\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' \
+            "$HOST_HEX" "$USER_HEX" "$DOMAIN_HEX" "$PORT" \
+            "$PASSWORD_HEX" "$SCALE" "$DEPTH" "$ORIENTATION")
+        if [ "$INDEX" -eq -1 ]; then
+            {
+                printf '%s\n' "$NEW_LINE"
+                if [ -f "$PROFILES" ]; then
+                    awk -F '\t' '
+                        (($1 == "v1" && NF == 8) || ($1 == "v2" && NF == 9 && ($9 == "portrait" || $9 == "landscape"))) && kept < 7 { print; kept++ }
+                    ' "$PROFILES"
+                fi
+            } > "$TMP"
+        else
+            awk -F '\t' -v wanted="$INDEX" -v replacement="$NEW_LINE" '
+                BEGIN { seen=0; found=0; kept=0 }
+                ($1 == "v1" && NF == 8) || ($1 == "v2" && NF == 9 && ($9 == "portrait" || $9 == "landscape")) {
+                    if (seen == wanted) { print replacement; found=1 }
+                    else { print }
+                    seen++
+                    kept++
+                    if (kept >= 8) exit
+                }
+                END { if (!found) exit 42 }
+            ' "$PROFILES" > "$TMP" || {
+                status=$?
+                [ "$status" -eq 42 ] && printf 'Profile index no longer exists.\n' >&2
+                exit "$status"
+            }
+        fi
+        ;;
+    --delete)
+        [ "$#" -eq 2 ] || usage
+        INDEX=$2
+        valid_index "$INDEX" && [ "$INDEX" -ge 0 ] || usage
+        awk -F '\t' -v wanted="$INDEX" '
+            BEGIN { seen=0; found=0; kept=0 }
+            ($1 == "v1" && NF == 8) || ($1 == "v2" && NF == 9 && ($9 == "portrait" || $9 == "landscape")) {
+                if (seen == wanted) found=1
+                else if (kept < 8) { print; kept++ }
+                seen++
+            }
+            END {
+                if (!found) exit 42
+                if (kept == 0) print "# PaperDesk profiles v1"
+            }
+        ' "$PROFILES" > "$TMP" || {
+            status=$?
+            [ "$status" -eq 42 ] && printf 'Profile index no longer exists.\n' >&2
+            exit "$status"
+        }
+        ;;
+    *) usage ;;
+esac
+
+chmod 0600 "$TMP"
+mv "$TMP" "$PROFILES"
+chmod 0600 "$PROFILES"
+printf 'PaperDesk RDP profiles updated.\n'

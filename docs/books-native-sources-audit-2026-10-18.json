@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-18",
+  "status": "Development sources integrated; scoped Books hardware deployment verified. Not a production release.",
+  "sources": ["Project Gutenberg", "Wolne Lektury", "OpenStax", "arXiv", "Europe PMC", "Open Library / Internet Archive unrestricted editions"],
+  "reading": {
+    "text": "Existing Books reader and bookmarks retained for Gutenberg and Europe PMC.",
+    "native": "PDF/EPUB downloads are validated and passed to firmware DocumentImporter, then opened by the user from My files after closing Books and AppLoad.",
+    "shortcut_removal": "Removing a Books native shortcut does not delete the document or annotations from My files.",
+    "unsupported_firmware": "Feature-detected native importer; an explanation replaces unsupported operations.",
+    "limitation": "Native file import and My files presence were verified; direct native reader opening was not confirmed. Private native window routing is deliberately not used."
+  },
+  "safety": [
+    "HTTPS certificate verification, approved provider redirect hosts, bounded connect/transfer time and 256 MB cap.",
+    "Streaming private staging with PDF/EPUB structural validation; worker never writes the native library directly.",
+    "No login, lending, DRM bypass or restricted Archive files.",
+    "arXiv pacing and preprint labelling; actual language and edition checks before import.",
+    "Large catalogues are session-cached, never stored in QSettings.",
+    "Settings initialization deferred until child Settings objects have completed, preventing initial default values from overwriting saved Books state.",
+    "No XOVI boot autostart enabled; published 3.0.1 archives and production site unchanged."
+  ],
+  "automated": {
+    "python_project": {"passed": 103, "failed": 0},
+    "qml_ui": {"passed": 149, "failed": 0},
+    "windows": {"passed": 42, "skipped": 2, "failed": 0},
+    "package_recheck_after_documentation": {"passed": 40, "failed": 0},
+    "node": ["books-catalogues.cjs passed", "paperbooks-engine.cjs passed"],
+    "coverage": ["six source selectors", "language and identity checks", "partial failure and paging", "restricted/private/DRM rejection", "PDF/EPUB corruption and unsafe paths", "native shared-pointer signal versus library wrapper UUID matching", "settings startup ordering", "offline shelf and bookmark preservation"]
+  },
+  "hardware": {
+    "model": "reMarkable 2",
+    "firmware": "3.29.0.149",
+    "interaction": "Physical evdev/uinput taps, not direct QML function calls, searched and downloaded Wolne Lektury EPUB and arXiv PDF; new source tiles toggled off/on. All six sources left enabled.",
+    "imports": ["Wolne Lektury: Studnia i wahadlo, complete EPUB", "arXiv: A model of quantum spacetime, 26-page PDF"],
+    "preserved": "All original eight text titles, raw offline content, metadata, bookmarks, font size 25 and pl/en languages matched original saved values. Two native shortcuts retained, ten shelf titles total. Other PaperDesk settings groups unchanged.",
+    "restart_diagnosis": "Journal recorded controlled Software update reboot, not a confirmed application crash. Testing resumed after full boot. No private native reader-routing path retained.",
+    "cleanup": "Installed QML, catalogue JS, resource archive and ARM worker hashes match canonical source. Physical event2 restored to 13:66; own touch daemon stopped and removed; original E2E group and failure-service state restored; xochitl active.",
+    "privacy": "Native My files screenshots contain private user documents and are excluded from distributed sources and this report."
+  }
+}

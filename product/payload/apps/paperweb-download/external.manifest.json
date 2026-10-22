@@ -1,0 +1,8 @@
+{
+  "name": "PaperDesk Web Download Worker",
+  "application": "/home/root/xovi/exthome/appload/paperweb-download/web-download",
+  "workingDirectory": "/home/root/xovi/exthome/appload/paperweb-download",
+  "qtfb": false,
+  "supportsVirtualKeyboard": false,
+  "disablesWindowedMode": false
+}

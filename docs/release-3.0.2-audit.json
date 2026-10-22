@@ -1,0 +1,57 @@
+{
+  "version": "3.0.2",
+  "date": "2026-10-18",
+  "status": "Published and externally verified",
+  "changes": [
+    "Six Books catalogues, including Wolne Lektury, OpenStax, arXiv and unrestricted Open Library / Internet Archive editions",
+    "Native My files PDF/EPUB import with existing Books texts and bookmarks preserved",
+    "Web PDF/EPUB downloads with confirmation, cancellation, independent streaming size cap, disk reserve, structural and network checks",
+    "Care current version, release metadata, source-first guides and website descriptions updated to 3.0.2"
+  ],
+  "tests": {
+    "pythonPassed": 105,
+    "qmlPassed": 160,
+    "windowsPassed": 42,
+    "windowsSkipped": 2,
+    "failed": 0,
+    "careFixtureCorrection": "The four-part update test now uses a future 9.9.9.1 fixture. Its earlier 3.0.1.1 fixture correctly compares older than current 3.0.2; application downgrade protection was not weakened.",
+    "hardwareEvidence": ["books-native-sources-audit-2026-10-18.json", "web-downloads-audit-2026-10-18.json"],
+    "payloadSourceArchiveParity": true,
+    "manifestSignaturesVerified": true,
+    "published301ArchivesUnchanged": true
+  },
+  "distribution": {
+    "sourceArchive": "paperdesk-sources-3.0.2.tar.gz",
+    "sourceSha256": "bf7c9e3df5afd42b0648dd1e03ebc90b27408d2cb7321e79e532a8b1de4bcb0c",
+    "sourceBytes": 3726454,
+    "careArchive": "paperdesk-3.0.2.zip",
+    "careSha256": "eca79f2a00345476be4911cc0324af340a808ed0250c63d0fe5c5a4d54f92281",
+    "careBytes": 2528645,
+    "feeds": {"stable": "3.0.2", "latest": "3.0.2"},
+    "publicInstallerLinks": 0,
+    "manualGuides": ["guide-en.html", "guide.html"],
+    "oldArchivesRetained": true
+  },
+  "production": {
+    "url": "https://paperdesk.lukaszbabut.info/",
+    "initialWebsiteContentsMatchedCanonical": true,
+    "downloadCountBefore": 139,
+    "downloadCountAfter": 139,
+    "countryRowsBefore": 35,
+    "countryRowsAfter": 35,
+    "sqliteIntegrity": "ok",
+    "statisticsBackup": "/var/lib/paperdesk/backups/stats-before-20261018T135931Z.sqlite3",
+    "rollbackDirectory": "/home/azureuser/PaperDesk.backup-20261018T135931Z",
+    "globalCaddyConfigUnchanged": true,
+    "serviceUnitUnchanged": true,
+    "publicVerification": "Health, homepage, both guides, both update manifests, signature and source checksum match local artifacts; both archives return HTTP 200 to HEAD. Server archive hashes match. Browser shows 3.0.2 and counter 139.",
+    "counterSafeChecks": "No release archive GET was issued against production; checks used HEAD and non-counted metadata endpoints."
+  },
+  "lola": {
+    "websiteVersion": "3.0.2",
+    "health": "ok",
+    "manifestAndSourceChecksumMatch": true,
+    "rollbackDirectory": "/home/lukasz/PaperDesk.backup-20261018T135918Z"
+  },
+  "scope": "Existing development feature changes were released with explicit user approval. No unrelated Git staging/commits or tablet installation/restart was performed during this release. Source snapshots remain separate from deployments."
+}

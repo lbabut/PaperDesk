@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-18",
+  "status": "Integrated development source and verified scoped tablet deployment; not published to production.",
+  "scope": "PDF and EPUB links/attachments imported into native My files. No general-purpose invisible Downloads directory, website saving, system daemon or unsafe XOVI autostart.",
+  "limits": {
+    "download_bytes": 67108864,
+    "epub_declared_uncompressed_bytes": 134217728,
+    "free_before_download_bytes": 603979776,
+    "free_during_transfer_bytes": 536870912,
+    "worker_budget_seconds": 180,
+    "connect_timeout_seconds": 15,
+    "low_speed_bytes_per_second": 1024,
+    "low_speed_timeout_seconds": 20,
+    "maximum_request_hops": 6,
+    "redirect_body_limit_bytes": 65536
+  },
+  "protections": [
+    "Confirmation and Cancel before downloading; cancellation on Web unload, including cancellation arriving before process startup.",
+    "Binary files stream to private disk, never a QML responseText string. File bytes are capped independently of advertised Content-Length.",
+    "PDF header/EOF or EPUB ZIP structure, mimetype and expanded-size checks before native import. Structural validation is not a malware guarantee.",
+    "Public IPv4 HTTPS port 443 only; resolved socket addresses and every redirect checked, private/local/metadata destinations blocked; system TLS checks on and environment proxies off.",
+    "Shared Books/Web transfer lock; native DocumentImporter performs library writes, not the worker.",
+    "Exact source URL plus native library wrapper used to match import; uncertain imports require checking My files before retrying.",
+    "Completed/cancelled/error staging cleaned; own interrupted jobs pruned after one week on a later download.",
+    "Headers-only binary detection keeps the pre-existing deferred Qt.callLater abort, avoiding abort inside HEADERS_RECEIVED. Unit regression asserts callback has exited and responseText is never read.",
+    "Books default validator limits and compiled ARM worker are unchanged; shared source only gains configurable default constants."
+  ],
+  "hardware": {
+    "device": "reMarkable 2, firmware 3.29.0.149",
+    "method": "Real uinput/evdev taps: link, Cancel, link again, Save to My files, Back to Web and unsupported ZIP.",
+    "verified_native_file": "W3C dummy.pdf, 13264 bytes, SHA-256 3df79d34abbca99308e79cb94461c1893582604d68329a41fd4bec1885e6adb4, matching the HTTPS origin.",
+    "native_completion": "Native library metadata and PDF confirmed, success UI reached, and xochitl PID remained 2387 throughout the successful download/import/ZIP actions.",
+    "fixes_found_on_device": ["Missing AppLoad import in the separate dialog component", "Existing shared storage parent is 0755 while private staging is 0700", "Firmware socket type contains extra flags; validate SOCK_STREAM type bits while retaining public-address and port checks"],
+    "regressions_added": ["Default launcher binding, not only an injected stub", "Owned 0755 parent allowed but world-writable parent rejected", "SOCK_STREAM with SOCK_CLOEXEC allowed for public addresses; private addresses still rejected"],
+    "cleanup": "Original Books/Dots/SSH/RSS/Web/Terminal/Update/E2E groups matched backups. Physical event2 restored to 13:66, own touch daemon removed, failure-service mask restored, xochitl active. No staging files left. Installed QML/resource archive/worker hashes match canonical source.",
+    "retained_test_document": "One small native PDF named dummy remains in My files; existing user documents were not deleted."
+  },
+  "tests": {
+    "project_python": {"passed": 105, "failed": 0},
+    "qml_ui": {"passed": 160, "failed": 0},
+    "windows": {"passed": 42, "skipped": 2, "failed": 0}
+  },
+  "limitations": "PDF/EPUB only; IPv6-only servers, nonstandard ports, plain HTTP and browser-cookie/login-only downloads are unsupported. Native import depends on firmware. Real hardware import tested with a direct PDF URL; extensionless binary-header handling and EPUB structure are covered by automated regressions, with native EPUB import separately verified in Books.",
+  "release_safety": "Published 3.0.1 ZIP and source archive hashes unchanged. No website deploy, counter changes, signed-feed changes, commits or staging of unrelated work."
+}

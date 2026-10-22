@@ -1,0 +1,15 @@
+[Unit]
+Description=PaperDesk product website and founding list
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/lukasz/PaperDesk
+ExecStart=/usr/bin/python3 /home/lukasz/PaperDesk/website/server.py --host 0.0.0.0 --port 8090
+Restart=on-failure
+RestartSec=3
+UMask=0077
+
+[Install]
+WantedBy=default.target
+

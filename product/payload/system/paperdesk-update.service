@@ -1,0 +1,12 @@
+[Unit]
+Description=Install a verified PaperDesk update
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStart=/home/root/.local/lib/paperdesk/paperdesk-update-agent
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=300

@@ -1,0 +1,150 @@
+#!/bin/sh
+
+set -eu
+umask 077
+
+BASE_URL=${PAPERDESK_UPDATE_BASE_URL:-https://paperdesk.lukaszbabut.info}
+MANIFEST_PATH=${PAPERDESK_UPDATE_MANIFEST_PATH:-/update/stable.json}
+STATE=${PAPERDESK_UPDATE_STATE:-/home/root/.local/share/paperdesk}
+SETTINGS=${PAPERDESK_UPDATE_SETTINGS:-/home/root/.config/remarkable/xochitl.conf}
+PUBLIC_KEY=${PAPERDESK_UPDATE_PUBLIC_KEY:-/home/root/.local/lib/paperdesk/release-public.pem}
+WORK=${PAPERDESK_UPDATE_WORK:-$STATE/update-work}
+LOCK=${PAPERDESK_UPDATE_LOCK:-/run/paperdesk-update.lock}
+UNINSTALLER=${PAPERDESK_UNINSTALLER:-/home/root/.local/lib/paperdesk/paperdesk-uninstall}
+
+read_setting() {
+    awk -F= -v wanted="$1" '
+        BEGIN { section=0 }
+        /^\[PaperDeskUpdate\]$/ { section=1; next }
+        /^\[/ { section=0 }
+        section && $1 == wanted { sub(/^[^=]*=/, ""); print; exit }
+    ' "$SETTINGS"
+}
+
+clear_request() {
+    awk '
+        BEGIN { section=0 }
+        /^\[PaperDeskUpdate\]$/ { section=1; print; next }
+        /^\[/ { section=0 }
+        section && /^installRequested=/ { print "installRequested=false"; next }
+        section && /^uninstallRequested=/ { print "uninstallRequested=false"; next }
+        { print }
+    ' "$SETTINGS" > "$SETTINGS.paperdesk-update"
+    mv "$SETTINGS.paperdesk-update" "$SETTINGS"
+}
+
+write_status() {
+    mkdir -p "$STATE"
+    printf '{"state":"%s","message":"%s","version":"%s","requestId":"%s"}\n' "$1" "$2" "$3" "${REQUEST_ID:-}" > "$STATE/update-status.json.tmp"
+    mv "$STATE/update-status.json.tmp" "$STATE/update-status.json"
+}
+
+version_is_newer() {
+    awk -F. -v candidate="$1" -v installed="$2" 'BEGIN {
+        split(candidate, a, "."); split(installed, b, ".")
+        for (i=1; i<=4; ++i) {
+            if ((a[i] + 0) > (b[i] + 0)) exit 0
+            if ((a[i] + 0) < (b[i] + 0)) exit 1
+        }
+        exit 1
+    }'
+}
+
+fail() {
+    write_status "error" "$1" "${LATEST_VERSION:-}"
+    exit 1
+}
+
+# Acquire ownership before reading or clearing requests. A second invocation
+# must neither consume a queued action nor overwrite the active job's status.
+exec 9>"$LOCK"
+flock -n 9 || exit 0
+
+REQUESTED=$(read_setting installRequested || true)
+UNINSTALL_REQUESTED=$(read_setting uninstallRequested || true)
+[ "$REQUESTED" = "true" ] || [ "$UNINSTALL_REQUESTED" = "true" ] || exit 0
+REQUESTED_VERSION=$(read_setting requestedVersion || true)
+REQUEST_ID=$(read_setting requestedId || true)
+case "$REQUEST_ID" in
+    *[!a-zA-Z0-9._-]*) REQUEST_ID=""; fail "The update request identifier is invalid" ;;
+esac
+[ "${#REQUEST_ID}" -le 96 ] || { REQUEST_ID=""; fail "The update request identifier is invalid"; }
+clear_request
+
+if [ "$UNINSTALL_REQUESTED" = "true" ]; then
+    write_status "uninstalling" "Removing PaperDesk" ""
+    [ -x "$UNINSTALLER" ] || fail "The PaperDesk uninstaller is unavailable"
+    "$UNINSTALLER" --from-care >/tmp/paperdesk-uninstall.log 2>&1 || fail "PaperDesk could not be removed"
+    write_status "success" "PaperDesk removed" ""
+    /home/root/xovi/start >/tmp/paperdesk-uninstall-reload.log 2>&1 || true
+    exit 0
+fi
+
+printf '%s' "$REQUESTED_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$' || fail "The requested version is invalid"
+mkdir -p "$STATE"
+# Delete only the unique temporary directory we created, never a configured
+# pre-existing path (which might contain unrelated user files).
+WORK=$(mktemp -d "$WORK.XXXXXX") || fail "Could not create the update workspace"
+trap 'rm -rf "$WORK"' EXIT
+trap 'exit 1' HUP INT TERM
+write_status "checking" "Verifying the official release" "$REQUESTED_VERSION"
+
+wget -q -T 25 -O "$WORK/latest.json" "$BASE_URL$MANIFEST_PATH" || fail "Could not download release information"
+wget -q -T 25 -O "$WORK/latest.json.sig" "$BASE_URL$MANIFEST_PATH.sig" || fail "Could not download release signature"
+openssl pkeyutl -verify -rawin -pubin -inkey "$PUBLIC_KEY" -sigfile "$WORK/latest.json.sig" -in "$WORK/latest.json" >/dev/null 2>&1 || fail "Release signature is invalid"
+
+LATEST_VERSION=$(sed -n 's/^[[:space:]]*"version": "\([0-9][0-9.]*\)",*$/\1/p' "$WORK/latest.json")
+ARCHIVE_URL=$(sed -n 's/^[[:space:]]*"archiveUrl": "\([^" ]*\)",*$/\1/p' "$WORK/latest.json")
+ARCHIVE_SHA=$(sed -n 's/^[[:space:]]*"archiveSha256": "\([0-9a-f]*\)",*$/\1/p' "$WORK/latest.json")
+ARCHIVE_SIZE=$(sed -n 's/^[[:space:]]*"archiveSize": \([0-9]*\),*$/\1/p' "$WORK/latest.json")
+
+printf '%s' "$LATEST_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$' || fail "Release version is invalid"
+printf '%s' "$ARCHIVE_URL" | grep -Eq '^/download/paperdesk-[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?\.zip$' || fail "Release download path is invalid"
+printf '%s' "$ARCHIVE_SHA" | grep -Eq '^[0-9a-f]{64}$' || fail "Release checksum is invalid"
+printf '%s' "$ARCHIVE_SIZE" | grep -Eq '^[0-9]+$' || fail "Release size is invalid"
+[ "$ARCHIVE_SIZE" -gt 0 ] && [ "$ARCHIVE_SIZE" -le 52428800 ] || fail "Release size is outside the safe limit"
+[ "$LATEST_VERSION" = "$REQUESTED_VERSION" ] || fail "The available release changed; check again"
+
+CURRENT=$(tr -d '\r\n' < "$STATE/current-version" 2>/dev/null || printf '0.0.0')
+if ! version_is_newer "$LATEST_VERSION" "$CURRENT"; then
+    write_status "current" "PaperDesk is already up to date" "$LATEST_VERSION"
+    exit 0
+fi
+
+write_status "downloading" "Downloading PaperDesk $LATEST_VERSION" "$LATEST_VERSION"
+# Care download counts are private. The randomly generated installation token
+# is unrelated to the device serial number, IP address, or user account.
+# Operators can disable anonymous metrics with PAPERDESK_UPDATE_METRICS=0.
+ANONYMOUS_METRICS=$(read_setting anonymousMetrics || true)
+if [ "${PAPERDESK_UPDATE_METRICS:-1}" = "1" ] && [ "$ANONYMOUS_METRICS" != "false" ]; then
+    INSTALL_ID_FILE="$STATE/anonymous-update-installation"
+    if [ ! -f "$INSTALL_ID_FILE" ]; then
+        openssl rand -hex 16 > "$INSTALL_ID_FILE.tmp.$$" || fail "Could not create anonymous update identifier"
+        chmod 600 "$INSTALL_ID_FILE.tmp.$$"
+        mv "$INSTALL_ID_FILE.tmp.$$" "$INSTALL_ID_FILE"
+    fi
+    INSTALL_ID=$(tr -d '\r\n' < "$INSTALL_ID_FILE")
+    printf '%s' "$INSTALL_ID" | grep -Eq '^[0-9a-f]{32}$' || fail "The anonymous update identifier is invalid"
+    wget -q -T 90 --header="X-PaperDesk-Update: care-v1" \
+        --header="X-PaperDesk-Install-Id: $INSTALL_ID" \
+        -O "$WORK/paperdesk.zip.partial" "$BASE_URL$ARCHIVE_URL" || fail "The update download failed"
+else
+    wget -q -T 90 -O "$WORK/paperdesk.zip.partial" "$BASE_URL$ARCHIVE_URL" || fail "The update download failed"
+fi
+[ "$(wc -c < "$WORK/paperdesk.zip.partial" | tr -d ' ')" = "$ARCHIVE_SIZE" ] || fail "The update size does not match"
+printf '%s  %s\n' "$ARCHIVE_SHA" "$WORK/paperdesk.zip.partial" | sha256sum -c - >/dev/null 2>&1 || fail "The update checksum does not match"
+mv "$WORK/paperdesk.zip.partial" "$WORK/paperdesk.zip"
+
+write_status "installing" "Installing PaperDesk $LATEST_VERSION" "$LATEST_VERSION"
+unzip -q "$WORK/paperdesk.zip" -d "$WORK/unpacked" || fail "The update archive could not be opened"
+RELEASE_DIR="$WORK/unpacked/paperdesk-$LATEST_VERSION"
+[ -f "$RELEASE_DIR/install.sh" ] && [ -f "$RELEASE_DIR/SHA256SUMS" ] || fail "The update package is incomplete"
+(cd "$RELEASE_DIR" && sha256sum -c SHA256SUMS >/dev/null) || fail "Files inside the update package are invalid"
+chmod 755 "$RELEASE_DIR/install.sh"
+"$RELEASE_DIR/install.sh" --from-updater >/tmp/paperdesk-update-install.log 2>&1 || fail "Installation failed; use the saved backup for recovery"
+
+write_status "success" "PaperDesk $LATEST_VERSION installed" "$LATEST_VERSION"
+# Reload the current UI once without creating any boot-time persistence.
+# A unique transient unit lets this update job finish before XOVI restarts.
+systemd-run --unit="paperdesk-xovi-reload-$$" --collect --on-active=2s \
+    /home/root/xovi/start >/dev/null

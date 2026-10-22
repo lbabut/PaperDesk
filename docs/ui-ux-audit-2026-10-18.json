@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-18",
+  "status": "completed_on_tablet_no_production_deployment",
+  "scope": "SSH, RDP login and profiles, RSS, Web, Books, Dots, Care; review of legacy hub and native RDP renderer",
+  "productionDeployment": false,
+  "releaseVersionChanged": false,
+  "method": [
+    "Read current canonical working files, preserving existing dirty changes.",
+    "Render host previews at 1404x1872, including forms, settings and dialogs.",
+    "Review hierarchy, contrast, target size, action discoverability, long text and keyboard occlusion.",
+    "Add host UI layout regressions, then validate using touch events on the physical tablet.",
+    "Compare private state digests before and after tablet scenarios."
+  ],
+  "changes": [
+    {"app": "All seven visible apps", "problem": "Close buttons differed in size and type; some option rows were too shallow.", "resolution": "176x76px Close, 8px radius; 16pt action labels; finger-sized important controls, clearer disabled states."},
+    {"app": "SSH", "problem": "Six commands squeezed app identity and the native input editor into a single row; panels could compete; the hold timer used unqualified touch state.", "resolution": "Persistent identity and Close above a five-command strip; separate input editor; mutually exclusive Sessions, Display and Shortcuts without dismissing an already-open keyboard; emphasized Open and Save; correctly scoped hold state prevents a left click after a right click."},
+    {"app": "RDP", "problem": "Editing kept a redundant saved-profile list above the fields; Save validation could be outside the viewport.", "resolution": "Contextual editor heading, saved list hidden only during editing, fixed opaque Save/Cancel dock with validation feedback; disabled unavailable Edit/Delete."},
+    {"app": "Web", "problem": "54px option bar, tiny status and labels that described the next action rather than the current state.", "resolution": "88px bar with 76px actions, View: Mobile/Computer and Pictures: on/off, visible zoom percentage; preserved vector Back/Reload."},
+    {"app": "RSS", "problem": "Cramped source names and 50px Remove targets competed; article metadata was too small; add-feed view lacked Close.", "resolution": "Wider source rail, taller source/article rows, larger metadata and two-tap Remove; Close on add-feed view, clearer loading and empty-state copy."},
+    {"app": "Books", "problem": "Sort choices were smaller than other controls, search wording omitted research topics, modal explanation and status were small and shelf hints persisted on other views.", "resolution": "Larger actions and sort picklist, contextual guidance, clearer search and input hints, keyboard-inset fallback, more readable deletion/status copy; reading position and storage-error visibility preserved."},
+    {"app": "Dots", "problem": "New-game dialog occupied nearly the whole display while much of it was blank.", "resolution": "Content-sized centered dialog and larger standard action buttons; no rule, saved-game or board-dimension changes."},
+    {"app": "Care", "problem": "Disabled actions were faded twice; fixed cards risked overlap with long status/release messages; security explanations were tiny.", "resolution": "Single readable disabled ink, consistent controls, content-sized status and uninstall panels, larger safety copy and bounded kinetic scrolling."}
+  ],
+  "preserved": ["Existing app capabilities", "System keyboard", "Saved connections", "Offline books and reading positions", "Dots game", "No new production release", "Website changes from other machines"],
+  "limitations": [
+    "Tablet Qt lacks the Accessible attached object available on the host. Optional annotations were removed after a physical load failure; a source regression now prevents reintroducing them.",
+    "Host raster previews are not photographs of the e-ink display. Tablet screenshots were deliberately not taken because capture has previously stalled or crashed this firmware.",
+    "The native RDP bitmap renderer remains different from Qt text. No engine/network rewrite is bundled with a visual cleanup.",
+    "This audit does not remove the previously documented synchronous RDP connection and transport byte-budget risks."
+  ],
+  "evidence": {
+    "designSpec": "docs/ui-design-system.json",
+    "uiRegression": "tests/qml/tst_design.qml",
+    "hostLog": "work/tests/uiux/final-host.log",
+    "hostPreviews": "work/tests/uiux/",
+    "hardwareLogs": ["work/tests/uiux/hardware-first-series.log", "work/tests/uiux/hardware-final-series.log"],
+    "tabletRollback": "/home/root/.local/state/paperdesk-usability.ogJ6md",
+    "latestInstallBackup": "/home/root/.local/state/paperdesk-usability.ssGDR2",
+    "hostTests": {"pythonPassed": 86, "qmlPassed": 142, "windowsPassed": 42, "windowsSkipped": 2},
+    "hostPreviewCount": 21,
+    "installedArtifactsMatched": 11,
+    "installedVerification": "work/tests/uiux/installed.log",
+    "hardwareTargetsPassed": ["terminal", "ssh-sessions", "rdp", "dots", "care", "all", "books-live"],
+    "hardwareStateReports": ["work/tests/usability-state-terminal-ssh-sessions-rdp-dots-care-all-books-live.json", "work/tests/usability-state-all-books-live.json"],
+    "userStateGroupsCheckedAfterEachTarget": 9,
+    "allUserStateComparisonsPassed": true,
+    "booksRealDownloadViewportPx": {"before": 782, "after": 782},
+    "deviceRestored": {"xochitl": "active", "physicalTouchNode": "13:66", "failureService": "static", "wifi": "up", "testTouchHelperRunning": false},
+    "safeActionScope": "No authenticated user server was changed. Native Care opened and cancelled uninstall; it did not install or uninstall. RDP/SSH CRUD used isolated fixtures. The test book download and test games were discarded by restoring original user state."
+  },
+  "validationCorrections": [
+    "Removed host-only Accessible annotations after the tablet rejected them at load time; added a regression.",
+    "Fixed the SSH hold timer's touch-state scope; verified right click without an extra left click.",
+    "Preserved an already-open SSH system keyboard when switching terminal tools.",
+    "Updated physical Web zoom taps to the center of the enlarged option controls rather than their old positions."
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "name": "PaperDesk Quiet Ink",
+  "revision": 1,
+  "referenceViewport": {"width": 1404, "height": 1872},
+  "principles": [
+    "Use black ink on white, not opacity layers for normal interface text.",
+    "Keep Close at the upper right on primary screens and form screens.",
+    "Separate app identity from dense command rows.",
+    "Use a black primary action and outlined secondary actions.",
+    "Keep Save and validation feedback above the system keyboard.",
+    "Show the current value of toggles, not only the name of their next action.",
+    "Keep destructive actions secondary and require confirmation.",
+    "Prefer bounded scrolling and no decorative animation on e-ink."
+  ],
+  "tokens": {
+    "headerHeightPx": 112,
+    "closeWidthPx": 176,
+    "actionHeightPx": 76,
+    "cornerRadiusPx": 8,
+    "borderPx": 2,
+    "actionFontPt": 16,
+    "actionWeight": "bold",
+    "appTitlePt": 25,
+    "secondaryTextPt": 15,
+    "bodyTextPt": 18,
+    "decorativeEyebrowPt": 10,
+    "disabledInk": "#666666",
+    "disabledBorder": "#777777"
+  },
+  "implementation": "Apps retain self-contained resource bundles and local controls; tests/qml/tst_design.qml enforces cross-app geometry. No new runtime plugin or font dependency.",
+  "intentionalExceptions": [
+    "The SSH command strip adds 96px below the identity header to fit five readable actions.",
+    "Books retains its padded library shell; its Close button uses the same dimensions.",
+    "The native RDP engine has a separate bitmap renderer. Its renderer and network behavior are not changed by this UI pass.",
+    "Reading content, terminal cells, game grids and decorative captions have their own typography requirements."
+  ]
+}
