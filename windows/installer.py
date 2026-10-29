@@ -21,46 +21,7 @@ def product_path():
     return Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parents[1])) / 'product'
 
 
-def verified_files(product):
-    files = []
-    for line in (product / 'SHA256SUMS').read_text(encoding='utf-8').splitlines():
-        match = re.fullmatch(r'([0-9a-f]{64})  (.+)', line)
-        if not match:
-            raise ValueError('Invalid SHA256SUMS manifest.')
-        digest, name = match.groups()
-        relative = PurePosixPath(name)
-        if relative.is_absolute() or '..' in relative.parts or '\\' in name or ':' in name:
-            raise ValueError('Unsafe path in the package.')
-        path = product.joinpath(*relative.parts)
-        if path.is_symlink() or not path.is_file() or not path.resolve().is_relative_to(product.resolve()):
-            raise ValueError('Missing package file: ' + name)
-        if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
-            raise ValueError('Corrupt package file: ' + name)
-        name = relative.as_posix()
-        if name in files or name == 'paperdesk.local.conf':
-            raise ValueError('Invalid file in the manifest.')
-        files.append(name)
-    if not {'install.sh', 'VERSION', 'release.json'}.issubset(files):
-        raise ValueError('Incomplete package.')
-    version = (product / 'VERSION').read_text().strip()
-    if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+(?:\.[0-9]+)?', version):
-        raise ValueError('Invalid version.')
-    if json.loads((product / 'release.json').read_text())['version'] != version:
-        raise ValueError('Package version mismatch.')
-    return files, version
-
-
-def archive(product):
-    files, version = verified_files(product)
-    data = io.BytesIO()
-    with tarfile.open(fileobj=data, mode='w:gz') as tar:
-        for name in files + ['SHA256SUMS']:
-            content = (product / name).read_bytes()
-            info = tarfile.TarInfo(name)
-            info.size = len(content)
-            info.mode = 0o755 if name.endswith('.sh') or name.startswith('payload/system/') else 0o644
-            tar.addfile(info, io.BytesIO(content))
-    return data.getvalue(), version
+from package_core import verified_files, archive
 
 
 def fingerprint(key):
@@ -221,104 +182,8 @@ def english_dialog(root, title, body, question=False, acknowledgement=False):
 
 
 def main(smoke=False):
-    import tkinter as tk
-    from tkinter import ttk
-    root = tk.Tk()
-    root.title('PaperDesk — Windows Installer')
-    root.geometry('590x450')
-    root.resizable(False, False)
-    frame = ttk.Frame(root, padding=24)
-    frame.pack(fill='both', expand=True)
-    ttk.Label(frame, text='PaperDesk for reMarkable 2', font=('Segoe UI', 18)).pack(anchor='w')
-    ttk.Label(frame, text='Connect the tablet by USB and enable the USB web interface.\nUse Install PaperDesk if XOVI, AppLoad and LiTerm are ready.\nUse Prepare tablet to install missing dependencies (OS 3.29.0.149 only).', wraplength=540).pack(anchor='w', pady=12)
-    ttk.Label(frame, text='Tablet address').pack(anchor='w')
-    host = ttk.Entry(frame)
-    host.insert(0, '10.11.99.1')
-    host.pack(fill='x')
-    ttk.Label(frame, text='USB management code from the tablet settings').pack(anchor='w', pady=(10, 0))
-    password = ttk.Entry(frame, show='•')
-    password.pack(fill='x')
-    status = tk.StringVar(value='Ready to install')
-    ttk.Label(frame, textvariable=status, wraplength=520).pack(anchor='w', pady=14)
-    events = queue.Queue()
-    busy = False
-
-    def confirm(title, body):
-        answer = queue.Queue()
-        events.put(('confirm', (title, body, answer)))
-        return answer.get()
-
-    def worker(address, code, prepare=False):
-        client = None
-        try:
-            check_windows()
-            verified_files(product_path())
-            events.put(('status', 'Connecting to the tablet…'))
-            client = connect(address, code, confirm)
-            code = None
-            action = prepare_and_install if prepare else install
-            done = action(client, product_path(), confirm, lambda text: events.put(('status', text)))
-            events.put(('done', done))
-        except Exception as exc:
-            events.put(('error', str(exc)))
-        finally:
-            code = None
-            if client:
-                client.close()
-
-    def start(prepare=False):
-        nonlocal busy
-        if busy:
-            return
-        if prepare and not english_dialog(root, 'Tablet preparation — risks and responsibility',
-                                          RISK_NOTICE, question=True, acknowledgement=True):
-            status.set('Tablet preparation cancelled. The tablet has not been changed.')
-            return
-        address, code = host.get().strip(), password.get()
-        password.delete(0, 'end')
-        busy = True
-        button.configure(state='disabled')
-        prepare_button.configure(state='disabled')
-        host.configure(state='disabled')
-        password.configure(state='disabled')
-        threading.Thread(target=worker, args=(address, code, prepare), daemon=True).start()
-
-    def poll():
-        nonlocal busy
-        while not events.empty():
-            kind, value = events.get()
-            if kind == 'confirm':
-                title, body, answer = value
-                answer.put(english_dialog(root, title, body, question=True))
-            elif kind == 'status':
-                status.set(value)
-            else:
-                busy = False
-                button.configure(state='normal')
-                prepare_button.configure(state='normal')
-                host.configure(state='normal')
-                password.configure(state='normal')
-                if kind == 'error':
-                    status.set('Installation did not complete.')
-                    english_dialog(root, 'PaperDesk — Installation error', value)
-                elif value:
-                    status.set('PaperDesk installed. XOVI started.')
-                    english_dialog(root, 'PaperDesk', 'Open AppLoad and check the PaperDesk apps.')
-                elif value is None:
-                    status.set('Tablet prepared. PaperDesk installation cancelled; dependencies remain installed.')
-                else:
-                    status.set('Installation cancelled.')
-        root.after(100, poll)
-
-    button = ttk.Button(frame, text='Install PaperDesk', command=start)
-    button.pack(anchor='e')
-    prepare_button = ttk.Button(frame, text='Prepare tablet and install PaperDesk', command=lambda: start(True))
-    prepare_button.pack(anchor='e', pady=(10, 0))
-    root.protocol('WM_DELETE_WINDOW', lambda: english_dialog(root, 'PaperDesk', 'Please wait until the operation finishes.') if busy else root.destroy())
-    poll()
-    if smoke:
-        root.after(1000, root.destroy)
-    root.mainloop()
+    from manual_wizard import main as manual_main
+    manual_main(product_path(), smoke=smoke)
 
 
 if __name__ == '__main__':
@@ -328,9 +193,7 @@ if __name__ == '__main__':
         # Windowed executables have no console; report via a requested file.
         result = f'PaperDesk {version} package OK {len(data)} bytes'
         if '--check-dependencies' in sys.argv:
-            from prepare_tablet import dependency_files, fetch_assets
-            dependencies = dependency_files(fetch_assets())
-            result += f'\nDependency download and verification OK: {len(dependencies)} files'
+            raise SystemExit('Automatic dependency downloads are disabled. Use the manual USB/SSH assistant.')
         if '--report' in sys.argv:
             Path(sys.argv[sys.argv.index('--report') + 1]).write_text(result)
         elif sys.stdout:
