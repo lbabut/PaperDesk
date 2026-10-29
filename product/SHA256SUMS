@@ -60,8 +60,8 @@ dc2fb1ec45c2c876925a7a986bcca7e9163d8ffece5b7e2643bfd5cc859777bb  ./payload/apps
 18bd9d641ab74be119d2ea2df0307fddbb2e8cc6e5159e61e36862fb176d05b1  ./payload/apps/papercare/assets/icon.svg
 7c35824535efb0565a00f45a2b04d1e755a4ce6cf7e01e54a9f827a4d3b1ce0f  ./payload/apps/papercare/icon.png
 0741c03fba719a3eea3a610fa6a2dd13ef6c87c5b27699bad2cea742e73f955b  ./payload/apps/papercare/manifest.json
-363ca15fe3728d19ea121b34283aab479f06ba25c2f4407306afd52a530c0049  ./payload/apps/papercare/resources.rcc
-2fec8394e9aa50b02bb1fb2e1574caaa19c4cc346f7477bade19eaf96e8560fb  ./payload/apps/papercare/ui/main.qml
+e96d0fb0eb563f5db5547896a6d9269fef18f20dcd5ebee6e228261e6d6f3c40  ./payload/apps/papercare/resources.rcc
+45a9b4238f31474e0434b1d48aa624b65bb67bfcd94f9c9ec27b7dd413aafc11  ./payload/apps/papercare/ui/main.qml
 ad585de93a3d49046a71f03643a9c4309e0e58bccb43308bae703d072e4287da  ./payload/apps/paperdesk/application.qrc
 b157df4ec15601380ea0cafcfaa3b41762886491c3e5562d2244d57de0d0c9b0  ./payload/apps/paperdesk/icon.png
 4644cc6adf117535f5a2e1a5da3a403921e9184b5f4f5b5f3a492be10220dfc8  ./payload/apps/paperdesk/icon.svg
@@ -118,7 +118,7 @@ e774d7f8580d27369410cf545a1c43c722dd1f0e9b21f72d274644a664410c7f  ./payload/apps
 1637ac3e2b2d7fdda4ff1789c2c403c06603f4948506de2b204f4750f8bde967  ./payload/system/paperdesk-appload-window.qml
 9a7c4769c9b995a47a077e1342817ef418f1bd1ac7abade106199d2f424b5a00  ./payload/system/paperdesk-appload.qml
 bf826622f18ac3004df7087f2bd99534272d225cbbe7cbfb3a7edf7ae540c992  ./payload/system/paperdesk-release-public.pem
-f25415b8300a4595295bbaf376d029d0487d526e058ba7ce0d3370492d57c094  ./payload/system/paperdesk-update-agent
+ccf1123c6a5418f606e1b84b2962d4dc8542ab22f31273998f36576403d31d96  ./payload/system/paperdesk-update-agent
 973a721d5aad4b64f52c6eeb3ce3b313da0bd066821ffbf8d2c6e443516bd58b  ./payload/system/paperdesk-update.path
 e7beb1bdca6d8ac65ef9c0caf96189db5640dbfc3469cdf17e42b5390ff21ea8  ./payload/system/paperdesk-update.service
 ed534a03958e509c1686e3e58bcb449c9055079aa3d3c1cccb3eedbb5e792af6  ./payload/system/profile-hook.sh

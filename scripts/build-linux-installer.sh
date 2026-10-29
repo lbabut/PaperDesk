@@ -13,6 +13,11 @@ mkdir -p "$ROOT/dist" "$STAGE/paperdesk-linux-installer-$VERSION"
 )
 cp -a "$ROOT/product" "$STAGE/paperdesk-linux-installer-$VERSION/"
 cp "$ROOT/PaperDesk-Installer.sh" "$STAGE/paperdesk-linux-installer-$VERSION/"
+mkdir "$STAGE/paperdesk-linux-installer-$VERSION/wizard"
+for module in manual_wizard.py package_core.py preflight.py; do
+    cp "$ROOT/windows/$module" "$STAGE/paperdesk-linux-installer-$VERSION/wizard/"
+done
+cp "$ROOT/INSTALL-DESKTOP.md" "$STAGE/paperdesk-linux-installer-$VERSION/"
 chmod 755 "$STAGE/paperdesk-linux-installer-$VERSION/PaperDesk-Installer.sh"
 rm -f "$STAGE/paperdesk-linux-installer-$VERSION/product/paperdesk.local.conf"
 tar -C "$STAGE" -czf "$OUT" "paperdesk-linux-installer-$VERSION"
