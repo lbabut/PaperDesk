@@ -159,7 +159,50 @@ Item {
             var b=Ink.book();b.pages[0].strokes.push(s);
             var old=Ink.decode(JSON.stringify(b));
             compare(old.pages[0].strokes[0].renderer,undefined);
-            compare(Ink.stroke(1,5,0,0.5,7).renderer,2);
+            compare(Ink.stroke(1,5,0,0.5,7).renderer,3);
+        }
+        function test_ink_is_visible_before_canvas_commit() {
+            scene.app.tool=3;scene.app.brushSize=20;
+            var canvas=findChild(scene.app,"drawingCanvas"),overlay=findChild(scene.app,"liveInk");
+            var passes=scene.app.rasterPasses;
+            mousePress(canvas,300,400,Qt.LeftButton);
+            try {
+                mouseMove(canvas,450,400,20);wait(100);
+                verify(scene.app.previewCount>0);
+                var position=canvas.mapToItem(scene,375,400),image=grabImage(scene);
+                verify(image.red(Math.round(position.x*image.width/scene.width),
+                                 Math.round(position.y*image.height/scene.height))<240,
+                       "The scene must show ink while the pen is still down");
+                compare(canvas.getContext("2d").getImageData(375,400,1,1).data[0],255);
+                compare(scene.app.rasterPasses,passes);
+            } finally {mouseRelease(canvas,450,400,Qt.LeftButton);}
+            tryCompare(scene.app,"painting",false,5000);
+            compare(scene.app.previewCount,0);
+            verify(canvas.getContext("2d").getImageData(375,400,1,1).data[0]<255);
+        }
+        function test_smudge_reads_the_image_once_per_segment() {
+            var canvas=findChild(scene.app,"drawingCanvas"),c=canvas.getContext("2d"),reads=0;
+            var wrapped={
+                getImageData:function(x,y,w,h){reads++;return c.getImageData(x,y,w,h);},
+                save:function(){c.save();},restore:function(){c.restore();},
+                beginPath:function(){c.beginPath();},arc:function(x,y,r,a,b){c.arc(x,y,r,a,b);},
+                clip:function(){c.clip();},drawImage:function(i,x,y){c.drawImage(i,x,y);}
+            };
+            Ink.smudge(wrapped,[100,100,0.7],[900,100,0.7],64,0.8);
+            compare(reads,1);
+        }
+        function test_long_live_stroke_keeps_history_and_bounds_preview() {
+            scene.app.tool=3;scene.app.brushSize=10;
+            scene.app.beginStroke(Qt.point(100,400),"pen",3,0.7);
+            var passes=scene.app.rasterPasses;
+            for(var i=1;i<1800;i++)
+                scene.app.extendStroke(Qt.point(100+(i%400)*2,400+60*Math.sin(i*0.1)),"pen",0.7);
+            verify(scene.app.previewCount<=512);
+            verify(scene.app.activeStroke.points.length>1500);
+            compare(scene.app.rasterPasses,passes);
+            scene.app.finishStroke();
+            tryCompare(scene.app,"painting",false,10000);
+            verify(scene.app.page.strokes[0].points.length>1500);
         }
         function test_validation() {
             var b=Ink.book(),s=Ink.stroke(0,5,0,0.5,1);

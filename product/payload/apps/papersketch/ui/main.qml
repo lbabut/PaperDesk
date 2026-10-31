@@ -32,6 +32,9 @@ Rectangle {
     property int replayStroke: 0
     property int replayPoint: 0
     property var pending: []
+    readonly property int previewCount: liveSegments.count
+    property int previewStart: 0
+    property int rasterPasses: 0
     property bool painting: false
     property int maxPaintMs: 0
     property int maxQueueWaitMs: 0
@@ -55,19 +58,39 @@ Rectangle {
         property int selectedTone: 0
         property bool useFinger: true
     }
+    ListModel { id:liveSegments }
     Timer { id: autosave; interval: 800; onTriggered: root.saveBook() }
     Timer { id: paintTimer; interval: 0; onTriggered: root.requestPendingPaint() }
 
     function requestPendingPaint() {
+        if(activeStroke!==null && activeStroke.tool!==7)return;
         if(replaying || resetCanvas || pending.some(function(job){return job.stroke.tool===7;})) {paper.requestPaint();return;}
         for(var i=0;i<pending.length;i++) {
             var job=pending[i],r=Ink.dirtyBounds(job.stroke,job.index);
             paper.markDirty(Qt.rect(r.x,r.y,r.width,r.height));
         }
     }
+    function previewInk(s,index) {
+        if(s.tool===7)return;
+        var b=s.points[index],a=index?s.points[index-1]:b,p=(a[2]+b[2])/2;
+        var t=Ink.tools[s.tool],alpha=t.kind==="eraser"?s.strength:t.opacity*s.strength*(0.3+0.7*p);
+        var value=t.kind==="eraser"?255:s.tone;
+        var gray=1-(1-value/255)*Math.max(0.35,alpha);
+        liveSegments.append({ax:a[0],ay:a[1],bx:b[0],by:b[1],
+                            thickness:Math.max(1,s.size*(0.18+0.82*p)),shade:gray});
+        if(liveSegments.count-previewStart>512) {
+            for(var n=liveSegments.count-1;n>previewStart;n-=2) {
+                var a=liveSegments.get(n-1),b=liveSegments.get(n);
+                liveSegments.set(n-1,{bx:b.bx,by:b.by,thickness:(a.thickness+b.thickness)/2,shade:(a.shade+b.shade)/2});
+                liveSegments.remove(n);
+            }
+        }
+    }
     function queueInk(s,index) {
         painting=true;
         pending.push({stroke:s,index:index,queuedAt:Date.now()});
+        previewInk(s,index);
+        if(activeStroke!==null && activeStroke.tool!==7)return;
         if(s.tool===7) {paper.requestPaint();return;}
         var r=Ink.dirtyBounds(s,index);
         paper.markDirty(Qt.rect(r.x,r.y,r.width,r.height));
@@ -82,12 +105,15 @@ Rectangle {
         return true;
     }
     function redraw() {
-        pending=[];resetCanvas=true;replaying=true;replayStroke=0;replayPoint=0;
+        pending=[];liveSegments.clear();resetCanvas=true;replaying=true;replayStroke=0;replayPoint=0;
         paper.requestPaint();guide.requestPaint();
     }
     function beginStroke(p,source,selected,pressure) {
         if(!ready || busy || saveBlocked || confirmation) return;
         if(totalPoints>=Ink.MAX_POINTS) {notice="Sketchbook full. Export your pages before starting a new book.";return;}
+        paintTimer.stop();
+        maxPaintMs=0;maxQueueWaitMs=0;
+        previewStart=liveSegments.count;
         activeSource=source;
         activeStroke=Ink.stroke(selected,selected===7?Math.max(brushSize,source==="finger"?64:32):brushSize,tone,strength,Date.now());
         activeStroke.points.push(Ink.point(p.x,p.y,source==="finger"?0.7:(pressure===undefined?penInput.centroid.pressure:pressure)));
@@ -107,7 +133,8 @@ Rectangle {
         if(activeStroke===null) return;
         page.strokes.push(activeStroke);totalPoints+=activeStroke.points.length;
         activeStroke=null;activeSource="";redoStrokes=[];clearedStrokes=null;revision++;
-        autosave.restart();
+        for(var i=0;i<pending.length;i++)pending[i].queuedAt=Date.now();
+        paintTimer.restart();autosave.restart();
     }
     function undo() {
         if(busy) return;
@@ -273,6 +300,8 @@ Rectangle {
                 id:paper;objectName:"drawingCanvas";anchors.fill:parent
                 renderTarget:Canvas.Image
                 onPaint:{
+                    if(root.activeStroke!==null && root.activeStroke.tool!==7)return;
+                    root.rasterPasses++;
                     var c=getContext("2d");
                     if(root.resetCanvas) {Ink.background(c,"plain");root.resetCanvas=false;}
                     var budget=256, started=Date.now(), hadPending=root.pending.length>0;
@@ -299,6 +328,7 @@ Rectangle {
                         console.log("PaperSketch export",ok,root.exportPath);
                     }
                     root.painting=root.pending.length>0;
+                    if(!root.pending.length && root.activeStroke===null)liveSegments.clear();
                     root.maxPaintMs=Math.max(root.maxPaintMs,Date.now()-started);
                     if(hadPending && !root.pending.length && root.activeStroke===null)
                         console.log("PaperSketch raster",root.maxPaintMs,"ms paint",root.maxQueueWaitMs,"ms queue");
@@ -309,8 +339,30 @@ Rectangle {
                 id:guide;anchors.fill:parent
                 onPaint:{var c=getContext("2d");c.clearRect(0,0,width,height);Ink.guides(c,root.page.paper)}
             }
-            HoverHandler {
-                id:penHover;acceptedDevices:PointerDevice.Stylus | PointerDevice.Airbrush
+            Item {
+                id:liveInk
+                objectName:"liveInk"
+                anchors.fill:parent
+                Repeater {
+                    model:liveSegments
+                    Item {
+                        x:ax;y:ay;width:1;height:1
+                        rotation:Math.atan2(by-ay,bx-ax)*180/Math.PI
+                        transformOrigin:Item.TopLeft
+                        Rectangle {
+                            x:-thickness/2;y:-thickness/2
+                            width:Math.sqrt((bx-ax)*(bx-ax)+(by-ay)*(by-ay))+thickness
+                            height:thickness;radius:thickness/2
+                            color:Qt.rgba(shade,shade,shade,1)
+                            antialiasing:true
+                        }
+                    }
+                }
+                DisplayMethodArea {
+                    anchors.fill:parent
+                    visible:liveSegments.count>0
+                    displayMethod:typeof DisplayMethodArea.UFast==="number" ? DisplayMethodArea.UFast : DisplayMethodArea.Fast
+                }
             }
             DragHandler {
                 id:penInput
