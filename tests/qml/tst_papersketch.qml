@@ -177,7 +177,7 @@ Item {
                 compare(scene.app.rasterPasses,passes);
             } finally {mouseRelease(canvas,450,400,Qt.LeftButton);}
             tryCompare(scene.app,"painting",false,5000);
-            compare(scene.app.previewCount,0);
+            tryCompare(scene.app,"previewCount",0,5000);
             verify(canvas.getContext("2d").getImageData(375,400,1,1).data[0]<255);
         }
         function test_smudge_reads_the_image_once_per_segment() {

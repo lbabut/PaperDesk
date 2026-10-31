@@ -200,3 +200,16 @@ function smudge(c,a,b,size,strength) {
     }
     c.restore();
 }
+
+function previewSegment(c,s,index) {
+    if(s.tool===7)return;
+    var b=s.points[index],a=index?s.points[index-1]:b,p=(a[2]+b[2])/2,t=tools[s.tool];
+    var w=Math.max(1,s.size*(0.18+0.82*p));
+    var alpha=t.kind==="eraser"?s.strength:t.opacity*s.strength*(0.3+0.7*p);
+    var value=t.kind==="eraser"?255:s.tone,gray=Math.round(255-(255-value)*Math.max(0.35,alpha));
+    c.save();c.strokeStyle=Qt.rgba(gray/255,gray/255,gray/255,1);
+    c.fillStyle=c.strokeStyle;c.lineWidth=w;c.lineCap="round";c.lineJoin="round";
+    if(!index) {c.beginPath();c.arc(b[0],b[1],w/2,0,Math.PI*2);c.fill();}
+    else {c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke();}
+    c.restore();
+}

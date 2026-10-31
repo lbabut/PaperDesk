@@ -33,7 +33,9 @@ Rectangle {
     property int replayPoint: 0
     property var pending: []
     readonly property int previewCount: liveSegments.count
-    property int previewStart: 0
+    property var previewJobs: []
+    property var previewTileMap: ({})
+    property var paintBounds: null
     property int rasterPasses: 0
     property bool painting: false
     property int maxPaintMs: 0
@@ -59,7 +61,17 @@ Rectangle {
         property bool useFinger: true
     }
     ListModel { id:liveSegments }
-    Timer { id: autosave; interval: 800; onTriggered: root.saveBook() }
+    Timer {
+        id:autosave;interval:3000
+        onTriggered:{
+            if(root.busy || root.painting)restart();
+            else root.saveBook();
+        }
+    }
+    Timer {
+        id:clearPreviewTimer;interval:80
+        onTriggered:if(!root.busy && !root.painting)root.clearPreview()
+    }
     Timer { id: paintTimer; interval: 0; onTriggered: root.requestPendingPaint() }
 
     function requestPendingPaint() {
@@ -70,20 +82,38 @@ Rectangle {
             paper.markDirty(Qt.rect(r.x,r.y,r.width,r.height));
         }
     }
+    function clearPreview() {
+        liveSegments.clear();previewJobs=[];previewTileMap=({});
+    }
+    function refreshArtTiles(bounds) {
+        for(var i=0;i<artTiles.count;i++) {
+            var tile=artTiles.itemAt(i);
+            if(tile && (!bounds || (tile.x<bounds.x+bounds.width && tile.x+tile.width>bounds.x &&
+                                  tile.y<bounds.y+bounds.height && tile.y+tile.height>bounds.y)))
+                tile.requestPaint();
+        }
+    }
+    function combineBounds(a,b) {
+        if(!a)return b;
+        var x=Math.min(a.x,b.x),y=Math.min(a.y,b.y);
+        return {x:x,y:y,width:Math.max(a.x+a.width,b.x+b.width)-x,
+                height:Math.max(a.y+a.height,b.y+b.height)-y};
+    }
     function previewInk(s,index) {
         if(s.tool===7)return;
-        var b=s.points[index],a=index?s.points[index-1]:b,p=(a[2]+b[2])/2;
-        var t=Ink.tools[s.tool],alpha=t.kind==="eraser"?s.strength:t.opacity*s.strength*(0.3+0.7*p);
-        var value=t.kind==="eraser"?255:s.tone;
-        var gray=1-(1-value/255)*Math.max(0.35,alpha);
-        liveSegments.append({ax:a[0],ay:a[1],bx:b[0],by:b[1],
-                            thickness:Math.max(1,s.size*(0.18+0.82*p)),shade:gray});
-        if(liveSegments.count-previewStart>512) {
-            for(var n=liveSegments.count-1;n>previewStart;n-=2) {
-                var a=liveSegments.get(n-1),b=liveSegments.get(n);
-                liveSegments.set(n-1,{bx:b.bx,by:b.by,thickness:(a.thickness+b.thickness)/2,shade:(a.shade+b.shade)/2});
-                liveSegments.remove(n);
+        var bounds=Ink.dirtyBounds(s,index);
+        previewJobs.push({stroke:s,index:index,bounds:bounds});
+        var left=Math.max(0,Math.floor(bounds.x/64)),top=Math.max(0,Math.floor(bounds.y/64));
+        var right=Math.min(18,Math.floor((bounds.x+bounds.width)/64));
+        var bottom=Math.min(24,Math.floor((bounds.y+bounds.height)/64));
+        for(var row=top;row<=bottom;row++)for(var col=left;col<=right;col++) {
+            var key=row*19+col,n=previewTileMap[key];
+            if(n===undefined) {
+                n=liveSegments.count;previewTileMap[key]=n;
+                liveSegments.append({tileX:col*64,tileY:row*64});
             }
+            var tile=liveTiles.itemAt(n);
+            if(tile)tile.requestPaint();
         }
     }
     function queueInk(s,index) {
@@ -105,15 +135,14 @@ Rectangle {
         return true;
     }
     function redraw() {
-        pending=[];liveSegments.clear();resetCanvas=true;replaying=true;replayStroke=0;replayPoint=0;
+        pending=[];clearPreview();resetCanvas=true;replaying=true;replayStroke=0;replayPoint=0;
         paper.requestPaint();guide.requestPaint();
     }
     function beginStroke(p,source,selected,pressure) {
         if(!ready || busy || saveBlocked || confirmation) return;
         if(totalPoints>=Ink.MAX_POINTS) {notice="Sketchbook full. Export your pages before starting a new book.";return;}
-        paintTimer.stop();
+        paintTimer.stop();clearPreviewTimer.stop();autosave.stop();
         maxPaintMs=0;maxQueueWaitMs=0;
-        previewStart=liveSegments.count;
         activeSource=source;
         activeStroke=Ink.stroke(selected,selected===7?Math.max(brushSize,source==="finger"?64:32):brushSize,tone,strength,Date.now());
         activeStroke.points.push(Ink.point(p.x,p.y,source==="finger"?0.7:(pressure===undefined?penInput.centroid.pressure:pressure)));
@@ -296,15 +325,38 @@ Rectangle {
             y:(workspace.height-height*root.drawingScale)/2
             scale:root.drawingScale;transformOrigin:Item.TopLeft
             clip:true
-            Canvas {
-                id:paper;objectName:"drawingCanvas";anchors.fill:parent
+            Item {
+                id:inputSurface;objectName:"drawingCanvas";anchors.fill:parent
+                function getContext(kind) {return paper.getContext(kind)}
+                function save(path) {return paper.save(path)}
+            }
+            Repeater {
+                id:artTiles
+                model:12
+                Canvas {
+                    x:(index%3)*400;y:Math.floor(index/3)*400
+                    width:400;height:400
+                    renderTarget:Canvas.Image
+                    onPaint:{
+                        var source=paper.getContext("2d");
+                        if(!source)return;
+                        var c=getContext("2d");
+                        c.drawImage(source.getImageData(x,y,width,height),0,0);
+                    }
+                }
+            }
+            Item {
+                width:1;height:1;clip:true
+                Canvas {
+                id:paper;objectName:"rasterCanvas"
+                x:-2000;y:-2000;width:Ink.WIDTH;height:Ink.HEIGHT
                 renderTarget:Canvas.Image
                 onPaint:{
                     if(root.activeStroke!==null && root.activeStroke.tool!==7)return;
                     root.rasterPasses++;
                     var c=getContext("2d");
                     if(root.resetCanvas) {Ink.background(c,"plain");root.resetCanvas=false;}
-                    var budget=256, started=Date.now(), hadPending=root.pending.length>0;
+                    var budget=256, started=Date.now(), hadPending=root.pending.length>0, wasReplaying=root.replaying, changed=null;
                     if(root.replaying) {
                         while(root.replayStroke<root.page.strokes.length && budget>0 && Date.now()-started<14) {
                             var s=root.page.strokes[root.replayStroke];
@@ -319,6 +371,7 @@ Rectangle {
                             var job=root.pending.shift();
                             root.maxQueueWaitMs=Math.max(root.maxQueueWaitMs,Date.now()-job.queuedAt);
                             Ink.segment(c,job.stroke,job.index);budget--;
+                            changed=root.combineBounds(changed,Ink.dirtyBounds(job.stroke,job.index));
                         }
                     }
                     if(root.exportPending && !root.replaying && !root.pending.length) {
@@ -328,12 +381,15 @@ Rectangle {
                         console.log("PaperSketch export",ok,root.exportPath);
                     }
                     root.painting=root.pending.length>0;
-                    if(!root.pending.length && root.activeStroke===null)liveSegments.clear();
+                    if(wasReplaying && !root.replaying)root.refreshArtTiles(null);
+                    else if(changed)root.refreshArtTiles(changed);
+                    if(!root.pending.length && root.activeStroke===null)clearPreviewTimer.restart();
                     root.maxPaintMs=Math.max(root.maxPaintMs,Date.now()-started);
                     if(hadPending && !root.pending.length && root.activeStroke===null)
                         console.log("PaperSketch raster",root.maxPaintMs,"ms paint",root.maxQueueWaitMs,"ms queue");
                     if(root.replaying || root.pending.length) paintTimer.restart();
                 }
+            }
             }
             Canvas {
                 id:guide;anchors.fill:parent
@@ -344,24 +400,24 @@ Rectangle {
                 objectName:"liveInk"
                 anchors.fill:parent
                 Repeater {
+                    id:liveTiles
                     model:liveSegments
-                    Item {
-                        x:ax;y:ay;width:1;height:1
-                        rotation:Math.atan2(by-ay,bx-ax)*180/Math.PI
-                        transformOrigin:Item.TopLeft
-                        Rectangle {
-                            x:-thickness/2;y:-thickness/2
-                            width:Math.sqrt((bx-ax)*(bx-ax)+(by-ay)*(by-ay))+thickness
-                            height:thickness;radius:thickness/2
-                            color:Qt.rgba(shade,shade,shade,1)
-                            antialiasing:true
+                    Canvas {
+                        property int consumed:0
+                        x:tileX;y:tileY
+                        width:Math.min(64,Ink.WIDTH-x);height:Math.min(64,Ink.HEIGHT-y)
+                        renderTarget:Canvas.Image
+                        Component.onCompleted:requestPaint()
+                        onPaint:{
+                            var c=getContext("2d");c.save();c.translate(-x,-y);
+                            for(var i=consumed;i<root.previewJobs.length;i++) {
+                                var job=root.previewJobs[i],r=job.bounds;
+                                if(x<r.x+r.width && x+width>r.x && y<r.y+r.height && y+height>r.y)
+                                    Ink.previewSegment(c,job.stroke,job.index);
+                            }
+                            consumed=root.previewJobs.length;c.restore();
                         }
                     }
-                }
-                DisplayMethodArea {
-                    anchors.fill:parent
-                    visible:liveSegments.count>0
-                    displayMethod:typeof DisplayMethodArea.UFast==="number" ? DisplayMethodArea.UFast : DisplayMethodArea.Fast
                 }
             }
             DragHandler {
@@ -442,8 +498,7 @@ Rectangle {
     DisplayMethodArea {
         anchors.fill:parent
         z:-1
-        displayMethod: root.busy || root.painting ? DisplayMethodArea.Fast :
-                       (typeof DisplayMethodArea.Content==="number" ? DisplayMethodArea.Content : DisplayMethodArea.Fast)
+        displayMethod: DisplayMethodArea.Fast
     }
     Rectangle {
         anchors.fill:parent;color:"#eeeeee";visible:root.confirmation!=="";z:10
