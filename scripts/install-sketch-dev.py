@@ -1,0 +1,78 @@
+import argparse
+import io
+import pathlib
+import shlex
+import subprocess
+import tarfile
+import time
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--host", default="10.11.99.1")
+parser.add_argument("--key", required=True)
+parser.add_argument("--known-hosts", required=True)
+parser.add_argument("--launch", action="store_true")
+args = parser.parse_args()
+root = pathlib.Path(__file__).resolve().parents[1]
+source = root / "product/payload/apps/papersketch"
+for name in ("manifest.json", "resources.rcc", "icon.png"):
+    if not (source / name).is_file():
+        parser.error("Build Paper Sketch before installing: missing " + name)
+ssh = ["ssh", "-i", args.key, "-o", "UserKnownHostsFile=" + args.known_hosts,
+       "-o", "StrictHostKeyChecking=yes", "-o", "BatchMode=yes",
+       "-o", "ConnectTimeout=8", "root@" + args.host]
+def remote(command, data=None):
+    result = subprocess.run(ssh + [command], input=data, capture_output=True, timeout=90)
+    if result.returncode:
+        raise RuntimeError(result.stderr.decode(errors="replace"))
+    return result.stdout
+
+remote('set -eu; test -d /home/root/xovi/exthome/appload; test "$(stat -c %t:%T /dev/input/event2)" = d:42; test -z "$(pidof paperdesk-rm-touchd || true)"; ! systemctl is-active --quiet paperdesk-update.service')
+backup = remote("mktemp -d /home/root/.local/state/papersketch-install.XXXXXX").decode().strip()
+assert backup.startswith("/home/root/.local/state/papersketch-install.")
+b = shlex.quote(backup)
+stream = io.BytesIO()
+with tarfile.open(fileobj=stream, mode="w") as archive:
+    archive.add(source, arcname="papersketch")
+remote("mkdir -p " + b + "/stage; tar -xf - -C " + b + "/stage", stream.getvalue())
+mask = remote("systemctl is-enabled remarkable-fail.service || true").decode().strip()
+mask_here = mask not in ("masked", "masked-runtime")
+stopped = False
+installed = False
+try:
+    if mask_here:
+        remote("systemctl mask --runtime remarkable-fail.service")
+    remote("systemctl stop xochitl")
+    stopped = True
+    remote("set -eu; cp -p /home/root/.config/remarkable/xochitl.conf " + b + "/xochitl.conf; "
+           "if test -d /home/root/xovi/exthome/appload/papersketch; then "
+           "cp -a /home/root/xovi/exthome/appload/papersketch " + b + "/previous; fi; "
+           "mkdir -p /home/root/.local/share/paperdesk/sketch; "
+           "chmod 700 /home/root/.local/share/paperdesk/sketch; "
+           "cp -a " + b + "/stage/papersketch /home/root/xovi/exthome/appload/papersketch.new; "
+           "if test -d /home/root/xovi/exthome/appload/papersketch; then "
+           "mv /home/root/xovi/exthome/appload/papersketch " + b + "/replaced; fi; "
+           "mv /home/root/xovi/exthome/appload/papersketch.new /home/root/xovi/exthome/appload/papersketch")
+    installed = True
+    if args.launch:
+        remote("awk 'BEGIN { skip=0 } /^\\[PaperDeskE2E\\]$/ { skip=1; next } /^\\[/ { skip=0 } !skip { print }' "
+               "/home/root/.config/remarkable/xochitl.conf > " + b + "/launch.conf; "
+               "printf '\\n[PaperDeskE2E]\\nautostart=true\\napplicationId=papersketch\\n' >> " + b + "/launch.conf; "
+               "cp " + b + "/launch.conf /home/root/.config/remarkable/xochitl.conf")
+    remote("systemctl reset-failed xochitl; systemctl start xochitl")
+    stopped = False
+    time.sleep(8)
+    remote("systemctl is-active --quiet xochitl")
+except Exception:
+    if installed:
+        remote("systemctl stop xochitl; mv /home/root/xovi/exthome/appload/papersketch " + b + "/failed; "
+               "if test -d " + b + "/previous; then cp -a " + b + "/previous /home/root/xovi/exthome/appload/papersketch; fi")
+        stopped = True
+    remote("if test -f " + b + "/xochitl.conf; then cp -p " + b + "/xochitl.conf /home/root/.config/remarkable/xochitl.conf; fi")
+    raise
+finally:
+    if stopped:
+        remote("systemctl reset-failed xochitl; systemctl start xochitl")
+    if mask_here:
+        remote("systemctl unmask --runtime remarkable-fail.service")
+print("Installed Paper Sketch; rollback: " + backup)
+print(remote("systemctl is-active xochitl; pidof xochitl; stat -c %t:%T /dev/input/event2").decode())

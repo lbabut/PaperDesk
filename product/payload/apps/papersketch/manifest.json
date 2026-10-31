@@ -1,0 +1,10 @@
+{
+  "name": "Paper Sketch",
+  "description": "Graphite, charcoal and finger blending in grayscale",
+  "icon": "icon.png",
+  "entry": "/ui/main.qml",
+  "id": "papersketch",
+  "loadsBackend": false,
+  "supportsScaling": true,
+  "canHaveMultipleFrontends": false
+}
