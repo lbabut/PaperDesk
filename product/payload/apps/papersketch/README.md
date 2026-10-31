@@ -44,6 +44,16 @@ Build with `bash scripts/build-sketch-native.sh`, then pass `--native-ink` to th
 
 The app sends a fresh, bounded portrait-canvas heartbeat only while its drawing surface is available. The backend expires the arm file after three seconds; absence, invalid geometry and non-root/nonregular files disable it. QML only suppresses its preview after a fresh native acknowledgement, and keeps the stroke history and raster commit. Native preview is black, constant width, and replaced by the selected graphite shade after pen-up; it does not supply raw pressure to saved strokes. Finger blending and the selected smudge tool retain the Qt path. Desktop tests and synthetic stroke-function benchmarks do not exercise physical Wacom-to-panel latency.
 
-Renderer 4 smudges mix shifted snapshots with source-over rather than darken. This softens and lightens the original line as well as depositing graphite beside it. A feathered capsule covers the entire sampled finger movement. Existing renderers 1–3 remain available so prior saved smudges replay consistently.
+Renderers 4 and 5 mix shifted snapshots with source-over rather than darken. This softens and lightens the original line as well as depositing graphite beside it. A feathered capsule covers the entire sampled finger movement. Existing renderers 1–3 remain available so prior saved smudges replay consistently.
 
 20 desktop QtTest checks pass, including a pixel assertion that smudging lightens the line's center, transfers graphite beside it, and preserves untouched white paper.
+
+## Post-stroke queue and directional blending
+
+Native pen segments still record every sample, but panel submissions now merge their dirty rectangles and run at most once per 16 ms, with a forced final submission on release. This avoids submitting roughly 500 updates per second. The host test `gcc -O2 tests/test-sketch-native-batch.c -ldl -lpthread -o /tmp/test-sketch-batch && /tmp/test-sketch-batch` verifies 1000 reports over two seconds become 126 submissions without dropping the final tail or union bounds. This is a scheduling test, not a physical panel measurement.
+
+The raster commit processes up to 8192 jobs / 80 ms per pass instead of 256 jobs / 14 ms. Changed art tiles are refreshed once the pending pen commit finishes; smudging retains incremental presentation. Existing nonnative preview clearing still waits for the commit.
+
+Renderer 5 moves more pigment in the finger's direction and uses stronger feathered mixing. The old renderer 4 remains available for saved strokes. Device pixel probes found the previous transfer extremely pale (235/255 beside a test line); the directional renderer yields 180/255 for the same fixture. The original line lightens from 76 to 158, and raster and visible-tile pixel values stay identical after another pen stroke and a full page replay.
+
+Two complete synthetic runs execute these probes inside Xochitl. Reports are `docs/papersketch-commit-smudge-2026-10-31.json` (batching with renderer 4) and `docs/papersketch-directional-smudge-2026-10-31.json` (renderer 5). In the latter, 180-point pen commits take 304–433 ms; smudge scheduling medians are 78–84 ms. Artwork document hashes before and after each run match. These timings cover the Qt path on the tablet with the previously installed native module; physical Wacom testing is needed to quantify the new native coalescer's panel latency.

@@ -18,6 +18,53 @@ Rectangle {
     property var gaps:[]
     property var frameDelays:[]
     property var results:[]
+    property var pixelProbes:[]
+    property bool pixelsChecked:false
+    property var pixelProbe:null
+    function find(item,name) {
+        if(item.objectName===name)return item;
+        for(var i=0;i<item.children.length;i++) {var hit=find(item.children[i],name);if(hit)return hit;}
+        return null;
+    }
+    function samples() {
+        var master=find(subject.item,"rasterCanvas").getContext("2d");
+        var tile=find(subject.item,"artTile0").getContext("2d");
+        return {core:master.getImageData(300,300,1,1).data[0],
+                beside:master.getImageData(327,300,1,1).data[0],
+                tileCore:tile.getImageData(300,300,1,1).data[0],
+                tileBeside:tile.getImageData(327,300,1,1).data[0]};
+    }
+    function samePixels(a,b) {return a.core===b.core && a.beside===b.beside && a.tileCore===b.tileCore && a.tileBeside===b.tileBeside;}
+    function probeStep() {
+        var a=subject.item;
+        if(a.painting || a.replaying || Date.now()-finishAt<250)return;
+        if(phase===10) {
+            pixelProbe={variant:variantNames[variant],before:samples()};
+            a.brushSize=64;a.strength=1;
+            a.beginStroke(Qt.point(240,300),"finger",7,1);
+            a.extendStroke(Qt.point(360,300),"finger",1);a.finishStroke();
+            finishAt=Date.now();phase=11;return;
+        }
+        if(phase===11) {
+            pixelProbe.smudged=samples();
+            a.brushSize=5;
+            a.beginStroke(Qt.point(900,900),"pen",1,1);a.extendStroke(Qt.point(920,920),"pen",1);
+            a.finishStroke();finishAt=Date.now();phase=12;return;
+        }
+        if(phase===12) {
+            pixelProbe.afterNextStroke=samples();a.redraw();finishAt=Date.now();phase=13;return;
+        }
+        pixelProbe.replayed=samples();
+        var p=pixelProbe;
+        p.softens=p.smudged.core>p.before.core+5;
+        p.transfers=p.smudged.beside<p.before.beside-5;
+        p.visibleTileMatches=p.smudged.core===p.smudged.tileCore && p.smudged.beside===p.smudged.tileBeside;
+        p.survivesNextStroke=samePixels(p.smudged,p.afterNextStroke);
+        p.survivesReplay=samePixels(p.smudged,p.replayed);
+        p.passed=p.softens && p.transfers && p.visibleTileMatches && p.survivesNextStroke && p.survivesReplay;
+        pixelProbes.push(p);console.log("PAPERSKETCH_PIXEL_PROBE "+JSON.stringify(p));
+        pixelsChecked=true;phase=1;
+    }
     property var variantNames:["baseline","constant-fast"]
     property var caseNames:["hb","charcoal","smudge"]
     function percentile(values,f) {
@@ -38,6 +85,7 @@ Rectangle {
     }
     function step() {
         var a=subject.item,now=Date.now();
+        if(phase>=10) {probeStep();return;}
         if(phase===0) {
             if(!a || !a.ready || a.replaying)return;
             a.notebook={version:1,index:0,pages:[{strokes:[],paper:"plain"}]};
@@ -45,6 +93,12 @@ Rectangle {
         }
         if(phase===1) {
             if(a.replaying)return;
+            if(!pixelsChecked) {
+                a.brushSize=24;a.strength=1;a.tone=0;
+                a.beginStroke(Qt.point(300,240),"pen",3,1);
+                a.extendStroke(Qt.point(300,360),"pen",1);a.finishStroke();
+                finishAt=Date.now();phase=10;return;
+            }
             startCase();return;
         }
         if(phase===2) {
@@ -75,7 +129,7 @@ Rectangle {
             results[results.length-1].max_bitmap_queue_ms=a.maxQueueWaitMs;
             if(caseIndex<2) {caseIndex++;phase=1;return;}
             if(variant===0) {
-                variant=1;caseIndex=0;phase=0;
+                variant=1;caseIndex=0;phase=0;pixelsChecked=false;
                 subject.source="constant-fast/ui/main.qml";return;
             }
             phase=4;
@@ -83,7 +137,7 @@ Rectangle {
                 execution:"reMarkable Xochitl AppLoad",
                 input:"synthetic calls to the production stroke functions, timed on the tablet",
                 frame_metric:"Qt window frameSwapped; not physical e-ink pixel latency",
-                cases:results}));
+                cases:results,pixel_probes:pixelProbes}));
             ticker.stop();
         }
     }

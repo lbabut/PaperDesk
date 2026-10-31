@@ -150,11 +150,34 @@ static void segment(float x0, float y0, float x1, float y1, float w, uint32_t in
 }
 
 static void show(const int b[4]) {
+#ifdef PAPERSKETCH_BATCH_TEST
+    (void)b;return;
+#else
     void *region[2] = {0};
     void *fbHolder = surf.fb;
     rctor(region, b[0], b[1], b[2] - b[0] + 1, b[3] - b[1] + 1, 0);
     ((UpdateFn)(base + OFF_UPDATE_BLOCKS))(&fbHolder, region, WAVE_DU, PIXEL_PEN, FLAG_FASTDRAW, " - papersketch ink");
     rdtor(region);
+#endif
+}
+
+
+#define PREVIEW_INTERVAL_MS 16
+struct PreviewBatch {int box[4],dirty,updates;long last_ms,update_us;};
+static void merge_batch(struct PreviewBatch *batch,const int box[4]) {
+    if(!batch->dirty) {memcpy(batch->box,box,sizeof batch->box);batch->dirty=1;return;}
+    if(box[0]<batch->box[0])batch->box[0]=box[0];
+    if(box[1]<batch->box[1])batch->box[1]=box[1];
+    if(box[2]>batch->box[2])batch->box[2]=box[2];
+    if(box[3]>batch->box[3])batch->box[3]=box[3];
+}
+static void flush_batch(struct PreviewBatch *batch,long now,int force) {
+    if(!batch->dirty || (!force && now-batch->last_ms<PREVIEW_INTERVAL_MS))return;
+    struct timespec a,z;clock_gettime(CLOCK_MONOTONIC,&a);
+    show(batch->box);
+    clock_gettime(CLOCK_MONOTONIC,&z);
+    batch->update_us+=(z.tv_sec-a.tv_sec)*1000000L+(z.tv_nsec-a.tv_nsec)/1000;
+    batch->updates++;batch->dirty=0;batch->last_ms=now;
 }
 
 #define HAS_BIT(bits, n) ((bits)[(n) / 8] >> ((n) % 8) & 1)
@@ -190,18 +213,19 @@ static void *pen_loop(void *arg) {
     fprintf(stderr, "[papersketch-native] ready: pen x 0..%d y 0..%d pressure ..%d\n", ax.maximum, ay.maximum, ap.maximum);
 
     int rx = 0, ry = 0, rp = 0, touch = 0, rubber = 0;
-    int stroke = 0, have_last = 0, sbox[4] = {0}, updates = 0;
+    int stroke = 0, have_last = 0, sbox[4] = {0}, samples = 0;
+    struct PreviewBatch batch={0};
     float lx = 0, ly = 0;
-    long last_arm = 0, t_stroke = 0, update_us = 0;
+    long last_arm = 0, t_stroke = 0;
     struct pollfd pfd = { pen, POLLIN, 0 };
     for (;;) {
         if (!backend_ready && open_surface()) {backend_ready=1;fprintf(stderr,"[papersketch-native] framebuffer layout verified\n");}
-        poll(&pfd, 1, ARM_CHECK_MS);
+        poll(&pfd, 1, batch.dirty?PREVIEW_INTERVAL_MS:ARM_CHECK_MS);
         long t = now_ms();
         if (t - last_arm >= ARM_CHECK_MS) { read_arm(); last_arm = t; }
         if(stroke && !arm.on) {
             for(int y=sbox[1];y<=sbox[3];y++)memset(surf.mk+y*surf.ms+sbox[0],0,sbox[2]-sbox[0]+1);
-            stroke=0;have_last=0;
+            stroke=0;have_last=0;batch.dirty=0;
         }
         struct input_event ev[64];
         ssize_t n = read(pen, ev, sizeof ev);
@@ -219,7 +243,7 @@ static void *pen_loop(void *arg) {
                 if (touch && arm.on && (!erasing || arm.eraseR > 0)) {
                     if (!stroke) {
                         if (!open_surface()) { arm.on = 0; continue; }
-                        stroke = 1; updates = 0; update_us = 0; t_stroke = now_ms();
+                        stroke = 1; samples=0; memset(&batch,0,sizeof batch);t_stroke = now_ms();batch.last_ms=t_stroke-PREVIEW_INTERVAL_MS;
                         sbox[0] = SCREEN_W; sbox[1] = SCREEN_H; sbox[2] = sbox[3] = 0;
                     }
                     // The panel's portrait frame: x along the digitizer's y, y against its x
@@ -229,12 +253,7 @@ static void *pen_loop(void *arg) {
                         int b[4];
                         if (erasing) segment(have_last ? lx : sx, have_last ? ly : sy, sx, sy, 2 * arm.eraseR, 0xFFFFFFFFu, b);
                         else segment(have_last ? lx : sx, have_last ? ly : sy, sx, sy, arm.size, 0xFF000000u, b);
-                        struct timespec a, z;
-                        clock_gettime(CLOCK_MONOTONIC, &a);
-                        show(b);
-                        clock_gettime(CLOCK_MONOTONIC, &z);
-                        update_us += (z.tv_sec - a.tv_sec) * 1000000L + (z.tv_nsec - a.tv_nsec) / 1000;
-                        updates++;
+                        merge_batch(&batch,b);flush_batch(&batch,now_ms(),0);samples++;
                         if (b[0] < sbox[0]) sbox[0] = b[0];
                         if (b[1] < sbox[1]) sbox[1] = b[1];
                         if (b[2] > sbox[2]) sbox[2] = b[2];
@@ -242,14 +261,16 @@ static void *pen_loop(void *arg) {
                         lx = sx; ly = sy; have_last = 1;
                     } else have_last = 0;
                 } else if (stroke && (!touch || !arm.on)) {
+                    flush_batch(&batch,now_ms(),1);
                     // The mask is the pen's scratch: clear what this stroke marked
                     for (int y = sbox[1]; y <= sbox[3]; y++) memset(surf.mk + y * surf.ms + sbox[0], 0, sbox[2] - sbox[0] + 1);
-                    fprintf(stderr, "[papersketch-native] stroke: %d updates, %ld us per update call, %ld ms\n",
-                            updates, updates ? update_us / updates : 0, now_ms() - t_stroke);
+                    fprintf(stderr, "[papersketch-native] stroke: %d samples, %d updates, %ld us per update call, %ld ms\n",
+                            samples,batch.updates,batch.updates?batch.update_us/batch.updates:0,now_ms()-t_stroke);
                     stroke = 0; have_last = 0;
                 }
             }
         }
+        if(stroke && arm.on)flush_batch(&batch,now_ms(),0);
     }
     return NULL;
 }

@@ -1,0 +1,25 @@
+{
+  "device": "reMarkable 2",
+  "os": "3.29.0.153",
+  "status": {
+    "ready": true,
+    "pid": 15684,
+    "time_ms": 1793458659826,
+    "armed": true
+  },
+  "arm_file": "on 162 282 1080 1440 21.6 0 10.8",
+  "source_sha256": {
+    "ui/main.qml": "9effa7a0758e0686da8571c97c0bc8eb730f03ca8c9664013c8749937258f161",
+    "engine.js": "6cf90f8ada805c93d036150dfc53b6a659a376164945ddb6e01e3c4b0df02cca",
+    "native/papersketch-ink.c": "8ec8f0c3b8dc38e7df29b7651a8a10a95eb725c1314d46b9138f49816910d03f",
+    "native/papersketch-ink.so": "64d56b54eef85cf995817a1653ac8233567cd9198dfc7d95a4cd0b777c2cba4e",
+    "resources.rcc": "6a8f9819dbd223fe0b356acc16b87c9c5b347a33ad9ab504bd9eb5b7e892891b"
+  },
+  "installed_sha256": "6a8f9819dbd223fe0b356acc16b87c9c5b347a33ad9ab504bd9eb5b7e892891b  /home/root/xovi/exthome/appload/papersketch/resources.rcc\n64d56b54eef85cf995817a1653ac8233567cd9198dfc7d95a4cd0b777c2cba4e  /home/root/xovi/extensions.d/papersketch-ink.so\n",
+  "artwork_before_sha256": "48759994ec8a082585b70635139b0aeaf5e67bd54ad4b2e9d316454520e4d47f",
+  "artwork_after_sha256": "48759994ec8a082585b70635139b0aeaf5e67bd54ad4b2e9d316454520e4d47f",
+  "artwork_preserved": true,
+  "batch_unit_test_host": "1000 reports coalesced to 126 updates; final tail and union bounds preserved",
+  "batch_unit_test_arm_on_tablet": "PASS, exit 0",
+  "physical_panel_latency_measured": false
+}

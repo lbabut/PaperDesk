@@ -1,0 +1,186 @@
+{
+  "candidate_qml_sha256": "9effa7a0758e0686da8571c97c0bc8eb730f03ca8c9664013c8749937258f161",
+  "source_qml_sha256": "9effa7a0758e0686da8571c97c0bc8eb730f03ca8c9664013c8749937258f161",
+  "source_engine_sha256": "8fd418f81e0a35d12576bdf4b11ac44f7da9f74a75e241b8d2826946decee994",
+  "backup": "/home/root/.local/state/papersketch-native.Mpr8V7",
+  "artwork_before_sha256": "48759994ec8a082585b70635139b0aeaf5e67bd54ad4b2e9d316454520e4d47f",
+  "process_cpu_sample": {
+    "wall_seconds": 35.276,
+    "cpu_seconds": 27.91,
+    "reference": "one CPU core; sampling starts after the first benchmark case is observed"
+  },
+  "results": {
+    "execution": "reMarkable Xochitl AppLoad",
+    "input": "synthetic calls to the production stroke functions, timed on the tablet",
+    "frame_metric": "Qt window frameSwapped; not physical e-ink pixel latency",
+    "cases": [
+      {
+        "variant": "production-1",
+        "case_name": "hb",
+        "synthetic_input_samples": 180,
+        "input_wall_ms": 3274,
+        "timer_gap_p50_ms": 16,
+        "timer_gap_p95_ms": 36,
+        "timer_gap_max_ms": 182,
+        "submitted_frame_delay_p50_ms": 4,
+        "submitted_frame_delay_p95_ms": 75,
+        "submitted_frame_delay_max_ms": 422,
+        "bitmap_passes_during_input": 0,
+        "bitmap_commit_ms": 303,
+        "max_bitmap_paint_ms": 43,
+        "max_bitmap_queue_ms": 59
+      },
+      {
+        "variant": "production-1",
+        "case_name": "charcoal",
+        "synthetic_input_samples": 180,
+        "input_wall_ms": 2903,
+        "timer_gap_p50_ms": 16,
+        "timer_gap_p95_ms": 17,
+        "timer_gap_max_ms": 51,
+        "submitted_frame_delay_p50_ms": null,
+        "submitted_frame_delay_p95_ms": null,
+        "submitted_frame_delay_max_ms": null,
+        "bitmap_passes_during_input": 0,
+        "bitmap_commit_ms": 382,
+        "max_bitmap_paint_ms": 52,
+        "max_bitmap_queue_ms": 67
+      },
+      {
+        "variant": "production-1",
+        "case_name": "smudge",
+        "synthetic_input_samples": 90,
+        "input_wall_ms": 7230,
+        "timer_gap_p50_ms": 79,
+        "timer_gap_p95_ms": 168,
+        "timer_gap_max_ms": 174,
+        "submitted_frame_delay_p50_ms": 80,
+        "submitted_frame_delay_p95_ms": 176,
+        "submitted_frame_delay_max_ms": 182,
+        "bitmap_passes_during_input": 74,
+        "bitmap_commit_ms": 114,
+        "max_bitmap_paint_ms": 68,
+        "max_bitmap_queue_ms": 35
+      },
+      {
+        "variant": "production-2",
+        "case_name": "hb",
+        "synthetic_input_samples": 180,
+        "input_wall_ms": 2906,
+        "timer_gap_p50_ms": 16,
+        "timer_gap_p95_ms": 18,
+        "timer_gap_max_ms": 42,
+        "submitted_frame_delay_p50_ms": 12,
+        "submitted_frame_delay_p95_ms": 18,
+        "submitted_frame_delay_max_ms": 41,
+        "bitmap_passes_during_input": 0,
+        "bitmap_commit_ms": 311,
+        "max_bitmap_paint_ms": 44,
+        "max_bitmap_queue_ms": 68
+      },
+      {
+        "variant": "production-2",
+        "case_name": "charcoal",
+        "synthetic_input_samples": 180,
+        "input_wall_ms": 2870,
+        "timer_gap_p50_ms": 16,
+        "timer_gap_p95_ms": 17,
+        "timer_gap_max_ms": 31,
+        "submitted_frame_delay_p50_ms": null,
+        "submitted_frame_delay_p95_ms": null,
+        "submitted_frame_delay_max_ms": null,
+        "bitmap_passes_during_input": 0,
+        "bitmap_commit_ms": 448,
+        "max_bitmap_paint_ms": 61,
+        "max_bitmap_queue_ms": 77
+      },
+      {
+        "variant": "production-2",
+        "case_name": "smudge",
+        "synthetic_input_samples": 90,
+        "input_wall_ms": 7568,
+        "timer_gap_p50_ms": 89,
+        "timer_gap_p95_ms": 148,
+        "timer_gap_max_ms": 176,
+        "submitted_frame_delay_p50_ms": 91,
+        "submitted_frame_delay_p95_ms": 155,
+        "submitted_frame_delay_max_ms": 181,
+        "bitmap_passes_during_input": 74,
+        "bitmap_commit_ms": 132,
+        "max_bitmap_paint_ms": 70,
+        "max_bitmap_queue_ms": 16
+      }
+    ],
+    "pixel_probes": [
+      {
+        "variant": "production-1",
+        "before": {
+          "core": 76,
+          "beside": 255,
+          "tileCore": 76,
+          "tileBeside": 255
+        },
+        "smudged": {
+          "core": 105,
+          "beside": 235,
+          "tileCore": 105,
+          "tileBeside": 235
+        },
+        "afterNextStroke": {
+          "core": 105,
+          "beside": 235,
+          "tileCore": 105,
+          "tileBeside": 235
+        },
+        "replayed": {
+          "core": 105,
+          "beside": 235,
+          "tileCore": 105,
+          "tileBeside": 235
+        },
+        "softens": true,
+        "transfers": true,
+        "visibleTileMatches": true,
+        "survivesNextStroke": true,
+        "survivesReplay": true,
+        "passed": true
+      },
+      {
+        "variant": "production-2",
+        "before": {
+          "core": 76,
+          "beside": 255,
+          "tileCore": 76,
+          "tileBeside": 255
+        },
+        "smudged": {
+          "core": 105,
+          "beside": 235,
+          "tileCore": 105,
+          "tileBeside": 235
+        },
+        "afterNextStroke": {
+          "core": 105,
+          "beside": 235,
+          "tileCore": 105,
+          "tileBeside": 235
+        },
+        "replayed": {
+          "core": 105,
+          "beside": 235,
+          "tileCore": 105,
+          "tileBeside": 235
+        },
+        "softens": true,
+        "transfers": true,
+        "visibleTileMatches": true,
+        "survivesNextStroke": true,
+        "survivesReplay": true,
+        "passed": true
+      }
+    ]
+  },
+  "runtime_seconds": 73.36,
+  "artwork_after_sha256": "48759994ec8a082585b70635139b0aeaf5e67bd54ad4b2e9d316454520e4d47f",
+  "artwork_preserved": true
+}

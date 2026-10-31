@@ -162,6 +162,7 @@ Rectangle {
     }
     function queueInk(s,index) {
         painting=true;
+        paintBounds=combineBounds(paintBounds,Ink.dirtyBounds(s,index));
         pending.push({stroke:s,index:index,queuedAt:Date.now()});
         previewInk(s,index);
         if(activeStroke!==null && activeStroke.tool!==7)return;
@@ -179,7 +180,7 @@ Rectangle {
         return true;
     }
     function redraw() {
-        pending=[];clearPreview();resetCanvas=true;replaying=true;replayStroke=0;replayPoint=0;
+        pending=[];paintBounds=null;clearPreview();resetCanvas=true;replaying=true;replayStroke=0;replayPoint=0;
         paper.requestPaint();guide.requestPaint();
     }
     function beginStroke(p,source,selected,pressure) {
@@ -379,6 +380,7 @@ Rectangle {
                 id:artTiles
                 model:12
                 Canvas {
+                    objectName:"artTile"+index
                     x:(index%3)*400;y:Math.floor(index/3)*400
                     width:400;height:400
                     renderTarget:Canvas.Image
@@ -401,7 +403,8 @@ Rectangle {
                     root.rasterPasses++;
                     var c=getContext("2d");
                     if(root.resetCanvas) {Ink.background(c,"plain");root.resetCanvas=false;}
-                    var budget=256, started=Date.now(), hadPending=root.pending.length>0, wasReplaying=root.replaying, changed=null;
+                    var budget=root.replaying?256:8192, started=Date.now(), hadPending=root.pending.length>0, wasReplaying=root.replaying, changed=null;
+                    var paintBudget=root.replaying?14:80;
                     if(root.replaying) {
                         while(root.replayStroke<root.page.strokes.length && budget>0 && Date.now()-started<14) {
                             var s=root.page.strokes[root.replayStroke];
@@ -412,7 +415,7 @@ Rectangle {
                         }
                         if(root.replayStroke>=root.page.strokes.length) root.replaying=false;
                     } else {
-                        while(root.pending.length && budget>0 && Date.now()-started<14) {
+                        while(root.pending.length && budget>0 && Date.now()-started<paintBudget) {
                             var job=root.pending.shift();
                             root.maxQueueWaitMs=Math.max(root.maxQueueWaitMs,Date.now()-job.queuedAt);
                             Ink.segment(c,job.stroke,job.index);budget--;
@@ -427,7 +430,9 @@ Rectangle {
                     }
                     root.painting=root.pending.length>0;
                     if(wasReplaying && !root.replaying)root.refreshArtTiles(null);
-                    else if(changed)root.refreshArtTiles(changed);
+                    else if(changed && (!root.pending.length || (root.activeStroke!==null && root.activeStroke.tool===7))) {
+                        root.refreshArtTiles(root.paintBounds || changed);root.paintBounds=null;
+                    }
                     if(!root.pending.length && root.activeStroke===null)clearPreviewTimer.restart();
                     root.maxPaintMs=Math.max(root.maxPaintMs,Date.now()-started);
                     if(hadPending && !root.pending.length && root.activeStroke===null)

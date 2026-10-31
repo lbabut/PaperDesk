@@ -159,7 +159,7 @@ Item {
             var b=Ink.book();b.pages[0].strokes.push(s);
             var old=Ink.decode(JSON.stringify(b));
             compare(old.pages[0].strokes[0].renderer,undefined);
-            compare(Ink.stroke(1,5,0,0.5,7).renderer,4);
+            compare(Ink.stroke(1,5,0,0.5,7).renderer,5);
         }
         function test_ink_is_visible_before_canvas_commit() {
             scene.app.tool=3;scene.app.brushSize=20;
@@ -215,7 +215,7 @@ Item {
             var beside=c.getImageData(327,300,1,1).data[0];
             verify(center>original+10,"The original black line must soften: "+center);
             verify(center<245,"Smudge must retain some original graphite");
-            verify(beside<250,"Graphite must spread onto adjacent white paper: "+beside);
+            verify(beside<220,"Graphite must spread onto adjacent white paper: "+beside);
             compare(c.getImageData(500,500,1,1).data[0],255);
         }
         function test_validation() {
