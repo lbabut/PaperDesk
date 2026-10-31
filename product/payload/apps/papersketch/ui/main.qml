@@ -37,6 +37,8 @@ Rectangle {
     property var previewJobs: []
     property var previewTileMap: ({})
     property var paintBounds: null
+    readonly property int artTileSize:128
+    readonly property int artColumns:Math.ceil(Ink.WIDTH/artTileSize)
     property int rasterPasses: 0
     property bool painting: false
     property int maxPaintMs: 0
@@ -90,6 +92,28 @@ Rectangle {
         if(x0<0 || y0<0 || w<=0 || h<=0 || x0+w>1404 || y0+h>1872) {nativeWrite("off");nativeArmed=false;return;}
         var size=Math.max(1,brushSize*drawingScale);
         nativeWrite("on "+x0+" "+y0+" "+w+" "+h+" "+size+" "+(tool===6?1:0)+" "+Math.min(80,size/2));
+    }
+
+
+    property var nativeRaster:null
+    property bool nativeRasterActive:false
+    readonly property bool nativeSmudgeAvailable:nativeRasterActive && nativeRaster!==null
+    property bool nativeSmudgeFailed:false
+    readonly property int nativePatchMaxMs:nativeRaster?nativeRaster.maxSmudgeMs:0
+    function initNativeRaster() {
+        try {
+            var proxy=Qt.createQmlObject('import QtQml 2.15; import PaperSketch.Native 1.0; QtObject { readonly property var raster: Raster }',root);
+            nativeRaster=proxy.raster;nativeRaster.setNamespace(saved.category);
+            console.log("PaperSketch native raster available");
+        } catch(e) {nativeRaster=null;console.log("PaperSketch native raster unavailable");}
+    }
+    function importNativeRaster(c) {
+        if(!nativeRaster)return;
+        nativeRasterActive=nativeRaster.importPixels(c.getImageData(0,0,Ink.WIDTH,Ink.HEIGHT).data);
+        if(nativeRasterActive)nativeRaster.saveCache(pageIndex,JSON.stringify(page));
+    }
+    function nativeContext() {
+        return {getImageData:function(x,y,w,h){return {data:nativeRaster.pixels(x,y,w,h)};}};
     }
 
     Settings {
@@ -161,36 +185,44 @@ Rectangle {
         }
     }
     function queueInk(s,index) {
-        painting=true;
-        paintBounds=combineBounds(paintBounds,Ink.dirtyBounds(s,index));
-        pending.push({stroke:s,index:index,queuedAt:Date.now()});
-        previewInk(s,index);
+        if(nativeRasterActive) {
+            var b=s.points[index],a=index?s.points[index-1]:b;
+            nativeRaster.segment([s.tool,s.size,s.tone,s.strength,s.renderer,s.seed,index],a,b,s.tool===7);
+            if(s.tool!==7 && !nativeStroke)previewInk(s,index);
+            return;
+        }
+        painting=true;paintBounds=combineBounds(paintBounds,Ink.dirtyBounds(s,index));
+        pending.push({stroke:s,index:index,queuedAt:Date.now()});previewInk(s,index);
         if(activeStroke!==null && activeStroke.tool!==7)return;
-        if(s.tool===7) {paper.requestPaint();return;}
-        var r=Ink.dirtyBounds(s,index);
-        paper.markDirty(Qt.rect(r.x,r.y,r.width,r.height));
+        paper.requestPaint();
     }
-    function unloading() { closing=true;if(nativeReady)nativeWrite("off");finishStroke();saveBook() }
+    function unloading() { closing=true;if(nativeReady)nativeWrite("off");finishStroke();saveBook();if(nativeRaster)nativeRaster.release() }
     function saveBook() {
         if(!ready || saveBlocked) return false;
         saved.checkpoint=saved.document;
         saved.document=JSON.stringify(notebook);
         saved.selectedTool=tool; saved.selectedSize=brushSize;
         saved.selectedStrength=strength;saved.selectedTone=tone;saved.useFinger=fingerSmudge;
+        if(nativeRasterActive)nativeRaster.saveCache(pageIndex,JSON.stringify(page));
         return true;
     }
     function redraw() {
-        pending=[];paintBounds=null;clearPreview();resetCanvas=true;replaying=true;replayStroke=0;replayPoint=0;
+        pending=[];paintBounds=null;clearPreview();nativeRasterActive=false;
+        if(nativeRaster && !page.strokes.length){nativeRaster.resetWhite();nativeRasterActive=true;resetCanvas=false;replaying=false;guide.requestPaint();return;}
+        if(nativeRaster && nativeRaster.loadCache(pageIndex,JSON.stringify(page))){nativeRasterActive=true;resetCanvas=false;replaying=false;guide.requestPaint();return;}
+        resetCanvas=true;replaying=true;replayStroke=0;replayPoint=0;
         paper.requestPaint();guide.requestPaint();
     }
     function beginStroke(p,source,selected,pressure) {
         if(!ready || busy || saveBlocked || confirmation) return;
         if(totalPoints>=Ink.MAX_POINTS) {notice="Sketchbook full. Export your pages before starting a new book.";return;}
         paintTimer.stop();clearPreviewTimer.stop();autosave.stop();
+        if(nativeRasterActive)clearPreview();
         maxPaintMs=0;maxQueueWaitMs=0;
         nativeStroke=source==="pen" && selected!==7 && nativeArmed;
         activeSource=source;
         activeStroke=Ink.stroke(selected,selected===7?Math.max(brushSize,source==="finger"?64:32):brushSize,tone,strength,Date.now());
+        if(nativeRasterActive)nativeRaster.begin();
         activeStroke.points.push(Ink.point(p.x,p.y,source==="finger"?0.7:(pressure===undefined?penInput.centroid.pressure:pressure)));
         queueInk(activeStroke,0);notice="";
     }
@@ -206,22 +238,23 @@ Rectangle {
     }
     function finishStroke() {
         if(activeStroke===null) return;
+        if(nativeRasterActive){nativeRaster.finish();clearPreviewTimer.restart();}
         page.strokes.push(activeStroke);totalPoints+=activeStroke.points.length;
         activeStroke=null;activeSource="";nativeStroke=false;redoStrokes=[];clearedStrokes=null;revision++;
         for(var i=0;i<pending.length;i++)pending[i].queuedAt=Date.now();
         paintTimer.restart();autosave.restart();
     }
     function undo() {
-        if(busy) return;
-        if(clearedStrokes!==null) {page.strokes=clearedStrokes;clearedStrokes=null;}
-        else if(page.strokes.length) redoStrokes.push(page.strokes.pop());
+        if(busy)return;var fast=false;
+        if(clearedStrokes!==null){page.strokes=clearedStrokes;clearedStrokes=null;}
+        else if(page.strokes.length){if(nativeRasterActive)fast=nativeRaster.undo();redoStrokes.push(page.strokes.pop());}
         else return;
-        totalPoints=Ink.count(notebook);revision++;redraw();autosave.restart();
+        totalPoints=Ink.count(notebook);revision++;if(!fast)redraw();autosave.restart();
     }
     function redo() {
-        if(busy || !redoStrokes.length) return;
-        page.strokes.push(redoStrokes.pop());totalPoints=Ink.count(notebook);
-        revision++;redraw();autosave.restart();
+        if(busy || !redoStrokes.length)return;var fast=nativeRasterActive && nativeRaster.redo();
+        page.strokes.push(redoStrokes.pop());totalPoints=Ink.count(notebook);revision++;
+        if(!fast)redraw();autosave.restart();
     }
     function selectPage(index) {
         if(busy) return;
@@ -245,9 +278,11 @@ Rectangle {
     function exportPage() {
         if(busy) return;
         exportPath="/home/root/.local/share/paperdesk/sketch/PaperSketch-"+Date.now()+"-page-"+(pageIndex+1)+".png";
+        if(nativeRasterActive){var ok=nativeRaster.save(exportPath);notice=ok?"PNG saved: "+exportPath:"PNG export failed";return;}
         exportPending=true;paper.requestPaint();
     }
     Component.onCompleted: {
+        initNativeRaster();
         if(saved.document) {
             try {notebook=Ink.decode(saved.document);}
             catch(e) {
@@ -373,22 +408,33 @@ Rectangle {
             clip:true
             Item {
                 id:inputSurface;objectName:"drawingCanvas";anchors.fill:parent
-                function getContext(kind) {return paper.getContext(kind)}
-                function save(path) {return paper.save(path)}
+                function getContext(kind) {return root.nativeRasterActive?root.nativeContext():paper.getContext(kind)}
+                function save(path) {return root.nativeRasterActive?root.nativeRaster.save(path):paper.save(path)}
             }
             Repeater {
                 id:artTiles
-                model:12
-                Canvas {
+                model:root.artColumns*Math.ceil(Ink.HEIGHT/root.artTileSize)
+                Item {
+                    id:tileCell
                     objectName:"artTile"+index
-                    x:(index%3)*400;y:Math.floor(index/3)*400
-                    width:400;height:400
-                    renderTarget:Canvas.Image
-                    onPaint:{
-                        var source=paper.getContext("2d");
-                        if(!source)return;
-                        var c=getContext("2d");
-                        c.drawImage(source.getImageData(x,y,width,height),0,0);
+                    x:(index%root.artColumns)*root.artTileSize;y:Math.floor(index/root.artColumns)*root.artTileSize
+                    width:Math.min(root.artTileSize,Ink.WIDTH-x);height:Math.min(root.artTileSize,Ink.HEIGHT-y)
+                    function requestPaint(){if(!root.nativeRasterActive)tileFallback.requestPaint();}
+                    function getContext(kind){
+                        if(root.nativeRasterActive && tileNative.item)return {getImageData:function(x,y,w,h){return {data:tileNative.item.pixels(x,y,w,h)};}};
+                        return tileFallback.getContext(kind);
+                    }
+                    Canvas {
+                        id:tileFallback;anchors.fill:parent;visible:!root.nativeRasterActive
+                        renderTarget:Canvas.Image
+                        onPaint:{
+                            var source=paper.getContext("2d");if(!source)return;
+                            var c=getContext("2d");c.drawImage(source.getImageData(tileCell.x,tileCell.y,width,height),0,0);
+                        }
+                    }
+                    Loader {
+                        id:tileNative;anchors.fill:parent;active:root.nativeRasterActive;source:"native-tile.qml"
+                        onLoaded:{item.sourceX=tileCell.x;item.sourceY=tileCell.y;item.raster=root.nativeRaster;}
                     }
                 }
             }
@@ -429,7 +475,7 @@ Rectangle {
                         console.log("PaperSketch export",ok,root.exportPath);
                     }
                     root.painting=root.pending.length>0;
-                    if(wasReplaying && !root.replaying)root.refreshArtTiles(null);
+                    if(wasReplaying && !root.replaying){root.importNativeRaster(c);root.refreshArtTiles(null);}
                     else if(changed && (!root.pending.length || (root.activeStroke!==null && root.activeStroke.tool===7))) {
                         root.refreshArtTiles(root.paintBounds || changed);root.paintBounds=null;
                     }

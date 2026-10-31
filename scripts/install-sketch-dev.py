@@ -11,6 +11,7 @@ parser.add_argument("--host", default="10.11.99.1")
 parser.add_argument("--key", required=True)
 parser.add_argument("--known-hosts", required=True)
 parser.add_argument("--launch", action="store_true")
+parser.add_argument("--native-raster",action="store_true",help="Install the native QImage engine with rollback")
 parser.add_argument("--native-ink", action="store_true", help="Install exact-build native pen preview with rollback")
 parser.add_argument("--host-key-alias")
 args = parser.parse_args()
@@ -21,6 +22,11 @@ for name in ("manifest.json", "resources.rcc", "icon.png"):
         parser.error("Build Paper Sketch before installing: missing " + name)
 if args.native_ink and not (source / "native/papersketch-ink.so").is_file():
     parser.error("Build native/papersketch-ink.so before --native-ink")
+if args.native_raster and not (source / "native/papersketch-raster.so").is_file():
+    parser.error("Build native/papersketch-raster.so before --native-raster")
+extensions=[]
+if args.native_ink:extensions.append("papersketch-ink.so")
+if args.native_raster:extensions.append("papersketch-raster.so")
 ssh = ["ssh", "-i", args.key, "-o", "UserKnownHostsFile=" + args.known_hosts,
        "-o", "StrictHostKeyChecking=yes", "-o", "BatchMode=yes",
        "-o", "ConnectTimeout=8", "root@" + args.host]
@@ -59,13 +65,12 @@ try:
            "mv /home/root/xovi/exthome/appload/papersketch " + b + "/replaced; fi; "
            "mv /home/root/xovi/exthome/appload/papersketch.new /home/root/xovi/exthome/appload/papersketch")
     installed = True
-    if args.native_ink:
+    for extension in extensions:
         remote("set -eu; test -d /home/root/xovi/extensions.d; "
-               "if test -f /home/root/xovi/extensions.d/papersketch-ink.so; then "
-               "cp -p /home/root/xovi/extensions.d/papersketch-ink.so " + b + "/previous-ink.so; fi; "
-               "cp " + b + "/stage/papersketch/native/papersketch-ink.so /home/root/xovi/extensions.d/papersketch-ink.so; "
+               "if test -f /home/root/xovi/extensions.d/" + extension + "; then "
+               "cp -p /home/root/xovi/extensions.d/" + extension + " " + b + "/previous-" + extension + "; fi; "
+               "cp " + b + "/stage/papersketch/native/" + extension + " /home/root/xovi/extensions.d/" + extension + "; "
                "rm -f /tmp/papersketch-ink /tmp/papersketch-ink-status")
-
     if args.launch:
         remote("awk 'BEGIN { skip=0 } /^\\[PaperDeskE2E\\]$/ { skip=1; next } /^\\[/ { skip=0 } !skip { print }' "
                "/home/root/.config/remarkable/xochitl.conf > " + b + "/launch.conf; "
@@ -77,9 +82,9 @@ try:
     remote("systemctl is-active --quiet xochitl")
 except Exception:
     if installed:
-        if args.native_ink:
-            remote("systemctl stop xochitl; rm -f /home/root/xovi/extensions.d/papersketch-ink.so; "
-                   "if test -f " + b + "/previous-ink.so; then cp -p " + b + "/previous-ink.so /home/root/xovi/extensions.d/papersketch-ink.so; fi")
+        for extension in extensions:
+            remote("systemctl stop xochitl; rm -f /home/root/xovi/extensions.d/" + extension + "; "
+                   "if test -f " + b + "/previous-" + extension + "; then cp -p " + b + "/previous-" + extension + " /home/root/xovi/extensions.d/" + extension + "; fi")
         remote("systemctl stop xochitl; mv /home/root/xovi/exthome/appload/papersketch " + b + "/failed; "
                "if test -d " + b + "/previous; then cp -a " + b + "/previous /home/root/xovi/exthome/appload/papersketch; fi")
         stopped = True

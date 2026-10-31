@@ -17,7 +17,7 @@ function point(x,y,p) {
 }
 function stroke(tool,size,tone,strength,seed) {
     var t=tools[tool] || tools[1];
-    return {renderer:5,tool:tool,size:clamp(size,1,80),tone:clamp(tone,0,238),
+    return {renderer:6,tool:tool,size:clamp(size,1,80),tone:clamp(tone,0,238),
             strength:clamp(strength,0.05,1),seed:seed>>>0,points:[]};
 }
 function count(b) {
@@ -38,7 +38,7 @@ function decode(raw) {
             throw Error("Invalid paper");
         for(var j=0;j<page.strokes.length;j++) {
             var s=page.strokes[j];
-            if(!s || (s.renderer!==undefined && s.renderer!==2 && s.renderer!==3 && s.renderer!==4 && s.renderer!==5) || !Number.isInteger(s.tool) || s.tool<0 || s.tool>=tools.length ||
+            if(!s || (s.renderer!==undefined && s.renderer!==2 && s.renderer!==3 && s.renderer!==4 && s.renderer!==5 && s.renderer!==6) || !Number.isInteger(s.tool) || s.tool<0 || s.tool>=tools.length ||
                !isFinite(s.size) || s.size<1 || s.size>80 || !isFinite(s.tone) || s.tone<0 || s.tone>238 ||
                !isFinite(s.strength) || s.strength<0.05 || s.strength>1 || !isFinite(s.seed) ||
                !Array.isArray(s.points) || !s.points.length) throw Error("Invalid stroke");
@@ -150,6 +150,7 @@ function fastSegment(c,s,index) {
         if(s.renderer===2)smudgeV2(c,a,b,s.size,s.strength);
         else if(s.renderer===3)smudgeV3(c,a,b,s.size,s.strength);
         else if(s.renderer===4)smudgeV4(c,a,b,s.size,s.strength);
+        else if(s.renderer===5)smudgeV5(c,a,b,s.size,s.strength);
         else smudge(c,a,b,s.size,s.strength);
         return;
     }
@@ -170,7 +171,7 @@ function fastSegment(c,s,index) {
         if(t.kind==="pencil" && w>3) {
             c.lineWidth=Math.max(0.5,w*0.06);
             c.strokeStyle="rgba("+value+","+value+","+value+","+alpha*t.grain+")";
-            var offset=(noise(a[0],a[1],s.seed)-0.5)*w*0.6;
+            var offset=s.renderer>=6?(noise(0,0,s.seed)-0.5)*w*0.15:(noise(a[0],a[1],s.seed)-0.5)*w*0.6;
             c.beginPath();c.moveTo(a[0]+offset,a[1]);c.lineTo(b[0]+offset,b[1]);c.stroke();
         }
     }
@@ -217,7 +218,7 @@ function previewSegment(c,s,index) {
 }
 
 function smudgeV4(c,a,b,size,strength) {blendSmudge(c,a,b,size,strength,false);}
-function smudge(c,a,b,size,strength) {blendSmudge(c,a,b,size,strength,true);}
+function smudgeV5(c,a,b,size,strength) {blendSmudge(c,a,b,size,strength,true);}
 function blendSmudge(c,a,b,size,strength,directional) {
     var dx=b[0]-a[0],dy=b[1]-a[1],distance=Math.sqrt(dx*dx+dy*dy);
     if(distance<0.1)return;
@@ -251,4 +252,49 @@ function blendSmudge(c,a,b,size,strength,directional) {
         c.restore();
     }
     c.restore();
+}
+function smudge(c,a,b,size,strength) {
+    var dx=b[0]-a[0],dy=b[1]-a[1],len2=dx*dx+dy*dy;
+    if(len2<0.01)return;
+    var distance=Math.sqrt(len2),r=clamp(size/2,6,40),pad=Math.ceil(r*2);
+    var sx=Math.max(0,Math.floor(Math.min(a[0],b[0])-pad));
+    var sy=Math.max(0,Math.floor(Math.min(a[1],b[1])-pad));
+    var w=Math.min(WIDTH-sx,Math.ceil(Math.abs(dx)+pad*2)),h=Math.min(HEIGHT-sy,Math.ceil(Math.abs(dy)+pad*2));
+    if(w<=0 || h<=0)return;
+    var image=c.getImageData(sx,sy,w,h),data=image.data,n=w*h;
+    var gray=new Float32Array(n),horizontal=new Float32Array(n),blur=new Float32Array(n);
+    for(var i=0;i<n;i++)gray[i]=data[i*4];
+    var br=Math.max(1,Math.round(r*0.18)),diameter=br*2+1;
+    for(var y=0;y<h;y++) {
+        var row=y*w,sum=0;
+        for(var k=-br;k<=br;k++)sum+=gray[row+clamp(k,0,w-1)];
+        for(var x=0;x<w;x++) {
+            horizontal[row+x]=sum/diameter;
+            sum+=gray[row+Math.min(w-1,x+br+1)]-gray[row+Math.max(0,x-br)];
+        }
+    }
+    for(var x=0;x<w;x++) {
+        var sum=0;
+        for(var k=-br;k<=br;k++)sum+=horizontal[clamp(k,0,h-1)*w+x];
+        for(var y=0;y<h;y++) {
+            blur[y*w+x]=sum/diameter;
+            sum+=horizontal[Math.min(h-1,y+br+1)*w+x]-horizontal[Math.max(0,y-br)*w+x];
+        }
+    }
+    var ux=dx/distance,uy=dy/distance,shift=Math.min(distance,r*0.8),radius2=r*r;
+    var opacity=clamp(strength,0.05,1)*0.65;
+    for(var y=0;y<h;y++)for(var x=0;x<w;x++) {
+        var px=sx+x-a[0],py=sy+y-a[1],t=clamp((px*dx+py*dy)/len2,0,1);
+        var ex=px-t*dx,ey=py-t*dy,falloff=1-(ex*ex+ey*ey)/radius2;
+        if(falloff<=0)continue;
+        falloff=falloff*falloff;
+        var fx=clamp(x-ux*shift*falloff,0,w-1),fy=clamp(y-uy*shift*falloff,0,h-1);
+        var ix=Math.floor(fx),iy=Math.floor(fy),jx=Math.min(w-1,ix+1),jy=Math.min(h-1,iy+1);
+        var mx=fx-ix,my=fy-iy;
+        var transported=(blur[iy*w+ix]*(1-mx)+blur[iy*w+jx]*mx)*(1-my)
+                       +(blur[jy*w+ix]*(1-mx)+blur[jy*w+jx]*mx)*my;
+        var at=y*w+x,mix=opacity*falloff,value=Math.round(gray[at]*(1-mix)+transported*mix);
+        data[at*4]=value;data[at*4+1]=value;data[at*4+2]=value;data[at*4+3]=255;
+    }
+    c.putImageData(image,sx,sy,0,0,w,h);
 }

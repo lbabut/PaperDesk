@@ -159,7 +159,7 @@ Item {
             var b=Ink.book();b.pages[0].strokes.push(s);
             var old=Ink.decode(JSON.stringify(b));
             compare(old.pages[0].strokes[0].renderer,undefined);
-            compare(Ink.stroke(1,5,0,0.5,7).renderer,5);
+            compare(Ink.stroke(1,5,0,0.5,7).renderer,6);
         }
         function test_ink_is_visible_before_canvas_commit() {
             scene.app.tool=3;scene.app.brushSize=20;
@@ -187,7 +187,7 @@ Item {
                 save:function(){c.save();},restore:function(){c.restore();},
                 beginPath:function(){c.beginPath();},arc:function(x,y,r,a,b){c.arc(x,y,r,a,b);},
                 closePath:function(){c.closePath();},moveTo:function(x,y){c.moveTo(x,y);},lineTo:function(x,y){c.lineTo(x,y);},
-                clip:function(){c.clip();},drawImage:function(i,x,y){c.drawImage(i,x,y);}
+                putImageData:function(i,x,y,a,b,w,h){c.putImageData(i,x,y,a,b,w,h);},clip:function(){c.clip();},drawImage:function(i,x,y){c.drawImage(i,x,y);}
             };
             Ink.smudge(wrapped,[100,100,0.7],[900,100,0.7],64,0.8);
             compare(reads,1);
@@ -217,6 +217,33 @@ Item {
             verify(center<245,"Smudge must retain some original graphite");
             verify(beside<220,"Graphite must spread onto adjacent white paper: "+beside);
             compare(c.getImageData(500,500,1,1).data[0],255);
+        }
+        function test_smudge_has_a_soft_continuous_cross_section() {
+            var c=findChild(scene.app,"drawingCanvas").getContext("2d");
+            c.fillStyle="white";c.fillRect(0,0,1200,1600);
+            c.fillStyle="black";c.fillRect(292,240,16,120);
+            Ink.smudge(c,[240,300,0.7],[360,300,0.7],64,1);
+            var profile=[],maxJump=0;
+            for(var y=264;y<=336;y++)profile.push(c.getImageData(319,y,1,1).data[0]);
+            for(var i=1;i<profile.length;i++)maxJump=Math.max(maxJump,Math.abs(profile[i]-profile[i-1]));
+            verify(maxJump<24,"Smudge edge must feather continuously, largest step="+maxJump);
+            verify(Math.min.apply(null,profile)<220,"A soft edge must still carry graphite");
+            findChild(scene.app,"drawingCanvas").save("/home/lukasz/Documents/Codex/PaperDesk/work/papersketch-tests/smudge-transport.png");
+            console.log("PaperSketch smudge feather",maxJump,"maximum adjacent pixel jump");
+        }
+        function test_native_preview_rasterizes_without_waiting_for_pen_up() {
+            if(!scene.app.nativeRasterActive)skip("Native raster test requires the tablet runtime");
+            scene.app.tool=3;scene.app.brushSize=20;scene.app.nativeArmed=true;
+            var canvas=findChild(scene.app,"drawingCanvas"),passes=scene.app.rasterPasses;
+            scene.app.beginStroke(Qt.point(100,400),"pen",3,1);
+            try {
+                for(var i=1;i<=50;i++)scene.app.extendStroke(Qt.point(100+i*5,400),"pen",1);
+                compare(scene.app.rasterPasses,passes);compare(scene.app.pending.length,0);
+                verify(canvas.getContext("2d").getImageData(225,400,1,1).data[0]<240);
+                var tile=findChild(scene.app,"artTile31");
+                compare(tile.getContext("2d").getImageData(97,16,1,1).data[0],255);
+            } finally {scene.app.finishStroke();scene.app.nativeArmed=false;}
+            tryVerify(function(){return findChild(scene.app,"artTile31").getContext("2d").getImageData(97,16,1,1).data[0]<240;},5000);
         }
         function test_validation() {
             var b=Ink.book(),s=Ink.stroke(0,5,0,0.5,1);

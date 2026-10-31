@@ -19,6 +19,7 @@ Rectangle {
     property var frameDelays:[]
     property var results:[]
     property var pixelProbes:[]
+    property bool smokeOnly:false
     property bool pixelsChecked:false
     property var pixelProbe:null
     function find(item,name) {
@@ -27,14 +28,20 @@ Rectangle {
         return null;
     }
     function samples() {
-        var master=find(subject.item,"rasterCanvas").getContext("2d");
-        var tile=find(subject.item,"artTile0").getContext("2d");
-        return {core:master.getImageData(300,300,1,1).data[0],
+        var master=find(subject.item,"drawingCanvas").getContext("2d");
+        var size=subject.item.artTileSize || 400,columns=Math.ceil(1200/size);
+        var col=Math.floor(300/size),row=Math.floor(300/size);
+        var tile=find(subject.item,"artTile"+(row*columns+col)).getContext("2d");
+        var raw=master.getImageData(319,264,1,73).data,profile=[];
+        var traw=tile.getImageData(319-col*size,264-row*size,1,73).data,tprofile=[];
+        for(var i=0;i<73;i++){profile.push(raw[i*4]);tprofile.push(traw[i*4]);}
+        return {profile:profile,tileProfile:tprofile,core:master.getImageData(300,300,1,1).data[0],
                 beside:master.getImageData(327,300,1,1).data[0],
-                tileCore:tile.getImageData(300,300,1,1).data[0],
-                tileBeside:tile.getImageData(327,300,1,1).data[0]};
+                tileCore:tile.getImageData(300-col*size,300-row*size,1,1).data[0],
+                tileBeside:tile.getImageData(327-col*size,300-row*size,1,1).data[0]};
     }
-    function samePixels(a,b) {return a.core===b.core && a.beside===b.beside && a.tileCore===b.tileCore && a.tileBeside===b.tileBeside;}
+    function sameProfile(a,b){return a.every(function(v,i){return Math.abs(v-b[i])<=1;});}
+    function samePixels(a,b) {return a.core===b.core && a.beside===b.beside && a.tileCore===b.tileCore && a.tileBeside===b.tileBeside && sameProfile(a.profile,b.profile) && sameProfile(a.tileProfile,b.tileProfile); }
     function probeStep() {
         var a=subject.item;
         if(a.painting || a.replaying || Date.now()-finishAt<250)return;
@@ -58,12 +65,16 @@ Rectangle {
         var p=pixelProbe;
         p.softens=p.smudged.core>p.before.core+5;
         p.transfers=p.smudged.beside<p.before.beside-5;
-        p.visibleTileMatches=p.smudged.core===p.smudged.tileCore && p.smudged.beside===p.smudged.tileBeside;
+        p.visibleTileMatches=p.smudged.core===p.smudged.tileCore && p.smudged.beside===p.smudged.tileBeside && sameProfile(p.smudged.profile,p.smudged.tileProfile);
         p.survivesNextStroke=samePixels(p.smudged,p.afterNextStroke);
         p.survivesReplay=samePixels(p.smudged,p.replayed);
         p.passed=p.softens && p.transfers && p.visibleTileMatches && p.survivesNextStroke && p.survivesReplay;
+        p.native_raster_active=a.nativeRasterActive;p.passed=p.passed && a.nativeRasterActive;
+        p.native_smudge_failed=a.nativeSmudgeFailed;p.native_pipeline_max_ms=a.nativePatchMaxMs;
         pixelProbes.push(p);console.log("PAPERSKETCH_PIXEL_PROBE "+JSON.stringify(p));
         pixelsChecked=true;phase=1;
+        if(smokeOnly && variant===0){variant=1;caseIndex=0;phase=0;pixelsChecked=false;subject.source="constant-fast/ui/main.qml";return;}
+        if(smokeOnly){phase=4;ticker.stop();console.log("PAPERSKETCH_NATIVE_RESULT "+JSON.stringify({execution:"reMarkable Xochitl AppLoad",cases:[],pixel_probes:pixelProbes}));}
     }
     property var variantNames:["baseline","constant-fast"]
     property var caseNames:["hb","charcoal","smudge"]
@@ -127,6 +138,13 @@ Rectangle {
             results[results.length-1].bitmap_commit_ms=Date.now()-finishAt;
             results[results.length-1].max_bitmap_paint_ms=a.maxPaintMs;
             results[results.length-1].max_bitmap_queue_ms=a.maxQueueWaitMs;
+            results[results.length-1].native_smudge_pipeline_max_ms=a.nativePatchMaxMs;
+            results[results.length-1].native_smudge_available=a.nativeSmudgeAvailable;
+            results[results.length-1].native_smudge_failed=a.nativeSmudgeFailed;
+            results[results.length-1].native_raster_active=a.nativeRasterActive;
+            var recorded=a.page.strokes[a.page.strokes.length-1].points;
+            results[results.length-1].recorded_points=recorded.length;
+            results[results.length-1].final_recorded_point=recorded[recorded.length-1];
             if(caseIndex<2) {caseIndex++;phase=1;return;}
             if(variant===0) {
                 variant=1;caseIndex=0;phase=0;pixelsChecked=false;

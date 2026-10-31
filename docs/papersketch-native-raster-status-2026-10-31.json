@@ -1,0 +1,45 @@
+{
+  "status": "draft; native QImage engine awaits tablet validation",
+  "date": "2026-10-31",
+  "device_reachable": false,
+  "device_address": "192.168.1.167:22",
+  "usb_network_present": false,
+  "tailscale_peer": "remarkable-2",
+  "tailscale_online": false,
+  "new_frontend_installed": false,
+  "new_qimage_extension_installed": false,
+  "validation": {
+    "desktop_qttest": {
+      "passed": 21,
+      "failed": 0,
+      "skipped": 1
+    },
+    "native_cpp_host": [
+      "QML registration",
+      "pixel-array import",
+      "graphite and smooth smudge",
+      "tile presentation",
+      "undo/redo",
+      "PNG export",
+      "cache hash validation"
+    ],
+    "arm_cross_compile": true,
+    "core_kernel_arm_fixture_ms": 11.158,
+    "full_native_app_latency_measured": false,
+    "physical_pen_to_glass_measured": false
+  },
+  "next_steps": [
+    "Wake the tablet and reconnect Wi-Fi",
+    "Restore the original coalesced ink extension from the rebuilt payload or retained module backups; temporary file-bridge module was used during diagnostics",
+    "Install QImage extension with rollback and run isolated smoke tests",
+    "Verify native_raster_active and raster/tile/replay pixel profiles",
+    "Run full native performance and input checks before installing the frontend",
+    "Verify the original artwork document hash and manually retained XOVI boot policy"
+  ],
+  "source_files": [
+    "product/payload/apps/papersketch/native/papersketch-raster.cpp",
+    "product/payload/apps/papersketch/native/sketch-smudge.h",
+    "product/payload/apps/papersketch/ui/main.qml",
+    "product/payload/apps/papersketch/ui/native-tile.qml"
+  ]
+}

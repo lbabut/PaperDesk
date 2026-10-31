@@ -18,6 +18,7 @@ p.add_argument("--host-key-alias")
 p.add_argument("--key",required=True)
 p.add_argument("--known-hosts",required=True)
 p.add_argument("--baseline-qml")
+p.add_argument("--smoke",action="store_true")
 p.add_argument("--output",default="docs/papersketch-native-2026-10-31.json")
 a=p.parse_args()
 root=pathlib.Path(__file__).resolve().parents[1]
@@ -42,13 +43,15 @@ for name,text in [("baseline",baseline),("constant-fast",candidate)]:
     (folder/"ui").mkdir(parents=True,exist_ok=True)
     (folder/"ui/main.qml").write_text(text.replace(needle,'category: "PaperDeskSketchNativeBench'+name+'"'))
     shutil.copy2(source/"engine.js",folder/"engine.js")
+    shutil.copy2(source/"ui/native-tile.qml",folder/"ui/native-tile.qml")
 harness=(root/"tests/device/papersketch-native.qml").read_text()
+if a.smoke:harness=harness.replace("property bool smokeOnly:false","property bool smokeOnly:true")
 if a.baseline_qml:harness=harness.replace('"constant-fast"','"tiled-fast"')
 elif candidate==baseline:harness=harness.replace('["baseline","constant-fast"]','["production-1","production-2"]')
 (app/"bench.qml").write_text(harness)
 shutil.copy2(source/"icon.png",app/"icon.png")
 (app/"manifest.json").write_text(json.dumps({"name":"Paper Sketch Native Diagnostics","id":"papersketch-native-bench","entry":"/bench.qml","icon":"icon.png","loadsBackend":False,"supportsScaling":True,"canHaveMultipleFrontends":False}))
-paths=["bench.qml","baseline/ui/main.qml","baseline/engine.js","constant-fast/ui/main.qml","constant-fast/engine.js"]
+paths=["bench.qml","baseline/ui/main.qml","baseline/ui/native-tile.qml","baseline/engine.js","constant-fast/ui/main.qml","constant-fast/ui/native-tile.qml","constant-fast/engine.js"]
 (app/"application.qrc").write_text('<RCC><qresource prefix="/">'+''.join('<file>'+x+'</file>' for x in paths)+'</qresource></RCC>')
 rcc=pathlib.Path("/home/lukasz/Documents/Codex/2026-09-25/m-2/work/qt-rcc-pkg/root/usr/lib/qt5/bin/rcc")
 subprocess.run([str(rcc),"--binary","application.qrc","-o","resources.rcc"],cwd=app,check=True)
@@ -142,3 +145,6 @@ finally:
     out.write_text(json.dumps(report,indent=2)+"\n")
     print("Report:",out,flush=True)
 assert report["artwork_preserved"],"Artwork settings changed; original backup retained"
+
+if a.smoke and not a.baseline_qml:
+    assert all(probe["passed"] for probe in report["results"]["pixel_probes"]), "Native raster pixel probe failed"
