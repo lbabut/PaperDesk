@@ -1,4 +1,5 @@
 import QtQuick 2.15
+import QtQuick.Window 2.15
 import QtQuick.Controls 2.15
 import Qt.labs.settings 1.1
 import net.asivery.ApploadUtils
@@ -47,6 +48,49 @@ Rectangle {
     readonly property var page: notebook.pages[pageIndex]
     readonly property bool busy: replaying || activeStroke!==null
     readonly property real drawingScale: Math.min((workspace.width-24)/Ink.WIDTH,(workspace.height-24)/Ink.HEIGHT)
+
+    // Native preview is optional and gated by the extension's fresh acknowledgement.
+    property bool nativeReady: false
+    property bool nativeArmed: false
+    property bool nativeStroke: false
+    property var nativeRequest: null
+    property string nativeState: ""
+    property bool closing: false
+    onToolChanged:if(ready)nativeHeartbeat()
+    onBrushSizeChanged:if(ready)nativeHeartbeat()
+    onControlsVisibleChanged:if(ready) {nativeArmed=false;if(nativeReady)nativeWrite("off");}
+    Timer { interval:400;running:root.visible && !root.closing;repeat:true;triggeredOnStart:true;onTriggered:root.nativeHeartbeat() }
+    function nativeWrite(value) {
+        try {
+            var x=new XMLHttpRequest();nativeRequest=x;
+            x.onreadystatechange=function(){if(x.readyState===XMLHttpRequest.DONE && nativeRequest===x)nativeRequest=null;};
+            x.open("PUT","file:///tmp/papersketch-ink");x.send(value);
+        }
+        catch(e) {nativeArmed=false;}
+    }
+    function nativeHeartbeat() {
+        try {
+            var x=new XMLHttpRequest();x.open("GET","file:///tmp/papersketch-ink-status",false);x.send();
+            var status=JSON.parse(x.responseText);
+            nativeReady=status.ready===true && Math.abs(Date.now()-status.time_ms)<1500;
+            nativeArmed=nativeReady && status.armed===true;
+        } catch(e) {nativeReady=false;nativeArmed=false;}
+        if(!nativeReady)return;
+        var win=root.Window.window;
+        var state=(win?win.width+"x"+win.height:"no window")+" ready="+ready+" replay="+replaying+" armed="+nativeArmed;
+        if(nativeState!==state) {nativeState=state;console.log("PaperSketch native",state);}
+
+        if(!win || win.width!==1404 || win.height!==1872 || !visible || closing || !ready || replaying || (painting && activeStroke===null) || saveBlocked || confirmation || tool===7 || activeSource==="finger") {
+            nativeWrite("off");nativeArmed=false;return;
+        }
+        var origin=inputSurface.mapToItem(win.contentItem,0,0);
+        var corner=inputSurface.mapToItem(win.contentItem,inputSurface.width,inputSurface.height);
+        var x0=Math.ceil(origin.x),y0=Math.ceil(origin.y);
+        var w=Math.floor(corner.x)-x0,h=Math.floor(corner.y)-y0;
+        if(x0<0 || y0<0 || w<=0 || h<=0 || x0+w>1404 || y0+h>1872) {nativeWrite("off");nativeArmed=false;return;}
+        var size=Math.max(1,brushSize*drawingScale);
+        nativeWrite("on "+x0+" "+y0+" "+w+" "+h+" "+size+" "+(tool===6?1:0)+" "+Math.min(80,size/2));
+    }
 
     Settings {
         id: saved
@@ -100,7 +144,7 @@ Rectangle {
                 height:Math.max(a.y+a.height,b.y+b.height)-y};
     }
     function previewInk(s,index) {
-        if(s.tool===7)return;
+        if(s.tool===7 || nativeStroke)return;
         var bounds=Ink.dirtyBounds(s,index);
         previewJobs.push({stroke:s,index:index,bounds:bounds});
         var left=Math.max(0,Math.floor(bounds.x/64)),top=Math.max(0,Math.floor(bounds.y/64));
@@ -125,7 +169,7 @@ Rectangle {
         var r=Ink.dirtyBounds(s,index);
         paper.markDirty(Qt.rect(r.x,r.y,r.width,r.height));
     }
-    function unloading() { finishStroke(); saveBook() }
+    function unloading() { closing=true;if(nativeReady)nativeWrite("off");finishStroke();saveBook() }
     function saveBook() {
         if(!ready || saveBlocked) return false;
         saved.checkpoint=saved.document;
@@ -143,6 +187,7 @@ Rectangle {
         if(totalPoints>=Ink.MAX_POINTS) {notice="Sketchbook full. Export your pages before starting a new book.";return;}
         paintTimer.stop();clearPreviewTimer.stop();autosave.stop();
         maxPaintMs=0;maxQueueWaitMs=0;
+        nativeStroke=source==="pen" && selected!==7 && nativeArmed;
         activeSource=source;
         activeStroke=Ink.stroke(selected,selected===7?Math.max(brushSize,source==="finger"?64:32):brushSize,tone,strength,Date.now());
         activeStroke.points.push(Ink.point(p.x,p.y,source==="finger"?0.7:(pressure===undefined?penInput.centroid.pressure:pressure)));
@@ -161,7 +206,7 @@ Rectangle {
     function finishStroke() {
         if(activeStroke===null) return;
         page.strokes.push(activeStroke);totalPoints+=activeStroke.points.length;
-        activeStroke=null;activeSource="";redoStrokes=[];clearedStrokes=null;revision++;
+        activeStroke=null;activeSource="";nativeStroke=false;redoStrokes=[];clearedStrokes=null;revision++;
         for(var i=0;i<pending.length;i++)pending[i].queuedAt=Date.now();
         paintTimer.restart();autosave.restart();
     }
@@ -491,7 +536,7 @@ Rectangle {
         }
         Text {
             anchors.left:parent.left;anchors.right:parent.right;anchors.margins:20;y:91
-            text:root.notice || (root.saveBlocked?"Save paused":root.activeSource==="finger"?"Smudging with your finger":root.busy?"Drawing…":Ink.tools[root.tool].name+" · Pressure-sensitive pen · Finger smudge "+(root.fingerSmudge?"on":"off")+" · Autosave")
+            text:root.notice || (root.saveBlocked?"Save paused":root.activeSource==="finger"?"Smudging with your finger":root.busy?"Drawing…":Ink.tools[root.tool].name+" · Pen · Finger smudge "+(root.fingerSmudge?"on":"off")+" · Autosave")
             elide:Text.ElideMiddle;font.pixelSize:19;color:"#444444"
         }
     }

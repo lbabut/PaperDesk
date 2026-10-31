@@ -159,7 +159,7 @@ Item {
             var b=Ink.book();b.pages[0].strokes.push(s);
             var old=Ink.decode(JSON.stringify(b));
             compare(old.pages[0].strokes[0].renderer,undefined);
-            compare(Ink.stroke(1,5,0,0.5,7).renderer,3);
+            compare(Ink.stroke(1,5,0,0.5,7).renderer,4);
         }
         function test_ink_is_visible_before_canvas_commit() {
             scene.app.tool=3;scene.app.brushSize=20;
@@ -186,6 +186,7 @@ Item {
                 getImageData:function(x,y,w,h){reads++;return c.getImageData(x,y,w,h);},
                 save:function(){c.save();},restore:function(){c.restore();},
                 beginPath:function(){c.beginPath();},arc:function(x,y,r,a,b){c.arc(x,y,r,a,b);},
+                closePath:function(){c.closePath();},moveTo:function(x,y){c.moveTo(x,y);},lineTo:function(x,y){c.lineTo(x,y);},
                 clip:function(){c.clip();},drawImage:function(i,x,y){c.drawImage(i,x,y);}
             };
             Ink.smudge(wrapped,[100,100,0.7],[900,100,0.7],64,0.8);
@@ -203,6 +204,19 @@ Item {
             scene.app.finishStroke();
             tryCompare(scene.app,"painting",false,10000);
             verify(scene.app.page.strokes[0].points.length>1500);
+        }
+        function test_smudge_softens_the_original_line_and_deposits_graphite() {
+            var c=findChild(scene.app,"drawingCanvas").getContext("2d");
+            c.fillStyle="white";c.fillRect(0,0,1200,1600);
+            c.fillStyle="black";c.fillRect(292,240,16,120);
+            var original=c.getImageData(300,300,1,1).data[0];
+            Ink.smudge(c,[240,300,0.7],[360,300,0.7],64,1);
+            var center=c.getImageData(300,300,1,1).data[0];
+            var beside=c.getImageData(327,300,1,1).data[0];
+            verify(center>original+10,"The original black line must soften: "+center);
+            verify(center<245,"Smudge must retain some original graphite");
+            verify(beside<250,"Graphite must spread onto adjacent white paper: "+beside);
+            compare(c.getImageData(500,500,1,1).data[0],255);
         }
         function test_validation() {
             var b=Ink.book(),s=Ink.stroke(0,5,0,0.5,1);

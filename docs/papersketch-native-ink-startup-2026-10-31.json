@@ -1,0 +1,24 @@
+{
+  "device": "reMarkable 2",
+  "os": "3.29.0.153",
+  "elf_build_id": "c1a6698ec0512ddd88c2ba5ca713390988978056",
+  "final_qml_sha256": "252919c4458701529278486fcdcd891de4f6aaa3e658ca00a37011dd07c0b1d9",
+  "engine_sha256": "8fd418f81e0a35d12576bdf4b11ac44f7da9f74a75e241b8d2826946decee994",
+  "native_so_sha256": "a4e30a443f833f1b8b34948508ecb7562c0a05648d7d76bb7442ae62a82c4e54",
+  "native_status": {
+    "ready": true,
+    "pid": 14017,
+    "time_ms": 1793453236647,
+    "armed": true
+  },
+  "arm_file": "on 162 282 1080 1440 37.947359633445735 0 18.973679816722868",
+  "artwork_before_sha256": "98558042f0da44fbab4aa56409b6810907d95acef21e65d8f8e966fb62919aa2",
+  "artwork_after_sha256": "98558042f0da44fbab4aa56409b6810907d95acef21e65d8f8e966fb62919aa2",
+  "artwork_preserved": true,
+  "desktop_qttest": {
+    "passed": 20,
+    "failed": 0
+  },
+  "physical_pen_latency_measured": false,
+  "limitations": "Synthetic stroke functions exercise Qt commits and smudge, not Wacom-to-panel latency. Native framebuffer layout and arm acknowledgement verified in the running production app. Live preview is black and constant width; final shade appears on pen-up."
+}

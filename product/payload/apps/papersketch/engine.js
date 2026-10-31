@@ -17,7 +17,7 @@ function point(x,y,p) {
 }
 function stroke(tool,size,tone,strength,seed) {
     var t=tools[tool] || tools[1];
-    return {renderer:3,tool:tool,size:clamp(size,1,80),tone:clamp(tone,0,238),
+    return {renderer:4,tool:tool,size:clamp(size,1,80),tone:clamp(tone,0,238),
             strength:clamp(strength,0.05,1),seed:seed>>>0,points:[]};
 }
 function count(b) {
@@ -38,7 +38,7 @@ function decode(raw) {
             throw Error("Invalid paper");
         for(var j=0;j<page.strokes.length;j++) {
             var s=page.strokes[j];
-            if(!s || (s.renderer!==undefined && s.renderer!==2 && s.renderer!==3) || !Number.isInteger(s.tool) || s.tool<0 || s.tool>=tools.length ||
+            if(!s || (s.renderer!==undefined && s.renderer!==2 && s.renderer!==3 && s.renderer!==4) || !Number.isInteger(s.tool) || s.tool<0 || s.tool>=tools.length ||
                !isFinite(s.size) || s.size<1 || s.size>80 || !isFinite(s.tone) || s.tone<0 || s.tone>238 ||
                !isFinite(s.strength) || s.strength<0.05 || s.strength>1 || !isFinite(s.seed) ||
                !Array.isArray(s.points) || !s.points.length) throw Error("Invalid stroke");
@@ -148,6 +148,7 @@ function fastSegment(c,s,index) {
     var b=s.points[index],a=index?s.points[index-1]:b,t=tools[s.tool];
     if(t.kind==="smudge") {
         if(s.renderer===2)smudgeV2(c,a,b,s.size,s.strength);
+        else if(s.renderer===3)smudgeV3(c,a,b,s.size,s.strength);
         else smudge(c,a,b,s.size,s.strength);
         return;
     }
@@ -180,7 +181,7 @@ function dirtyBounds(s,index) {
             width:Math.abs(b[0]-a[0])+r*2,height:Math.abs(b[1]-a[1])+r*2};
 }
 
-function smudge(c,a,b,size,strength) {
+function smudgeV3(c,a,b,size,strength) {
     var dx=b[0]-a[0],dy=b[1]-a[1],distance=Math.sqrt(dx*dx+dy*dy);
     if(distance<0.1) return;
     var radius=clamp(size/2,6,40),step=Math.max(4,radius*0.4);
@@ -211,5 +212,39 @@ function previewSegment(c,s,index) {
     c.fillStyle=c.strokeStyle;c.lineWidth=w;c.lineCap="round";c.lineJoin="round";
     if(!index) {c.beginPath();c.arc(b[0],b[1],w/2,0,Math.PI*2);c.fill();}
     else {c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke();}
+    c.restore();
+}
+
+function smudge(c,a,b,size,strength) {
+    var dx=b[0]-a[0],dy=b[1]-a[1],distance=Math.sqrt(dx*dx+dy*dy);
+    if(distance<0.1)return;
+    var r=clamp(size/2,6,40),pad=r*2;
+    var sx=Math.max(0,Math.floor(Math.min(a[0],b[0])-pad));
+    var sy=Math.max(0,Math.floor(Math.min(a[1],b[1])-pad));
+    var w=Math.min(WIDTH-sx,Math.ceil(Math.abs(dx)+pad*2));
+    var h=Math.min(HEIGHT-sy,Math.ceil(Math.abs(dy)+pad*2));
+    if(w<=0 || h<=0)return;
+    var patch=c.getImageData(sx,sy,w,h),ux=dx/distance,uy=dy/distance,shift=r*0.95;
+    var offsets=[[0,0,0.45],[ux*shift,uy*shift,0.2],[-ux*shift,-uy*shift,0.1],
+                 [-uy*shift,ux*shift,0.125],[uy*shift,-ux*shift,0.125]];
+    var angle=Math.atan2(dy,dx);
+    c.save();c.globalCompositeOperation="source-over";
+    for(var ring=0;ring<3;ring++) {
+        var radius=r*(1-ring*0.25),mix=clamp(strength,0.05,1)*[0.18,0.28,0.38][ring];
+        c.save();c.beginPath();
+        c.moveTo(a[0]-uy*radius,a[1]+ux*radius);
+        c.lineTo(b[0]-uy*radius,b[1]+ux*radius);
+        c.arc(b[0],b[1],radius,angle+Math.PI/2,angle-Math.PI/2,true);
+        c.lineTo(a[0]+uy*radius,a[1]-ux*radius);
+        c.arc(a[0],a[1],radius,angle-Math.PI/2,angle+Math.PI/2,true);
+        c.closePath();c.clip();
+        var cumulative=1-mix;
+        for(var i=0;i<offsets.length;i++) {
+            var o=offsets[i],weight=mix*o[2];cumulative+=weight;
+            c.globalAlpha=weight/cumulative;
+            c.drawImage(patch,sx+o[0],sy+o[1]);
+        }
+        c.restore();
+    }
     c.restore();
 }
