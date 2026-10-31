@@ -1,0 +1,26 @@
+{
+  "rollback": "/home/root/.local/state/papersketch-install.mGmjhb",
+  "artifacts": {
+    "resources": {
+      "sha256": "5d5f0639420a3b6749273ea1ccb58b6e1fb64f85be4e4d4e7c9c46366fac65ee",
+      "matches_build": true
+    },
+    "raster": {
+      "sha256": "a7e23cf45e97ed2bf99e26377a60c27c90f35571e58a5e45ba341b29394aeeaa",
+      "matches_build": true
+    },
+    "ink": {
+      "sha256": "e21a01f2a073cc8ce4f0f21da4560b3d4c6153b3e8d0b340b72d8416d2e65472",
+      "matches_build": true
+    }
+  },
+  "artwork_document_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "artwork_preserved": true,
+  "xochitl_active": true,
+  "xovi_boot_autostart_enabled_by_installer": false,
+  "native_module_registered": true,
+  "native_qml_available": true,
+  "opened_original_book": true,
+  "replay_complete": true,
+  "qml_errors": []
+}

@@ -116,6 +116,7 @@ Rectangle {
         return {getImageData:function(x,y,w,h){return {data:nativeRaster.pixels(x,y,w,h)};}};
     }
 
+    Connections {target:root.nativeRaster;ignoreUnknownSignals:true;function onSaveFailed(){root.notice="Autosave failed. Keep this page open and export a PNG.";console.log("PaperSketch native autosave FAILED");}}
     Settings {
         id: saved
         objectName:"sketchSettings"
@@ -199,17 +200,25 @@ Rectangle {
     function unloading() { closing=true;if(nativeReady)nativeWrite("off");finishStroke();saveBook();if(nativeRaster)nativeRaster.release() }
     function saveBook() {
         if(!ready || saveBlocked) return false;
+        var saveStarted=Date.now();
+        if(nativeRasterActive){
+            nativeRaster.saveNotebook(JSON.stringify({document:JSON.stringify(notebook),selectedTool:tool,selectedSize:brushSize,selectedStrength:strength,selectedTone:tone,useFinger:fingerSmudge}),pageIndex,JSON.stringify(page));
+            console.log("PaperSketch autosave queued",Date.now()-saveStarted,"ms");return true;
+        }
         saved.checkpoint=saved.document;
         saved.document=JSON.stringify(notebook);
         saved.selectedTool=tool; saved.selectedSize=brushSize;
         saved.selectedStrength=strength;saved.selectedTone=tone;saved.useFinger=fingerSmudge;
         if(nativeRasterActive)nativeRaster.saveCache(pageIndex,JSON.stringify(page));
+        console.log("PaperSketch autosave",Date.now()-saveStarted,"ms");
         return true;
     }
     function redraw() {
-        pending=[];paintBounds=null;clearPreview();nativeRasterActive=false;
+        autosave.stop();
+        pending=[];paintBounds=null;clearPreview();
         if(nativeRaster && !page.strokes.length){nativeRaster.resetWhite();nativeRasterActive=true;resetCanvas=false;replaying=false;guide.requestPaint();return;}
         if(nativeRaster && nativeRaster.loadCache(pageIndex,JSON.stringify(page))){nativeRasterActive=true;resetCanvas=false;replaying=false;guide.requestPaint();return;}
+        nativeRasterActive=false;
         resetCanvas=true;replaying=true;replayStroke=0;replayPoint=0;
         paper.requestPaint();guide.requestPaint();
     }
@@ -223,12 +232,15 @@ Rectangle {
         activeSource=source;
         activeStroke=Ink.stroke(selected,selected===7?Math.max(brushSize,source==="finger"?64:32):brushSize,tone,strength,Date.now());
         if(nativeRasterActive)nativeRaster.begin();
-        activeStroke.points.push(Ink.point(p.x,p.y,source==="finger"?0.7:(pressure===undefined?penInput.centroid.pressure:pressure)));
+        var penPressure=pressure===undefined?penInput.centroid.pressure:pressure;
+        if(source==="pen" && nativeRaster)penPressure=nativeRaster.penPressure(penPressure);
+        activeStroke.points.push(Ink.point(p.x,p.y,source==="finger"?0.7:penPressure));
         queueInk(activeStroke,0);notice="";
     }
     function extendStroke(p,source,pressure) {
         if(activeStroke===null || activeSource!==source) return;
         if(totalPoints+activeStroke.points.length>=Ink.MAX_POINTS) {finishStroke();notice="Sketchbook full";return;}
+        if(source==="pen" && nativeRaster)pressure=nativeRaster.penPressure(pressure===undefined?1:pressure);
         var q=Ink.point(p.x,p.y,pressure),prev=activeStroke.points[activeStroke.points.length-1];
         var dx=q[0]-prev[0],dy=q[1]-prev[1];
         var threshold=Math.max(1,Math.min(3,activeStroke.size*0.08));
@@ -290,10 +302,16 @@ Rectangle {
                 catch(e2) {saveBlocked=true;notice="Saved book could not be read. Original data retained; use New book to begin.";}
             }
         }
-        tool=Ink.clamp(saved.selectedTool,0,7);
-        brushSize=Ink.clamp(saved.selectedSize,1,80);
-        strength=Ink.clamp(saved.selectedStrength,0.05,1);
-        tone=Ink.clamp(saved.selectedTone,0,238);fingerSmudge=saved.useFinger;
+        var preferences=saved;
+        if(nativeRaster){
+            var stored=nativeRaster.loadNotebook();
+            if(stored){try{var parsed=JSON.parse(stored);notebook=Ink.decode(parsed.document);preferences=parsed;saveBlocked=false;}
+            catch(e){saveBlocked=true;notice="Native autosave could not be read. Original data retained; export before starting a new book.";}}
+        }
+        tool=Ink.clamp(preferences.selectedTool,0,7);
+        brushSize=Ink.clamp(preferences.selectedSize,1,80);
+        strength=Ink.clamp(preferences.selectedStrength,0.05,1);
+        tone=Ink.clamp(preferences.selectedTone,0,238);fingerSmudge=preferences.useFinger;
         pageIndex=notebook.index;totalPoints=Ink.count(notebook);ready=true;redraw();
         console.log("PaperSketch opened",notebook.pages.length,"pages",totalPoints,"points",saveBlocked?"save-blocked":"ready");
     }

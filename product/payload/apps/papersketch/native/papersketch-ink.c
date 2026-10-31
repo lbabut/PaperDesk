@@ -251,8 +251,8 @@ static void *pen_loop(void *arg) {
                     if (sx >= arm.x && sx < arm.x + arm.w && sy >= arm.y && sy < arm.y + arm.h) {
                         float p = (rp - ap.minimum) / (float)(ap.maximum - ap.minimum);
                         int b[4];
-                        if (erasing) segment(have_last ? lx : sx, have_last ? ly : sy, sx, sy, 2 * arm.eraseR, 0xFFFFFFFFu, b);
-                        else segment(have_last ? lx : sx, have_last ? ly : sy, sx, sy, arm.size, 0xFF000000u, b);
+                        if (erasing) segment(have_last ? lx : sx, have_last ? ly : sy, sx, sy, 2 * arm.eraseR*(0.18f+0.82f*fminf(1,fmaxf(0,p))), 0xFFFFFFFFu, b);
+                        else segment(have_last ? lx : sx, have_last ? ly : sy, sx, sy, arm.size*(0.18f+0.82f*fminf(1,fmaxf(0,p))), 0xFF000000u, b);
                         merge_batch(&batch,b);flush_batch(&batch,now_ms(),0);samples++;
                         if (b[0] < sbox[0]) sbox[0] = b[0];
                         if (b[1] < sbox[1]) sbox[1] = b[1];

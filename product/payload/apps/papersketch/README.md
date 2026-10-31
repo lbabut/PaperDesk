@@ -4,7 +4,7 @@ Offline grayscale sketchbook for reMarkable 2 / XOVI AppLoad: four graphite penc
 
 ## Current status
 
-The previous deployed frontend is not usable enough according to physical user testing. The current source introduces a native QImage engine and remains a draft. It compiles for ARM and passes host integration checks, but has NOT been installed or validated on the tablet: the tablet stopped responding on Wi-Fi, has no connected USB network, and its Tailscale peer is offline. Do not treat earlier benchmark passes as proof of acceptable drawing feel.
+The native QImage candidate passes on-tablet pixel/replay, Linux evdev input and persistence checks. It remains a development build pending the user's physical drawing assessment. Software timing measurements do not measure the e-ink panel's optical response.
 
 ## Native image engine
 
@@ -12,7 +12,7 @@ The previous deployed frontend is not usable enough according to physical user t
 
 128-pixel QQuickPaintedItem tiles present the image. Pen raster work happens during input; the selected shade is published when the pen lifts. The separate guarded pen extension supplies the immediate black preview. Finger changes publish only their affected tiles, without serializing pixels through JavaScript or temporary PNG files.
 
-Saved renderer versions 1–5 retain their original JS replay paths. Renderer 6 uses the new smooth smudge and stable grain. On the first load of an older page, its existing Qt raster is imported without changing its stroke history. Later loads can use an atomic PNG cache keyed to the complete page JSON and isolated by settings namespace. Eight native image snapshots accelerate undo/redo; older history remains available through replay. Closing releases native image/snapshot memory. PNG export uses the native image when active.
+Saved renderer versions 1–6 retain their original replay behavior. Renderer 7 adds pressure-sensitive smudge strength; stronger stylus pressure softens and transports more graphite. The native backend reads the digitizer pressure directly because this firmware forwards constant pressure in the promoted Qt pointer events. The immediate pen preview also varies its width with pressure. Finger smudging uses its fixed touch strength. On the first load of an older page, its existing Qt raster is imported without changing its stroke history. Later loads can use an atomic PNG cache keyed to the complete page JSON and isolated by settings namespace. Eight native image snapshots accelerate undo/redo; older history remains available through replay. Closing releases native image/snapshot memory. PNG export uses the native image when active. Stroke documents and image caches are committed atomically by a background writer. The complete notebook and tool preferences live in a namespace-specific native JSON file alongside the caches; the original Settings document is retained as the migration fallback. A cache is accepted only when its page hash matches. Native redraws retain existing tile objects instead of rebuilding all their loaders.
 
 The app loads the optional module dynamically. The Canvas fallback remains available, but its smudge path is too slow on the tested tablet and must not be presented as a performance fix.
 
@@ -40,11 +40,15 @@ Add --host-key-alias 10.11.99.1 when reusing the verified USB host key over Wi-F
 
 ## Validation
 
-- Desktop fallback QtTest: 21 passed, one native-only test skipped.
-- Native C++ host integration: QML type registration, image import, graphite/smudge pixels, actual tile painting, undo/redo, PNG export and cache-key rejection pass.
-- The core C smudge kernel ran on the tablet's ARM processor at about 11 ms for the 248 x 128 fixture, with white-paper preservation checked. This is NOT full application latency.
-- The complete new ARM extension compiles. Its on-tablet QML, rendering, import, cache, performance and physical-input checks remain blocked by device connectivity.
-- Native device diagnostics: tests/run-sketch-native.py, with --smoke for the two pixel/replay probes. Diagnostics isolate settings and cache namespaces, restore the original config, and verify the artwork document hash.
-- tests/test-sketch-raster.cpp exercises the new native engine on the host; tests/test-sketch-native-smudge.c tests the pixel kernel.
+- Desktop fallback QtTest: 22 passed, one native-only test skipped. This includes pressure-dependent smudging and preservation of renderer 6.
+- Native C++ host integration passes: QML registration, pixel import, pressure-dependent smudge pixels, tile painting, undo/redo, PNG export, asynchronous document/cache persistence and cache-key rejection.
+- On-tablet native pixel/replay probes pass: smudging softens the original line, transports graphite, remains visible after another stroke and matches saved-history replay.
+- Final Linux evdev trace passes through the production pointer handlers. Recorded stylus pressure varies from 0.21 to 0.88. Finger smudging changes the original line from gray 76 to 181 and adjacent paper from 255 to 173; the presented native tiles match those pixels.
+- In the final trace the pen's tile appears 59 ms after evdev release, sampled every 16 ms. The maximum idle timer gap is 227 ms, and the saved document plus image cache reload identically. This is software observation, not physical pen-to-glass latency.
+- Earlier full native benchmarks measured roughly 19 ms median smudge steps and 35–50 ms pen commits. See the dated reports in docs; do not mix those measurements with earlier rejected JS frontends.
+- Diagnostics isolate both Settings and native persistence namespaces per run, restore configuration using the tablet-local backup, and verify the original artwork document hash.
+- Run tests/run-sketch-native.py with --smoke for pixel/replay probes or --input-probe for touch, stylus pressure and persistence. The input driver primes both MT axes because Linux suppresses unchanged ABS values left by a previous run.
 
-The rejected JS pixel-transport experiment is recorded in docs/papersketch-pixel-transport-2026-10-31.json: roughly 0.4 seconds per smudge step on the tablet. The temporary file-bridge experiments also failed the responsiveness goal and are not the final architecture. Earlier reports describe previous frontends; they are not measurements of the new QImage engine.
+Reports: docs/papersketch-qimage-device-smoke-2026-10-31.json, docs/papersketch-qimage-idle-save-2026-10-31.json and docs/papersketch-qimage-input-verified-2026-10-31.json.
+
+The rejected JS pixel-transport and temporary file-bridge experiments remain documented in earlier reports. They are not the current native image architecture.

@@ -159,7 +159,7 @@ Item {
             var b=Ink.book();b.pages[0].strokes.push(s);
             var old=Ink.decode(JSON.stringify(b));
             compare(old.pages[0].strokes[0].renderer,undefined);
-            compare(Ink.stroke(1,5,0,0.5,7).renderer,6);
+            compare(Ink.stroke(1,5,0,0.5,7).renderer,7);
         }
         function test_ink_is_visible_before_canvas_commit() {
             scene.app.tool=3;scene.app.brushSize=20;
@@ -230,6 +230,18 @@ Item {
             verify(Math.min.apply(null,profile)<220,"A soft edge must still carry graphite");
             findChild(scene.app,"drawingCanvas").save("/home/lukasz/Documents/Codex/PaperDesk/work/papersketch-tests/smudge-transport.png");
             console.log("PaperSketch smudge feather",maxJump,"maximum adjacent pixel jump");
+        }
+        function test_smudge_pressure_and_legacy_replay() {
+            var c=findChild(scene.app,"drawingCanvas").getContext("2d");
+            function core(renderer,pressure){
+                c.fillStyle="white";c.fillRect(0,0,1200,1600);
+                c.fillStyle="black";c.fillRect(292,240,16,120);
+                var s=Ink.stroke(7,64,0,1,55);s.renderer=renderer;
+                s.points=[[240,300,pressure],[360,300,pressure]];
+                Ink.segment(c,s,1);return c.getImageData(300,300,1,1).data[0];
+            }
+            verify(core(7,1)>core(7,0.1)+20,"More pressure must soften the original line more");
+            compare(core(6,0.1),core(6,1),"Saved renderer 6 must retain its original appearance");
         }
         function test_native_preview_rasterizes_without_waiting_for_pen_up() {
             if(!scene.app.nativeRasterActive)skip("Native raster test requires the tablet runtime");

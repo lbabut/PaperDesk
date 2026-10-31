@@ -17,7 +17,7 @@ function point(x,y,p) {
 }
 function stroke(tool,size,tone,strength,seed) {
     var t=tools[tool] || tools[1];
-    return {renderer:6,tool:tool,size:clamp(size,1,80),tone:clamp(tone,0,238),
+    return {renderer:7,tool:tool,size:clamp(size,1,80),tone:clamp(tone,0,238),
             strength:clamp(strength,0.05,1),seed:seed>>>0,points:[]};
 }
 function count(b) {
@@ -38,7 +38,7 @@ function decode(raw) {
             throw Error("Invalid paper");
         for(var j=0;j<page.strokes.length;j++) {
             var s=page.strokes[j];
-            if(!s || (s.renderer!==undefined && s.renderer!==2 && s.renderer!==3 && s.renderer!==4 && s.renderer!==5 && s.renderer!==6) || !Number.isInteger(s.tool) || s.tool<0 || s.tool>=tools.length ||
+            if(!s || (s.renderer!==undefined && s.renderer!==2 && s.renderer!==3 && s.renderer!==4 && s.renderer!==5 && s.renderer!==6 && s.renderer!==7) || !Number.isInteger(s.tool) || s.tool<0 || s.tool>=tools.length ||
                !isFinite(s.size) || s.size<1 || s.size>80 || !isFinite(s.tone) || s.tone<0 || s.tone>238 ||
                !isFinite(s.strength) || s.strength<0.05 || s.strength>1 || !isFinite(s.seed) ||
                !Array.isArray(s.points) || !s.points.length) throw Error("Invalid stroke");
@@ -151,7 +151,7 @@ function fastSegment(c,s,index) {
         else if(s.renderer===3)smudgeV3(c,a,b,s.size,s.strength);
         else if(s.renderer===4)smudgeV4(c,a,b,s.size,s.strength);
         else if(s.renderer===5)smudgeV5(c,a,b,s.size,s.strength);
-        else smudge(c,a,b,s.size,s.strength);
+        else smudge(c,a,b,s.size,s.strength*(s.renderer>=7?(a[2]+b[2])/2:1));
         return;
     }
     var p=(a[2]+b[2])*0.5,w=Math.max(0.8,s.size*(0.18+0.82*p));

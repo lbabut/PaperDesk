@@ -1,45 +1,50 @@
 {
-  "status": "draft; native QImage engine awaits tablet validation",
+  "status": "development build installed; device checks passed; user physical assessment pending",
   "date": "2026-10-31",
-  "device_reachable": false,
+  "device_reachable": true,
   "device_address": "192.168.1.167:22",
-  "usb_network_present": false,
-  "tailscale_peer": "remarkable-2",
-  "tailscale_online": false,
-  "new_frontend_installed": false,
-  "new_qimage_extension_installed": false,
+  "new_frontend_installed": true,
+  "new_qimage_extension_installed": true,
+  "pressure_preview_installed": true,
+  "original_artwork_preserved": true,
+  "original_artwork_document_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "original_points_at_open": 12947,
   "validation": {
     "desktop_qttest": {
-      "passed": 21,
+      "passed": 22,
       "failed": 0,
       "skipped": 1
     },
     "native_cpp_host": [
       "QML registration",
-      "pixel-array import",
+      "image import",
       "graphite and smooth smudge",
+      "pressure-dependent smudge",
       "tile presentation",
       "undo/redo",
       "PNG export",
+      "asynchronous notebook and cache",
       "cache hash validation"
     ],
     "arm_cross_compile": true,
-    "core_kernel_arm_fixture_ms": 11.158,
-    "full_native_app_latency_measured": false,
+    "device_pixel_replay_probes_passed": true,
+    "evdev_input_probe_passed": true,
+    "evdev_pressure_min": 0.21,
+    "evdev_pressure_max": 0.88,
+    "pen_release_to_painted_tile_ms": 59,
+    "polling_granularity_ms": 16,
+    "idle_max_tick_gap_ms": 227,
+    "notebook_and_cache_reload_identical": true,
     "physical_pen_to_glass_measured": false
   },
+  "persistence": "Atomic native notebook JSON and page-hashed PNG caches on a background writer; original Settings document retained as migration fallback",
+  "renderer": 7,
+  "legacy_renderers_preserved": "1–6",
+  "deployment_report": "docs/papersketch-qimage-deployment-2026-10-31.json",
+  "input_report": "docs/papersketch-qimage-input-verified-2026-10-31.json",
+  "rollback": "/home/root/.local/state/papersketch-install.mGmjhb",
+  "xovi_boot_autostart_enabled_by_installer": false,
   "next_steps": [
-    "Wake the tablet and reconnect Wi-Fi",
-    "Restore the original coalesced ink extension from the rebuilt payload or retained module backups; temporary file-bridge module was used during diagnostics",
-    "Install QImage extension with rollback and run isolated smoke tests",
-    "Verify native_raster_active and raster/tile/replay pixel profiles",
-    "Run full native performance and input checks before installing the frontend",
-    "Verify the original artwork document hash and manually retained XOVI boot policy"
-  ],
-  "source_files": [
-    "product/payload/apps/papersketch/native/papersketch-raster.cpp",
-    "product/payload/apps/papersketch/native/sketch-smudge.h",
-    "product/payload/apps/papersketch/ui/main.qml",
-    "product/payload/apps/papersketch/ui/native-tile.qml"
+    "User tests physical drawing and smudge feel on the installed build"
   ]
 }
