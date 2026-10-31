@@ -142,6 +142,7 @@ Rectangle {
         strength=Ink.clamp(saved.selectedStrength,0.05,1);
         tone=Ink.clamp(saved.selectedTone,0,238);fingerSmudge=saved.useFinger;
         pageIndex=notebook.index;totalPoints=Ink.count(notebook);ready=true;redraw();
+        console.log("PaperSketch opened",notebook.pages.length,"pages",totalPoints,"points",saveBlocked?"save-blocked":"ready");
     }
 
     component Action: Rectangle {
