@@ -1,0 +1,63 @@
+{
+  "execution": "real reMarkable2 over Wi-Fi; production app after controlled evdev tests",
+  "tablet": "192.168.1.167",
+  "xochitl_pid": 1846,
+  "rollback": "/home/root/.local/state/papersketch-install.oMMIgj",
+  "selected_page": 1,
+  "saved_pages": [
+    {
+      "page": 0,
+      "sha256": "ef9c60e5cbf186435fdfa23aa53e64a57ec5210ea8effd7131823e6d5264b23d",
+      "unchanged": true
+    },
+    {
+      "page": 1,
+      "sha256": "cd1e7e04ee8f4cf1950cf2e131676057f4071d6b4276e8d99b310e6c50d999ba",
+      "unchanged": true
+    }
+  ],
+  "artwork_files_unchanged": true,
+  "saved_artwork_sha256": "cd1e7e04ee8f4cf1950cf2e131676057f4071d6b4276e8d99b310e6c50d999ba",
+  "saved_optical_sha256": "013c9f4ea0de445f874515625408f399887c24183ecc8ad70e979f1f2598c2e5",
+  "loaded_optical_digests": [
+    "013c9f4ea0de445f874515625408f399887c24183ecc8ad70e979f1f2598c2e5"
+  ],
+  "loaded_pixels_match_saved": true,
+  "installed_hashes": {
+    "resources.rcc": {
+      "canonical_sha256": "60c13cd77888e4ed68771fc7000fe30fe9f668beef96c68e235b3601a6ec3a62",
+      "installed_sha256": "60c13cd77888e4ed68771fc7000fe30fe9f668beef96c68e235b3601a6ec3a62",
+      "matches": true
+    },
+    "native/papersketch-raster.so": {
+      "canonical_sha256": "74fa67d0435ad7f5d2bed896eaffded56b9cd0467b483567f7a50c1296621ca9",
+      "installed_sha256": "74fa67d0435ad7f5d2bed896eaffded56b9cd0467b483567f7a50c1296621ca9",
+      "matches": true
+    }
+  },
+  "qml_tests": {
+    "passed": 25,
+    "failed": 0,
+    "native_only_skip": 1
+  },
+  "native_host_tests": [
+    "pressure sample matching",
+    "material pressure contrast and conservation",
+    "material persistence and palm cancellation"
+  ],
+  "software_input_results": {
+    "matched_pressure_samples": 55,
+    "fallback_pressure_samples": 0,
+    "active_input_max_tick_gap_ms": 48,
+    "slider_active_max_tick_gap_ms": 42,
+    "slider_pre_contact_max_tick_gap_ms": 174,
+    "graphite_shading_max_tick_gap_ms": 51,
+    "charcoal_shading_max_tick_gap_ms": 127,
+    "blank_frames_observed": 0
+  },
+  "optical_panel_latency_measured": false,
+  "limitation": "Charcoal still has 127 ms software input gaps; these tests do not establish paper-like physical response.",
+  "boot_autostart_changed": false,
+  "automatic_save": false,
+  "passed": true
+}

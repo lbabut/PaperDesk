@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include "sketch-smudge.h"
 #include "sketch-material.h"
+#include "sketch-pen.h"
 #include <QtCore/QTimer>
 #include <QtCore/QJsonDocument>
 #include <QtCore/QJsonObject>
@@ -36,6 +37,10 @@ class SketchRaster:public QObject {
     Q_PROPERTY(bool penInRange READ penInRange NOTIFY proximityChanged)
     Q_PROPERTY(int maxSmudgeMs READ maxSmudgeMs NOTIFY timingChanged)
 public:
+    PaperPen penSamples;double inputX=0,inputY=0,inputScaleX=1,inputScaleY=1;int pressureMatches=0,pressureFallbacks=0;
+    Q_INVOKABLE void setInputTransform(double x,double y,double sx,double sy){inputX=x;inputY=y;inputScaleX=sx;inputScaleY=sy;}
+    Q_INVOKABLE double pressureAt(double x,double y,double fallback){double p=penSamples.at(inputX+x*inputScaleX,inputY+y*inputScaleY);if(p>=0){pressureMatches++;return std::clamp(p,.04,1.0);}pressureFallbacks++;return penPressure(fallback);}
+    Q_INVOKABLE QVariantList pressureMatchCounts()const{return {pressureMatches,pressureFallbacks};}
     QImage image{1200,1600,QImage::Format_RGB32};
     QImage material, finger, currentFinger;bool tentativeTouch=false;
     struct Patch{QRect rect;QImage optical,mass;};
@@ -99,7 +104,7 @@ public:
          writeError=false;saves.push_back(std::move(job));}
         saveWake.notify_one();
     }
-    SketchRaster(QObject *parent=nullptr,QString directory="/home/root/.local/share/paperdesk/sketch"):QObject(parent),cacheDirectory(directory){image.fill(Qt::white);proximityTimer.setInterval(40);connect(&proximityTimer,&QTimer::timeout,this,[this]{penPressure(1);unsigned char keys[KEY_MAX/8+1]={0};bool nearby=pressureFd>=0&&ioctl(pressureFd,EVIOCGKEY(sizeof keys),keys)>=0&&((keys[BTN_TOOL_PEN/8]&(1<<(BTN_TOOL_PEN%8)))||(keys[BTN_TOOL_RUBBER/8]&(1<<(BTN_TOOL_RUBBER%8))));if(nearby!=penNearby){if(nearby&&tentativeTouch)cancel();penNearby=nearby;emit proximityChanged();}});proximityTimer.start();displayTimer.setInterval(16);displayTimer.setSingleShot(true);connect(&displayTimer,&QTimer::timeout,this,&SketchRaster::flushDisplay);writer=std::thread([this]{writeLoop();});}
+    SketchRaster(QObject *parent=nullptr,QString directory="/home/root/.local/share/paperdesk/sketch"):QObject(parent),cacheDirectory(directory){image.fill(Qt::white);proximityTimer.setInterval(40);connect(&proximityTimer,&QTimer::timeout,this,[this]{bool nearby=penSamples.nearby.load();if(nearby!=penNearby){if(nearby&&tentativeTouch)cancel();penNearby=nearby;emit proximityChanged();}});proximityTimer.start();displayTimer.setInterval(16);displayTimer.setSingleShot(true);connect(&displayTimer,&QTimer::timeout,this,&SketchRaster::flushDisplay);writer=std::thread([this]{writeLoop();});}
     ~SketchRaster() override {{std::lock_guard<std::mutex> lock(saveMutex);stopping=true;}saveWake.notify_one();writer.join();if(pressureFd>=0)close(pressureFd);}
     mutable int pressureFd=-1;mutable double pressureLast=.5;mutable QElapsedTimer pressureAge;
     Q_INVOKABLE double penPressure(double fallback)const{
@@ -122,11 +127,11 @@ public:
         for(int y=0;y<1600;y++){auto row=reinterpret_cast<QRgb*>(next.scanLine(y));for(int x=0;x<1200;x++){int v=pixels.property((y*1200+x)*4).toInt();row[x]=qRgb(v,v,v);}}
         currentPatches.clear();image=next;materialReady=false;ensureMaterial();emit changed(QRect(0,0,1200,1600));return true;
     }
-    Q_INVOKABLE void setNamespace(QString name){cacheNamespace=name;proximityTimer.start();}
-    Q_INVOKABLE void release(){proximityTimer.stop();displayTimer.stop();displayDirty=QRect();image=QImage();material=QImage();finger=QImage();currentFinger=QImage();currentPatches.clear();materialReady=false;}
+    Q_INVOKABLE void setNamespace(QString name){cacheNamespace=name;penSamples.activate();proximityTimer.start();}
+    Q_INVOKABLE void release(){penSamples.pause();proximityTimer.stop();displayTimer.stop();displayDirty=QRect();image=QImage();material=QImage();finger=QImage();currentFinger=QImage();currentPatches.clear();materialReady=false;}
     Q_INVOKABLE void resetWhite(){currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(image.size()!=QSize(1200,1600))image=QImage(1200,1600,QImage::Format_RGB32);image.fill(Qt::white);materialReady=false;ensureMaterial();finger.fill(0);slowest=0;emit timingChanged();emit changed(image.rect());}
     Q_INVOKABLE void clearPage(){image.fill(Qt::white);ensureMaterial();material.fill(0);finger.fill(0);emit changed(image.rect());}
-    Q_INVOKABLE void begin(bool tentative=false){ensureMaterial();tentativeTouch=tentative;currentFinger=tentative?finger:QImage();captured.fill(false);currentPatches.clear();physics.untilNext=0;pendingDirty=QRect();unpublished=false;}
+    Q_INVOKABLE void begin(bool tentative=false){pressureMatches=0;pressureFallbacks=0;ensureMaterial();tentativeTouch=tentative;currentFinger=tentative?finger:QImage();captured.fill(false);currentPatches.clear();physics.untilNext=0;pendingDirty=QRect();unpublished=false;}
     Q_INVOKABLE void finish(){currentPatches.clear();currentFinger=QImage();tentativeTouch=false;flushDisplay();if(unpublished&&!pendingDirty.isEmpty())emit changed(pendingDirty);pendingDirty=QRect();unpublished=false;}
     Q_INVOKABLE void cancel(){
         if(!tentativeTouch)return;QRect dirty;for(const auto &p:currentPatches)dirty=dirty.united(p.rect);

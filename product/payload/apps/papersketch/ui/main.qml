@@ -67,10 +67,10 @@ Rectangle {
     property var nativeRequest: null
     property string nativeState: ""
     property bool closing: false
-    onToolChanged:if(ready)nativeHeartbeat()
-    onBrushSizeChanged:if(ready)nativeHeartbeat()
-    onControlsVisibleChanged:if(ready) {nativeArmed=false;if(nativeReady)nativeWrite("off");}
-    Timer { interval:400;running:root.visible && !root.closing;repeat:true;triggeredOnStart:true;onTriggered:root.nativeHeartbeat() }
+    onToolChanged:if(ready && !bitmapMode)nativeHeartbeat()
+    onBrushSizeChanged:if(ready && !bitmapMode)nativeHeartbeat()
+    onControlsVisibleChanged:if(ready && !bitmapMode) {nativeArmed=false;if(nativeReady)nativeWrite("off");}
+    Timer { interval:400;running:root.visible && !root.closing && !root.bitmapMode;repeat:true;triggeredOnStart:true;onTriggered:root.nativeHeartbeat() }
     function nativeWrite(value) {
         try {
             var x=new XMLHttpRequest();nativeRequest=x;
@@ -80,6 +80,7 @@ Rectangle {
         catch(e) {nativeArmed=false;}
     }
     function nativeHeartbeat() {
+        if(nativeRaster && nativeRaster.materialAvailable){nativeReady=false;nativeArmed=false;return;}
         try {
             var x=new XMLHttpRequest();x.open("GET","file:///tmp/papersketch-ink-status",false);x.send();
             var status=JSON.parse(x.responseText);
@@ -113,6 +114,7 @@ Rectangle {
         try {
             var proxy=Qt.createQmlObject('import QtQml 2.15; import PaperSketch.Native 1.0; QtObject { readonly property var raster: Raster }',root);
             nativeRaster=proxy.raster;nativeRaster.setNamespace(saved.category);
+            if(nativeRaster.materialAvailable)nativeWrite("off");
             console.log("PaperSketch native raster available");
         } catch(e) {nativeRaster=null;console.log("PaperSketch native raster unavailable");}
     }
@@ -239,6 +241,11 @@ Rectangle {
         resetCanvas=true;replaying=true;replayStroke=0;replayPoint=0;
         paper.requestPaint();guide.requestPaint();
     }
+    function syncInputTransform(){
+        var win=root.Window.window;if(!nativeRaster || !win)return;
+        var a=inputSurface.mapToItem(win.contentItem,0,0),b=inputSurface.mapToItem(win.contentItem,Ink.WIDTH,Ink.HEIGHT);
+        nativeRaster.setInputTransform(a.x,a.y,(b.x-a.x)/Ink.WIDTH,(b.y-a.y)/Ink.HEIGHT);
+    }
     function beginStroke(p,source,selected,pressure) {
         if(source==="pen" && activeSource==="finger"){if(bitmapMode)nativeRaster.cancel();activeStroke=null;activeSource="";}
         if(!ready || busy || saveBlocked || confirmation) return;
@@ -252,7 +259,7 @@ Rectangle {
         if(bitmapMode)activeStroke.renderer=8;
         if(nativeRasterActive)nativeRaster.begin(source==="finger");
         var penPressure=pressure===undefined?penInput.centroid.pressure:pressure;
-        if(source==="pen" && nativeRaster)penPressure=nativeRaster.penPressure(penPressure);
+        if(source==="pen" && nativeRaster){if(bitmapMode){syncInputTransform();penPressure=nativeRaster.pressureAt(p.x,p.y,penPressure);}else penPressure=nativeRaster.penPressure(penPressure);}
         var initial=Ink.point(p.x,p.y,source==="finger"?0.7:penPressure);
         if(bitmapMode){
             activeStroke.points=[initial,[initial[0],initial[1],initial[2]]];activeStroke.samples=1;
@@ -264,7 +271,7 @@ Rectangle {
     function extendStroke(p,source,pressure) {
         if(activeStroke===null || activeSource!==source) return;
         if(!bitmapMode && totalPoints+activeStroke.points.length>=Ink.MAX_POINTS) {finishStroke();notice="Sketchbook full";return;}
-        if(source==="pen" && nativeRaster)pressure=nativeRaster.penPressure(pressure===undefined?1:pressure);
+        if(source==="pen" && nativeRaster)pressure=bitmapMode?nativeRaster.pressureAt(p.x,p.y,pressure===undefined?1:pressure):nativeRaster.penPressure(pressure===undefined?1:pressure);
         if(bitmapMode){
             var pressureValue=source==="finger"?.7:pressure;
             if(nativeRaster.advance(activeStroke.tool,activeStroke.size,strength,p.x,p.y,pressureValue,false)){
@@ -420,8 +427,9 @@ Rectangle {
                 Column {
                     Text {text:"Size  "+Math.round(root.brushSize);font.pixelSize:19;font.bold:true}
                     Slider {
-                        objectName:"sizeSlider";width:400;height:52;from:1;to:80;value:root.brushSize
+                        objectName:"sizeSlider";width:400;height:52;from:1;to:80;stepSize:1;value:root.brushSize
                         onMoved:root.brushSize=value
+                        DisplayMethodArea{anchors.fill:parent;displayMethod:typeof DisplayMethodArea.UFast==="number"?DisplayMethodArea.UFast:DisplayMethodArea.Fast}
                         background:Rectangle {x:10;y:24;width:parent.width-20;height:3;color:"#888888"}
                         handle:Rectangle {x:parent.leftPadding+parent.visualPosition*(parent.availableWidth-width);y:10;width:28;height:32;radius:4;color:"black"}
                     }

@@ -1,0 +1,97 @@
+{
+  "candidate_qml_sha256": "5020980812d35dfe49e278c2724200c6a49615eb0f84240b9944200208e4aed0",
+  "source_qml_sha256": "5020980812d35dfe49e278c2724200c6a49615eb0f84240b9944200208e4aed0",
+  "source_engine_sha256": "273635d47eface6a86d727fc8a6d43fc3b310cb35db316fd755bc43aa3e09917",
+  "backup": "/home/root/.local/state/papersketch-native.wL9uY4",
+  "artwork_before_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "evdev_injections": [
+    {
+      "mode": "finger",
+      "contact_ms": 1793481452330,
+      "release_ms": 1793481453316,
+      "writes_ok": true,
+      "id": "finger"
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793481456086,
+      "release_ms": 1793481457088,
+      "writes_ok": true,
+      "id": "pen"
+    }
+  ],
+  "results": {
+    "execution": "reMarkable evdev input through production pointer handlers",
+    "cases": [],
+    "input_probe": {
+      "execution": "reMarkable evdev input through production pointer handlers",
+      "physical_panel_latency_measured": false,
+      "idle_max_tick_gap_ms": 18,
+      "new_book_max_tick_gap_ms": 259,
+      "no_automatic_save": true,
+      "dirty_before_save": true,
+      "manual_save_ok": true,
+      "manual_save_ms": 413,
+      "clean_after_save": true,
+      "autosave_document_matches": true,
+      "autosave_cache_matches": true,
+      "autosave_reload_matches": true,
+      "touch_before": {
+        "core": 30,
+        "beside": 255
+      },
+      "touch": {
+        "tool": 7,
+        "points": 24,
+        "first": [
+          331.1,
+          398.9,
+          0.7
+        ],
+        "last": [
+          470,
+          400,
+          0.7
+        ],
+        "core": 79,
+        "beside": 217,
+        "tile_core": 79,
+        "tile_beside": 217,
+        "passed": true
+      },
+      "pen": {
+        "matched_pressure_samples": 55,
+        "fallback_pressure_samples": 0,
+        "blank_frames_after_visible": 0,
+        "pressure_min": 0.13,
+        "pressure_max": 0.88,
+        "tool": 4,
+        "points": 55,
+        "first": [
+          700,
+          699.9,
+          0.13
+        ],
+        "last": [
+          900,
+          720,
+          0.88
+        ],
+        "raster_seen_ms": 1793481456598,
+        "tile_seen_ms": 1793481456608,
+        "passed": true,
+        "post_release_to_tile_ms": -480
+      },
+      "disk_unchanged_during_drawing": true,
+      "active_input_max_tick_gap_ms": 48,
+      "bitmap_mode": true,
+      "serialized_book_bytes": 91,
+      "native_raster_active": true,
+      "passed": true,
+      "polling_granularity_ms": 16
+    }
+  },
+  "runtime_seconds": 57.06,
+  "artwork_after_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "artwork_preserved": true
+}

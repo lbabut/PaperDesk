@@ -23,7 +23,8 @@ struct PaperMaterial {
         for(int i=0;i<width*height;i++){int total=inverse[image[i]&255],fixed=total*7/10;mass[i]=(uint32_t(fixed)<<16)|(total-fixed);}
     }
     void dab(uint32_t* mass,uint32_t* image,uint16_t* finger,int tool,double size,double tone,double strength,double cx,double cy,double pressure){
-        double p=std::clamp(pressure,0.04,1.0),radius=tool==7?std::max(6.0,size*.5*(.65+.35*p)):std::max(.8,size*(.18+.82*p)*.5);
+        double p=std::clamp(pressure,0.04,1.0);if(tool<6)p*=std::sqrt(p);
+        double radius=tool==7?std::max(6.0,size*.5*(.65+.35*p)):std::max(.8,size*(.18+.82*p)*.5);
         int x0=std::max(0,(int)std::floor(cx-radius)),x1=std::min(width-1,(int)std::ceil(cx+radius));
         int y0=std::max(0,(int)std::floor(cy-radius)),y1=std::min(height-1,(int)std::ceil(cy+radius));
         const double doses[]={6000,12000,16000,22000,20000,24000};
@@ -49,7 +50,7 @@ struct PaperMaterial {
             }else{
                 double contact=std::clamp((p+.2-grain*(tool<4?.7:.5))*2.0,0.0,1.0);
                 double valley=std::clamp((.9-grain)/.7,0.0,1.0);
-                int capacity=(int)(capacities[tool]*(.08+.92*valley*valley));
+                int capacity=(int)(capacities[tool]*(.08+.92*valley*valley)*(.12+.88*p));
                 int room=std::max(0,capacity-fixed-loose);
                 double amount=doses[tool]*strength*p*edge*contact*(1-tone/255.0)*(room/double(capacity));
                 int added=std::min(room,(int)std::lround(amount));

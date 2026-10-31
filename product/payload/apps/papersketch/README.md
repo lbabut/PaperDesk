@@ -14,6 +14,10 @@ The material kernel writes the authoritative bitmap as pointer events arrive. Sc
 
 There is no post-stroke undo history and no page snapshot at the start of a stylus stroke. Small temporary patches exist only during a finger gesture so that stylus proximity can cancel an accidental palm mark. They are discarded when the gesture finishes. Finger input pauses while the stylus is in range.
 
+Pressure packets are read from Wacom evdev in a separate, non-grabbing reader and matched to the delivered screen position. This avoids applying a newer pressure to an older movement queued by Qt. The material response uses a curved pressure response and pressure-dependent pigment capacity, so light shading does not reach the same density as a hard stroke as quickly.
+
+The size slider performs no legacy preview status reads or writes in bitmap mode. Its black handle uses the tablet's UFast display hint; the grayscale drawing surface retains Fast.
+
 ## Persistence and migration
 
 New marks are flattened into bitmap state. Artwork stays in RAM until the user chooses Save or PNG export. Close and page changes offer Save, Discard and Cancel for unsaved changes. Full screen hides all controls except a small round menu button at the upper right. The notebook contains page metadata rather than the growing point history that previously blocked the tablet for about two seconds during JSON serialization.
@@ -43,7 +47,9 @@ The optional legacy pen extension can be built with scripts/build-sketch-native.
 - tests/test-sketch-material-integration.cpp checks absence of post-stroke snapshots, tentative palm cancellation, and exact reload of optical pixels, pigment and fingertip state.
 - tests/test-sketch-raster.cpp covers the legacy native import, tile, export and cache paths without undo.
 - On-device evidence: docs/papersketch-material-arm-2026-10-31.json and docs/papersketch-material-manual-input-2026-10-31.json and docs/papersketch-material-shading-2026-10-31.json. The input probe exercises Linux evdev through the production pointer handlers and samples actual painted tiles during the gesture and after pen-up.
-- Long shading tests inject 1,260 pen samples per gesture (21 traversals across the page in about 5.3 seconds). Both graphite and fullscreen charcoal remain visible before pen-up with no sampled blank frames. The final observed maximum input timer gaps are 55 ms for graphite and 124 ms for the heavier charcoal case; material segment maxima are 1 and 4 ms respectively. Only two diagnostic points are retained. The manual-save probe confirms no automatic save and no changes to disk state while drawing.
+- Long shading tests inject 1,260 pen samples per gesture (21 traversals across the page in about 5.3 seconds). Both graphite and fullscreen charcoal remain visible before pen-up with no sampled blank frames. The current pressure-engine probe (docs/papersketch-pressure-shading-2026-10-31.json) observes maximum input timer gaps of 51 ms for graphite and 127 ms for the heavier charcoal case. This is still a material responsiveness limitation; a passing no-blank-frame test is not a guarantee of comfortable drawing. Only two diagnostic points are retained. The manual-save probe confirms no automatic save and no changes to disk state while drawing.
+- Current pressure/control evidence: docs/papersketch-real-pressure-2026-10-31.json captures aggregate readings from real hand-drawn strokes; docs/papersketch-pressure-device-2026-10-31.json exercises the production handlers with 55/55 spatially matched pressure samples, finger smearing, live tile visibility and manual-only saving. tests/test-sketch-pen.cpp checks pressure matching against a newer sample at a different position.
+- The slider probe (docs/papersketch-slider-device-2026-10-31.json) measures a maximum 42 ms input timer gap during a drag and 11 ms from the first sampled value change to a Qt frame. A separate 174 ms gap occurs before the drag. The initial probe included pre-contact time in the input metric; the harness now reports both values rather than hiding the startup gap.
 - Software timing is distinct from the e-ink panel's optical latency. Physical drawing feel remains subject to user testing.
 
 Earlier qimage, JS transport and native-preview reports describe previous architectures. Do not use them as measurements of the bitmap material engine.

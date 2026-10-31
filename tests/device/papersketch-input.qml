@@ -75,13 +75,14 @@ Rectangle {
    if(!penFinishedAt)penFinishedAt=Date.now();if(Date.now()-penFinishedAt<250)return;
    var s=a.bitmapMode?a.lastStroke:a.page.strokes[a.page.strokes.length-1];
    var pressures=s.points.map(function(p){return p[2]});
-   result.pen={blank_frames_after_visible:blankFrames,pressure_min:s.pressureMin||Math.min.apply(Math,pressures),pressure_max:s.pressureMax||Math.max.apply(Math,pressures),tool:s.tool,points:s.samples||s.points.length,first:s.points[0],last:s.points[s.points.length-1],raster_seen_ms:firstRasterAt,tile_seen_ms:firstTileAt};
+   var matched=a.nativeRaster.pressureMatchCounts();
+   result.pen={matched_pressure_samples:matched[0],fallback_pressure_samples:matched[1],blank_frames_after_visible:blankFrames,pressure_min:s.pressureMin||Math.min.apply(Math,pressures),pressure_max:s.pressureMax||Math.max.apply(Math,pressures),tool:s.tool,points:s.samples||s.points.length,first:s.points[0],last:s.points[s.points.length-1],raster_seen_ms:firstRasterAt,tile_seen_ms:firstTileAt};
    var t=result.touch;
    t.passed=t.tool===7 && t.points>=3 && Math.abs(t.first[0]-330)<8 && Math.abs(t.first[1]-400)<8
     && Math.abs(t.last[0]-470)<8 && Math.abs(t.last[1]-400)<8 && t.core>result.touch_before.core && t.beside<result.touch_before.beside
     && t.core===t.tile_core && t.beside===t.tile_beside;
    var p=result.pen;
-   p.passed=blankFrames===0 && p.pressure_min<0.25 && p.pressure_max>0.75 && p.tool===4 && p.points>=10 && Math.abs(p.first[0]-700)<8 && Math.abs(p.first[1]-700)<8 && Math.abs(p.last[0]-900)<8 && Math.abs(p.last[1]-720)<8;
+   p.passed=p.matched_pressure_samples>p.fallback_pressure_samples*4 && blankFrames===0 && p.pressure_min<0.25 && p.pressure_max>0.75 && p.tool===4 && p.points>=10 && Math.abs(p.first[0]-700)<8 && Math.abs(p.first[1]-700)<8 && Math.abs(p.last[0]-900)<8 && Math.abs(p.last[1]-720)<8;
    result.disk_unchanged_during_drawing=a.nativeRaster.loadNotebook()===savedEnvelope;
    result.active_input_max_tick_gap_ms=inputMaxGap;result.bitmap_mode=a.bitmapMode;result.serialized_book_bytes=JSON.stringify(a.notebook).length;result.native_raster_active=a.nativeRasterActive;result.passed=t.passed && p.passed && result.autosave_reload_matches && result.no_automatic_save && result.manual_save_ok && result.disk_unchanged_during_drawing && idleMaxGap<250;
    console.log("PAPERSKETCH_NATIVE_RESULT "+JSON.stringify({execution:result.execution,cases:[],input_probe:result}));

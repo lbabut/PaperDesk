@@ -1,0 +1,142 @@
+{
+  "candidate_qml_sha256": "5020980812d35dfe49e278c2724200c6a49615eb0f84240b9944200208e4aed0",
+  "source_qml_sha256": "5020980812d35dfe49e278c2724200c6a49615eb0f84240b9944200208e4aed0",
+  "source_engine_sha256": "273635d47eface6a86d727fc8a6d43fc3b310cb35db316fd755bc43aa3e09917",
+  "backup": "/home/root/.local/state/papersketch-native.EyK6TR",
+  "artwork_before_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "evdev_injections": [
+    {
+      "mode": "pen",
+      "contact_ms": 1793481579670,
+      "release_ms": 1793481585074,
+      "writes_ok": true,
+      "id": "pen-graphite"
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793481590622,
+      "release_ms": 1793481595946,
+      "writes_ok": true,
+      "id": "pen-charcoal"
+    }
+  ],
+  "process_cpu_sample": {
+    "wall_seconds": 10.873,
+    "cpu_seconds": 8.29,
+    "reference": "one CPU core; sampling starts after the first benchmark case is observed"
+  },
+  "results": {
+    "execution": "long fast Linux evdev shading through production handlers",
+    "shading_probe": {
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "tool": 1,
+          "points": 1259,
+          "first": [
+            120,
+            399.9,
+            0.13
+          ],
+          "last": [
+            1079.9,
+            499.9,
+            0.88
+          ],
+          "raster_seen_ms": 1793481582358,
+          "tile_seen_ms": 1793481582380,
+          "max_input_tick_gap_ms": 51,
+          "blank_frames_after_visible": 0,
+          "full_screen": false,
+          "max_material_segment_ms": 0,
+          "retained_points": 2,
+          "metadata_bytes": 91,
+          "passed": true,
+          "tile_visible_before_release": true,
+          "injected_duration_ms": 5404
+        },
+        {
+          "id": "pen-charcoal",
+          "tool": 4,
+          "points": 1259,
+          "first": [
+            120,
+            900,
+            0.13
+          ],
+          "last": [
+            1079.9,
+            1199.9,
+            0.88
+          ],
+          "raster_seen_ms": 1793481593313,
+          "tile_seen_ms": 1793481593433,
+          "max_input_tick_gap_ms": 127,
+          "blank_frames_after_visible": 0,
+          "full_screen": true,
+          "max_material_segment_ms": 13,
+          "retained_points": 2,
+          "metadata_bytes": 91,
+          "passed": true,
+          "tile_visible_before_release": true,
+          "injected_duration_ms": 5324
+        }
+      ],
+      "no_automatic_save": true,
+      "passed": true
+    },
+    "cases": [
+      {
+        "id": "pen-graphite",
+        "tool": 1,
+        "points": 1259,
+        "first": [
+          120,
+          399.9,
+          0.13
+        ],
+        "last": [
+          1079.9,
+          499.9,
+          0.88
+        ],
+        "raster_seen_ms": 1793481582358,
+        "tile_seen_ms": 1793481582380,
+        "max_input_tick_gap_ms": 51,
+        "blank_frames_after_visible": 0,
+        "full_screen": false,
+        "max_material_segment_ms": 0,
+        "retained_points": 2,
+        "metadata_bytes": 91,
+        "passed": true
+      },
+      {
+        "id": "pen-charcoal",
+        "tool": 4,
+        "points": 1259,
+        "first": [
+          120,
+          900,
+          0.13
+        ],
+        "last": [
+          1079.9,
+          1199.9,
+          0.88
+        ],
+        "raster_seen_ms": 1793481593313,
+        "tile_seen_ms": 1793481593433,
+        "max_input_tick_gap_ms": 127,
+        "blank_frames_after_visible": 0,
+        "full_screen": true,
+        "max_material_segment_ms": 13,
+        "retained_points": 2,
+        "metadata_bytes": 91,
+        "passed": true
+      }
+    ]
+  },
+  "runtime_seconds": 59.79,
+  "artwork_after_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "artwork_preserved": true
+}

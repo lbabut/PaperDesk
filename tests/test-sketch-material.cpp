@@ -13,6 +13,7 @@ struct Fixture{
 };
 int main(){
  Fixture tiny;tiny.line(1,160,160,160,160,1,1);assert(tiny.mass()>0);
+ Fixture soft,firm;soft.line(1,60,160,260,160,.4,20);firm.line(1,60,160,260,160,.9,20);assert(firm.mass()>soft.mass()*3);
  Fixture white;white.line(7,60,160,260,160,.7,64);assert(white.mass()==0&&white.gray(160,160)==255);
  Fixture hb,coal;hb.line(1,160,80,160,240);coal.line(4,160,80,160,240);assert(coal.loose()>hb.loose()*2);
  auto sum=coal.mass();int core=coal.gray(160,160);coal.line(7,100,160,240,160,1,64);assert(coal.mass()==sum);assert(coal.gray(160,160)>core);assert(coal.gray(195,160)<255);
