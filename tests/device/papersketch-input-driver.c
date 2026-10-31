@@ -20,7 +20,8 @@ static void release(int fd,int finger){
  event(fd,EV_SYN,SYN_REPORT,0);
 }
 int main(int argc,char **argv){
- if(argc!=6 || (strcmp(argv[1],"finger") && strcmp(argv[1],"pen")))return 2;
+ if((argc!=6 && argc!=7) || (strcmp(argv[1],"finger") && strcmp(argv[1],"pen")))return 2;
+ int shading=argc==7 && !strcmp(argv[6],"shade");if(argc==7 && (!shading || strcmp(argv[1],"pen")))return 2;
  int finger=!strcmp(argv[1],"finger");const char *path=finger?"/dev/input/event2":"/dev/input/event1";
  int fd=open(path,O_RDWR|O_NONBLOCK);if(fd<0){perror(path);return 3;}
  struct stat st;if(fstat(fd,&st)||!S_ISCHR(st.st_mode)||major(st.st_rdev)!=13||minor(st.st_rdev)!=(finger?66:65)){close(fd);return 4;}
@@ -35,14 +36,17 @@ int main(int argc,char **argv){
  if(finger){event(fd,EV_ABS,ABS_MT_SLOT,0);event(fd,EV_ABS,ABS_MT_TRACKING_ID,(int)(started%65535));event(fd,EV_KEY,BTN_TOUCH,1);event(fd,EV_KEY,BTN_TOOL_FINGER,1);}
  else{event(fd,EV_KEY,BTN_TOOL_RUBBER,0);event(fd,EV_KEY,BTN_TOOL_PEN,1);event(fd,EV_KEY,BTN_TOUCH,1);event(fd,EV_ABS,ABS_PRESSURE,2048);}
  int ok=1;
- for(int i=0;i<=60 && !stopped;i++){
-  int x=x0+(x1-x0)*i/60,y=y0+(y1-y0)*i/60;
+ int samples=shading?1260:61;
+ for(int i=0;i<samples && !stopped;i++){
+  int pass=i/60,step=i%60;
+  int x=shading?x0+(x1-x0)*pass/20:x0+(x1-x0)*i/60;
+  int y=shading?y0+(y1-y0)*(pass%2?59-step:step)/59:y0+(y1-y0)*i/60;
   // A fresh Qt reader has empty slot coordinates. Force both axes to change:
   // the kernel suppresses repeated ABS values left by a previous diagnostic run.
   if(finger && i==0){x=x<maxx?x+1:x-1;y=y<maxy?y+1:y-1;}
   if(finger){ok&=event(fd,EV_ABS,ABS_MT_POSITION_X,x);ok&=event(fd,EV_ABS,ABS_MT_POSITION_Y,y);}
-  else{ok&=event(fd,EV_ABS,ABS_PRESSURE,512+3072*i/60);ok&=event(fd,EV_ABS,ABS_X,x);ok&=event(fd,EV_ABS,ABS_Y,y);}
-  ok&=event(fd,EV_SYN,SYN_REPORT,0);if(!ok)break;usleep(16000);
+  else{ok&=event(fd,EV_ABS,ABS_PRESSURE,shading?512+3072*step/59:512+3072*i/60);ok&=event(fd,EV_ABS,ABS_X,x);ok&=event(fd,EV_ABS,ABS_Y,y);}
+  ok&=event(fd,EV_SYN,SYN_REPORT,0);if(!ok)break;usleep(shading?4000:16000);
  }
  release(fd,finger);long long released=ms();close(fd);
  printf("{\"mode\":\"%s\",\"contact_ms\":%lld,\"release_ms\":%lld,\"writes_ok\":%s}\n",argv[1],started,released,ok && !stopped?"true":"false");

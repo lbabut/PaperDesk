@@ -18,7 +18,7 @@ Item {
         }
         function cleanupTestCase(){scene.app.destroy()}
         function init(){
-            scene.app.confirmation="book";scene.app.confirmAction();
+            scene.app.fullScreen=false;scene.app.confirmation="book";scene.app.confirmAction();
             tryCompare(scene.app,"replaying",false,10000);
         }
         function line(tool,x,y,p) {
@@ -27,29 +27,23 @@ Item {
             for(var i=1;i<30;i++)scene.app.extendStroke(Qt.point(x+i*5,y+i*2),"pen",p);
             scene.app.finishStroke();wait(150);
         }
-        function test_pressure_undo_redo_and_roundtrip() {
+        function test_pressure_and_roundtrip() {
             line(1,100,100,0.25);line(4,300,300,0.9);
             compare(scene.app.page.strokes.length,2);
             var raw=JSON.stringify(scene.app.notebook),decoded=Ink.decode(raw);
             compare(decoded.pages[0].strokes.length,2);
             verify(decoded.pages[0].strokes[0].points[1][2]<decoded.pages[0].strokes[1].points[1][2]);
-            scene.app.undo();tryCompare(scene.app,"replaying",false,10000);
-            compare(scene.app.page.strokes.length,1);
-            scene.app.redo();tryCompare(scene.app,"replaying",false,10000);
-            compare(JSON.stringify(scene.app.notebook),raw);
         }
-        function test_pages_and_clear_undo() {
+        function test_pages_and_clear() {
             line(2,100,100,0.7);
-            scene.app.newPage();tryCompare(scene.app,"replaying",false,10000);
+            scene.app.saveBook();scene.app.newPage();tryCompare(scene.app,"replaying",false,10000);
             compare(scene.app.pageIndex,1);compare(scene.app.page.strokes.length,0);
             line(5,200,200,0.6);
-            scene.app.selectPage(0);tryCompare(scene.app,"replaying",false,10000);
+            scene.app.saveBook();scene.app.selectPage(0);tryCompare(scene.app,"replaying",false,10000);
             compare(scene.app.page.strokes[0].tool,2);
             scene.app.confirmation="clear";scene.app.confirmAction();
             tryCompare(scene.app,"replaying",false,10000);
             compare(scene.app.page.strokes.length,0);
-            scene.app.undo();tryCompare(scene.app,"replaying",false,10000);
-            compare(scene.app.page.strokes.length,1);
         }
         function test_real_mouse_input() {
             var canvas=findChild(scene.app,"drawingCanvas");
@@ -256,6 +250,31 @@ Item {
                 compare(tile.getContext("2d").getImageData(97,16,1,1).data[0],255);
             } finally {scene.app.finishStroke();scene.app.nativeArmed=false;}
             tryVerify(function(){return findChild(scene.app,"artTile31").getContext("2d").getImageData(97,16,1,1).data[0]<240;},5000);
+        }
+        function test_simple_tools_without_history_or_opacity_controls() {
+            verify(findChild(scene.app,"undoButton")===null);
+            verify(findChild(scene.app,"redoButton")===null);
+            verify(findChild(scene.app,"strengthSlider")===null);
+            verify(findChild(scene.app,"sizeSlider")!==null);
+            compare(typeof scene.app.undo,"undefined");compare(typeof scene.app.redo,"undefined");
+        }
+        function test_manual_save_and_cancel_discard_page_prompt() {
+            line(1,120,120,0.7);verify(scene.app.dirty);
+            scene.app.requestClose();compare(scene.app.confirmation,"leave");
+            scene.app.resolveLeave("cancel");verify(scene.app.dirty);verify(!scene.app.closing);
+            scene.app.saveBook();verify(!scene.app.dirty);
+            scene.app.newPage();compare(scene.app.pageIndex,1);
+            line(4,300,300,0.7);scene.app.selectPage(0);compare(scene.app.confirmation,"leave");compare(scene.app.pageIndex,1);
+            scene.app.resolveLeave("discard");compare(scene.app.pageIndex,0);compare(scene.app.pageCount,1);
+            compare(scene.app.page.strokes.length,1);
+        }
+        function test_full_screen_and_round_menu_button() {
+            scene.app.fullScreen=true;wait(80);
+            compare(findChild(scene.app,"sketchHeader").height,0);
+            compare(findChild(scene.app,"sketchFooter").height,0);
+            var button=findChild(scene.app,"exitFullScreen");verify(button.visible);
+            mouseClick(button,28,28,Qt.LeftButton);wait(50);verify(!scene.app.fullScreen);
+            compare(findChild(scene.app,"sketchHeader").height,88);
         }
         function test_validation() {
             var b=Ink.book(),s=Ink.stroke(0,5,0,0.5,1);

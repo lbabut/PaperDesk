@@ -58,6 +58,7 @@ try:
     remote("set -eu; cp -p /home/root/.config/remarkable/xochitl.conf " + b + "/xochitl.conf; "
            "if test -d /home/root/xovi/exthome/appload/papersketch; then "
            "cp -a /home/root/xovi/exthome/appload/papersketch " + b + "/previous; fi; "
+           "if test -d /home/root/.local/share/paperdesk/sketch; then cp -a /home/root/.local/share/paperdesk/sketch " + b + "/sketch-state; fi; "
            "mkdir -p /home/root/.local/share/paperdesk/sketch; "
            "chmod 700 /home/root/.local/share/paperdesk/sketch; "
            "cp -a " + b + "/stage/papersketch /home/root/xovi/exthome/appload/papersketch.new; "

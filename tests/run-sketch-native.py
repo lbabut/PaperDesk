@@ -20,6 +20,7 @@ p.add_argument("--known-hosts",required=True)
 p.add_argument("--baseline-qml")
 p.add_argument("--smoke",action="store_true")
 p.add_argument("--input-probe",action="store_true")
+p.add_argument("--shading-probe",action="store_true")
 p.add_argument("--output",default="docs/papersketch-native-2026-10-31.json")
 a=p.parse_args()
 root=pathlib.Path(__file__).resolve().parents[1]
@@ -46,7 +47,7 @@ for name,text in [("baseline",baseline),("constant-fast",candidate)]:
     (folder/"ui/main.qml").write_text(text.replace(needle,'category: "PaperDeskSketchNativeBench'+name+namespace_suffix+'"'))
     shutil.copy2(source/"engine.js",folder/"engine.js")
     shutil.copy2(source/"ui/native-tile.qml",folder/"ui/native-tile.qml")
-harness=(root/("tests/device/papersketch-input.qml" if a.input_probe else "tests/device/papersketch-native.qml")).read_text()
+harness=(root/("tests/device/papersketch-shading.qml" if a.shading_probe else "tests/device/papersketch-input.qml" if a.input_probe else "tests/device/papersketch-native.qml")).read_text()
 if a.smoke:harness=harness.replace("property bool smokeOnly:false","property bool smokeOnly:true")
 if a.baseline_qml:harness=harness.replace('"constant-fast"','"tiled-fast"')
 elif candidate==baseline:harness=harness.replace('["baseline","constant-fast"]','["production-1","production-2"]')
@@ -91,7 +92,7 @@ original=None
 injected=set()
 report={"candidate_qml_sha256":hashlib.sha256(candidate.encode()).hexdigest(),"source_qml_sha256":hashlib.sha256(baseline.encode()).hexdigest(),"source_engine_sha256":hashlib.sha256((source/"engine.js").read_bytes()).hexdigest(),"backup":backup}
 try:
-    if a.input_probe:
+    if a.input_probe or a.shading_probe:
         cache=pathlib.Path("/home/lukasz/Documents/Codex/2026-09-25/m-2/work/arm-toolchain/root")
         env=dict(__import__("os").environ,LD_LIBRARY_PATH=str(cache/"usr/lib/x86_64-linux-gnu"))
         driver=work/"input-driver-arm"
@@ -119,25 +120,28 @@ try:
     result=None
     for attempt in range(65):
         logs=remote("journalctl -u xochitl _PID="+pid+" --no-pager").decode()
-        if a.input_probe:
+        if a.input_probe or a.shading_probe:
             for line in logs.splitlines():
                 if "PAPERSKETCH_INPUT_READY " not in line:continue
                 payload=line.split("PAPERSKETCH_INPUT_READY ",1)[1];payload=payload[:payload.rfind("}")+1]
                 request=json.loads(payload);mode=request["mode"]
-                if mode in injected:continue
+                request_id=request.get("id",mode)
+                if request_id in injected:continue
                 assert mode in ("finger","pen")
                 points=request["start"]+request["end"]
                 if mode=="finger":points=[points[0],1871-points[1],points[2],1871-points[3]]
                 if mode=="pen":
                     points=[20966-points[1]*20966/1872,points[0]*15725/1404,20966-points[3]*20966/1872,points[2]*15725/1404]
                 coords=[str(round(v)) for v in points]
-                try:event_report=json.loads(remote(shlex.join(["/tmp/papersketch-input-driver",mode]+coords)))
+                pattern=[request["pattern"]] if request.get("pattern") else []
+                try:event_report=json.loads(remote(shlex.join(["/tmp/papersketch-input-driver",mode]+coords+pattern)))
                 except RuntimeError as error:
                     if "Input is busy" in str(error) or "Touch contact is active" in str(error):
                         if attempt%8==0:print("Waiting for existing "+mode+" contact to end",flush=True)
                         continue
                     raise
-                report.setdefault("evdev_injections",[]).append(event_report);injected.add(mode)
+                event_report["id"]=request_id
+                report.setdefault("evdev_injections",[]).append(event_report);injected.add(request_id)
         if "PAPERSKETCH_NATIVE_CASE" in logs and cpu_start is None:
             cpu_start=(time.monotonic(),cpu_ticks())
         if "PAPERSKETCH_NATIVE_RESULT " in logs:
@@ -155,16 +159,21 @@ try:
     if cpu_start is not None:
         cpu_wall=time.monotonic()-cpu_start[0]
         report["process_cpu_sample"]={"wall_seconds":round(cpu_wall,3),"cpu_seconds":round((cpu_ticks()-cpu_start[1])/ticks,3),"reference":"one CPU core; sampling starts after the first benchmark case is observed"}
-    if a.input_probe:
+    if a.input_probe or a.shading_probe:
         for event in report.get("evdev_injections",[]):
-            if event["mode"]=="pen":
+            if event["mode"]=="pen" and "input_probe" in result:
                 result["input_probe"]["pen"]["post_release_to_tile_ms"]=result["input_probe"]["pen"]["tile_seen_ms"]-event["release_ms"]
-        result["input_probe"]["polling_granularity_ms"]=16
+        if "input_probe" in result:result["input_probe"]["polling_granularity_ms"]=16
+        if "shading_probe" in result:
+            for case in result["shading_probe"]["cases"]:
+                event=next(e for e in report["evdev_injections"] if e["id"]==case["id"])
+                case["tile_visible_before_release"]=case["tile_seen_ms"]<event["release_ms"]
+                case["injected_duration_ms"]=event["release_ms"]-event["contact_ms"]
     report["results"]=result
     report["runtime_seconds"]=round(time.monotonic()-started,2)
     print(json.dumps(result,indent=2),flush=True)
 finally:
-    if a.input_probe:remote("rm -f /tmp/papersketch-input-driver")
+    if a.input_probe or a.shading_probe:remote("rm -f /tmp/papersketch-input-driver")
     if original is not None:
         remote("systemctl stop xochitl")
         remote("cp -p "+b+"/xochitl.conf /home/root/.config/remarkable/xochitl.conf")
@@ -186,3 +195,5 @@ if a.smoke and not a.baseline_qml:
 
 if a.input_probe:
     assert report["results"]["input_probe"]["passed"], "Physical input path probe failed"
+if a.shading_probe:
+    assert report["results"]["shading_probe"]["passed"] and all(c["tile_visible_before_release"] for c in report["results"]["shading_probe"]["cases"]), "Long fast shading probe failed"

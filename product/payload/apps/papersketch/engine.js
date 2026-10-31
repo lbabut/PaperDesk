@@ -38,7 +38,7 @@ function decode(raw) {
             throw Error("Invalid paper");
         for(var j=0;j<page.strokes.length;j++) {
             var s=page.strokes[j];
-            if(!s || (s.renderer!==undefined && s.renderer!==2 && s.renderer!==3 && s.renderer!==4 && s.renderer!==5 && s.renderer!==6 && s.renderer!==7) || !Number.isInteger(s.tool) || s.tool<0 || s.tool>=tools.length ||
+            if(!s || (s.renderer!==undefined && s.renderer!==2 && s.renderer!==3 && s.renderer!==4 && s.renderer!==5 && s.renderer!==6 && s.renderer!==7 && s.renderer!==8) || !Number.isInteger(s.tool) || s.tool<0 || s.tool>=tools.length ||
                !isFinite(s.size) || s.size<1 || s.size>80 || !isFinite(s.tone) || s.tone<0 || s.tone>238 ||
                !isFinite(s.strength) || s.strength<0.05 || s.strength>1 || !isFinite(s.seed) ||
                !Array.isArray(s.points) || !s.points.length) throw Error("Invalid stroke");

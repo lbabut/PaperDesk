@@ -1,54 +1,49 @@
 # Paper Sketch (development)
 
-Offline grayscale sketchbook for reMarkable 2 / XOVI AppLoad: four graphite pencils, charcoal, eraser, finger smudging, undo/redo, up to twelve pages, autosave and PNG export. Stroke history and PNG exports remain on the tablet.
+A grayscale bitmap sketchbook for reMarkable 2 / XOVI AppLoad. Choose a pencil or charcoal and its size; pressure comes from the stylus. Finger contact smears pigment. Undo, Redo, the strength slider and shade swatches have been removed.
 
-## Current status
+## Material model
 
-The native QImage candidate passes on-tablet pixel/replay, Linux evdev input and persistence checks. It remains a development build pending the user's physical drawing assessment. Software timing measurements do not measure the e-ink panel's optical response.
+Renderer 8 stores fixed and loose pigment as two 16-bit masses per pixel, with an optical bitmap and a persistent fingertip pigment map. Fixed paper grain controls contact and local pigment capacity. Pencil hardness changes deposition and binding; charcoal leaves much more loose dust. Pressure changes contact width, deposition and rubbing strength. The eraser lifts pigment rather than painting a white stroke.
 
-## Native image engine
+A finger picks up loose pigment, lifts some bound pigment and deposits what it carries elsewhere. Neighbor exchange mixes material on the fingertip without creating or destroying pigment. Fixed distance sampling makes the result independent of how pointer events split the same motion, and prevents segment seams. The simulation is an approximation of dry media, not a claim of complete physical equivalence to real paper.
 
-`native/papersketch-raster.cpp` registers the optional `PaperSketch.Native` QML module. A native QImage owns the current page. QPainter renders new graphite/charcoal/eraser segments, and the native pixel kernel in `native/sketch-smudge.h` transports and blurs graphite with a smooth brush falloff. There are no shifted-image rings. New pencil grain uses one offset per stroke instead of a random offset for each segment.
+## Live drawing
 
-128-pixel QQuickPaintedItem tiles present the image. Pen raster work happens during input; the selected shade is published when the pen lifts. The separate guarded pen extension supplies the immediate black preview. Finger changes publish only their affected tiles, without serializing pixels through JavaScript or temporary PNG files.
+The material kernel writes the authoritative bitmap as pointer events arrive. Scalar pointer calls retain only the first and current point; JavaScript does not grow a point history during long shading gestures. Dirty tiles publish during the gesture on a coalesced 16 ms timer. The bitmap is neither cleared nor replaced by a temporary stroke preview at pen-up. The older firmware pen-preview extension is kept off in bitmap mode.
 
-Saved renderer versions 1–6 retain their original replay behavior. Renderer 7 adds pressure-sensitive smudge strength; stronger stylus pressure softens and transports more graphite. The native backend reads the digitizer pressure directly because this firmware forwards constant pressure in the promoted Qt pointer events. The immediate pen preview also varies its width with pressure. Finger smudging uses its fixed touch strength. On the first load of an older page, its existing Qt raster is imported without changing its stroke history. Later loads can use an atomic PNG cache keyed to the complete page JSON and isolated by settings namespace. Eight native image snapshots accelerate undo/redo; older history remains available through replay. Closing releases native image/snapshot memory. PNG export uses the native image when active. Stroke documents and image caches are committed atomically by a background writer. The complete notebook and tool preferences live in a namespace-specific native JSON file alongside the caches; the original Settings document is retained as the migration fallback. A cache is accepted only when its page hash matches. Native redraws retain existing tile objects instead of rebuilding all their loaders.
+There is no post-stroke undo history and no page snapshot at the start of a stylus stroke. Small temporary patches exist only during a finger gesture so that stylus proximity can cancel an accidental palm mark. They are discarded when the gesture finishes. Finger input pauses while the stylus is in range.
 
-The app loads the optional module dynamically. The Canvas fallback remains available, but its smudge path is too slow on the tested tablet and must not be presented as a performance fix.
+## Persistence and migration
 
-## Build
+New marks are flattened into bitmap state. Artwork stays in RAM until the user chooses Save or PNG export. Close and page changes offer Save, Discard and Cancel for unsaved changes. Full screen hides all controls except a small round menu button at the upper right. The notebook contains page metadata rather than the growing point history that previously blocked the tablet for about two seconds during JSON serialization.
 
-The existing tool cache is selected by PAPERDESK_TOOLCACHE (default: /home/lukasz/Documents/Codex/2026-09-25/m-2/work).
+Each atomic .material page stores its optical bitmap, fixed/loose pigment and fingertip state together. Save waits for an atomic commit from a worker; there is no automatic saving. Image references are released before compression so they do not remain shared throughout disk I/O. The compact .material-notebook.json manifest is committed after its page. A newer matching bitmap page can repair the page metadata after an interrupted manifest commit.
+
+Legacy notebooks and PNG caches are retained. Existing artwork is loaded from its matching bitmap cache, or replayed once if necessary, and imported without modifying its optical pixels. Subsequent opening uses the material bitmap directly. Missing material pages block saving instead of silently replacing artwork with a blank page. PNG export remains available.
+
+## Build and install
+
+The tool cache defaults to /home/lukasz/Documents/Codex/2026-09-25/m-2/work and can be selected with PAPERDESK_TOOLCACHE.
 
 ```sh
-bash scripts/build-sketch.sh
-bash scripts/build-sketch-native.sh
 python3 scripts/build-sketch-raster.py
+bash scripts/build-sketch.sh
+python3 scripts/install-sketch-dev.py --host TABLET_IP --key KEY_PATH --known-hosts KNOWN_HOSTS_PATH --host-key-alias 10.11.99.1 --native-raster --launch
 ```
 
-The raster build expects an extracted Qt 6.8 SDK at `$PAPERDESK_TOOLCACHE/papersketch-qt-sdk/root` and the existing ARM cross toolchain at `$PAPERDESK_TOOLCACHE/arm-toolchain/root`. The SDK used here comes from Debian packages qt6-base-dev, qt6-base-dev-tools and qt6-declarative-dev, extracted with dpkg-deb; it is not installed on the tablet. No Qt libraries are bundled into the extension.
+The raster build uses the extracted Qt 6.8 SDK and ARM toolchain in the tool cache. No Qt libraries are installed on the tablet. The installer backs up the app, configuration, native drawing state and replaced modules. It does not enable XOVI boot autostart.
 
-The native pen preview is derived from dav01d/RemarkableAnimator's MIT-licensed extension (David @ TheoryStudios, 2026); its license is retained in native/LICENSE. It checks reMarkable 2 OS 3.29.0.153's exact ELF build ID c1a6698ec0512ddd88c2ba5ca713390988978056 and framebuffer layout before calling firmware functions. Updates are coalesced every 16 ms. The QImage engine uses Qt APIs and does not call firmware addresses.
+The optional legacy pen extension can be built with scripts/build-sketch-native.sh. It derives from David @ TheoryStudios' MIT-licensed RemarkableAnimator extension; its license remains in native/LICENSE. It is not the material renderer.
 
-## Development install (after device validation)
+## Verification
 
-```sh
-python3 scripts/install-sketch-dev.py --host TABLET_IP --key /path/to/tablet-key --known-hosts /path/to/known_hosts --native-ink --native-raster --launch
-```
+- Desktop QtTest: 25 passed, no failures, one native-only skip; simplified controls and absence of Undo/Redo are checked.
+- tests/test-sketch-material.cpp checks clean white paper, graphite/charcoal differences, a minimum-size nib, pigment conservation, pressure, erasing and motion resampling.
+- tests/test-sketch-material-integration.cpp checks absence of post-stroke snapshots, tentative palm cancellation, and exact reload of optical pixels, pigment and fingertip state.
+- tests/test-sketch-raster.cpp covers the legacy native import, tile, export and cache paths without undo.
+- On-device evidence: docs/papersketch-material-arm-2026-10-31.json and docs/papersketch-material-manual-input-2026-10-31.json and docs/papersketch-material-shading-2026-10-31.json. The input probe exercises Linux evdev through the production pointer handlers and samples actual painted tiles during the gesture and after pen-up.
+- Long shading tests inject 1,260 pen samples per gesture (21 traversals across the page in about 5.3 seconds). Both graphite and fullscreen charcoal remain visible before pen-up with no sampled blank frames. The final observed maximum input timer gaps are 55 ms for graphite and 124 ms for the heavier charcoal case; material segment maxima are 1 and 4 ms respectively. Only two diagnostic points are retained. The manual-save probe confirms no automatic save and no changes to disk state while drawing.
+- Software timing is distinct from the e-ink panel's optical latency. Physical drawing feel remains subject to user testing.
 
-Add --host-key-alias 10.11.99.1 when reusing the verified USB host key over Wi-Fi. The installer backs up the app, settings and each replaced extension. It restarts Xochitl and uses the existing one-shot launch hook. It does not enable XOVI boot autostart.
-
-## Validation
-
-- Desktop fallback QtTest: 22 passed, one native-only test skipped. This includes pressure-dependent smudging and preservation of renderer 6.
-- Native C++ host integration passes: QML registration, pixel import, pressure-dependent smudge pixels, tile painting, undo/redo, PNG export, asynchronous document/cache persistence and cache-key rejection.
-- On-tablet native pixel/replay probes pass: smudging softens the original line, transports graphite, remains visible after another stroke and matches saved-history replay.
-- Final Linux evdev trace passes through the production pointer handlers. Recorded stylus pressure varies from 0.21 to 0.88. Finger smudging changes the original line from gray 76 to 181 and adjacent paper from 255 to 173; the presented native tiles match those pixels.
-- In the final trace the pen's tile appears 59 ms after evdev release, sampled every 16 ms. The maximum idle timer gap is 227 ms, and the saved document plus image cache reload identically. This is software observation, not physical pen-to-glass latency.
-- Earlier full native benchmarks measured roughly 19 ms median smudge steps and 35–50 ms pen commits. See the dated reports in docs; do not mix those measurements with earlier rejected JS frontends.
-- Diagnostics isolate both Settings and native persistence namespaces per run, restore configuration using the tablet-local backup, and verify the original artwork document hash.
-- Run tests/run-sketch-native.py with --smoke for pixel/replay probes or --input-probe for touch, stylus pressure and persistence. The input driver primes both MT axes because Linux suppresses unchanged ABS values left by a previous run.
-
-Reports: docs/papersketch-qimage-device-smoke-2026-10-31.json, docs/papersketch-qimage-idle-save-2026-10-31.json and docs/papersketch-qimage-input-verified-2026-10-31.json.
-
-The rejected JS pixel-transport and temporary file-bridge experiments remain documented in earlier reports. They are not the current native image architecture.
+Earlier qimage, JS transport and native-preview reports describe previous architectures. Do not use them as measurements of the bitmap material engine.
