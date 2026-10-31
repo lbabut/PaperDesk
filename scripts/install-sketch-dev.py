@@ -11,6 +11,7 @@ parser.add_argument("--host", default="10.11.99.1")
 parser.add_argument("--key", required=True)
 parser.add_argument("--known-hosts", required=True)
 parser.add_argument("--launch", action="store_true")
+parser.add_argument("--host-key-alias")
 args = parser.parse_args()
 root = pathlib.Path(__file__).resolve().parents[1]
 source = root / "product/payload/apps/papersketch"
@@ -20,6 +21,8 @@ for name in ("manifest.json", "resources.rcc", "icon.png"):
 ssh = ["ssh", "-i", args.key, "-o", "UserKnownHostsFile=" + args.known_hosts,
        "-o", "StrictHostKeyChecking=yes", "-o", "BatchMode=yes",
        "-o", "ConnectTimeout=8", "root@" + args.host]
+if args.host_key_alias:
+    ssh[-1:-1] = ["-o", "HostKeyAlias=" + args.host_key_alias]
 def remote(command, data=None):
     result = subprocess.run(ssh + [command], input=data, capture_output=True, timeout=90)
     if result.returncode:

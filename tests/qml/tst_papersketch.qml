@@ -59,7 +59,18 @@ Item {
             mouseRelease(canvas,300,380,Qt.LeftButton);
             wait(200);
             compare(scene.app.page.strokes.length,1);
-            verify(scene.app.page.strokes[0].points.length>=2);
+            var points=scene.app.page.strokes[0].points;
+            verify(points.length>=2);
+            compare(points[0][0],200);compare(points[0][1],300);
+            verify(points.some(function(p){return p[0]>=250 && p[1]>=340;}));
+            verify(points.every(function(p){return p[0]>0 && p[1]>0;}));
+        }
+        function test_pen_tap_has_real_coordinates() {
+            var canvas=findChild(scene.app,"drawingCanvas");
+            mouseClick(canvas,420,530,Qt.LeftButton);wait(100);
+            compare(scene.app.page.strokes.length,1);
+            compare(scene.app.page.strokes[0].points[0][0],420);
+            compare(scene.app.page.strokes[0].points[0][1],530);
         }
         function test_smudge_transfers_gray_and_keeps_white_clean() {
             var canvas=findChild(scene.app,"drawingCanvas"),c=canvas.getContext("2d");

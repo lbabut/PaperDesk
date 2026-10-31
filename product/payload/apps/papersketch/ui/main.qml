@@ -34,7 +34,7 @@ Rectangle {
     property bool resetCanvas: true
     property bool exportPending: false
     property string exportPath: ""
-    property bool penBlocked: penInput.active || penHover.hovered || palmTimer.running
+    property bool penBlocked: penInput.active || penDot.pressed || penHover.hovered || palmTimer.running
     readonly property var page: notebook.pages[pageIndex]
     readonly property bool busy: replaying || activeStroke!==null
     readonly property real drawingScale: Math.min((workspace.width-24)/Ink.WIDTH,(workspace.height-24)/Ink.HEIGHT)
@@ -68,12 +68,12 @@ Rectangle {
         pending=[];resetCanvas=true;replaying=true;replayStroke=0;replayPoint=0;
         paper.requestPaint();guide.requestPaint();
     }
-    function beginStroke(p,source,selected) {
+    function beginStroke(p,source,selected,pressure) {
         if(!ready || busy || saveBlocked || confirmation) return;
         if(totalPoints>=Ink.MAX_POINTS) {notice="Sketchbook full. Export your pages before starting a new book.";return;}
         activeSource=source;
         activeStroke=Ink.stroke(selected,selected===7?Math.max(brushSize,32):brushSize,tone,strength,Date.now());
-        activeStroke.points.push(Ink.point(p.x,p.y,source==="finger"?0.7:penInput.point.pressure));
+        activeStroke.points.push(Ink.point(p.x,p.y,source==="finger"?0.7:(pressure===undefined?penInput.centroid.pressure:pressure)));
         pending.push({stroke:activeStroke,index:0});
         paper.requestPaint();notice="";
     }
@@ -291,16 +291,35 @@ Rectangle {
                 id:penHover;acceptedDevices:PointerDevice.Stylus | PointerDevice.Airbrush
                 onHoveredChanged:if(!hovered) palmTimer.restart()
             }
-            PointHandler {
+            DragHandler {
                 id:penInput
+                objectName:"penInput"
+                target:null
+                acceptedDevices:PointerDevice.Stylus | PointerDevice.Airbrush | PointerDevice.Mouse
+                acceptedButtons:Qt.LeftButton
+                dragThreshold:0
+                enabled:!root.replaying && !root.saveBlocked && !root.confirmation
+                onActiveChanged:{
+                    if(active) {
+                        palmTimer.restart();
+                        root.beginStroke(centroid.pressPosition,"pen",root.tool,centroid.pressure);
+                        root.extendStroke(centroid.position,"pen",centroid.pressure);
+                    } else if(root.activeSource==="pen") {
+                        root.finishStroke();palmTimer.restart();
+                    }
+                }
+                onCentroidChanged:if(active) root.extendStroke(centroid.position,"pen",centroid.pressure)
+            }
+            TapHandler {
+                id:penDot
                 acceptedDevices:PointerDevice.Stylus | PointerDevice.Airbrush | PointerDevice.Mouse
                 acceptedButtons:Qt.LeftButton
                 enabled:!root.replaying && !root.saveBlocked && !root.confirmation
-                onActiveChanged:{
-                    if(active) {palmTimer.restart();root.beginStroke(point.position,"pen",root.tool)}
-                    else {root.finishStroke();palmTimer.restart()}
+                onPressedChanged:if(pressed) palmTimer.restart()
+                onTapped:function(eventPoint,button) {
+                    root.beginStroke(eventPoint.position,"pen",root.tool,eventPoint.pressure);
+                    root.finishStroke();palmTimer.restart();
                 }
-                onPointChanged:if(active) root.extendStroke(point.position,"pen",point.pressure)
             }
             DragHandler {
                 id:fingerInput;objectName:"fingerInput";target:null
