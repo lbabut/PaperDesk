@@ -26,6 +26,7 @@
 #include "sketch-smudge.h"
 #include "sketch-material.h"
 #include "sketch-pen.h"
+#include "sketch-display.h"
 #include <QtCore/QTimer>
 #include <QtCore/QJsonDocument>
 #include <QtCore/QJsonObject>
@@ -33,10 +34,14 @@
 class SketchRaster:public QObject {
     Q_OBJECT
     Q_PROPERTY(bool available READ available CONSTANT)
+    Q_PROPERTY(bool fastDisplay READ fastDisplay WRITE setFastDisplay NOTIFY displayModeChanged)
     Q_PROPERTY(bool materialAvailable READ available CONSTANT)
     Q_PROPERTY(bool penInRange READ penInRange NOTIFY proximityChanged)
     Q_PROPERTY(int maxSmudgeMs READ maxSmudgeMs NOTIFY timingChanged)
 public:
+    bool displayFast=true;
+    bool fastDisplay()const{return displayFast;}
+    void setFastDisplay(bool value){if(displayFast==value)return;displayFast=value;emit displayModeChanged();emit changed(image.rect());}
     PaperPen penSamples;double inputX=0,inputY=0,inputScaleX=1,inputScaleY=1;int pressureMatches=0,pressureFallbacks=0;
     Q_INVOKABLE void setInputTransform(double x,double y,double sx,double sy){inputX=x;inputY=y;inputScaleX=sx;inputScaleY=sy;}
     Q_INVOKABLE double pressureAt(double x,double y,double fallback){double p=penSamples.at(inputX+x*inputScaleX,inputY+y*inputScaleY);if(p>=0){pressureMatches++;return std::clamp(p,.04,1.0);}pressureFallbacks++;return penPressure(fallback);}
@@ -222,6 +227,7 @@ public:
         pendingDirty=pendingDirty.united(dirty);if(publish)emit changed(dirty);else unpublished=true;return true;
     }
 signals:
+    void displayModeChanged();
     void proximityChanged();
     void saveFailed();
     void saveCompleted();
@@ -234,12 +240,15 @@ class SketchTile:public QQuickPaintedItem {
     Q_PROPERTY(QObject* raster READ raster WRITE setRaster)
     Q_PROPERTY(int sourceX MEMBER sx)
     Q_PROPERTY(int sourceY MEMBER sy)
-    SketchRaster *board=nullptr;int sx=0,sy=0;QImage painted;
+    SketchRaster *board=nullptr;int sx=0,sy=0;QImage painted,optical;
 public:
-    SketchTile(QQuickItem *parent=nullptr):QQuickPaintedItem(parent){setRenderTarget(QQuickPaintedItem::Image);setOpaquePainting(true);}
+    SketchTile(QQuickItem *parent=nullptr):QQuickPaintedItem(parent){setRenderTarget(QQuickPaintedItem::Image);setOpaquePainting(true);setSmooth(false);}
     QObject* raster()const{return board;}
-    void setRaster(QObject*obj){if(board)disconnect(board,nullptr,this,nullptr);board=qobject_cast<SketchRaster*>(obj);if(board)connect(board,&SketchRaster::changed,this,[this](QRect rect){if(rect.intersects(QRect(sx,sy,(int)width(),(int)height())))update();});update();}
-    void paint(QPainter *painter)override{if(!board)return;painted=board->image.copy(sx,sy,(int)width(),(int)height());painter->drawImage(0,0,painted);}
+    void setRaster(QObject*obj){if(board)disconnect(board,nullptr,this,nullptr);board=qobject_cast<SketchRaster*>(obj);if(board)connect(board,&SketchRaster::changed,this,[this](QRect rect){auto local=rect.intersected(QRect(sx,sy,(int)width(),(int)height())).translated(-sx,-sy);if(!local.isEmpty())update(local);});update();}
+    void paint(QPainter *painter)override{if(!board)return;optical=board->image.copy(sx,sy,(int)width(),(int)height());painted=optical;
+        if(board->fastDisplay()){painted=optical.copy();for(int y=0;y<painted.height();y++){auto row=reinterpret_cast<uint32_t*>(painted.scanLine(y));for(int x=0;x<painted.width();x++)row[x]=paperDisplayPixel(row[x],sx+x,sy+y);}}
+        painter->setRenderHint(QPainter::SmoothPixmapTransform,false);painter->drawImage(0,0,painted);}
+    Q_INVOKABLE QVariantList opticalPixels(int x,int y,int w,int h)const{QVariantList out;if(w<0||h<0||w*h>4096)return out;for(int py=y;py<y+h;py++)for(int px=x;px<x+w;px++){auto c=optical.valid(px,py)?optical.pixel(px,py):qRgb(255,255,255);out<<qRed(c)<<qGreen(c)<<qBlue(c)<<255;}return out;}
     Q_INVOKABLE QVariantList pixels(int x,int y,int w,int h)const{QVariantList out;if(w<0||h<0||w*h>4096)return out;for(int py=y;py<y+h;py++)for(int px=x;px<x+w;px++){auto c=painted.valid(px,py)?painted.pixel(px,py):qRgb(255,255,255);out<<qRed(c)<<qGreen(c)<<qBlue(c)<<255;}return out;}
 };
 extern "C" void _xovi_construct(){

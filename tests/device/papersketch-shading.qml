@@ -16,7 +16,7 @@ Rectangle{
  function gray(x,y,tile){
   var a=subject.item;if(!tile)return a.nativeRaster.pixels(x,y,1,1)[0];
   var size=a.artTileSize,c=Math.floor(x/size),r=Math.floor(y/size),cell=find(a,"artTile"+(r*a.artColumns+c));
-  return cell.getContext("2d").getImageData(x-c*size,y-r*size,1,1).data[0];
+  var block=cell.displayPixels(x-c*size,y-r*size,8,8),sum=0;for(var i=0;i<block.length;i+=4)sum+=block[i];return block.length?sum/(block.length/4):255;
  }
  function ready(){
   var d=definitions[caseIndex],a=subject.item,surface=find(a,"drawingCanvas"),win=bench.Window.window;
@@ -40,8 +40,11 @@ Rectangle{
    if(firstTile && gray(mx,my,true)>=245)blankFrames++;
    if(a.activeStroke!==null || !a.lastStroke || a.lastStroke.tool!==d.tool || !firstTile)return;
    var s=a.lastStroke,points=s.points,first=points[0],last=points[points.length-1];
-   var item={id:d.id,tool:d.tool,points:s.samples||points.length,first:first,last:last,raster_seen_ms:firstRaster,tile_seen_ms:firstTile,max_input_tick_gap_ms:maxGap,blank_frames_after_visible:blankFrames,full_screen:a.fullScreen,max_material_segment_ms:a.nativePatchMaxMs,retained_points:points.length,metadata_bytes:JSON.stringify(a.notebook).length};
-   item.passed=(s.samples||points.length)>=100 && Math.abs(first[0]-120)<15 && Math.abs(first[1]-d.y0)<15 && Math.abs(last[0]-1080)<15 && Math.abs(last[1]-d.y1)<15 && blankFrames===0 && maxGap<200;
+   var matched=a.nativeRaster.pressureMatchCounts(),cell=find(a,"artTile"+(Math.floor(my/128)*a.artColumns+Math.floor(mx/128)));
+   var display=cell.displayPixels(mx%128,my%128,32,32),raw=a.nativeRaster.pixels(mx,my,32,32),displaySum=0,rawSum=0,binary=true,grays=false;
+   for(var pi=0;pi<display.length;pi+=4){var value=display[pi];binary=binary&&(value===0||value===255);displaySum+=value;rawSum+=raw[pi];grays=grays||(raw[pi]>0&&raw[pi]<255);}
+   var item={display_probe:"8x8 mean of actual binary tile display pixels",fast_display:a.fastDisplay,pressure_matches:matched[0],pressure_fallbacks:matched[1],display_binary:binary,display_has_samples:display.length===4096,optical_has_grays:grays,display_mean:displaySum/1024,optical_mean:rawSum/1024,id:d.id,tool:d.tool,points:s.samples||points.length,first:first,last:last,raster_seen_ms:firstRaster,tile_seen_ms:firstTile,max_input_tick_gap_ms:maxGap,blank_frames_after_visible:blankFrames,full_screen:a.fullScreen,max_material_segment_ms:a.nativePatchMaxMs,retained_points:points.length,metadata_bytes:JSON.stringify(a.notebook).length};
+   item.passed=a.fastDisplay && binary && display.length===4096 && grays && Math.abs(displaySum-rawSum)/1024<12 && matched[0]>4*matched[1] && (s.samples||points.length)>=100 && Math.abs(first[0]-120)<15 && Math.abs(first[1]-d.y0)<15 && Math.abs(last[0]-1080)<15 && Math.abs(last[1]-d.y1)<15 && blankFrames===0 && maxGap<200;
    cases.push(item);console.log("PAPERSKETCH_NATIVE_CASE "+JSON.stringify(item));
    caseIndex++;waitAt=now;phase=4;return;
   }

@@ -27,6 +27,7 @@ Rectangle {
     property string notice: ""
     property string confirmation: ""
     readonly property bool bitmapMode:nativeRasterActive && nativeRaster && nativeRaster.materialAvailable===true
+    readonly property bool fastDisplay:bitmapMode && nativeRaster.fastDisplay===true
     readonly property bool penNearby:bitmapMode && nativeRaster.penInRange
     onPenNearbyChanged:if(penNearby && activeSource==="finger"){
         nativeRaster.cancel();activeStroke=null;activeSource="";nativeStroke=false;pending=[];paintTimer.stop();
@@ -381,7 +382,7 @@ Rectangle {
             text: action.label;font.pixelSize: 21;font.bold: true
             color: !action.available?"#999999":action.selected || tap.pressed?"white":"black"
         }
-        TapHandler { id: tap; enabled: action.available; onTapped: action.triggered() }
+        TapHandler { id: tap; enabled: action.available && !root.busy; onTapped: action.triggered() }
     }
     Rectangle {
         id: header;objectName:"sketchHeader"
@@ -390,9 +391,9 @@ Rectangle {
         Row {
             anchors.left: parent.left;anchors.leftMargin: 20;anchors.verticalCenter: parent.verticalCenter;spacing:12
             Text {text:"Paper Sketch";font.pixelSize:32;font.bold:true;width:236;anchors.verticalCenter:parent.verticalCenter}
-            Action {label:"Save";width:112;objectName:"saveButton";available:!root.busy && !root.saveBlocked;onTriggered:root.saveBook()}
-            Action {label:"Export PNG";width:154;objectName:"exportButton";available:!root.busy;onTriggered:root.exportPage()}
-            Action {label:"Full screen";width:156;objectName:"fullScreenButton";available:!root.busy;onTriggered:root.fullScreen=true}
+            Action {label:"Save";width:112;objectName:"saveButton";available:!root.saveBlocked;onTriggered:root.saveBook()}
+            Action {label:"Export PNG";width:154;objectName:"exportButton";available:true;onTriggered:root.exportPage()}
+            Action {label:"Full screen";width:156;objectName:"fullScreenButton";available:true;onTriggered:root.fullScreen=true}
         }
         Action {
             anchors.right:parent.right;anchors.rightMargin:20;anchors.verticalCenter:parent.verticalCenter
@@ -465,9 +466,10 @@ Rectangle {
                     objectName:"artTile"+index
                     x:(index%root.artColumns)*root.artTileSize;y:Math.floor(index/root.artColumns)*root.artTileSize
                     width:Math.min(root.artTileSize,Ink.WIDTH-x);height:Math.min(root.artTileSize,Ink.HEIGHT-y)
+                    function displayPixels(x,y,w,h){return tileNative.item?tileNative.item.pixels(x,y,w,h):[];}
                     function requestPaint(){if(!root.nativeRasterActive)tileFallback.requestPaint();}
                     function getContext(kind){
-                        if(root.nativeRasterActive && tileNative.item)return {getImageData:function(x,y,w,h){return {data:tileNative.item.pixels(x,y,w,h)};}};
+                        if(root.nativeRasterActive && tileNative.item)return {getImageData:function(x,y,w,h){return {data:(tileNative.item.opticalPixels?tileNative.item.opticalPixels(x,y,w,h):tileNative.item.pixels(x,y,w,h))};}};
                         return tileFallback.getContext(kind);
                     }
                     Canvas {
@@ -620,21 +622,21 @@ Rectangle {
         Rectangle {width:parent.width;height:2;color:"black"}
         Row {
             anchors.left:parent.left;anchors.leftMargin:18;y:12;spacing:12
-            Action {label:"‹";width:64;available:!root.busy && root.pageIndex>0;onTriggered:root.selectPage(root.pageIndex-1)}
+            Action {label:"‹";width:64;available:root.pageIndex>0;onTriggered:root.selectPage(root.pageIndex-1)}
             Text {text:"Page "+(root.pageIndex+1)+" / "+root.pageCount;width:146;font.pixelSize:22;anchors.verticalCenter:parent.verticalCenter}
-            Action {label:"›";width:64;available:!root.busy && root.pageIndex<root.pageCount-1;onTriggered:root.selectPage(root.pageIndex+1)}
-            Action {label:"New page";width:144;available:!root.busy;onTriggered:root.newPage()}
+            Action {label:"›";width:64;available:root.pageIndex<root.pageCount-1;onTriggered:root.selectPage(root.pageIndex+1)}
+            Action {label:"New page";width:144;available:true;onTriggered:root.newPage()}
             Action {
                 label:root.page.paper==="plain"?"Plain":root.page.paper==="dots"?"Dots":"Grid"
                 width:110;available:!root.busy
                 onTriggered:{var kinds=["plain","dots","grid"];root.page.paper=kinds[(kinds.indexOf(root.page.paper)+1)%3];root.revision++;guide.requestPaint();root.dirty=true}
             }
-            Action {label:"Clear page";width:150;available:!root.busy;onTriggered:root.confirmation="clear"}
-            Action {label:"New book";width:146;available:!root.busy;onTriggered:root.confirmation="book"}
+            Action {label:"Clear page";width:150;available:true;onTriggered:root.confirmation="clear"}
+            Action {label:"New book";width:146;available:true;onTriggered:root.confirmation="book"}
         }
         Text {
             anchors.left:parent.left;anchors.right:parent.right;anchors.margins:20;y:91
-            text:root.notice || (root.saveBlocked?"Save paused":root.activeSource==="finger"?"Smudging with your finger":root.busy?"Drawing…":root.penNearby?"Pen nearby · Finger paused":Ink.tools[root.tool].name+" · Pen · Finger smudge "+(root.fingerSmudge?"on":"off")+(root.dirty?" · Unsaved changes":" · Saved"))
+            text:root.notice || (root.saveBlocked?"Save paused":Ink.tools[root.tool].name+" · Pen · Finger smudge "+(root.fingerSmudge?"on":"off")+(root.dirty?" · Unsaved changes":" · Saved"))
             elide:Text.ElideMiddle;font.pixelSize:19;color:"#444444"
         }
     }
@@ -648,7 +650,7 @@ Rectangle {
     DisplayMethodArea {
         anchors.fill:parent
         z:-1
-        displayMethod: DisplayMethodArea.Fast
+        displayMethod:root.fastDisplay && typeof DisplayMethodArea.UFast==="number"?DisplayMethodArea.UFast:DisplayMethodArea.Fast
     }
     Rectangle {
         anchors.fill:parent;color:"#eeeeee";visible:root.confirmation!=="";z:10

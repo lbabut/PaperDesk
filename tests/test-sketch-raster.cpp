@@ -25,7 +25,12 @@ int main(int argc,char **argv){
     board.image=blended;board.materialReady=false;
     SketchTile tile;tile.setWidth(128);tile.setHeight(128);tile.setProperty("sourceX",256);tile.setProperty("sourceY",256);tile.setRaster(&board);
     QImage display(128,128,QImage::Format_RGB32);{QPainter painter(&display);tile.paint(&painter);}
+    auto displayGray=qRed(paperDisplayPixel(board.image.pixel(300,300),300,300));
+    assert(qRed(display.pixel(44,44))==displayGray && tile.pixels(44,44,1,1)[0].toInt()==displayGray);
+    assert(tile.opticalPixels(44,44,1,1)[0].toInt()==core);
+    board.setFastDisplay(false);{QPainter painter(&display);tile.paint(&painter);}
     assert(qRed(display.pixel(44,44))==core && tile.pixels(44,44,1,1)[0].toInt()==core);
+    assert(board.image==blended);board.setFastDisplay(true);
     assert(board.save(dir.filePath("drawing.png")));QImage exported(dir.filePath("drawing.png"));assert(exported.size()==board.image.size() && exported.pixel(300,300)==board.image.pixel(300,300));
     bool saved=false;QObject::connect(&board,&SketchRaster::saveCompleted,&board,[&]{saved=true;});
     const QString document=R"({"document":"fixture-book"})";

@@ -18,6 +18,16 @@ Pressure packets are read from Wacom evdev in a separate, non-grabbing reader an
 
 The size slider performs no legacy preview status reads or writes in bitmap mode. Its black handle uses the tablet's UFast display hint; the grayscale drawing surface retains Fast.
 
+## Fast live display
+
+The authoritative image, pigment simulation, saved material page and PNG export retain grayscale. Native tiles convert their display copy to a fixed 8×8 ordered halftone, allowing the drawing surface to use UFast rather than a grayscale waveform. This trades smooth screen tones for fine black-and-white grain. The pattern stays in place during and after a stroke; there is no black preview replaced by a different final image at pen-up.
+
+Tile invalidation now supplies the intersecting local rectangle. Drawing no longer changes button availability colors or the footer's drawing/idle text on every pen contact; input actions remain blocked while a stroke is active. Page changes and requested saves retain their existing behavior.
+
+On-device reports are docs/papersketch-live-shading-2026-10-31.json and docs/papersketch-live-input-2026-10-31.json. Both long shading gestures match all 1,259 delivered pressure samples, retain grayscale RAM pixels, and paint only black/white display pixels whose regional mean differs by less than 3/255 in the sampled patches. An 8×8 mean of the actual binary tile display pixels stays visible throughout each gesture and does not go blank after pen-up. Input probes read the painted optical snapshot before halftoning for exact pigment comparisons; the shading probe separately checks the actual native tile display palette.
+
+The probe-wide timer maxima are 43 ms for graphite and 132 ms for charcoal. Those numbers include time before injected contact and are not optical pen-to-panel timings. This change does not establish a measured improvement in physical drawing comfort.
+
 ## Persistence and migration
 
 New marks are flattened into bitmap state. Artwork stays in RAM until the user chooses Save or PNG export. Close and page changes offer Save, Discard and Cancel for unsaved changes. Full screen hides all controls except a small round menu button at the upper right. The notebook contains page metadata rather than the growing point history that previously blocked the tablet for about two seconds during JSON serialization.
