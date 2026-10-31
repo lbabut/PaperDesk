@@ -17,7 +17,7 @@ function point(x,y,p) {
 }
 function stroke(tool,size,tone,strength,seed) {
     var t=tools[tool] || tools[1];
-    return {tool:tool,size:clamp(size,1,80),tone:clamp(tone,0,238),
+    return {renderer:2,tool:tool,size:clamp(size,1,80),tone:clamp(tone,0,238),
             strength:clamp(strength,0.05,1),seed:seed>>>0,points:[]};
 }
 function count(b) {
@@ -38,7 +38,7 @@ function decode(raw) {
             throw Error("Invalid paper");
         for(var j=0;j<page.strokes.length;j++) {
             var s=page.strokes[j];
-            if(!s || !Number.isInteger(s.tool) || s.tool<0 || s.tool>=tools.length ||
+            if(!s || (s.renderer!==undefined && s.renderer!==2) || !Number.isInteger(s.tool) || s.tool<0 || s.tool>=tools.length ||
                !isFinite(s.size) || s.size<1 || s.size>80 || !isFinite(s.tone) || s.tone<0 || s.tone>238 ||
                !isFinite(s.strength) || s.strength<0.05 || s.strength>1 || !isFinite(s.seed) ||
                !Array.isArray(s.points) || !s.points.length) throw Error("Invalid stroke");
@@ -58,7 +58,7 @@ function noise(x,y,seed) {
     var n=Math.sin(x*12.9898+y*78.233+(seed%65536)*0.017)*43758.5453;
     return n-Math.floor(n);
 }
-function smudge(c,a,b,size,strength) {
+function legacySmudge(c,a,b,size,strength) {
     var dx=clamp(b[0]-a[0],-12,12), dy=clamp(b[1]-a[1],-12,12);
     if(Math.abs(dx)+Math.abs(dy)<0.1) return;
     var r=Math.max(3,Math.min(32,size/2)), pad=14;
@@ -79,7 +79,8 @@ function smudge(c,a,b,size,strength) {
 }
 function segment(c,s,index) {
     var b=s.points[index],a=index?s.points[index-1]:b,t=tools[s.tool];
-    if(t.kind==="smudge") { smudge(c,a,b,s.size,s.strength);return; }
+    if(s.renderer===2) { fastSegment(c,s,index);return; }
+    if(t.kind==="smudge") { legacySmudge(c,a,b,s.size,s.strength);return; }
     var dx=b[0]-a[0],dy=b[1]-a[1],dist=Math.sqrt(dx*dx+dy*dy);
     var steps=Math.max(1,Math.ceil(dist/Math.max(0.8,s.size*0.17)));
     c.save();
@@ -119,4 +120,58 @@ function guides(c,paper) {
         c.stroke();
     }
     c.restore();
+}
+
+function smudge(c,a,b,size,strength) {
+    var dx=b[0]-a[0],dy=b[1]-a[1],distance=Math.sqrt(dx*dx+dy*dy);
+    if(distance<0.1) return;
+    var radius=clamp(size/2,6,40),step=Math.max(3,radius*0.28);
+    var steps=Math.max(1,Math.ceil(distance/step)),ox=a[0],oy=a[1];
+    c.save();
+    c.globalAlpha=clamp(strength*0.65,0.05,0.8);
+    c.globalCompositeOperation="qt-darken";
+    for(var i=1;i<=steps;i++) {
+        var x=a[0]+dx*i/steps,y=a[1]+dy*i/steps;
+        var sx=Math.max(0,Math.floor(ox-radius)),sy=Math.max(0,Math.floor(oy-radius));
+        var w=Math.min(WIDTH-sx,Math.ceil(radius*2)),h=Math.min(HEIGHT-sy,Math.ceil(radius*2));
+        if(w>0 && h>0) {
+            var patch=c.getImageData(sx,sy,w,h);
+            c.save();c.beginPath();c.arc(x,y,radius,0,Math.PI*2);c.clip();
+            c.drawImage(patch,sx+x-ox,sy+y-oy);
+            c.restore();
+        }
+        ox=x;oy=y;
+    }
+    c.restore();
+}
+function fastSegment(c,s,index) {
+    var b=s.points[index],a=index?s.points[index-1]:b,t=tools[s.tool];
+    if(t.kind==="smudge") {smudge(c,a,b,s.size,s.strength);return;}
+    var p=(a[2]+b[2])*0.5,w=Math.max(0.8,s.size*(0.18+0.82*p));
+    var value=t.kind==="eraser"?255:s.tone;
+    var alpha=t.kind==="eraser"?s.strength:t.opacity*s.strength*(0.3+0.7*p);
+    c.save();c.lineCap="round";c.lineJoin="round";
+    if(!index || (a[0]===b[0] && a[1]===b[1])) {
+        c.fillStyle="rgba("+value+","+value+","+value+","+alpha+")";
+        c.beginPath();c.arc(b[0],b[1],w/2,0,Math.PI*2);c.fill();
+    } else {
+        var layers=t.kind==="charcoal"?3:1;
+        for(var i=0;i<layers;i++) {
+            c.lineWidth=w*(1-i*0.22);
+            c.strokeStyle="rgba("+value+","+value+","+value+","+(alpha*(layers===1?1:[0.3,0.6,0.5][i]))+")";
+            c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke();
+        }
+        if(t.kind==="pencil" && w>3) {
+            c.lineWidth=Math.max(0.5,w*0.06);
+            c.strokeStyle="rgba("+value+","+value+","+value+","+alpha*t.grain+")";
+            var offset=(noise(a[0],a[1],s.seed)-0.5)*w*0.6;
+            c.beginPath();c.moveTo(a[0]+offset,a[1]);c.lineTo(b[0]+offset,b[1]);c.stroke();
+        }
+    }
+    c.restore();
+}
+function dirtyBounds(s,index) {
+    var b=s.points[index],a=index?s.points[index-1]:b,r=s.size+4;
+    return {x:Math.max(0,Math.min(a[0],b[0])-r),y:Math.max(0,Math.min(a[1],b[1])-r),
+            width:Math.abs(b[0]-a[0])+r*2,height:Math.abs(b[1]-a[1])+r*2};
 }

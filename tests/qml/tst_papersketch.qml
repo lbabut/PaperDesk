@@ -111,6 +111,56 @@ Item {
             var canvas=findChild(scene.app,"drawingCanvas");
             verify(canvas.save("/home/lukasz/Documents/Codex/PaperDesk/work/papersketch-tests/export.png"));
         }
+        function test_sparse_smudge_follows_the_entire_drag() {
+            var canvas=findChild(scene.app,"drawingCanvas"),c=canvas.getContext("2d");
+            c.fillStyle="white";c.fillRect(0,0,1200,1600);
+            c.fillStyle="black";c.fillRect(295,260,10,80);
+            Ink.smudge(c,[200,300,0.7],[500,300,0.7],64,1);
+            var moved=c.getImageData(325,300,1,1).data[0];
+            verify(moved<250,"Pigment must move even when the event jumps across the line: "+moved);
+            var untouched=c.getImageData(600,300,1,1).data[0];
+            compare(untouched,255);
+        }
+        function test_touch_smears_actual_pencil_after_pen_up() {
+            scene.app.tool=3;scene.app.brushSize=35;scene.app.strength=1;
+            var canvas=findChild(scene.app,"drawingCanvas");
+            mousePress(canvas,400,240,Qt.LeftButton);
+            mouseMove(canvas,400,300,30);mouseMove(canvas,400,360,30);
+            mouseRelease(canvas,400,360,Qt.LeftButton);wait(30);
+            var c=canvas.getContext("2d"),before=c.getImageData(425,300,1,1).data[0];
+            touchEvent(canvas).press(0,canvas,300,300).commit();wait(30);
+            touchEvent(canvas).move(0,canvas,310,300).commit();wait(30);
+            touchEvent(canvas).move(0,canvas,500,300).commit();wait(30);
+            touchEvent(canvas).release(0,canvas,500,300).commit();
+            tryCompare(scene.app,"painting",false,5000);
+            compare(scene.app.page.strokes.length,2);
+            compare(scene.app.page.strokes[1].tool,7);
+            var after=c.getImageData(425,300,1,1).data[0];
+            verify(after<before,"Real touch must move pencil pigment: "+before+" -> "+after);
+        }
+        function test_render_cost_comparison() {
+            var canvas=findChild(scene.app,"drawingCanvas"),c=canvas.getContext("2d");
+            var modern=Ink.stroke(4,24,0,0.8,42);
+            for(var i=0;i<600;i++)modern.points.push([50+(i%200)*2,600+Math.floor(i/200)*50,0.7]);
+            var old=JSON.parse(JSON.stringify(modern));delete old.renderer;
+            var times=[];
+            for(var mode=0;mode<2;mode++) {
+                var s=mode?modern:old,start=Date.now();
+                for(var j=0;j<s.points.length;j++)Ink.segment(c,s,j);
+                c.getImageData(0,0,1,1);
+                times.push(Date.now()-start);
+            }
+            console.log("PaperSketch 600 point benchmark",times[0],"ms original",times[1],"ms optimized");
+            verify(times[0]>=0 && times[1]>=0);
+        }
+        function test_legacy_stroke_keeps_its_rendering_version() {
+            var s=Ink.stroke(1,5,0,0.5,7);delete s.renderer;
+            s.points=[[100,100,0.5],[120,120,0.7]];
+            var b=Ink.book();b.pages[0].strokes.push(s);
+            var old=Ink.decode(JSON.stringify(b));
+            compare(old.pages[0].strokes[0].renderer,undefined);
+            compare(Ink.stroke(1,5,0,0.5,7).renderer,2);
+        }
         function test_validation() {
             var b=Ink.book(),s=Ink.stroke(0,5,0,0.5,1);
             s.points.push(Ink.point(-1,1800,2));b.pages[0].strokes.push(s);

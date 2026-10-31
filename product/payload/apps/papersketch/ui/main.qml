@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import Qt.labs.settings 1.1
+import net.asivery.ApploadUtils
 import "../engine.js" as Ink
 
 Rectangle {
@@ -31,10 +32,13 @@ Rectangle {
     property int replayStroke: 0
     property int replayPoint: 0
     property var pending: []
+    property bool painting: false
+    property int maxPaintMs: 0
+    property int maxQueueWaitMs: 0
     property bool resetCanvas: true
     property bool exportPending: false
     property string exportPath: ""
-    property bool penBlocked: penInput.active || penDot.pressed || penHover.hovered || palmTimer.running
+    property bool penBlocked: penInput.active || penDot.pressed
     readonly property var page: notebook.pages[pageIndex]
     readonly property bool busy: replaying || activeStroke!==null
     readonly property real drawingScale: Math.min((workspace.width-24)/Ink.WIDTH,(workspace.height-24)/Ink.HEIGHT)
@@ -51,10 +55,23 @@ Rectangle {
         property int selectedTone: 0
         property bool useFinger: true
     }
-    Timer { id: palmTimer; interval: 550 }
     Timer { id: autosave; interval: 800; onTriggered: root.saveBook() }
-    Timer { id: paintTimer; interval: 16; onTriggered: paper.requestPaint() }
+    Timer { id: paintTimer; interval: 0; onTriggered: root.requestPendingPaint() }
 
+    function requestPendingPaint() {
+        if(replaying || resetCanvas || pending.some(function(job){return job.stroke.tool===7;})) {paper.requestPaint();return;}
+        for(var i=0;i<pending.length;i++) {
+            var job=pending[i],r=Ink.dirtyBounds(job.stroke,job.index);
+            paper.markDirty(Qt.rect(r.x,r.y,r.width,r.height));
+        }
+    }
+    function queueInk(s,index) {
+        painting=true;
+        pending.push({stroke:s,index:index,queuedAt:Date.now()});
+        if(s.tool===7) {paper.requestPaint();return;}
+        var r=Ink.dirtyBounds(s,index);
+        paper.markDirty(Qt.rect(r.x,r.y,r.width,r.height));
+    }
     function unloading() { finishStroke(); saveBook() }
     function saveBook() {
         if(!ready || saveBlocked) return false;
@@ -72,20 +89,19 @@ Rectangle {
         if(!ready || busy || saveBlocked || confirmation) return;
         if(totalPoints>=Ink.MAX_POINTS) {notice="Sketchbook full. Export your pages before starting a new book.";return;}
         activeSource=source;
-        activeStroke=Ink.stroke(selected,selected===7?Math.max(brushSize,32):brushSize,tone,strength,Date.now());
+        activeStroke=Ink.stroke(selected,selected===7?Math.max(brushSize,source==="finger"?64:32):brushSize,tone,strength,Date.now());
         activeStroke.points.push(Ink.point(p.x,p.y,source==="finger"?0.7:(pressure===undefined?penInput.centroid.pressure:pressure)));
-        pending.push({stroke:activeStroke,index:0});
-        paper.requestPaint();notice="";
+        queueInk(activeStroke,0);notice="";
     }
     function extendStroke(p,source,pressure) {
         if(activeStroke===null || activeSource!==source) return;
         if(totalPoints+activeStroke.points.length>=Ink.MAX_POINTS) {finishStroke();notice="Sketchbook full";return;}
         var q=Ink.point(p.x,p.y,pressure),prev=activeStroke.points[activeStroke.points.length-1];
         var dx=q[0]-prev[0],dy=q[1]-prev[1];
-        if(dx*dx+dy*dy<1) return;
+        var threshold=Math.max(1,Math.min(3,activeStroke.size*0.08));
+        if(dx*dx+dy*dy<threshold*threshold) return;
         activeStroke.points.push(q);
-        pending.push({stroke:activeStroke,index:activeStroke.points.length-1});
-        paper.requestPaint();
+        queueInk(activeStroke,activeStroke.points.length-1);
     }
     function finishStroke() {
         if(activeStroke===null) return;
@@ -259,7 +275,7 @@ Rectangle {
                 onPaint:{
                     var c=getContext("2d");
                     if(root.resetCanvas) {Ink.background(c,"plain");root.resetCanvas=false;}
-                    var budget=32, started=Date.now();
+                    var budget=256, started=Date.now(), hadPending=root.pending.length>0;
                     if(root.replaying) {
                         while(root.replayStroke<root.page.strokes.length && budget>0 && Date.now()-started<14) {
                             var s=root.page.strokes[root.replayStroke];
@@ -271,7 +287,9 @@ Rectangle {
                         if(root.replayStroke>=root.page.strokes.length) root.replaying=false;
                     } else {
                         while(root.pending.length && budget>0 && Date.now()-started<14) {
-                            var job=root.pending.shift();Ink.segment(c,job.stroke,job.index);budget--;
+                            var job=root.pending.shift();
+                            root.maxQueueWaitMs=Math.max(root.maxQueueWaitMs,Date.now()-job.queuedAt);
+                            Ink.segment(c,job.stroke,job.index);budget--;
                         }
                     }
                     if(root.exportPending && !root.replaying && !root.pending.length) {
@@ -280,6 +298,10 @@ Rectangle {
                         root.notice=ok?"PNG saved: "+root.exportPath:"PNG export failed. Your drawing is still saved in the sketchbook.";
                         console.log("PaperSketch export",ok,root.exportPath);
                     }
+                    root.painting=root.pending.length>0;
+                    root.maxPaintMs=Math.max(root.maxPaintMs,Date.now()-started);
+                    if(hadPending && !root.pending.length && root.activeStroke===null)
+                        console.log("PaperSketch raster",root.maxPaintMs,"ms paint",root.maxQueueWaitMs,"ms queue");
                     if(root.replaying || root.pending.length) paintTimer.restart();
                 }
             }
@@ -289,7 +311,6 @@ Rectangle {
             }
             HoverHandler {
                 id:penHover;acceptedDevices:PointerDevice.Stylus | PointerDevice.Airbrush
-                onHoveredChanged:if(!hovered) palmTimer.restart()
             }
             DragHandler {
                 id:penInput
@@ -301,11 +322,11 @@ Rectangle {
                 enabled:!root.replaying && !root.saveBlocked && !root.confirmation
                 onActiveChanged:{
                     if(active) {
-                        palmTimer.restart();
+                        
                         root.beginStroke(centroid.pressPosition,"pen",root.tool,centroid.pressure);
                         root.extendStroke(centroid.position,"pen",centroid.pressure);
                     } else if(root.activeSource==="pen") {
-                        root.finishStroke();palmTimer.restart();
+                        root.finishStroke();
                     }
                 }
                 onCentroidChanged:if(active) root.extendStroke(centroid.position,"pen",centroid.pressure)
@@ -315,10 +336,9 @@ Rectangle {
                 acceptedDevices:PointerDevice.Stylus | PointerDevice.Airbrush | PointerDevice.Mouse
                 acceptedButtons:Qt.LeftButton
                 enabled:!root.replaying && !root.saveBlocked && !root.confirmation
-                onPressedChanged:if(pressed) palmTimer.restart()
                 onTapped:function(eventPoint,button) {
                     root.beginStroke(eventPoint.position,"pen",root.tool,eventPoint.pressure);
-                    root.finishStroke();palmTimer.restart();
+                    root.finishStroke();
                 }
             }
             DragHandler {
@@ -328,7 +348,10 @@ Rectangle {
                 dragThreshold:10
                 enabled:root.fingerSmudge && !root.penBlocked && !root.replaying && !root.saveBlocked && !root.confirmation
                 onActiveChanged:{
-                    if(active) root.beginStroke(centroid.position,"finger",7);
+                    if(active) {
+                        root.beginStroke(centroid.pressPosition,"finger",7);
+                        root.extendStroke(centroid.position,"finger",0.7);
+                    }
                     else if(root.activeSource==="finger") root.finishStroke()
                 }
                 onCentroidChanged:if(active) root.extendStroke(centroid.position,"finger",0.7)
@@ -363,6 +386,12 @@ Rectangle {
             text:root.notice || (root.saveBlocked?"Save paused":root.activeSource==="finger"?"Smudging with your finger":root.busy?"Drawing…":Ink.tools[root.tool].name+" · Pressure-sensitive pen · Finger smudge "+(root.fingerSmudge?"on":"off")+" · Autosave")
             elide:Text.ElideMiddle;font.pixelSize:19;color:"#444444"
         }
+    }
+    DisplayMethodArea {
+        anchors.fill:parent
+        z:-1
+        displayMethod: root.busy || root.painting ? DisplayMethodArea.Fast :
+                       (typeof DisplayMethodArea.Content==="number" ? DisplayMethodArea.Content : DisplayMethodArea.Fast)
     }
     Rectangle {
         anchors.fill:parent;color:"#eeeeee";visible:root.confirmation!=="";z:10
