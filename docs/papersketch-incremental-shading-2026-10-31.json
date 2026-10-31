@@ -1,0 +1,198 @@
+{
+  "candidate_qml_sha256": "088ba1c4daf6f080e29a493dc588f2bd4d2d046dfecf03590a5eec1e80fac60a",
+  "source_qml_sha256": "088ba1c4daf6f080e29a493dc588f2bd4d2d046dfecf03590a5eec1e80fac60a",
+  "source_engine_sha256": "273635d47eface6a86d727fc8a6d43fc3b310cb35db316fd755bc43aa3e09917",
+  "backup": "/home/root/.local/state/papersketch-native.94g7xh",
+  "artwork_before_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "evdev_injections": [
+    {
+      "mode": "pen",
+      "contact_ms": 1793483907470,
+      "release_ms": 1793483912949,
+      "writes_ok": true,
+      "id": "pen-graphite"
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793483918606,
+      "release_ms": 1793483924009,
+      "writes_ok": true,
+      "id": "pen-charcoal"
+    }
+  ],
+  "process_cpu_sample": {
+    "wall_seconds": 11.053,
+    "cpu_seconds": 8.36,
+    "reference": "one CPU core; sampling starts after the first benchmark case is observed"
+  },
+  "results": {
+    "execution": "long fast Linux evdev shading through production handlers",
+    "shading_probe": {
+      "cases": [
+        {
+          "active_input_tick_gap_ms": 47,
+          "slow_ticks": [],
+          "display_probe": "8x8 mean of actual binary tile display pixels",
+          "fast_display": true,
+          "pressure_matches": 1259,
+          "pressure_fallbacks": 0,
+          "display_binary": true,
+          "display_has_samples": true,
+          "optical_has_grays": true,
+          "display_mean": 219.3896484375,
+          "optical_mean": 222.1650390625,
+          "id": "pen-graphite",
+          "tool": 1,
+          "points": 1259,
+          "first": [
+            120,
+            399.9,
+            0.13
+          ],
+          "last": [
+            1079.9,
+            499.9,
+            0.88
+          ],
+          "raster_seen_ms": 1793483910219,
+          "tile_seen_ms": 1793483910234,
+          "max_input_tick_gap_ms": 52,
+          "blank_frames_after_visible": 0,
+          "full_screen": false,
+          "max_material_segment_ms": 0,
+          "retained_points": 2,
+          "metadata_bytes": 91,
+          "passed": true,
+          "tile_visible_before_release": true,
+          "injected_duration_ms": 5479
+        },
+        {
+          "active_input_tick_gap_ms": 97,
+          "slow_ticks": [
+            {
+              "gap_ms": 97,
+              "contact": true,
+              "previous_contact": true
+            }
+          ],
+          "display_probe": "8x8 mean of actual binary tile display pixels",
+          "fast_display": true,
+          "pressure_matches": 1259,
+          "pressure_fallbacks": 0,
+          "display_binary": true,
+          "display_has_samples": true,
+          "optical_has_grays": true,
+          "display_mean": 157.1337890625,
+          "optical_mean": 159.541015625,
+          "id": "pen-charcoal",
+          "tool": 4,
+          "points": 1259,
+          "first": [
+            120,
+            900,
+            0.13
+          ],
+          "last": [
+            1079.9,
+            1199.9,
+            0.88
+          ],
+          "raster_seen_ms": 1793483921308,
+          "tile_seen_ms": 1793483921340,
+          "max_input_tick_gap_ms": 97,
+          "blank_frames_after_visible": 0,
+          "full_screen": true,
+          "max_material_segment_ms": 6,
+          "retained_points": 2,
+          "metadata_bytes": 91,
+          "passed": true,
+          "tile_visible_before_release": true,
+          "injected_duration_ms": 5403
+        }
+      ],
+      "no_automatic_save": true,
+      "passed": true
+    },
+    "cases": [
+      {
+        "active_input_tick_gap_ms": 47,
+        "slow_ticks": [],
+        "display_probe": "8x8 mean of actual binary tile display pixels",
+        "fast_display": true,
+        "pressure_matches": 1259,
+        "pressure_fallbacks": 0,
+        "display_binary": true,
+        "display_has_samples": true,
+        "optical_has_grays": true,
+        "display_mean": 219.3896484375,
+        "optical_mean": 222.1650390625,
+        "id": "pen-graphite",
+        "tool": 1,
+        "points": 1259,
+        "first": [
+          120,
+          399.9,
+          0.13
+        ],
+        "last": [
+          1079.9,
+          499.9,
+          0.88
+        ],
+        "raster_seen_ms": 1793483910219,
+        "tile_seen_ms": 1793483910234,
+        "max_input_tick_gap_ms": 52,
+        "blank_frames_after_visible": 0,
+        "full_screen": false,
+        "max_material_segment_ms": 0,
+        "retained_points": 2,
+        "metadata_bytes": 91,
+        "passed": true
+      },
+      {
+        "active_input_tick_gap_ms": 97,
+        "slow_ticks": [
+          {
+            "gap_ms": 97,
+            "contact": true,
+            "previous_contact": true
+          }
+        ],
+        "display_probe": "8x8 mean of actual binary tile display pixels",
+        "fast_display": true,
+        "pressure_matches": 1259,
+        "pressure_fallbacks": 0,
+        "display_binary": true,
+        "display_has_samples": true,
+        "optical_has_grays": true,
+        "display_mean": 157.1337890625,
+        "optical_mean": 159.541015625,
+        "id": "pen-charcoal",
+        "tool": 4,
+        "points": 1259,
+        "first": [
+          120,
+          900,
+          0.13
+        ],
+        "last": [
+          1079.9,
+          1199.9,
+          0.88
+        ],
+        "raster_seen_ms": 1793483921308,
+        "tile_seen_ms": 1793483921340,
+        "max_input_tick_gap_ms": 97,
+        "blank_frames_after_visible": 0,
+        "full_screen": true,
+        "max_material_segment_ms": 6,
+        "retained_points": 2,
+        "metadata_bytes": 91,
+        "passed": true
+      }
+    ]
+  },
+  "runtime_seconds": 59.57,
+  "artwork_after_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "artwork_preserved": true
+}

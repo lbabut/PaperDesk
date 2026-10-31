@@ -10,4 +10,11 @@ inline uint32_t paperDisplayPixel(uint32_t pixel,int x,int y){
  const int gray=(pixel>>16)&255,threshold=bayer[y&7][x&7]*4+2;
  return gray>threshold?0xffffffffu:0xff000000u;
 }
+inline void paperDisplayPatch(const uint32_t* source,int sourceStride,uint32_t* optical,uint32_t* display,int tileStride,int x0,int y0,int width,int height,int originX,int originY,bool fast){
+ for(int y=y0;y<y0+height;y++){
+  const auto src=source+y*sourceStride;
+  auto raw=optical+y*tileStride,out=display+y*tileStride;
+  for(int x=x0;x<x0+width;x++){uint32_t p=src[x];raw[x]=p;out[x]=fast?paperDisplayPixel(p,originX+x,originY+y):p;}
+ }
+}
 #endif

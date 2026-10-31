@@ -10,7 +10,7 @@ A finger picks up loose pigment, lifts some bound pigment and deposits what it c
 
 ## Live drawing
 
-The material kernel writes the authoritative bitmap as pointer events arrive. Scalar pointer calls retain only the first and current point; JavaScript does not grow a point history during long shading gestures. Dirty tiles publish during the gesture on a coalesced 16 ms timer. The bitmap is neither cleared nor replaced by a temporary stroke preview at pen-up. The older firmware pen-preview extension is kept off in bitmap mode.
+The material kernel writes the authoritative bitmap as pointer events arrive. Scalar pointer calls retain only the first and current point; JavaScript does not grow a point history during long shading gestures. Dirty rectangles notify the tiles immediately during the gesture; Qt coalesces the actual frame updates, with no additional 16 ms application timer. The bitmap is neither cleared nor replaced by a temporary stroke preview at pen-up. The older firmware pen-preview extension is kept off in bitmap mode.
 
 There is no post-stroke undo history and no page snapshot at the start of a stylus stroke. Small temporary patches exist only during a finger gesture so that stylus proximity can cancel an accidental palm mark. They are discarded when the gesture finishes. Finger input pauses while the stylus is in range.
 
@@ -22,11 +22,17 @@ The size slider performs no legacy preview status reads or writes in bitmap mode
 
 The authoritative image, pigment simulation, saved material page and PNG export retain grayscale. Native tiles convert their display copy to a fixed 8×8 ordered halftone, allowing the drawing surface to use UFast rather than a grayscale waveform. This trades smooth screen tones for fine black-and-white grain. The pattern stays in place during and after a stroke; there is no black preview replaced by a different final image at pen-up.
 
-Tile invalidation now supplies the intersecting local rectangle. Drawing no longer changes button availability colors or the footer's drawing/idle text on every pen contact; input actions remain blocked while a stroke is active. Page changes and requested saves retain their existing behavior.
+Tile invalidation supplies the intersecting local rectangle. Each tile reuses its optical and display buffers and converts only its accumulated damaged regions. A repaint with no new damage simply reuses the existing pixels; changing page, display mode, tile size or source origin refreshes the full tile. Drawing no longer changes button availability colors or the footer's drawing/idle text on every pen contact; input actions remain blocked while a stroke is active. Page changes and requested saves retain their existing behavior.
 
 On-device reports are docs/papersketch-live-shading-2026-10-31.json and docs/papersketch-live-input-2026-10-31.json. Both long shading gestures match all 1,259 delivered pressure samples, retain grayscale RAM pixels, and paint only black/white display pixels whose regional mean differs by less than 3/255 in the sampled patches. An 8×8 mean of the actual binary tile display pixels stays visible throughout each gesture and does not go blank after pen-up. Input probes read the painted optical snapshot before halftoning for exact pigment comparisons; the shading probe separately checks the actual native tile display palette.
 
-The probe-wide timer maxima are 43 ms for graphite and 132 ms for charcoal. Those numbers include time before injected contact and are not optical pen-to-panel timings. This change does not establish a measured improvement in physical drawing comfort.
+The earlier live-display probe's timer maxima are 43 ms for graphite and 132 ms for charcoal. Those numbers include time before injected contact and are not optical pen-to-panel timings. This change does not establish a measured improvement in physical drawing comfort.
+
+## Incremental display optimization
+
+The display conversion benchmark runs on the tablet's ARM CPU without changing the screen or user artwork. For 2,000 narrow 8×64 patches, whole-tile conversion takes 474.256 ms versus 21.0615 ms for incremental updates (22.52×). For 48×48 wide-tool patches it takes 487.683 ms versus 79.1804 ms (6.16×). Final optical and display buffers are byte-identical. These ratios cover the measured copy/halftone operation, not total app speed or optical panel latency. See docs/papersketch-incremental-display-arm-2026-10-31.json and tests/bench-sketch-display.cpp.
+
+Native regression tests compare full rendered output after separate one-pixel updates, source-origin changes, exposure repaints and display-mode changes. A live update is emitted before returning to the event loop. Current tablet integration reports are docs/papersketch-incremental-{shading,input,deployment}-2026-10-31.json. Instrumented long shading records active-contact timer maxima of 47 ms for graphite and 97 ms for charcoal; an earlier run recorded an unclassified 190 ms probe-wide peak before active/contact logging was added. The short pen/finger probe records 46 ms. These values are not optical panel measurements and do not establish an overall app speedup.
 
 ## Persistence and migration
 

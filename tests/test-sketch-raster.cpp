@@ -11,6 +11,9 @@ int main(int argc,char **argv){
     QElapsedTimer readyTimer;readyTimer.start();while(component.isLoading() && readyTimer.elapsed()<5000)QCoreApplication::processEvents(QEventLoop::AllEvents,50);
     if(component.isError())qWarning()<<component.errors();assert(component.isReady());QObject *object=component.create();assert(object);delete object;
     QTemporaryDir dir;assert(dir.isValid());SketchRaster board(nullptr,dir.path());
+    SketchRaster live(nullptr,dir.path()+"/live");int liveUpdates=0;
+    QObject::connect(&live,&SketchRaster::changed,[&](QRect){liveUpdates++;});
+    live.begin();assert(live.advance(1,12,1,100,100,.7,true));assert(liveUpdates>0);live.finish();
     QVariantList a{300,240,1},b{300,360,1},spec{3,24,0,1,6,123,0};
     board.begin();assert(board.segment(spec,a,a,false));spec[6]=1;assert(board.segment(spec,a,b,false));board.finish();
     QImage pencil=board.image;int original=qRed(pencil.pixel(300,300));assert(original<150);
@@ -31,6 +34,18 @@ int main(int argc,char **argv){
     board.setFastDisplay(false);{QPainter painter(&display);tile.paint(&painter);}
     assert(qRed(display.pixel(44,44))==core && tile.pixels(44,44,1,1)[0].toInt()==core);
     assert(board.image==blended);board.setFastDisplay(true);
+    auto paintTile=[&](){QPainter painter(&display);tile.paint(&painter);};
+    auto checkTile=[&](int ox,int oy){for(int y=0;y<128;y++)for(int x=0;x<128;x++){
+        auto raw=board.image.pixel(ox+x,oy+y);
+        assert(display.pixel(x,y)==paperDisplayPixel(raw,ox+x,oy+y));
+        assert(tile.opticalPixels(x,y,1,1)[0].toInt()==qRed(raw));
+    }};
+    paintTile();checkTile(256,256);
+    board.image.setPixel(270,280,qRgb(35,35,35));board.image.setPixel(370,375,qRgb(205,205,205));
+    emit board.changed(QRect(270,280,1,1));emit board.changed(QRect(370,375,1,1));
+    paintTile();checkTile(256,256);paintTile();checkTile(256,256);
+    tile.setProperty("sourceX",384);paintTile();checkTile(384,256);
+    board.image=blended;emit board.changed(board.image.rect());tile.setProperty("sourceX",256);paintTile();checkTile(256,256);
     assert(board.save(dir.filePath("drawing.png")));QImage exported(dir.filePath("drawing.png"));assert(exported.size()==board.image.size() && exported.pixel(300,300)==board.image.pixel(300,300));
     bool saved=false;QObject::connect(&board,&SketchRaster::saveCompleted,&board,[&]{saved=true;});
     const QString document=R"({"document":"fixture-book"})";

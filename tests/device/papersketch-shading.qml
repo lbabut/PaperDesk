@@ -7,6 +7,9 @@ Rectangle{
  property real waitAt:0
  property real lastTick:0
  property real maxGap:0
+ property real activeGap:0
+ property bool wasActive:false
+ property var slowTicks:[]
  property real firstRaster:0
  property real firstTile:0
  property int blankFrames:0
@@ -21,11 +24,11 @@ Rectangle{
  function ready(){
   var d=definitions[caseIndex],a=subject.item,surface=find(a,"drawingCanvas"),win=bench.Window.window;
   var p=surface.mapToItem(win.contentItem,120,d.y0),q=surface.mapToItem(win.contentItem,1080,d.y1);
-  firstRaster=0;firstTile=0;blankFrames=0;maxGap=0;phase=3;
+  firstRaster=0;firstTile=0;blankFrames=0;maxGap=0;activeGap=0;wasActive=false;slowTicks=[];phase=3;
   console.log("PAPERSKETCH_INPUT_READY "+JSON.stringify({mode:"pen",id:d.id,pattern:"shade",start:[p.x,p.y],end:[q.x,q.y]}));
  }
  function step(){
-  var now=Date.now(),a=subject.item;if(lastTick && phase===3)maxGap=Math.max(maxGap,now-lastTick);lastTick=now;
+  var now=Date.now(),a=subject.item;if(lastTick && phase===3){var gap=now-lastTick,contact=!!(a&&a.activeSource==="pen");maxGap=Math.max(maxGap,gap);if(contact||wasActive)activeGap=Math.max(activeGap,gap);if(gap>=80)slowTicks.push({gap_ms:gap,contact:contact,previous_contact:wasActive});wasActive=contact;}lastTick=now;
   if(!a || !a.ready || a.replaying || !a.bitmapMode)return;
   if(phase===0){waitAt=now;phase=1;return;}
   if(phase===1 && now-waitAt>4000){
@@ -43,7 +46,7 @@ Rectangle{
    var matched=a.nativeRaster.pressureMatchCounts(),cell=find(a,"artTile"+(Math.floor(my/128)*a.artColumns+Math.floor(mx/128)));
    var display=cell.displayPixels(mx%128,my%128,32,32),raw=a.nativeRaster.pixels(mx,my,32,32),displaySum=0,rawSum=0,binary=true,grays=false;
    for(var pi=0;pi<display.length;pi+=4){var value=display[pi];binary=binary&&(value===0||value===255);displaySum+=value;rawSum+=raw[pi];grays=grays||(raw[pi]>0&&raw[pi]<255);}
-   var item={display_probe:"8x8 mean of actual binary tile display pixels",fast_display:a.fastDisplay,pressure_matches:matched[0],pressure_fallbacks:matched[1],display_binary:binary,display_has_samples:display.length===4096,optical_has_grays:grays,display_mean:displaySum/1024,optical_mean:rawSum/1024,id:d.id,tool:d.tool,points:s.samples||points.length,first:first,last:last,raster_seen_ms:firstRaster,tile_seen_ms:firstTile,max_input_tick_gap_ms:maxGap,blank_frames_after_visible:blankFrames,full_screen:a.fullScreen,max_material_segment_ms:a.nativePatchMaxMs,retained_points:points.length,metadata_bytes:JSON.stringify(a.notebook).length};
+   var item={active_input_tick_gap_ms:activeGap,slow_ticks:slowTicks,display_probe:"8x8 mean of actual binary tile display pixels",fast_display:a.fastDisplay,pressure_matches:matched[0],pressure_fallbacks:matched[1],display_binary:binary,display_has_samples:display.length===4096,optical_has_grays:grays,display_mean:displaySum/1024,optical_mean:rawSum/1024,id:d.id,tool:d.tool,points:s.samples||points.length,first:first,last:last,raster_seen_ms:firstRaster,tile_seen_ms:firstTile,max_input_tick_gap_ms:maxGap,blank_frames_after_visible:blankFrames,full_screen:a.fullScreen,max_material_segment_ms:a.nativePatchMaxMs,retained_points:points.length,metadata_bytes:JSON.stringify(a.notebook).length};
    item.passed=a.fastDisplay && binary && display.length===4096 && grays && Math.abs(displaySum-rawSum)/1024<12 && matched[0]>4*matched[1] && (s.samples||points.length)>=100 && Math.abs(first[0]-120)<15 && Math.abs(first[1]-d.y0)<15 && Math.abs(last[0]-1080)<15 && Math.abs(last[1]-d.y1)<15 && blankFrames===0 && maxGap<200;
    cases.push(item);console.log("PAPERSKETCH_NATIVE_CASE "+JSON.stringify(item));
    caseIndex++;waitAt=now;phase=4;return;

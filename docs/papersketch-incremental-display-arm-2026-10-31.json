@@ -1,0 +1,26 @@
+{
+  "execution": "standalone CPU display benchmark; no screen latency measurement",
+  "cases": [
+    {
+      "name": "narrow-ink",
+      "frames": 2000,
+      "baseline_ms": 474.256,
+      "incremental_ms": 21.0615,
+      "speedup": 22.5177,
+      "identical": true,
+      "baseline_pixels_per_frame": 16384,
+      "updated_pixels_per_frame": 512
+    },
+    {
+      "name": "wide-tool",
+      "frames": 2000,
+      "baseline_ms": 487.683,
+      "incremental_ms": 79.1804,
+      "speedup": 6.15914,
+      "identical": true,
+      "baseline_pixels_per_frame": 16384,
+      "updated_pixels_per_frame": 2304
+    }
+  ],
+  "device": "real reMarkable2, ARM CPU"
+}
