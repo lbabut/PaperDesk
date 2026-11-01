@@ -1,11 +1,18 @@
-# PaperDesk 3.0.3
+# PaperDesk 4.0.0
 
 PaperDesk turns a reMarkable 2 into a quiet, monochrome network workspace.
-The bundle adds seven apps directly to the AppLoad list and keeps their
+The bundle adds eight apps directly to the AppLoad list and keeps their
 settings between sessions. The redundant hub and technical RDP worker are
 hidden from users.
 
 ## Apps
+
+- **Paper Sketch** — a grayscale sketchbook with pressure-sensitive graphite and
+  charcoal, a pigment-lifting eraser, textured paper and finger blending. Choose
+  the tool and size in one compact icon toolbar. Save pages manually and export
+  grayscale PNGs to Documents. The material simulation approximates dry media;
+  the e-ink screen uses fine black-and-white halftoning while saved art retains
+  grayscale.
 
 - **PaperDesk Books** — an offline library with reading positions, language
   and source preferences, with Gutenberg, Wolne Lektury, OpenStax, arXiv, Europe PMC and unrestricted Open Library editions. PDF/EPUB editions use the built-in reader through My files.
@@ -44,14 +51,17 @@ It also handles the newer AppLoad 0.6.0 screen-aspect reporting.
 
 ## Requirements
 
-- reMarkable 2 running reMarkable OS 3.29.x (tested on 3.29.0.149);
+- reMarkable 2 running reMarkable OS **3.29.0.149** (suite baseline) or **3.29.0.153** (Sketch validation);
 - XOVI 0.3.3;
 - rm-xovi-extensions v19;
 - AppLoad 0.6.0;
 - LiTerm 0.1.7.
 
-This is the tested configuration. Other versions may work, but are not
-covered by this release.
+This is the tested configuration. The installer accepts only OS 3.29.0.149 or 3.29.0.153
+and requires ARMv7 architecture before making changes: Paper Sketch registers a native
+Qt extension inside Xochitl, and ABI compatibility on another firmware has not
+been established. It installs only the material renderer; the optional legacy
+pen-preview extension is not enabled.
 
 After a firmware update, XOVI needs a symbol table rebuilt for the exact
 OS version. On the tested device, this was done with
@@ -104,9 +114,26 @@ saved copy of LiTerm; see `MANUAL-INSTALL.md`.
 ## Component licences
 
 The package contains licence texts for LiTerm, AppLoad/QTFB, and FreeRDP
-under `licenses`. The bundled QTFB shim source is in
+under `licenses`. Paper Sketch retains the MIT notice for the optional legacy
+pen-preview code under `payload/apps/papersketch/native/LICENSE`. The bundled QTFB shim source is in
 `third_party_source`. PaperDesk application code, the AppLoad QML
 compatibility patch, and the PaperRDP client are shipped in the package.
+
+## Paper Sketch data
+
+The sketchbook is under `/home/root/.local/share/paperdesk/sketch`. Drawing
+changes RAM until Save is chosen; Close and page changes offer Save, Discard or
+Cancel. Export creates a PNG in Documents and does not implicitly save the
+sketchbook. Installation and removal retain artwork and exports. The installer
+backs up an existing native renderer before replacing it and restores a
+pre-existing renderer when PaperDesk is removed.
+
+## Source
+
+Browse the application, renderer, tests and build scripts at
+<https://github.com/lbabut/PaperDesk>. The project archive additionally includes
+prepared ARM files for manual installation. See the root `LICENSES.md` for the
+component inventory and the scope of the existing licence notices.
 
 ## Release status
 
@@ -114,3 +141,9 @@ The inherited app baseline was exercised on a physical reMarkable 2 with OS 3.29
 all module launches and safe menu actions, system keyboard, persistent
 settings, RSS refresh and full-text retrieval, AppLoad window cleanup,
 physical scroll and pinch gestures, and scaled RDP sessions.
+
+The v4 source adds Paper Sketch to the bundle. Native material and display tests
+cover pigment conservation, pressure, erasing, event sampling, persistence and
+incremental repainting. Physical pen feel and optical panel latency remain
+separate from software regression results; this release does not claim that a
+digital simulation exactly reproduces every physical pencil or paper.

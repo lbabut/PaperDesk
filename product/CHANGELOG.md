@@ -1,3 +1,11 @@
+# 4.0.0 — 2026-11-01
+
+- Added Paper Sketch to the installable bundle: pressure-sensitive graphite and charcoal, textured paper, pigment-lifting eraser and finger blending.
+- Replaced text actions with icons and placed the tool-size slider in the same toolbar, giving the canvas the space previously used by the lower size bar.
+- Audited material mass transfer, pointer sampling, save/export handling and incremental display rendering; kept full grayscale in saved artwork and PNGs.
+- Installed the native material renderer with a supported-firmware check, previous-module backups and uninstall restoration; sketchbooks and exported PNGs remain intact.
+- Updated the project site and both guides for eight apps, and linked source browsing directly to the GitHub repository.
+
 # 3.0.3 — 2026-10-20
 
 - RDP keeps its desktop, toolbar and shortcuts in one landscape coordinate space, including when opening or dismissing the keyboard.

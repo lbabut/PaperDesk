@@ -1,0 +1,120 @@
+{
+  "product": "PaperDesk",
+  "version": "4.0.0",
+  "audit_date": "2026-11-01",
+  "source_baseline": {
+    "github_main": "d75bc1454459f504be85a3649d5f17bd3fcf2599",
+    "paper_sketch": "Current isolated feature snapshot from authoritative PaperDesk working tree; unrelated uncommitted source left in place"
+  },
+  "fixed": [
+    "Zero pressure no longer marks paper",
+    "Finger mixing scales with pressure and strength",
+    "Sub-.001px motion no longer loses distance",
+    "Finite parameter validation before coordinate conversion",
+    "Fixed-size zlib decode and packed pigment validation for material caches",
+    "Reused footprint coordinates and per-dab constants",
+    "Native Sketch renderer is included in staged, checksum-verified installation",
+    "Native module replacement, rollback and uninstall restoration use atomic rename",
+    "Firmware-safe QML tool icons and integrated brush-size slider",
+    "Care/release metadata updated to 4.0.0",
+    "Public GitHub source links and new eight-app project page"
+  ],
+  "toolbar": {
+    "before_height_px": 182,
+    "after_height_px": 84,
+    "icons": 8,
+    "size_slider_in_same_row": true
+  },
+  "host_verification": {
+    "python_tests_run": 137,
+    "python_skipped": 2,
+    "python_failed": 0,
+    "qml_passed": 202,
+    "qml_skipped": 2,
+    "qml_failed": 0,
+    "native_suites": [
+      "material",
+      "pen",
+      "display",
+      "material-integration",
+      "workflow",
+      "raster"
+    ],
+    "native_passed": true,
+    "material_address_undefined_sanitizers_passed": true
+  },
+  "device": {
+    "model": "reMarkable 2",
+    "IMG_VERSION": "3.29.0.153",
+    "native_dependency_libz_so_1_verified": true,
+    "probes": {
+      "controls": {
+        "passed": true,
+        "artwork_preserved": true,
+        "report": "docs/papersketch-v4-controls-device.json"
+      },
+      "workflow": {
+        "passed": true,
+        "artwork_preserved": true,
+        "report": "docs/papersketch-v4-workflow-device.json"
+      },
+      "input": {
+        "passed": true,
+        "artwork_preserved": true,
+        "report": "docs/papersketch-v4-input-device.json"
+      },
+      "shading": {
+        "passed": true,
+        "artwork_preserved": true,
+        "report": "docs/papersketch-v4-shading-device.json",
+        "physical_panel_latency_measured": false
+      }
+    },
+    "material_cpu_benchmark": {
+      "execution": "CPU-only benchmark on reMarkable 2 ARMv7 after all input/display probes completed",
+      "runs_per_phase": 9,
+      "medians_microseconds": {
+        "before": {
+          "smudge_p50_us": 1028.094,
+          "smudge_p95_us": 1095.094,
+          "pencil_p50_us": 74.498,
+          "pencil_p95_us": 84.498
+        },
+        "after": {
+          "smudge_p50_us": 650.982,
+          "smudge_p95_us": 699.854,
+          "pencil_p50_us": 63.873,
+          "pencil_p95_us": 73.248
+        }
+      },
+      "change_percent": {
+        "smudge_p50_us": -36.68,
+        "smudge_p95_us": -36.09,
+        "pencil_p50_us": -14.26,
+        "pencil_p95_us": -13.31
+      },
+      "workload_source": "tests/bench-sketch-material.cpp",
+      "raw_results": "docs/papersketch-v4-material-arm.jsonl",
+      "optical_panel_latency_measured": false
+    }
+  },
+  "source_visibility": {
+    "repository": "https://github.com/lbabut/PaperDesk",
+    "visibility": "public",
+    "homepage": "https://paperdesk.lukaszbabut.info"
+  },
+  "limitations": [
+    "Dry-media approximation; stylus tilt, wear, sharpening, graphite sheen and paper deformation are not simulated",
+    "Software frame/input timings are not optical pen-to-panel latency",
+    "No claim of measured physical equivalence to real paper",
+    "Installer retains per-app backups but is not a whole-system transaction"
+  ],
+  "hashes": {
+    "ui/main.qml": "d13fea4eb1a78c1c7b345226ffe546e463e82fba41635fb93ece016a293bee11",
+    "ui/ToolIcon.qml": "31c99a3d02e6a980c9e2a3055480d05ea9fb37260ea5ec4d491bba807073e62a",
+    "native/sketch-material.h": "a3db3c2a0052eb9a61e9fa8b2f8e232c2b1d9811e71cf6c22fbde766fbead29a",
+    "native/papersketch-raster.cpp": "6e473869f401f1a3ce25dbf9a3356b37243a628bf4b824244b0900f0ae724572",
+    "native/papersketch-raster.so": "1b4dbf8cf090e6384a096e6658cbb7f61357ab691cfeb0ccead5a5a824d4f31f",
+    "resources.rcc": "adbf62420ea39759f62859a077f05fdd69ccf26f87cebf8c89a77a64095155b7"
+  }
+}

@@ -43,10 +43,10 @@ Rectangle {
         Rectangle {
             anchors.left: parent.left
             anchors.top: parent.top
-            anchors.leftMargin: 28
-            anchors.topMargin: 28
-            width: 104
-            height: 76
+            anchors.leftMargin: 20
+            anchors.topMargin: 20
+            width: 76
+            height: 52
             radius: 6
             color: cardTouch.pressed ? "white" : "black"
             Text {
@@ -74,7 +74,7 @@ Rectangle {
             anchors.top: parent.top
             anchors.leftMargin: 28
             anchors.rightMargin: 28
-            anchors.topMargin: 124
+            anchors.topMargin: 88
             height: 2
             color: cardTouch.pressed ? "white" : "black"
         }
@@ -82,11 +82,11 @@ Rectangle {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
-            anchors.topMargin: 158
+            anchors.topMargin: 110
             anchors.margins: 28
             text: title
             color: cardTouch.pressed ? "white" : "black"
-            font.pointSize: 31
+            font.pointSize: 25
             font.bold: true
             wrapMode: Text.WordWrap
         }
@@ -94,11 +94,11 @@ Rectangle {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
-            anchors.topMargin: 238
+            anchors.topMargin: 168
             anchors.margins: 28
             text: subtitle
             color: cardTouch.pressed ? "white" : "black"
-            font.pointSize: 17
+            font.pointSize: 15
             lineHeight: 1.32
             wrapMode: Text.WordWrap
         }
@@ -107,8 +107,8 @@ Rectangle {
             anchors.bottom: parent.bottom
             anchors.margins: 28
             width: 128
-            height: 54
-            radius: 27
+            height: 44
+            radius: 22
             color: "transparent"
             border.color: cardTouch.pressed ? "white" : "black"
             border.width: 2
@@ -159,7 +159,7 @@ Rectangle {
                         font.bold: true
                     }
                     Text {
-                        text: "Five focused tools. One quiet workspace."
+                        text: "Eight focused tools. One quiet workspace."
                         color: "white"
                         font.pointSize: 16
                     }
@@ -173,7 +173,7 @@ Rectangle {
                     radius: 31
                     Text {
                         anchors.centerIn: parent
-                        text: "V 2.0.5"
+                        text: "V 4.0.0"
                         color: "white"
                         font.pointSize: 13
                         font.bold: true
@@ -209,10 +209,20 @@ Rectangle {
             columnSpacing: 20
 
             ProductCard {
-                objectName: "terminalButton"
+                objectName: "sketchButton"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 number: "01"
+                mark: "/"
+                title: "Paper Sketch"
+                subtitle: "Draw with graphite and charcoal, blend with a finger and save your pages."
+                applicationId: "papersketch"
+            }
+            ProductCard {
+                objectName: "terminalButton"
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                number: "02"
                 mark: ">_"
                 title: "PaperDesk SSH"
                 subtitle: "Connect over SSH, use shortcuts and work with readable, zoomable text."
@@ -222,7 +232,7 @@ Rectangle {
                 objectName: "webButton"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                number: "02"
+                number: "03"
                 mark: "WWW"
                 title: "Web reader"
                 subtitle: "Read lightweight pages without animation, clutter or distracting colour."
@@ -232,7 +242,7 @@ Rectangle {
                 objectName: "rdpButton"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                number: "03"
+                number: "04"
                 mark: "RDP"
                 title: "Remote desktop"
                 subtitle: "Open a saved computer with touch, keyboard and the shortcuts you need."
@@ -242,21 +252,41 @@ Rectangle {
                 objectName: "rssButton"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                number: "04"
+                number: "05"
                 mark: "RSS"
                 title: "Reading list"
-                subtitle: "Keep feeds, favourites and full articles together, ready for offline reading."
+                subtitle: "Keep feeds and full articles together, ready for offline reading."
                 applicationId: "paperrss"
             }
             ProductCard {
                 objectName: "booksButton"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                number: "05"
+                number: "06"
                 mark: "BK"
                 title: "Books"
                 subtitle: "Find public-domain books and take your offline shelf anywhere."
                 applicationId: "paperbooks"
+            }
+            ProductCard {
+                objectName: "dotsButton"
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                number: "07"
+                mark: "••"
+                title: "Dots"
+                subtitle: "Play Kropki with a person or computer, then return to your saved game."
+                applicationId: "paperdots"
+            }
+            ProductCard {
+                objectName: "careButton"
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                number: "08"
+                mark: "+"
+                title: "Care"
+                subtitle: "Read release notes and keep your apps current with signed updates."
+                applicationId: "papercare"
             }
         }
     }

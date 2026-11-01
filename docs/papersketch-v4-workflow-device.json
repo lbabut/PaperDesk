@@ -1,0 +1,64 @@
+{
+  "candidate_qml_sha256": "d13fea4eb1a78c1c7b345226ffe546e463e82fba41635fb93ece016a293bee11",
+  "source_qml_sha256": "d13fea4eb1a78c1c7b345226ffe546e463e82fba41635fb93ece016a293bee11",
+  "source_engine_sha256": "08cf51250d5e4b868419ab889982d3fdf8f48a54c9d920e49c801cfd039115ab",
+  "source_icon_sha256": "31c99a3d02e6a980c9e2a3055480d05ea9fb37260ea5ec4d491bba807073e62a",
+  "backup": "/home/root/.local/state/papersketch-native.mKilL2",
+  "cache_namespace": "PaperDeskSketchNativeBenchbaseline1793535048075629681",
+  "artwork_before_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "evdev_injections": [
+    {
+      "mode": "finger",
+      "contact_ms": 1793535095973,
+      "release_ms": 1793535096054,
+      "writes_ok": true,
+      "id": "export-save"
+    },
+    {
+      "mode": "finger",
+      "contact_ms": 1793535098804,
+      "release_ms": 1793535098884,
+      "writes_ok": true,
+      "id": "delete-menu"
+    },
+    {
+      "mode": "finger",
+      "contact_ms": 1793535102367,
+      "release_ms": 1793535102454,
+      "writes_ok": true,
+      "id": "delete-confirm"
+    }
+  ],
+  "results": {
+    "execution": "real tablet named PNG export and stable page deletion through production UI",
+    "workflow_probe": {
+      "real_device": true,
+      "fixture_saved": true,
+      "finger_always_on": true,
+      "removed_buttons": true,
+      "name_focused": true,
+      "keyboard_visible": true,
+      "export_path": "/home/root/Documents/PaperSketch-test-1793535084451.png",
+      "export_optical_digest": "36e6018b54a5e3de8f4f3a43524a5b686da52a3a952bc5a4b756457e22ebd3ac",
+      "export_named": true,
+      "collision_confirmation": true,
+      "middle_delete": true,
+      "slots_after_delete": [
+        0,
+        2
+      ],
+      "deletion_saved": true,
+      "new_page_uses_new_slot": true,
+      "new_page_discard": true,
+      "reload_preserves_surviving_art": true,
+      "metadata_recovery": true,
+      "last_page_becomes_blank": true,
+      "delete_discard_restores": true,
+      "passed": true
+    },
+    "cases": []
+  },
+  "runtime_seconds": 55.95,
+  "artwork_after_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "artwork_preserved": true
+}

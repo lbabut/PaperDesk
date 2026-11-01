@@ -1,27 +1,70 @@
 {
   "product": "PaperDesk",
-  "version": "3.0.3",
-  "releaseDate": "2026-10-20",
+  "version": "4.0.0",
+  "releaseDate": "2026-11-01",
   "device": "reMarkable 2",
   "components": [
-    { "id": "literm", "name": "PaperDesk SSH" },
-    { "id": "paperweb", "name": "PaperDesk Web" },
-    { "id": "paperrdp-login", "name": "PaperDesk RDP" },
-    { "id": "paperrss", "name": "PaperDesk RSS" },
-    { "id": "papercare", "name": "PaperDesk Care" },
-    { "id": "paperdots", "name": "PaperDesk Dots" },
-    { "id": "paperbooks", "name": "PaperDesk Books" }
+    {
+      "id": "papersketch",
+      "name": "Paper Sketch"
+    },
+    {
+      "id": "literm",
+      "name": "PaperDesk SSH"
+    },
+    {
+      "id": "paperweb",
+      "name": "PaperDesk Web"
+    },
+    {
+      "id": "paperrdp-login",
+      "name": "PaperDesk RDP"
+    },
+    {
+      "id": "paperrss",
+      "name": "PaperDesk RSS"
+    },
+    {
+      "id": "papercare",
+      "name": "PaperDesk Care"
+    },
+    {
+      "id": "paperdots",
+      "name": "PaperDesk Dots"
+    },
+    {
+      "id": "paperbooks",
+      "name": "PaperDesk Books"
+    }
   ],
   "internalComponents": [
-    { "id": "external::paperrdp", "name": "PaperDesk RDP Engine", "role": "hidden FreeRDP/QTFB worker" },
-    { "id": "external::paperbooks-download", "name": "Books Download Worker", "role": "hidden bounded PDF/EPUB download worker" },
-    { "id": "external::paperweb-download", "name": "Web Download Worker", "role": "hidden bounded PDF/EPUB download worker" }
+    {
+      "id": "external::paperrdp",
+      "name": "PaperDesk RDP Engine",
+      "role": "hidden FreeRDP/QTFB worker"
+    },
+    {
+      "id": "external::paperbooks-download",
+      "name": "Books Download Worker",
+      "role": "hidden bounded PDF/EPUB download worker"
+    },
+    {
+      "id": "external::paperweb-download",
+      "name": "Web Download Worker",
+      "role": "hidden bounded PDF/EPUB download worker"
+    },
+    {
+      "id": "papersketch-raster.so",
+      "name": "Paper Sketch material renderer",
+      "role": "XOVI native Qt extension; explicitly supported OS 3.29.0.149 and 3.29.0.153"
+    }
   ],
   "testedWith": {
     "remarkableOS": "3.29.0.149",
     "xovi": "0.3.3",
     "rmXoviExtensions": "v19-23052026",
     "appLoad": "0.6.0",
-    "liTerm": "0.1.7"
+    "liTerm": "0.1.7",
+    "paperSketchOS": "3.29.0.153"
   }
 }

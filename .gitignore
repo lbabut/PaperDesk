@@ -11,7 +11,9 @@ product/paperdesk.local.conf
 # Never publish local or machine-specific state
 work/
 build/
-dist/
+/dist/*
+!/dist/SHA256SUMS
+!/dist/*.sha256
 website/data/
 __pycache__/
 *.pyc

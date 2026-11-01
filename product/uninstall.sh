@@ -11,12 +11,29 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
-for app in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download paperpet shims; do
+NATIVE_RESTORE_STAGE=""
+trap 'if [ -n "$NATIVE_RESTORE_STAGE" ]; then rm -f "$NATIVE_RESTORE_STAGE"; fi' EXIT
+trap 'exit 1' HUP INT TERM
+
+for app in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch paperpet shims; do
     rm -rf "$TARGET/$app"
-    if [ -f "$STATE/original-recorded" ] && [ -e "$STATE/original/apps/$app" ]; then
+    if { [ -f "$STATE/original-recorded" ] || { [ "$app" = papersketch ] && [ -f "$STATE/sketch-original-recorded" ]; }; } && [ -e "$STATE/original/apps/$app" ]; then
         cp -R "$STATE/original/apps/$app" "$TARGET/$app"
     fi
 done
+
+# Restore only the module managed by v4. Keep legacy pen-preview modules and
+# every user sketchbook/export untouched.
+if [ -f "$STATE/sketch-original-recorded" ]; then
+    if [ -f "$STATE/original/system/papersketch-raster.so" ]; then
+        NATIVE_RESTORE_STAGE=$(mktemp /home/root/xovi/extensions.d/.papersketch-uninstall.XXXXXX)
+        cp -p "$STATE/original/system/papersketch-raster.so" "$NATIVE_RESTORE_STAGE"
+        mv "$NATIVE_RESTORE_STAGE" /home/root/xovi/extensions.d/papersketch-raster.so
+        NATIVE_RESTORE_STAGE=""
+    else
+        rm -f /home/root/xovi/extensions.d/papersketch-raster.so
+    fi
+fi
 
 rm -f /home/root/.local/bin/rmssh-menu
 if [ -f "$STATE/original-recorded" ] && [ -f "$STATE/original/system/rmssh-menu" ]; then

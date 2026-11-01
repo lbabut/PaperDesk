@@ -1,4 +1,4 @@
-"""The public source download must not be hidden behind vague package labels."""
+"""Source links must browse GitHub; prepared installation packages stay distinct."""
 from html.parser import HTMLParser
 from pathlib import Path
 import re
@@ -6,7 +6,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = (ROOT / 'product/VERSION').read_text().strip()
-SOURCE_URL = f'/download/paperdesk-sources-{VERSION}.tar.gz'
+SOURCE_URL = "https://github.com/lbabut/PaperDesk"
 
 
 class Links(HTMLParser):
@@ -37,7 +37,7 @@ class SourceVisibilityTests(unittest.TestCase):
     def assert_source_link(self, fragment):
         matches = [(attrs, label) for attrs, label in Links(fragment).links
                    if attrs.get('href') == SOURCE_URL]
-        self.assertTrue(matches, 'Source code must link directly to the current archive')
+        self.assertTrue(matches, 'Source code must link directly to the GitHub repository')
         self.assertTrue(any('source code' in label.lower() for _, label in matches))
 
     def test_source_code_is_in_top_navigation(self):
@@ -52,8 +52,15 @@ class SourceVisibilityTests(unittest.TestCase):
         self.assertIn('button', source.get('class', '').split())
         self.assertNotIn('<details', hero)
 
+    def test_source_code_links_on_every_public_page_use_github(self):
+        for path in (ROOT / 'website').glob('*.html'):
+            for attrs, label in Links(path.read_text()).links:
+                if 'source code' in label.lower() or 'źródła' in label.lower():
+                    self.assertEqual(attrs.get('href'), SOURCE_URL, str(path))
+
     def test_download_label_and_client_role_are_explicit(self):
-        self.assertIn('Download source code', self.home)
+        self.assertIn('Browse source code on GitHub', self.home)
+        self.assertIn('Download project package', self.home)
         self.assertIn('QML and C/C++ app code, installers, tests and licences', self.home)
         ssh = re.search(r'<h3>PaperDesk SSH</h3>(.*?)</article>', self.home, re.S).group(1)
         self.assertIn('graphical SSH client and terminal', ssh)

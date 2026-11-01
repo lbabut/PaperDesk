@@ -3,6 +3,7 @@
 PaperDesk turns a reMarkable 2 into a quiet, monochrome network workspace.
 It bundles touch-first tools designed around the limits of e-ink:
 
+- Paper Sketch — pressure-sensitive graphite and charcoal, textured paper, finger blending, manual page saves and grayscale PNG export.
 - PaperDesk SSH — SSH, system keyboard, gestures, and common shortcuts.
 - PaperDesk Dots — offline Kropki with human or computer players, three board sizes, saved games and undo.
 - PaperDesk Books — six free literature/textbook/research sources, offline text reading and native PDF/EPUB import, with saved language and service preferences.
@@ -11,8 +12,14 @@ It bundles touch-first tools designed around the limits of e-ink:
 - RSS — RSS/Atom feeds, full-text reading, read state, and offline cache.
 - Care — signed updates, release notes, automatic verification, and rollback backups.
 
-The current release is **3.0.3**, targeting the tested reMarkable OS
-3.29.0.149 with XOVI 0.3.3, AppLoad 0.6.0, and LiTerm 0.1.7.
+The current release is **4.0.0**, targeting the tested reMarkable OS
+**3.29.0.149** with XOVI 0.3.3, AppLoad 0.6.0, and LiTerm 0.1.7.
+
+The installer accepts only OS 3.29.0.149 or 3.29.0.153 because Sketch loads a native
+Qt extension into Xochitl. Other firmware versions are not validated.
+
+Browse the source at <https://github.com/lbabut/PaperDesk>. The release project
+archive also contains prepared ARM files for installation.
 
 ## Repository layout
 

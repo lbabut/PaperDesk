@@ -6,6 +6,7 @@ umask 077
 PRODUCT="PaperDesk"
 TARGET="/home/root/xovi/exthome/appload"
 QRR_DIR="/home/root/xovi/exthome/qt-resource-rebuilder"
+EXTENSIONS="/home/root/xovi/extensions.d"
 STATE="/home/root/.local/share/paperdesk"
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PAYLOAD="$SCRIPT_DIR/payload"
@@ -26,7 +27,7 @@ if [ ! -d "/home/root/xovi" ] || [ ! -d "$TARGET" ]; then
     exit 1
 fi
 
-for required in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download shims; do
+for required in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch shims; do
     if [ ! -d "$PAYLOAD/apps/$required" ]; then
         echo "Incomplete package: missing payload/apps/$required" >&2
         exit 1
@@ -45,6 +46,22 @@ if [ ! -f /home/root/xovi/extensions.d/qt-resource-rebuilder.so ]; then
     exit 1
 fi
 
+# Sketch runs native Qt code inside Xochitl. A different firmware may have an
+# incompatible ABI even when QML-only apps happen to launch successfully.
+OS_VERSION=$(sed -n 's/^IMG_VERSION=//p' /etc/os-release | tr -d '\"')
+if [ -z "$OS_VERSION" ]; then
+    OS_VERSION=$(sed -n 's/^VERSION_ID=//p' /etc/os-release | tr -d '\"')
+fi
+if { [ "$OS_VERSION" != "3.29.0.149" ] && [ "$OS_VERSION" != "3.29.0.153" ]; } || [ "$(uname -m)" != "armv7l" ]; then
+    echo "PaperDesk 4 requires the supported reMarkable 2 OS 3.29.0.149 or 3.29.0.153 / ARMv7 native ABI." >&2
+    echo "No files have been installed. Check firmware compatibility before continuing." >&2
+    exit 1
+fi
+if [ ! -f "$PAYLOAD/apps/papersketch/native/papersketch-raster.so" ]; then
+    echo "Incomplete package: missing Paper Sketch native material renderer." >&2
+    exit 1
+fi
+
 # Manual installs deserve the same payload-integrity check as Care. Verify
 # before touching services, backups or installed files.
 (cd "$SCRIPT_DIR" && sha256sum -c SHA256SUMS >/dev/null) || {
@@ -58,23 +75,44 @@ flock -n 8 || { echo "Another PaperDesk installation is running." >&2; exit 1; }
 # currently installed apps intact. Renames below remain on the same filesystem.
 STAGING=$(mktemp -d "$TARGET/.paperdesk-install.XXXXXX")
 REPLACING_APP=""
+NATIVE_STAGE=""
+NATIVE_REPLACING=0
+NATIVE_WAS_PRESENT=0
+INSTALL_COMPLETE=0
 cleanup_staging() {
     if [ -n "$REPLACING_APP" ] && [ ! -e "$TARGET/$REPLACING_APP" ] &&
        [ -e "$STAGING/previous-$REPLACING_APP" ]; then
         # A signal between the two renames must put the previous app back.
         mv "$STAGING/previous-$REPLACING_APP" "$TARGET/$REPLACING_APP" || return 1
     fi
+    if [ -n "$NATIVE_STAGE" ]; then rm -f "$NATIVE_STAGE"; NATIVE_STAGE=""; fi
+    if [ "$NATIVE_REPLACING" = 1 ] && [ "$INSTALL_COMPLETE" != 1 ]; then
+        if [ "$NATIVE_WAS_PRESENT" = 1 ]; then
+            # Restore by rename too: interruption cannot leave a truncated .so.
+            NATIVE_STAGE=$(mktemp "$EXTENSIONS/.papersketch-restore.XXXXXX")
+            if ! { cp -p "$BACKUP/system/papersketch-raster.so" "$NATIVE_STAGE" &&
+                   mv "$NATIVE_STAGE" "$EXTENSIONS/papersketch-raster.so"; }; then
+                echo "Could not restore the previous Sketch renderer; keep backup $BACKUP." >&2
+            fi
+        else
+            rm -f "$EXTENSIONS/papersketch-raster.so"
+        fi
+    fi
+    if [ -n "$NATIVE_STAGE" ]; then rm -f "$NATIVE_STAGE"; fi
     rm -rf "$STAGING"
 }
 trap cleanup_staging EXIT
 trap 'exit 1' HUP INT TERM
 cp -R "$PAYLOAD/apps/." "$STAGING/"
+NATIVE_STAGE=$(mktemp "$EXTENSIONS/.papersketch-raster.XXXXXX")
+cp "$PAYLOAD/apps/papersketch/native/papersketch-raster.so" "$NATIVE_STAGE"
+chmod 644 "$NATIVE_STAGE"
 
 # Capture the original installation once. Later upgrades must not replace this baseline.
 ORIGINAL="$STATE/original"
 if [ ! -f "$STATE/original-recorded" ] && [ ! -f "$STATE/current-version" ]; then
     mkdir -p "$ORIGINAL/apps" "$ORIGINAL/system"
-    for app in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download paperpet shims; do
+    for app in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch paperpet shims; do
         if [ -e "$TARGET/$app" ]; then
             cp -R "$TARGET/$app" "$ORIGINAL/apps/$app"
         fi
@@ -96,6 +134,19 @@ if [ ! -f "$STATE/original-recorded" ] && [ ! -f "$STATE/current-version" ]; the
         cp /home/root/.local/bin/rmssh-menu "$ORIGINAL/system/rmssh-menu"
     fi
     touch "$STATE/original-recorded"
+fi
+
+# Older PaperDesk installations already have original-recorded. Capture a
+# pre-existing development Sketch app/module once when first upgrading to v4.
+if [ ! -f "$STATE/sketch-original-recorded" ]; then
+    mkdir -p "$ORIGINAL/apps" "$ORIGINAL/system"
+    if [ -e "$TARGET/papersketch" ] && [ ! -e "$ORIGINAL/apps/papersketch" ]; then
+        cp -R "$TARGET/papersketch" "$ORIGINAL/apps/papersketch"
+    fi
+    if [ -f "$EXTENSIONS/papersketch-raster.so" ]; then
+        cp -p "$EXTENSIONS/papersketch-raster.so" "$ORIGINAL/system/papersketch-raster.so"
+    fi
+    touch "$STATE/sketch-original-recorded"
 fi
 
 cp "$PAYLOAD/system/paperdesk-update.service" /etc/systemd/system/paperdesk-update.service
@@ -140,6 +191,10 @@ mkdir -p "$BACKUP/apps" "$BACKUP/system" "$TARGET" /home/root/.local/bin \
 
 echo "$PRODUCT $VERSION — installation"
 echo "Previous-version backup: $BACKUP"
+if [ -f "$EXTENSIONS/papersketch-raster.so" ]; then
+    cp -p "$EXTENSIONS/papersketch-raster.so" "$BACKUP/system/papersketch-raster.so"
+    NATIVE_WAS_PRESENT=1
+fi
 
 # Retire the experimental PaperPet app, retaining its previous installation
 # in the version backup. User data and original snapshots remain untouched.
@@ -147,7 +202,7 @@ if [ -e "$TARGET/paperpet" ]; then
     cp -R "$TARGET/paperpet" "$BACKUP/apps/paperpet"
     rm -rf "$TARGET/paperpet"
 fi
-for app in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download shims; do
+for app in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch shims; do
     REPLACING_APP=$app
     if [ -e "$TARGET/$app" ]; then
         cp -R "$TARGET/$app" "$BACKUP/apps/$app"
@@ -202,8 +257,17 @@ if ! grep -q '^# RMSSH-BEGIN' /home/root/.profile; then
     sed -n '/^# RMSSH-BEGIN/,/^# RMSSH-END/p' "$PAYLOAD/system/profile-hook.sh" >> /home/root/.profile
 fi
 
+# The extension is replaced by a same-filesystem rename only after the app
+# payload and resources succeeded. The exit trap restores it on later failure.
+NATIVE_REPLACING=1
+mv "$NATIVE_STAGE" "$EXTENSIONS/papersketch-raster.so"
+NATIVE_STAGE=""
+mkdir -p "$STATE/sketch"
+chmod 700 "$STATE/sketch"
+
 printf '%s\n' "$VERSION" > "$STATE/current-version"
 printf '%s\n' "$BACKUP" > "$STATE/last-backup"
+INSTALL_COMPLETE=1
 
 echo
 echo "Done. Restart XOVI with /home/root/xovi/start."

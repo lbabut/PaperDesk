@@ -1,0 +1,43 @@
+{
+  "candidate_qml_sha256": "d13fea4eb1a78c1c7b345226ffe546e463e82fba41635fb93ece016a293bee11",
+  "source_qml_sha256": "d13fea4eb1a78c1c7b345226ffe546e463e82fba41635fb93ece016a293bee11",
+  "source_engine_sha256": "08cf51250d5e4b868419ab889982d3fdf8f48a54c9d920e49c801cfd039115ab",
+  "source_icon_sha256": "31c99a3d02e6a980c9e2a3055480d05ea9fb37260ea5ec4d491bba807073e62a",
+  "backup": "/home/root/.local/state/papersketch-native.7g8UW4",
+  "cache_namespace": "PaperDeskSketchNativeBenchbaseline1793534964282011679",
+  "artwork_before_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "evdev_injections": [
+    {
+      "mode": "finger",
+      "contact_ms": 1793535010013,
+      "release_ms": 1793535011000,
+      "writes_ok": true,
+      "id": "size-slider"
+    }
+  ],
+  "results": {
+    "execution": "real tablet size-slider pointer and rendered-frame probe",
+    "controls_probe": {
+      "value_updates": 149,
+      "painted_frames": 154,
+      "max_input_tick_gap_ms": 41,
+      "max_probe_tick_gap_ms": 141,
+      "gaps_over_70ms": [
+        {
+          "ms": 141,
+          "pressed": false,
+          "since_ready": 823
+        }
+      ],
+      "final_size": 79,
+      "first_value_to_frame_ms": 22,
+      "real_device": true,
+      "optical_panel_latency_measured": false,
+      "passed": true
+    },
+    "cases": []
+  },
+  "runtime_seconds": 40.97,
+  "artwork_after_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "artwork_preserved": true
+}
