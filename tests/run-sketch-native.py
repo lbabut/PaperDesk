@@ -21,11 +21,18 @@ p.add_argument("--baseline-qml")
 p.add_argument("--smoke",action="store_true")
 p.add_argument("--input-probe",action="store_true")
 p.add_argument("--shading-probe",action="store_true")
+p.add_argument("--latency-probe",action="store_true")
+p.add_argument("--latency-fresh-only",action="store_true",help="limit the latency probe to fresh-page HB and charcoal")
 p.add_argument("--controls-probe",action="store_true")
 p.add_argument("--workflow-probe",action="store_true")
 p.add_argument("--realism-probe",action="store_true")
 p.add_argument("--output",default="docs/papersketch-native-2026-10-31.json")
 a=p.parse_args()
+if a.latency_fresh_only and not a.latency_probe:
+    p.error("--latency-fresh-only requires --latency-probe")
+if a.latency_probe and any((a.smoke,a.input_probe,a.shading_probe,a.controls_probe,a.workflow_probe,a.realism_probe)):
+    p.error("--latency-probe must run separately from other probes")
+uses_input=a.input_probe or a.shading_probe or a.latency_probe or a.controls_probe or a.workflow_probe or a.realism_probe
 root=pathlib.Path(__file__).resolve().parents[1]
 work=root/"work/papersketch-native"
 app=work/"papersketch-native-bench"
@@ -51,7 +58,11 @@ for name,text in [("baseline",baseline),("constant-fast",candidate)]:
     shutil.copy2(source/"engine.js",folder/"engine.js")
     for qml_name in ("native-tile.qml","ToolIcon.qml"):
         shutil.copy2(source/"ui"/qml_name,folder/"ui"/qml_name)
-harness=(root/("tests/device/papersketch-realism.qml" if a.realism_probe else "tests/device/papersketch-workflow.qml" if a.workflow_probe else "tests/device/papersketch-controls.qml" if a.controls_probe else "tests/device/papersketch-shading.qml" if a.shading_probe else "tests/device/papersketch-input.qml" if a.input_probe else "tests/device/papersketch-native.qml")).read_text()
+harness=(root/("tests/device/papersketch-latency.qml" if a.latency_probe else "tests/device/papersketch-realism.qml" if a.realism_probe else "tests/device/papersketch-workflow.qml" if a.workflow_probe else "tests/device/papersketch-controls.qml" if a.controls_probe else "tests/device/papersketch-shading.qml" if a.shading_probe else "tests/device/papersketch-input.qml" if a.input_probe else "tests/device/papersketch-native.qml")).read_text()
+if a.latency_fresh_only:
+    marker="property bool freshOnly:false"
+    assert harness.count(marker)==1,"Latency harness fresh-only option is missing"
+    harness=harness.replace(marker,"property bool freshOnly:true")
 if a.smoke:harness=harness.replace("property bool smokeOnly:false","property bool smokeOnly:true")
 if a.baseline_qml:harness=harness.replace('"constant-fast"','"tiled-fast"')
 elif candidate==baseline:harness=harness.replace('["baseline","constant-fast"]','["production-1","production-2"]')
@@ -96,7 +107,7 @@ original=None
 injected=set()
 report={"candidate_qml_sha256":hashlib.sha256(candidate.encode()).hexdigest(),"source_qml_sha256":hashlib.sha256(baseline.encode()).hexdigest(),"source_engine_sha256":hashlib.sha256((source/"engine.js").read_bytes()).hexdigest(),"source_icon_sha256":hashlib.sha256((source/"ui/ToolIcon.qml").read_bytes()).hexdigest(),"backup":backup,"cache_namespace":"PaperDeskSketchNativeBenchbaseline"+namespace_suffix}
 try:
-    if a.input_probe or a.shading_probe or a.controls_probe or a.workflow_probe or a.realism_probe:
+    if uses_input:
         cache=pathlib.Path("/home/lukasz/Documents/Codex/2026-09-25/m-2/work/arm-toolchain/root")
         env=dict(__import__("os").environ,LD_LIBRARY_PATH=str(cache/"usr/lib/x86_64-linux-gnu"))
         driver=work/"input-driver-arm"
@@ -124,7 +135,7 @@ try:
     result=None
     for attempt in range(65):
         logs=remote("journalctl -u xochitl _PID="+pid+" --no-pager").decode()
-        if a.input_probe or a.shading_probe or a.controls_probe or a.workflow_probe or a.realism_probe:
+        if uses_input:
             for line in logs.splitlines():
                 if "PAPERSKETCH_INPUT_READY " not in line:continue
                 payload=line.split("PAPERSKETCH_INPUT_READY ",1)[1];payload=payload[:payload.rfind("}")+1]
@@ -163,7 +174,7 @@ try:
     if cpu_start is not None:
         cpu_wall=time.monotonic()-cpu_start[0]
         report["process_cpu_sample"]={"wall_seconds":round(cpu_wall,3),"cpu_seconds":round((cpu_ticks()-cpu_start[1])/ticks,3),"reference":"one CPU core; sampling starts after the first benchmark case is observed"}
-    if a.input_probe or a.shading_probe or a.controls_probe or a.workflow_probe or a.realism_probe:
+    if uses_input:
         for event in report.get("evdev_injections",[]):
             if event["mode"]=="pen" and "input_probe" in result:
                 result["input_probe"]["pen"]["post_release_to_tile_ms"]=result["input_probe"]["pen"]["tile_seen_ms"]-event["release_ms"]
@@ -173,15 +184,44 @@ try:
                 event=next(e for e in report["evdev_injections"] if e["id"]==case["id"])
                 case["tile_visible_before_release"]=case["tile_seen_ms"]<event["release_ms"]
                 case["injected_duration_ms"]=event["release_ms"]-event["contact_ms"]
-    if a.realism_probe:
+    if a.realism_probe or a.latency_probe:
+        probe_name="latency_probe" if a.latency_probe else "realism_probe"
         runtime_errors=[line for line in logs.splitlines() if ("bench.qml:" in line or "baseline/ui/main.qml:" in line) and any(error in line for error in ("TypeError:","ReferenceError:","SyntaxError:"))]
-        result["realism_probe"]["runtime_errors"]=runtime_errors
-        result["realism_probe"]["passed"]=result["realism_probe"]["passed"] and not runtime_errors
+        result[probe_name]["runtime_errors"]=runtime_errors
+        result[probe_name]["passed"]=result[probe_name]["passed"] and not runtime_errors
+    if a.latency_probe:
+        probe=result["latency_probe"]
+        events={event["id"]:event for event in report.get("evdev_injections",[])}
+        for case in probe["cases"]:
+            event=events.get(case["id"])
+            if event is None:
+                case["evdev_injection_missing"]=True
+                probe["passed"]=False
+                continue
+            contact=event["contact_ms"]
+            case["evdev_contact_ms"]=contact;case["evdev_release_ms"]=event["release_ms"]
+            case["tile_visible_before_release"]=bool(case.get("tile_seen_ms")) and case["tile_seen_ms"]<event["release_ms"]
+            case["injected_duration_ms"]=event["release_ms"]-contact
+            for output,timestamp in (
+                ("evdev_contact_to_qt_input_observed_ms","first_input_observed_ms"),
+                ("evdev_contact_to_damage_ms","first_damage_published_ms"),
+                ("evdev_contact_to_raster_upper_ms","raster_seen_ms"),
+                ("evdev_contact_to_tile_upper_ms","tile_seen_ms"),
+                ("evdev_contact_to_submitted_frame_upper_ms","first_frame_after_tile_ms"),
+            ):
+                case[output]=case[timestamp]-contact if case.get(timestamp) else None
+            stats=case.get("native_latency_stats")
+            if stats:
+                for key in ("first_advance_ms","first_publish_ms","first_tile_paint_ms"):
+                    case["evdev_contact_to_native_"+key.removesuffix("_ms")+"_ms"]=stats[key]-contact if stats.get(key) else None
+        probe["timing_origin"]="tablet CLOCK_REALTIME contact_ms versus QML Date.now/native epoch timestamps"
+        probe["physical_panel_latency_measured"]=False
+        result["cases"]=probe["cases"]
     report["results"]=result
     report["runtime_seconds"]=round(time.monotonic()-started,2)
     print(json.dumps(result,indent=2),flush=True)
 finally:
-    if a.input_probe or a.shading_probe or a.controls_probe or a.workflow_probe or a.realism_probe:remote("rm -f /tmp/papersketch-input-driver")
+    if uses_input:remote("rm -f /tmp/papersketch-input-driver")
     if original is not None:
         remote("systemctl stop xochitl")
         remote("cp -p "+b+"/xochitl.conf /home/root/.config/remarkable/xochitl.conf")
@@ -219,3 +259,15 @@ if a.realism_probe:
     events=report.get("evdev_injections",[])
     assert required.issubset({event["id"] for event in events}),"Realism probe skipped a required physical UI/input action"
     assert all(event.get("writes_ok") for event in events),"Realism input driver reported incomplete event writes"
+
+if a.latency_probe:
+    probe=report["results"]["latency_probe"]
+    assert not probe.get("runtime_errors"),"Latency harness or production UI emitted a runtime error"
+    required={"latency-fresh-hb","latency-fresh-charcoal"}
+    if not a.latency_fresh_only:required|={"latency-layered-hb","latency-layered-charcoal"}
+    assert probe.get("scope")==("fresh-only" if a.latency_fresh_only else "fresh-and-layered"),"Latency report scope differs from requested cases"
+    events=report.get("evdev_injections",[])
+    assert required.issubset({event["id"] for event in events}),"Latency probe skipped a required physical input action"
+    assert required=={case["id"] for case in probe["cases"]},"Latency probe did not report exactly the requested cases"
+    assert all(event.get("writes_ok") for event in events),"Latency input driver reported incomplete event writes"
+    assert probe["passed"],"Latency diagnostic incomplete; inspect its error and case reports"

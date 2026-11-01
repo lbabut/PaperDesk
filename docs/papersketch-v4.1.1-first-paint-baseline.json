@@ -1,0 +1,587 @@
+{
+  "candidate_qml_sha256": "618e52a987e44624d15804f93a2913de97cf1e2770edff511f33eb97ff757c56",
+  "source_qml_sha256": "9cc11e7da05ff015cea8bf55ad2d516c80c29868686fd7886ae8746205aafdb0",
+  "source_engine_sha256": "85e40646d3a71637569f52eb6b821bb90581a3d7316a21b24addb898f407500d",
+  "source_icon_sha256": "f2f8c03e93f4e0386edf6b5a80b78bf5412fb66d34d4f6f3c18918b6decf37bf",
+  "backup": "/home/root/.local/state/papersketch-native.x65JZS",
+  "cache_namespace": "PaperDeskSketchNativeBenchbaseline1793539656747277326",
+  "artwork_before_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "evdev_injections": [
+    {
+      "mode": "pen",
+      "contact_ms": 1793539702046,
+      "release_ms": 1793539703039,
+      "writes_ok": true,
+      "id": "latency-fresh-hb"
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793539705825,
+      "release_ms": 1793539706814,
+      "writes_ok": true,
+      "id": "latency-fresh-charcoal"
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793539722810,
+      "release_ms": 1793539723802,
+      "writes_ok": true,
+      "id": "latency-layered-hb"
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793539738619,
+      "release_ms": 1793539739606,
+      "writes_ok": true,
+      "id": "latency-layered-charcoal"
+    }
+  ],
+  "process_cpu_sample": {
+    "wall_seconds": 35.187,
+    "cpu_seconds": 28.7,
+    "reference": "one CPU core; sampling starts after the first benchmark case is observed"
+  },
+  "results": {
+    "execution": "isolated fresh/layered software latency diagnostic",
+    "cases": [
+      {
+        "id": "latency-fresh-hb",
+        "tool": 1,
+        "size": 12,
+        "surface": "fresh",
+        "measured_input": "Linux evdev via production pen handlers; fixed upright 0.55 pressure",
+        "first_input_observed_ms": 1793539702085,
+        "first_damage_published_ms": 1793539702088,
+        "raster_seen_ms": 1793539702090,
+        "tile_seen_ms": 1793539702102,
+        "first_frame_after_tile_ms": 1793539702102,
+        "qt_input_to_raster_upper_ms": 5,
+        "qt_input_to_tile_upper_ms": 17,
+        "qt_input_to_submitted_frame_upper_ms": 17,
+        "event_loop_gaps": {
+          "count": 39,
+          "p50_ms": 23,
+          "p95_ms": 49,
+          "max_ms": 55
+        },
+        "gaps_over_50ms": [
+          55
+        ],
+        "pixel_probe_cost": {
+          "count": 45,
+          "p50_ms": 0,
+          "p95_ms": 1,
+          "max_ms": 2
+        },
+        "polling_granularity_ms": 16,
+        "native_segment_peak_ms": 0,
+        "native_latency_stats": null,
+        "native_segment_peak_scope": "maximum internal material segment since page reset; layered cases include fixture work",
+        "raw_replay": [
+          1,
+          2
+        ],
+        "pressure_matches": [
+          60,
+          0
+        ],
+        "delivered_points": 60,
+        "retained_points": 2,
+        "metadata_bytes": 123,
+        "fixture_strokes": 0,
+        "fixture_cpu_wall_ms": 0,
+        "first_paint_metric": "changed bytes in native RasterTile display snapshot; upper bound sampled by GUI timer",
+        "frame_metric": "Qt frameSwapped after changed tile snapshot; callback delivery can be delayed",
+        "physical_panel_latency_measured": false,
+        "passed": true,
+        "synthetic_production_extend_cost": {
+          "count": 48,
+          "p50_ms": 1,
+          "p95_ms": 1,
+          "max_ms": 1
+        },
+        "synthetic_cost_scope": "48 direct production extendStroke calls, one per timer; includes pressure lookup and advance, excludes evdev delivery; 12px steps at pressure0.55",
+        "evdev_contact_ms": 1793539702046,
+        "evdev_release_ms": 1793539703039,
+        "tile_visible_before_release": true,
+        "injected_duration_ms": 993,
+        "evdev_contact_to_qt_input_observed_ms": 39,
+        "evdev_contact_to_damage_ms": 42,
+        "evdev_contact_to_raster_upper_ms": 44,
+        "evdev_contact_to_tile_upper_ms": 56,
+        "evdev_contact_to_submitted_frame_upper_ms": 56
+      },
+      {
+        "id": "latency-fresh-charcoal",
+        "tool": 4,
+        "size": 38,
+        "surface": "fresh",
+        "measured_input": "Linux evdev via production pen handlers; fixed upright 0.55 pressure",
+        "first_input_observed_ms": 1793539705863,
+        "first_damage_published_ms": 1793539705866,
+        "raster_seen_ms": 1793539705880,
+        "tile_seen_ms": 1793539705880,
+        "first_frame_after_tile_ms": 1793539705880,
+        "qt_input_to_raster_upper_ms": 17,
+        "qt_input_to_tile_upper_ms": 17,
+        "qt_input_to_submitted_frame_upper_ms": 17,
+        "event_loop_gaps": {
+          "count": 60,
+          "p50_ms": 17,
+          "p95_ms": 23,
+          "max_ms": 30
+        },
+        "gaps_over_50ms": [],
+        "pixel_probe_cost": {
+          "count": 69,
+          "p50_ms": 0,
+          "p95_ms": 0,
+          "max_ms": 2
+        },
+        "polling_granularity_ms": 16,
+        "native_segment_peak_ms": 2,
+        "native_latency_stats": null,
+        "native_segment_peak_scope": "maximum internal material segment since page reset; layered cases include fixture work",
+        "raw_replay": [
+          1,
+          2
+        ],
+        "pressure_matches": [
+          60,
+          0
+        ],
+        "delivered_points": 60,
+        "retained_points": 2,
+        "metadata_bytes": 123,
+        "fixture_strokes": 0,
+        "fixture_cpu_wall_ms": 0,
+        "first_paint_metric": "changed bytes in native RasterTile display snapshot; upper bound sampled by GUI timer",
+        "frame_metric": "Qt frameSwapped after changed tile snapshot; callback delivery can be delayed",
+        "physical_panel_latency_measured": false,
+        "passed": true,
+        "synthetic_production_extend_cost": {
+          "count": 48,
+          "p50_ms": 2,
+          "p95_ms": 2,
+          "max_ms": 3
+        },
+        "synthetic_cost_scope": "48 direct production extendStroke calls, one per timer; includes pressure lookup and advance, excludes evdev delivery; 12px steps at pressure0.55",
+        "evdev_contact_ms": 1793539705825,
+        "evdev_release_ms": 1793539706814,
+        "tile_visible_before_release": true,
+        "injected_duration_ms": 989,
+        "evdev_contact_to_qt_input_observed_ms": 38,
+        "evdev_contact_to_damage_ms": 41,
+        "evdev_contact_to_raster_upper_ms": 55,
+        "evdev_contact_to_tile_upper_ms": 55,
+        "evdev_contact_to_submitted_frame_upper_ms": 55
+      },
+      {
+        "id": "latency-layered-hb",
+        "tool": 1,
+        "size": 12,
+        "surface": "layered",
+        "measured_input": "Linux evdev via production pen handlers; fixed upright 0.55 pressure",
+        "first_input_observed_ms": 1793539722851,
+        "first_damage_published_ms": 1793539722853,
+        "raster_seen_ms": 1793539722854,
+        "tile_seen_ms": 1793539722868,
+        "first_frame_after_tile_ms": 1793539722868,
+        "qt_input_to_raster_upper_ms": 3,
+        "qt_input_to_tile_upper_ms": 17,
+        "qt_input_to_submitted_frame_upper_ms": 17,
+        "event_loop_gaps": {
+          "count": 61,
+          "p50_ms": 17,
+          "p95_ms": 18,
+          "max_ms": 23
+        },
+        "gaps_over_50ms": [],
+        "pixel_probe_cost": {
+          "count": 69,
+          "p50_ms": 0,
+          "p95_ms": 1,
+          "max_ms": 3
+        },
+        "polling_granularity_ms": 16,
+        "native_segment_peak_ms": 31,
+        "native_latency_stats": null,
+        "native_segment_peak_scope": "maximum internal material segment since page reset; layered cases include fixture work",
+        "raw_replay": [
+          1,
+          2
+        ],
+        "pressure_matches": [
+          60,
+          0
+        ],
+        "delivered_points": 60,
+        "retained_points": 2,
+        "metadata_bytes": 124,
+        "fixture_strokes": 96,
+        "fixture_cpu_wall_ms": 10287,
+        "first_paint_metric": "changed bytes in native RasterTile display snapshot; upper bound sampled by GUI timer",
+        "frame_metric": "Qt frameSwapped after changed tile snapshot; callback delivery can be delayed",
+        "physical_panel_latency_measured": false,
+        "passed": true,
+        "synthetic_production_extend_cost": {
+          "count": 48,
+          "p50_ms": 1,
+          "p95_ms": 1,
+          "max_ms": 2
+        },
+        "synthetic_cost_scope": "48 direct production extendStroke calls, one per timer; includes pressure lookup and advance, excludes evdev delivery; 12px steps at pressure0.55",
+        "evdev_contact_ms": 1793539722810,
+        "evdev_release_ms": 1793539723802,
+        "tile_visible_before_release": true,
+        "injected_duration_ms": 992,
+        "evdev_contact_to_qt_input_observed_ms": 41,
+        "evdev_contact_to_damage_ms": 43,
+        "evdev_contact_to_raster_upper_ms": 44,
+        "evdev_contact_to_tile_upper_ms": 58,
+        "evdev_contact_to_submitted_frame_upper_ms": 58
+      },
+      {
+        "id": "latency-layered-charcoal",
+        "tool": 4,
+        "size": 38,
+        "surface": "layered",
+        "measured_input": "Linux evdev via production pen handlers; fixed upright 0.55 pressure",
+        "first_input_observed_ms": 1793539738656,
+        "first_damage_published_ms": 1793539738658,
+        "raster_seen_ms": 1793539738662,
+        "tile_seen_ms": 1793539738674,
+        "first_frame_after_tile_ms": 1793539738674,
+        "qt_input_to_raster_upper_ms": 6,
+        "qt_input_to_tile_upper_ms": 18,
+        "qt_input_to_submitted_frame_upper_ms": 18,
+        "event_loop_gaps": {
+          "count": 61,
+          "p50_ms": 17,
+          "p95_ms": 22,
+          "max_ms": 25
+        },
+        "gaps_over_50ms": [],
+        "pixel_probe_cost": {
+          "count": 69,
+          "p50_ms": 0,
+          "p95_ms": 1,
+          "max_ms": 3
+        },
+        "polling_granularity_ms": 16,
+        "native_segment_peak_ms": 29,
+        "native_latency_stats": null,
+        "native_segment_peak_scope": "maximum internal material segment since page reset; layered cases include fixture work",
+        "raw_replay": [
+          1,
+          2
+        ],
+        "pressure_matches": [
+          60,
+          0
+        ],
+        "delivered_points": 60,
+        "retained_points": 2,
+        "metadata_bytes": 124,
+        "fixture_strokes": 96,
+        "fixture_cpu_wall_ms": 10246,
+        "first_paint_metric": "changed bytes in native RasterTile display snapshot; upper bound sampled by GUI timer",
+        "frame_metric": "Qt frameSwapped after changed tile snapshot; callback delivery can be delayed",
+        "physical_panel_latency_measured": false,
+        "passed": true,
+        "synthetic_production_extend_cost": {
+          "count": 48,
+          "p50_ms": 2,
+          "p95_ms": 3,
+          "max_ms": 4
+        },
+        "synthetic_cost_scope": "48 direct production extendStroke calls, one per timer; includes pressure lookup and advance, excludes evdev delivery; 12px steps at pressure0.55",
+        "evdev_contact_ms": 1793539738619,
+        "evdev_release_ms": 1793539739606,
+        "tile_visible_before_release": true,
+        "injected_duration_ms": 987,
+        "evdev_contact_to_qt_input_observed_ms": 37,
+        "evdev_contact_to_damage_ms": 39,
+        "evdev_contact_to_raster_upper_ms": 43,
+        "evdev_contact_to_tile_upper_ms": 55,
+        "evdev_contact_to_submitted_frame_upper_ms": 55
+      }
+    ],
+    "latency_probe": {
+      "passed": true,
+      "error": "",
+      "cases": [
+        {
+          "id": "latency-fresh-hb",
+          "tool": 1,
+          "size": 12,
+          "surface": "fresh",
+          "measured_input": "Linux evdev via production pen handlers; fixed upright 0.55 pressure",
+          "first_input_observed_ms": 1793539702085,
+          "first_damage_published_ms": 1793539702088,
+          "raster_seen_ms": 1793539702090,
+          "tile_seen_ms": 1793539702102,
+          "first_frame_after_tile_ms": 1793539702102,
+          "qt_input_to_raster_upper_ms": 5,
+          "qt_input_to_tile_upper_ms": 17,
+          "qt_input_to_submitted_frame_upper_ms": 17,
+          "event_loop_gaps": {
+            "count": 39,
+            "p50_ms": 23,
+            "p95_ms": 49,
+            "max_ms": 55
+          },
+          "gaps_over_50ms": [
+            55
+          ],
+          "pixel_probe_cost": {
+            "count": 45,
+            "p50_ms": 0,
+            "p95_ms": 1,
+            "max_ms": 2
+          },
+          "polling_granularity_ms": 16,
+          "native_segment_peak_ms": 0,
+          "native_latency_stats": null,
+          "native_segment_peak_scope": "maximum internal material segment since page reset; layered cases include fixture work",
+          "raw_replay": [
+            1,
+            2
+          ],
+          "pressure_matches": [
+            60,
+            0
+          ],
+          "delivered_points": 60,
+          "retained_points": 2,
+          "metadata_bytes": 123,
+          "fixture_strokes": 0,
+          "fixture_cpu_wall_ms": 0,
+          "first_paint_metric": "changed bytes in native RasterTile display snapshot; upper bound sampled by GUI timer",
+          "frame_metric": "Qt frameSwapped after changed tile snapshot; callback delivery can be delayed",
+          "physical_panel_latency_measured": false,
+          "passed": true,
+          "synthetic_production_extend_cost": {
+            "count": 48,
+            "p50_ms": 1,
+            "p95_ms": 1,
+            "max_ms": 1
+          },
+          "synthetic_cost_scope": "48 direct production extendStroke calls, one per timer; includes pressure lookup and advance, excludes evdev delivery; 12px steps at pressure0.55",
+          "evdev_contact_ms": 1793539702046,
+          "evdev_release_ms": 1793539703039,
+          "tile_visible_before_release": true,
+          "injected_duration_ms": 993,
+          "evdev_contact_to_qt_input_observed_ms": 39,
+          "evdev_contact_to_damage_ms": 42,
+          "evdev_contact_to_raster_upper_ms": 44,
+          "evdev_contact_to_tile_upper_ms": 56,
+          "evdev_contact_to_submitted_frame_upper_ms": 56
+        },
+        {
+          "id": "latency-fresh-charcoal",
+          "tool": 4,
+          "size": 38,
+          "surface": "fresh",
+          "measured_input": "Linux evdev via production pen handlers; fixed upright 0.55 pressure",
+          "first_input_observed_ms": 1793539705863,
+          "first_damage_published_ms": 1793539705866,
+          "raster_seen_ms": 1793539705880,
+          "tile_seen_ms": 1793539705880,
+          "first_frame_after_tile_ms": 1793539705880,
+          "qt_input_to_raster_upper_ms": 17,
+          "qt_input_to_tile_upper_ms": 17,
+          "qt_input_to_submitted_frame_upper_ms": 17,
+          "event_loop_gaps": {
+            "count": 60,
+            "p50_ms": 17,
+            "p95_ms": 23,
+            "max_ms": 30
+          },
+          "gaps_over_50ms": [],
+          "pixel_probe_cost": {
+            "count": 69,
+            "p50_ms": 0,
+            "p95_ms": 0,
+            "max_ms": 2
+          },
+          "polling_granularity_ms": 16,
+          "native_segment_peak_ms": 2,
+          "native_latency_stats": null,
+          "native_segment_peak_scope": "maximum internal material segment since page reset; layered cases include fixture work",
+          "raw_replay": [
+            1,
+            2
+          ],
+          "pressure_matches": [
+            60,
+            0
+          ],
+          "delivered_points": 60,
+          "retained_points": 2,
+          "metadata_bytes": 123,
+          "fixture_strokes": 0,
+          "fixture_cpu_wall_ms": 0,
+          "first_paint_metric": "changed bytes in native RasterTile display snapshot; upper bound sampled by GUI timer",
+          "frame_metric": "Qt frameSwapped after changed tile snapshot; callback delivery can be delayed",
+          "physical_panel_latency_measured": false,
+          "passed": true,
+          "synthetic_production_extend_cost": {
+            "count": 48,
+            "p50_ms": 2,
+            "p95_ms": 2,
+            "max_ms": 3
+          },
+          "synthetic_cost_scope": "48 direct production extendStroke calls, one per timer; includes pressure lookup and advance, excludes evdev delivery; 12px steps at pressure0.55",
+          "evdev_contact_ms": 1793539705825,
+          "evdev_release_ms": 1793539706814,
+          "tile_visible_before_release": true,
+          "injected_duration_ms": 989,
+          "evdev_contact_to_qt_input_observed_ms": 38,
+          "evdev_contact_to_damage_ms": 41,
+          "evdev_contact_to_raster_upper_ms": 55,
+          "evdev_contact_to_tile_upper_ms": 55,
+          "evdev_contact_to_submitted_frame_upper_ms": 55
+        },
+        {
+          "id": "latency-layered-hb",
+          "tool": 1,
+          "size": 12,
+          "surface": "layered",
+          "measured_input": "Linux evdev via production pen handlers; fixed upright 0.55 pressure",
+          "first_input_observed_ms": 1793539722851,
+          "first_damage_published_ms": 1793539722853,
+          "raster_seen_ms": 1793539722854,
+          "tile_seen_ms": 1793539722868,
+          "first_frame_after_tile_ms": 1793539722868,
+          "qt_input_to_raster_upper_ms": 3,
+          "qt_input_to_tile_upper_ms": 17,
+          "qt_input_to_submitted_frame_upper_ms": 17,
+          "event_loop_gaps": {
+            "count": 61,
+            "p50_ms": 17,
+            "p95_ms": 18,
+            "max_ms": 23
+          },
+          "gaps_over_50ms": [],
+          "pixel_probe_cost": {
+            "count": 69,
+            "p50_ms": 0,
+            "p95_ms": 1,
+            "max_ms": 3
+          },
+          "polling_granularity_ms": 16,
+          "native_segment_peak_ms": 31,
+          "native_latency_stats": null,
+          "native_segment_peak_scope": "maximum internal material segment since page reset; layered cases include fixture work",
+          "raw_replay": [
+            1,
+            2
+          ],
+          "pressure_matches": [
+            60,
+            0
+          ],
+          "delivered_points": 60,
+          "retained_points": 2,
+          "metadata_bytes": 124,
+          "fixture_strokes": 96,
+          "fixture_cpu_wall_ms": 10287,
+          "first_paint_metric": "changed bytes in native RasterTile display snapshot; upper bound sampled by GUI timer",
+          "frame_metric": "Qt frameSwapped after changed tile snapshot; callback delivery can be delayed",
+          "physical_panel_latency_measured": false,
+          "passed": true,
+          "synthetic_production_extend_cost": {
+            "count": 48,
+            "p50_ms": 1,
+            "p95_ms": 1,
+            "max_ms": 2
+          },
+          "synthetic_cost_scope": "48 direct production extendStroke calls, one per timer; includes pressure lookup and advance, excludes evdev delivery; 12px steps at pressure0.55",
+          "evdev_contact_ms": 1793539722810,
+          "evdev_release_ms": 1793539723802,
+          "tile_visible_before_release": true,
+          "injected_duration_ms": 992,
+          "evdev_contact_to_qt_input_observed_ms": 41,
+          "evdev_contact_to_damage_ms": 43,
+          "evdev_contact_to_raster_upper_ms": 44,
+          "evdev_contact_to_tile_upper_ms": 58,
+          "evdev_contact_to_submitted_frame_upper_ms": 58
+        },
+        {
+          "id": "latency-layered-charcoal",
+          "tool": 4,
+          "size": 38,
+          "surface": "layered",
+          "measured_input": "Linux evdev via production pen handlers; fixed upright 0.55 pressure",
+          "first_input_observed_ms": 1793539738656,
+          "first_damage_published_ms": 1793539738658,
+          "raster_seen_ms": 1793539738662,
+          "tile_seen_ms": 1793539738674,
+          "first_frame_after_tile_ms": 1793539738674,
+          "qt_input_to_raster_upper_ms": 6,
+          "qt_input_to_tile_upper_ms": 18,
+          "qt_input_to_submitted_frame_upper_ms": 18,
+          "event_loop_gaps": {
+            "count": 61,
+            "p50_ms": 17,
+            "p95_ms": 22,
+            "max_ms": 25
+          },
+          "gaps_over_50ms": [],
+          "pixel_probe_cost": {
+            "count": 69,
+            "p50_ms": 0,
+            "p95_ms": 1,
+            "max_ms": 3
+          },
+          "polling_granularity_ms": 16,
+          "native_segment_peak_ms": 29,
+          "native_latency_stats": null,
+          "native_segment_peak_scope": "maximum internal material segment since page reset; layered cases include fixture work",
+          "raw_replay": [
+            1,
+            2
+          ],
+          "pressure_matches": [
+            60,
+            0
+          ],
+          "delivered_points": 60,
+          "retained_points": 2,
+          "metadata_bytes": 124,
+          "fixture_strokes": 96,
+          "fixture_cpu_wall_ms": 10246,
+          "first_paint_metric": "changed bytes in native RasterTile display snapshot; upper bound sampled by GUI timer",
+          "frame_metric": "Qt frameSwapped after changed tile snapshot; callback delivery can be delayed",
+          "physical_panel_latency_measured": false,
+          "passed": true,
+          "synthetic_production_extend_cost": {
+            "count": 48,
+            "p50_ms": 2,
+            "p95_ms": 3,
+            "max_ms": 4
+          },
+          "synthetic_cost_scope": "48 direct production extendStroke calls, one per timer; includes pressure lookup and advance, excludes evdev delivery; 12px steps at pressure0.55",
+          "evdev_contact_ms": 1793539738619,
+          "evdev_release_ms": 1793539739606,
+          "tile_visible_before_release": true,
+          "injected_duration_ms": 987,
+          "evdev_contact_to_qt_input_observed_ms": 37,
+          "evdev_contact_to_damage_ms": 39,
+          "evdev_contact_to_raster_upper_ms": 43,
+          "evdev_contact_to_tile_upper_ms": 55,
+          "evdev_contact_to_submitted_frame_upper_ms": 55
+        }
+      ],
+      "no_automatic_save": true,
+      "physical_panel_latency_measured": false,
+      "limitations": "Software input/raster/tile/frame timestamps only; no camera or optical panel measurement. Date.now has millisecond resolution. Synthetic handler costs are separate from evdev timings. Layered fixture has 96 in-memory charcoal strokes and is never saved.",
+      "runtime_errors": [],
+      "timing_origin": "tablet CLOCK_REALTIME contact_ms versus QML Date.now/native epoch timestamps"
+    }
+  },
+  "runtime_seconds": 77.36,
+  "artwork_after_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "artwork_preserved": true
+}

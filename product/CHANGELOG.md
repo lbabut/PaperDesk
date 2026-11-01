@@ -1,3 +1,9 @@
+# 4.1.2 — 2026-11-01
+
+- Start pen strokes at initial contact, including stationary dots, without waiting for a drag or pen release.
+- Reduce repeated material calculations with a shared lookup of the same paper-response values, retaining the material equations and rendered image.
+- Add isolated fresh/layered-page software latency diagnostics for input, material updates, publication and tile painting; these do not measure optical e-ink latency.
+
 # 4.1.1 — 2026-11-01
 
 - Moved the Paper Sketch Materials settings icon from the header into the bottom navigation bar.

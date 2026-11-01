@@ -12,9 +12,21 @@ parser.add_argument("--key", required=True)
 parser.add_argument("--known-hosts", required=True)
 parser.add_argument("--launch", action="store_true")
 parser.add_argument("--native-raster",action="store_true",help="Install the native QImage engine with rollback")
+parser.add_argument("--native-raster-path",type=pathlib.Path,help="Stage this regular file as the native raster module; requires --native-raster")
 parser.add_argument("--native-ink", action="store_true", help="Install exact-build native pen preview with rollback")
 parser.add_argument("--host-key-alias")
 args = parser.parse_args()
+raster_override = None
+if args.native_raster_path is not None:
+    if not args.native_raster:
+        parser.error("--native-raster-path requires --native-raster")
+    override_path = args.native_raster_path.expanduser()
+    if not override_path.is_file():
+        parser.error("--native-raster-path must name a regular file")
+    try:
+        raster_override = override_path.read_bytes()
+    except OSError as error:
+        parser.error("Cannot read --native-raster-path: " + str(error))
 root = pathlib.Path(__file__).resolve().parents[1]
 source = root / "product/payload/apps/papersketch"
 for name in ("manifest.json", "resources.rcc", "icon.png"):
@@ -22,7 +34,7 @@ for name in ("manifest.json", "resources.rcc", "icon.png"):
         parser.error("Build Paper Sketch before installing: missing " + name)
 if args.native_ink and not (source / "native/papersketch-ink.so").is_file():
     parser.error("Build native/papersketch-ink.so before --native-ink")
-if args.native_raster and not (source / "native/papersketch-raster.so").is_file():
+if args.native_raster and raster_override is None and not (source / "native/papersketch-raster.so").is_file():
     parser.error("Build native/papersketch-raster.so before --native-raster")
 extensions=[]
 if args.native_ink:extensions.append("papersketch-ink.so")
@@ -46,6 +58,10 @@ stream = io.BytesIO()
 with tarfile.open(fileobj=stream, mode="w") as archive:
     archive.add(source, arcname="papersketch")
 remote("mkdir -p " + b + "/stage; tar -xf - -C " + b + "/stage", stream.getvalue())
+if raster_override is not None:
+    # Replace only the staged payload after extraction; the local product module
+    # and the rollback copy of the installed extension remain untouched.
+    remote("cat > " + b + "/stage/papersketch/native/papersketch-raster.so", raster_override)
 mask = remote("systemctl is-enabled remarkable-fail.service || true").decode().strip()
 mask_here = mask not in ("masked", "masked-runtime")
 stopped = False

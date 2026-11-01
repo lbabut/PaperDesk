@@ -1,0 +1,258 @@
+{
+  "candidate_qml_sha256": "9cc11e7da05ff015cea8bf55ad2d516c80c29868686fd7886ae8746205aafdb0",
+  "source_qml_sha256": "9cc11e7da05ff015cea8bf55ad2d516c80c29868686fd7886ae8746205aafdb0",
+  "source_engine_sha256": "85e40646d3a71637569f52eb6b821bb90581a3d7316a21b24addb898f407500d",
+  "source_icon_sha256": "f2f8c03e93f4e0386edf6b5a80b78bf5412fb66d34d4f6f3c18918b6decf37bf",
+  "backup": "/home/root/.local/state/papersketch-native.DEVjkT",
+  "cache_namespace": "PaperDeskSketchNativeBenchbaseline1793539512616903423",
+  "artwork_before_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "evdev_injections": [
+    {
+      "mode": "pen",
+      "contact_ms": 1793539561363,
+      "release_ms": 1793539566751,
+      "writes_ok": true,
+      "id": "pen-graphite"
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793539572235,
+      "release_ms": 1793539577640,
+      "writes_ok": true,
+      "id": "pen-charcoal"
+    }
+  ],
+  "process_cpu_sample": {
+    "wall_seconds": 10.954,
+    "cpu_seconds": 8.22,
+    "reference": "one CPU core; sampling starts after the first benchmark case is observed"
+  },
+  "results": {
+    "execution": "long fast Linux evdev shading through production handlers",
+    "shading_probe": {
+      "cases": [
+        {
+          "raw_replayed_samples": 1,
+          "max_raw_batch": 2,
+          "active_input_tick_gap_ms": 54,
+          "slow_ticks": [],
+          "display_probe": "8x8 mean of actual binary tile display pixels",
+          "fast_display": true,
+          "pressure_matches": 1259,
+          "pressure_fallbacks": 0,
+          "display_binary": true,
+          "display_has_samples": true,
+          "optical_has_grays": true,
+          "display_mean": 187.265625,
+          "optical_mean": 187.3359375,
+          "id": "pen-graphite",
+          "tool": 1,
+          "points": 1259,
+          "first": [
+            120,
+            400,
+            0.12503052503052503
+          ],
+          "last": [
+            1079.9,
+            500,
+            0.88
+          ],
+          "raster_seen_ms": 1793539564068,
+          "tile_seen_ms": 1793539564086,
+          "max_input_tick_gap_ms": 54,
+          "blank_frames_after_visible": 0,
+          "full_screen": false,
+          "max_material_segment_ms": 0,
+          "retained_points": 2,
+          "metadata_bytes": 123,
+          "passed": true,
+          "tile_visible_before_release": true,
+          "injected_duration_ms": 5388
+        },
+        {
+          "raw_replayed_samples": 1,
+          "max_raw_batch": 2,
+          "active_input_tick_gap_ms": 316,
+          "slow_ticks": [
+            {
+              "gap_ms": 91,
+              "contact": true,
+              "previous_contact": true
+            },
+            {
+              "gap_ms": 84,
+              "contact": true,
+              "previous_contact": true
+            },
+            {
+              "gap_ms": 148,
+              "contact": true,
+              "previous_contact": true
+            },
+            {
+              "gap_ms": 146,
+              "contact": true,
+              "previous_contact": true
+            },
+            {
+              "gap_ms": 113,
+              "contact": true,
+              "previous_contact": true
+            },
+            {
+              "gap_ms": 316,
+              "contact": true,
+              "previous_contact": true
+            }
+          ],
+          "display_probe": "8x8 mean of actual binary tile display pixels",
+          "fast_display": true,
+          "pressure_matches": 1259,
+          "pressure_fallbacks": 0,
+          "display_binary": true,
+          "display_has_samples": true,
+          "optical_has_grays": true,
+          "display_mean": 103.8427734375,
+          "optical_mean": 103.380859375,
+          "id": "pen-charcoal",
+          "tool": 4,
+          "points": 1259,
+          "first": [
+            120,
+            900,
+            0.12503052503052503
+          ],
+          "last": [
+            1079.9,
+            1199.9,
+            0.88
+          ],
+          "raster_seen_ms": 1793539574964,
+          "tile_seen_ms": 1793539575081,
+          "max_input_tick_gap_ms": 316,
+          "blank_frames_after_visible": 0,
+          "full_screen": true,
+          "max_material_segment_ms": 14,
+          "retained_points": 2,
+          "metadata_bytes": 123,
+          "passed": false,
+          "tile_visible_before_release": true,
+          "injected_duration_ms": 5405
+        }
+      ],
+      "no_automatic_save": true,
+      "passed": false
+    },
+    "cases": [
+      {
+        "raw_replayed_samples": 1,
+        "max_raw_batch": 2,
+        "active_input_tick_gap_ms": 54,
+        "slow_ticks": [],
+        "display_probe": "8x8 mean of actual binary tile display pixels",
+        "fast_display": true,
+        "pressure_matches": 1259,
+        "pressure_fallbacks": 0,
+        "display_binary": true,
+        "display_has_samples": true,
+        "optical_has_grays": true,
+        "display_mean": 187.265625,
+        "optical_mean": 187.3359375,
+        "id": "pen-graphite",
+        "tool": 1,
+        "points": 1259,
+        "first": [
+          120,
+          400,
+          0.12503052503052503
+        ],
+        "last": [
+          1079.9,
+          500,
+          0.88
+        ],
+        "raster_seen_ms": 1793539564068,
+        "tile_seen_ms": 1793539564086,
+        "max_input_tick_gap_ms": 54,
+        "blank_frames_after_visible": 0,
+        "full_screen": false,
+        "max_material_segment_ms": 0,
+        "retained_points": 2,
+        "metadata_bytes": 123,
+        "passed": true
+      },
+      {
+        "raw_replayed_samples": 1,
+        "max_raw_batch": 2,
+        "active_input_tick_gap_ms": 316,
+        "slow_ticks": [
+          {
+            "gap_ms": 91,
+            "contact": true,
+            "previous_contact": true
+          },
+          {
+            "gap_ms": 84,
+            "contact": true,
+            "previous_contact": true
+          },
+          {
+            "gap_ms": 148,
+            "contact": true,
+            "previous_contact": true
+          },
+          {
+            "gap_ms": 146,
+            "contact": true,
+            "previous_contact": true
+          },
+          {
+            "gap_ms": 113,
+            "contact": true,
+            "previous_contact": true
+          },
+          {
+            "gap_ms": 316,
+            "contact": true,
+            "previous_contact": true
+          }
+        ],
+        "display_probe": "8x8 mean of actual binary tile display pixels",
+        "fast_display": true,
+        "pressure_matches": 1259,
+        "pressure_fallbacks": 0,
+        "display_binary": true,
+        "display_has_samples": true,
+        "optical_has_grays": true,
+        "display_mean": 103.8427734375,
+        "optical_mean": 103.380859375,
+        "id": "pen-charcoal",
+        "tool": 4,
+        "points": 1259,
+        "first": [
+          120,
+          900,
+          0.12503052503052503
+        ],
+        "last": [
+          1079.9,
+          1199.9,
+          0.88
+        ],
+        "raster_seen_ms": 1793539574964,
+        "tile_seen_ms": 1793539575081,
+        "max_input_tick_gap_ms": 316,
+        "blank_frames_after_visible": 0,
+        "full_screen": true,
+        "max_material_segment_ms": 14,
+        "retained_points": 2,
+        "metadata_bytes": 123,
+        "passed": false
+      }
+    ]
+  },
+  "runtime_seconds": 59.54,
+  "artwork_after_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "artwork_preserved": true
+}

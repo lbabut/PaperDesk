@@ -75,7 +75,7 @@ Rectangle {
     property bool resetCanvas: true
     property bool exportPending: false
     property string exportPath: ""
-    property bool penBlocked: penInput.active || penDot.pressed
+    property bool penBlocked: penInput.active || penDot.pressed || activeSource==="pen"
     readonly property bool fingerInputEnabled:fingerInput.enabled
     readonly property var page: notebook.pages[pageIndex]
     readonly property bool busy: replaying || activeStroke!==null
@@ -254,6 +254,10 @@ Rectangle {
         onTriggered:if(!root.busy && !root.painting)root.clearPreview()
     }
     Timer { id: paintTimer; interval: 0; onTriggered: root.requestPendingPaint() }
+    Timer {
+        id:penEndTimer;interval:0
+        onTriggered:if(root.activeSource==="pen" && !penInput.active && !penDot.pressed)root.finishStroke()
+    }
 
     function requestPendingPaint() {
         if(activeStroke!==null && activeStroke.tool!==7)return;
@@ -734,8 +738,7 @@ Rectangle {
                 enabled:!root.replaying && !root.saveBlocked && !root.confirmation && !root.exportDialog && !root.materialsDialog && !root.calibrationDialog
                 onActiveChanged:{
                     if(active) {
-                        
-                        root.beginStroke(centroid.pressPosition,"pen",root.tool,centroid.pressure);
+                        if(root.activeSource!=="pen")root.beginStroke(centroid.pressPosition,"pen",root.tool,centroid.pressure);
                         root.extendStroke(centroid.position,"pen",centroid.pressure);
                     } else if(root.activeSource==="pen") {
                         root.finishStroke();
@@ -747,10 +750,16 @@ Rectangle {
                 id:penDot
                 acceptedDevices:PointerDevice.Stylus | PointerDevice.Airbrush | PointerDevice.Mouse
                 acceptedButtons:Qt.LeftButton
-                enabled:!root.replaying && !root.saveBlocked && !root.confirmation && !root.exportDialog && !root.materialsDialog && !root.calibrationDialog
+                enabled:penInput.enabled
+                onGrabChanged:function(transition,eventPoint) {
+                    // Use this event's coordinates: handlerPoint may still be
+                    // stale for tablet-synthesized mouse events on the device.
+                    if(transition===PointerDevice.GrabPassive && root.activeSource!=="pen")
+                        root.beginStroke(eventPoint.position,"pen",root.tool,eventPoint.pressure);
+                }
+                onPressedChanged:if(!pressed)penEndTimer.restart()
                 onTapped:function(eventPoint,button) {
-                    root.beginStroke(eventPoint.position,"pen",root.tool,eventPoint.pressure);
-                    root.finishStroke();
+                    if(root.activeSource==="pen")root.finishStroke();
                 }
             }
             DragHandler {

@@ -1,4 +1,4 @@
-# PaperDesk 4.1.1
+# PaperDesk 4.1.2
 
 PaperDesk turns a reMarkable 2 into a quiet, monochrome network workspace.
 The bundle adds eight apps directly to the AppLoad list and keeps their
@@ -14,7 +14,9 @@ hidden from users.
   The tool and size share one compact icon toolbar. Save pages
   manually and export grayscale PNGs to Documents. The material simulation
   approximates dry media; the e-ink screen uses fine black-and-white halftoning
-  while saved art retains grayscale.
+  while saved art retains grayscale. Strokes start at initial pen contact,
+  including stationary dots. The renderer reuses the same paper-response values
+  to reduce repeated calculations without changing the rendered result.
 
 - **PaperDesk Books** — an offline library with reading positions, language
   and source preferences, with Gutenberg, Wolne Lektury, OpenStax, arXiv, Europe PMC and unrestricted Open Library editions. PDF/EPUB editions use the built-in reader through My files.

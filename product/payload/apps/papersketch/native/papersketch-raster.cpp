@@ -8,6 +8,7 @@
 #include <QtCore/QFileInfo>
 #include <QtCore/QVariantMap>
 #include <QtCore/QElapsedTimer>
+#include <QtCore/QDateTime>
 #include <QtGui/QImage>
 #include <QtGui/QRegion>
 #include <QtGui/QPainter>
@@ -23,6 +24,9 @@
 #include <condition_variable>
 #include <deque>
 #include <array>
+#include <atomic>
+#include <chrono>
+#include <memory>
 #include <linux/input.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
@@ -40,6 +44,39 @@
 #include <QtCore/QSet>
 #include <zlib.h>
 
+// Software pipeline timings, not panel/optical latency. A scope retains the
+// current stroke's counters so a concurrent reset cannot charge an old paint
+// to the next stroke. Only begin() allocates; measured paths do no logging/I/O.
+struct SketchLatency {
+    struct Counter {
+        std::atomic<qulonglong> calls{0},totalUs{0},maxUs{0};
+        std::atomic<qlonglong> firstMs{0};
+    } advance,publish,tilePaint;
+    enum class Stage {Advance,Publish,TilePaint};
+    struct Scope {
+        std::shared_ptr<SketchLatency> owner;
+        Counter *counter;
+        std::chrono::steady_clock::time_point started;
+        Scope(std::shared_ptr<SketchLatency> snapshot,Stage stage):owner(std::move(snapshot)),
+            counter(stage==Stage::Advance?&owner->advance:stage==Stage::Publish?&owner->publish:&owner->tilePaint),
+            started(std::chrono::steady_clock::now()){
+            if(!counter->firstMs.load(std::memory_order_relaxed)){
+                qlonglong empty=0;
+                counter->firstMs.compare_exchange_strong(empty,QDateTime::currentMSecsSinceEpoch(),std::memory_order_relaxed);
+            }
+        }
+        Scope(const Scope&)=delete;
+        Scope& operator=(const Scope&)=delete;
+        ~Scope(){
+            const auto elapsed=qulonglong(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()-started).count());
+            counter->totalUs.fetch_add(elapsed,std::memory_order_relaxed);
+            auto maximum=counter->maxUs.load(std::memory_order_relaxed);
+            while(maximum<elapsed&&!counter->maxUs.compare_exchange_weak(maximum,elapsed,std::memory_order_relaxed)){}
+            counter->calls.fetch_add(1,std::memory_order_relaxed);
+        }
+    };
+};
+
 class SketchRaster:public QObject {
     Q_OBJECT
     Q_PROPERTY(bool available READ available CONSTANT)
@@ -50,6 +87,15 @@ class SketchRaster:public QObject {
     Q_PROPERTY(bool calibrationActive READ calibrationActive NOTIFY calibrationChanged)
     Q_PROPERTY(int calibrationStage READ calibrationStage NOTIFY calibrationChanged)
 public:
+    std::shared_ptr<SketchLatency> latency=std::make_shared<SketchLatency>();
+    Q_INVOKABLE QVariantMap latencyStats()const{
+        const auto snapshot=std::atomic_load_explicit(&latency,std::memory_order_acquire);
+        auto load=[](const auto &value){return value.load(std::memory_order_relaxed);};
+        return {{"advance_calls",load(snapshot->advance.calls)},{"advance_total_us",load(snapshot->advance.totalUs)},{"advance_max_us",load(snapshot->advance.maxUs)},
+            {"publish_calls",load(snapshot->publish.calls)},{"publish_total_us",load(snapshot->publish.totalUs)},{"publish_max_us",load(snapshot->publish.maxUs)},
+            {"tile_paint_calls",load(snapshot->tilePaint.calls)},{"tile_paint_total_us",load(snapshot->tilePaint.totalUs)},{"tile_paint_max_us",load(snapshot->tilePaint.maxUs)},
+            {"first_advance_ms",load(snapshot->advance.firstMs)},{"first_publish_ms",load(snapshot->publish.firstMs)},{"first_tile_paint_ms",load(snapshot->tilePaint.firstMs)}};
+    }
     bool displayFast=true;
     bool fastDisplay()const{return displayFast;}
     void setFastDisplay(bool value){if(displayFast==value)return;displayFast=value;emit displayModeChanged();publishDirty(image.rect());}
@@ -112,7 +158,7 @@ public:
     QTimer displayPublicationTimer;
     QRegion displayPending;
     bool livePublication=false;
-    void emitDisplayDamage(const QRegion &damage){if(damage.isEmpty())return;emit damaged(damage);emit changed(damage.boundingRect());}
+    void emitDisplayDamage(const QRegion &damage){if(damage.isEmpty())return;SketchLatency::Scope timing(std::atomic_load_explicit(&latency,std::memory_order_acquire),SketchLatency::Stage::Publish);emit damaged(damage);emit changed(damage.boundingRect());}
     void flushDisplayDamage(){
         displayPublicationTimer.stop();
         auto damage=std::move(displayPending);displayPending=QRegion();
@@ -253,7 +299,7 @@ public:
     Q_INVOKABLE void release(){dropDisplayDamage();pressureCurve.cancel();penSamples.pause();touchSamples.pause();proximityTimer.stop();image=QImage();material=QImage();finger=QImage();currentFinger=QImage();currentPatches.clear();materialReady=false;}
     Q_INVOKABLE void resetWhite(){dropDisplayDamage();currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(image.size()!=QSize(1200,1600)||image.format()!=QImage::Format_RGB32)image=QImage(1200,1600,QImage::Format_RGB32);image.fill(Qt::white);materialReady=false;ensureMaterial();physics.resetSurface();finger.fill(0);slowest=0;emit timingChanged();publishDirty(image.rect());}
     Q_INVOKABLE void clearPage(){if(!ensureMaterial())return;dropDisplayDamage();image.fill(Qt::white);material.fill(0);finger.fill(0);physics.resetSurface();publishDirty(image.rect());}
-    Q_INVOKABLE void begin(bool tentative=false){flushDisplayDamage();livePublication=false;lastRawId=0;lastContact=0;pendingSample=PaperPen::Sample();rawReplayed=0;rawBatchMax=0;collectingDamage=false;collectedDamage=QRegion();pressureMatches=0;pressureFallbacks=0;penSamples.resetMatchDiagnostics();tiltSamples=0;touchGeometryMatches=0;if(!ensureMaterial())return;livePublication=true;tentativeTouch=tentative;currentFinger=tentative?finger:QImage();captured.fill(false);currentPatches.clear();physics.untilNext=0;pendingDirty=QRect();unpublished=false;}
+    Q_INVOKABLE void begin(bool tentative=false){flushDisplayDamage();std::atomic_store_explicit(&latency,std::make_shared<SketchLatency>(),std::memory_order_release);livePublication=false;lastRawId=0;lastContact=0;pendingSample=PaperPen::Sample();rawReplayed=0;rawBatchMax=0;collectingDamage=false;collectedDamage=QRegion();pressureMatches=0;pressureFallbacks=0;penSamples.resetMatchDiagnostics();tiltSamples=0;touchGeometryMatches=0;if(!ensureMaterial())return;livePublication=true;tentativeTouch=tentative;currentFinger=tentative?finger:QImage();captured.fill(false);currentPatches.clear();physics.untilNext=0;pendingDirty=QRect();unpublished=false;}
     Q_INVOKABLE void finish(){currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(unpublished&&!pendingDirty.isEmpty())publishDirty(pendingDirty);livePublication=false;flushDisplayDamage();pendingDirty=QRect();unpublished=false;}
     Q_INVOKABLE void cancel(){
         if(!tentativeTouch)return;dropDisplayDamage();QRect dirty;for(const auto &p:currentPatches)dirty=dirty.united(p.rect);
@@ -391,6 +437,7 @@ public:
         pendingDirty=pendingDirty.united(dirty);publishDirty(dirty);lastX=x;lastY=y;lastP=p;return true;
     }
     Q_INVOKABLE bool advance(int tool,double size,double strength,double x,double y,double p,bool first){
+        SketchLatency::Scope timing(std::atomic_load_explicit(&latency,std::memory_order_acquire),SketchLatency::Stage::Advance);
         if(tool<0||tool>7||!std::isfinite(size)||size<1||size>80||!std::isfinite(strength)||strength<.05||strength>1||!std::isfinite(x)||!std::isfinite(y)||!std::isfinite(p))return false;
         auto sample=pendingSample;pendingSample=PaperPen::Sample();
         if(sample.id&&inputScaleX>0&&inputScaleY>0&&!tentativeTouch){
@@ -486,6 +533,7 @@ public:
     }
     void paint(QPainter *painter)override{
         if(!board)return;
+        SketchLatency::Scope timing(std::atomic_load_explicit(&board->latency,std::memory_order_acquire),SketchLatency::Stage::TilePaint);
         QSize size((int)width(),(int)height());bool fast=board->fastDisplay();
         if(size.isEmpty())return;
         if(optical.size()!=size||resetDisplay||lastFast!=fast||lastSourceX!=sx||lastSourceY!=sy){

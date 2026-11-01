@@ -1,0 +1,169 @@
+{
+  "date": "2026-11-01",
+  "baseline_release": "4.1.1",
+  "baseline_commit": "202fc75",
+  "architecture": "x86_64",
+  "compiler": "14.2.0",
+  "scope": "CPU-only material loop; no tablet input/display/panel latency measurement",
+  "method": "9 alternating reference/candidate runs for each case; complete1260-point pressure-ramp trajectory; allocation/reset excluded",
+  "reference_header": "tests/fixtures/sketch-material-v411-before-grain-cache.h",
+  "reference_sha256": "3a9991e19a646a56c0b68059cdb20f237d2cdcbf004f94829c38e6bb53c34f6e",
+  "candidate_sha256": "dc72a2868b3b29e3855e63fe6dca907f3625dfb340e8bcf7e16ab4c196ec2556",
+  "source": "tests/bench-sketch-material-grain-cache.cpp",
+  "source_sha256": "c3adfce162da0a6fb062df61bf20739612eb513bc6d3d970c3415290d6c6edce",
+  "tradeoff": {
+    "process_shared_lookup_bytes": 1048576,
+    "per_page_instance_bytes_changed": 0,
+    "cache_format_changed": false
+  },
+  "correctness": {
+    "full_1260_point_trajectories": 48,
+    "all_media": 8,
+    "paper_kinds": 3,
+    "tooth_burnish_pairs": 65536,
+    "pixel_cases": 1179648,
+    "bitwise_state_equal": true,
+    "address_undefined_sanitizers": "PASS",
+    "leak_detection": "PASS",
+    "material_suite": "PASS",
+    "realism_suite": "PASS"
+  },
+  "results": [
+    {
+      "bitwise_all_8_tools_3_papers_tilt_finger_kneaded": true,
+      "trajectories_compared": 48,
+      "pixel_cases_compared": 1179648,
+      "case": "HB-fresh",
+      "grain_cache_bytes": 1048576,
+      "grain_cache_first_init_us": 0,
+      "saturated": false,
+      "reference_median_us": 9510,
+      "candidate_median_us": 7802,
+      "change_percent": -17.96,
+      "reference_runs_us": [
+        9510,
+        10014,
+        9162,
+        9329,
+        9685,
+        10381,
+        8781,
+        8991,
+        10073
+      ],
+      "candidate_runs_us": [
+        8012,
+        8655,
+        7500,
+        6752,
+        7465,
+        10791,
+        7933,
+        7755,
+        7802
+      ]
+    },
+    {
+      "bitwise_all_8_tools_3_papers_tilt_finger_kneaded": true,
+      "trajectories_compared": 48,
+      "pixel_cases_compared": 1179648,
+      "case": "charcoal-fresh",
+      "grain_cache_bytes": 1048576,
+      "grain_cache_first_init_us": 0,
+      "saturated": false,
+      "reference_median_us": 70953,
+      "candidate_median_us": 52206,
+      "change_percent": -26.42,
+      "reference_runs_us": [
+        70775,
+        74424,
+        70953,
+        77485,
+        70417,
+        68681,
+        69528,
+        73624,
+        71483
+      ],
+      "candidate_runs_us": [
+        50804,
+        52117,
+        52076,
+        54281,
+        52206,
+        52348,
+        54711,
+        58409,
+        51885
+      ]
+    },
+    {
+      "bitwise_all_8_tools_3_papers_tilt_finger_kneaded": true,
+      "trajectories_compared": 48,
+      "pixel_cases_compared": 1179648,
+      "case": "charcoal-loaded",
+      "grain_cache_bytes": 1048576,
+      "grain_cache_first_init_us": 0,
+      "saturated": true,
+      "reference_median_us": 35556,
+      "candidate_median_us": 26541,
+      "change_percent": -25.35,
+      "reference_runs_us": [
+        34789,
+        35556,
+        34525,
+        34145,
+        35127,
+        35877,
+        36402,
+        36565,
+        35808
+      ],
+      "candidate_runs_us": [
+        25589,
+        27399,
+        26541,
+        26167,
+        28379,
+        27772,
+        25255,
+        26418,
+        27662
+      ]
+    },
+    {
+      "bitwise_all_8_tools_3_papers_tilt_finger_kneaded": true,
+      "trajectories_compared": 48,
+      "pixel_cases_compared": 1179648,
+      "case": "finger-loaded",
+      "grain_cache_bytes": 1048576,
+      "grain_cache_first_init_us": 0,
+      "saturated": true,
+      "reference_median_us": 173960,
+      "candidate_median_us": 173932,
+      "change_percent": -0.02,
+      "reference_runs_us": [
+        175175,
+        170310,
+        176076,
+        168252,
+        172001,
+        172521,
+        176350,
+        173960,
+        176736
+      ],
+      "candidate_runs_us": [
+        173759,
+        174371,
+        170587,
+        170465,
+        184331,
+        178389,
+        176914,
+        172491,
+        173932
+      ]
+    }
+  ]
+}
