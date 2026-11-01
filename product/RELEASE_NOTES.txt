@@ -1,3 +1,5 @@
+Paper Sketch 4.1.3 puts the Materials settings icon first in the middle toolbar, before the 2H pencil.
+
 Paper Sketch 4.1.2 starts each pen stroke at initial contact, including a stationary dot, without waiting for a drag or pen release.
 The material renderer reuses precomputed paper-response values to reduce repeated CPU work while retaining the same material equations and image output. Software diagnostics now separate input, material updates and tile painting; no optical e-ink latency is claimed.
 

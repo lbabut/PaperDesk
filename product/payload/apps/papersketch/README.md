@@ -1,6 +1,6 @@
-# Paper Sketch 4.1.2
+# Paper Sketch 4.1.3
 
-A grayscale bitmap sketchbook for reMarkable 2 and XOVI AppLoad. Four pencil grades (2H, HB, 2B, 6B), charcoal, soft charcoal, hard and kneaded erasing, and a smudge tool share one compact icon toolbar with the size slider. Finger blending is always enabled; stylus proximity cancels tentative palm marks. Materials settings open from the bottom navigation bar. The full-screen mode leaves a small menu button to restore the controls.
+A grayscale bitmap sketchbook for reMarkable 2 and XOVI AppLoad. Four pencil grades (2H, HB, 2B, 6B), charcoal, soft charcoal, hard and kneaded erasing, and a smudge tool share one compact icon toolbar with the size slider. Finger blending is always enabled; stylus proximity cancels tentative palm marks. Materials settings are the first icon in the middle toolbar, before the 2H pencil. The full-screen mode leaves a small menu button to restore the controls.
 
 ## Dry materials
 

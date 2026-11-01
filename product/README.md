@@ -1,4 +1,4 @@
-# PaperDesk 4.1.2
+# PaperDesk 4.1.3
 
 PaperDesk turns a reMarkable 2 into a quiet, monochrome network workspace.
 The bundle adds eight apps directly to the AppLoad list and keeps their
@@ -10,7 +10,8 @@ hidden from users.
 - **Paper Sketch** — a grayscale sketchbook with graphite and charcoal, stylus
   tilt, pressure calibration, Plain/Smooth/Rough paper and simulated burnishing,
   tip wear and sharpening, variable finger contact and cleaning, and hard or
-  kneaded erasers. Materials settings open from the bottom navigation bar.
+  kneaded erasers. Materials settings are the first icon in the middle toolbar,
+  before the 2H pencil.
   The tool and size share one compact icon toolbar. Save pages
   manually and export grayscale PNGs to Documents. The material simulation
   approximates dry media; the e-ink screen uses fine black-and-white halftoning

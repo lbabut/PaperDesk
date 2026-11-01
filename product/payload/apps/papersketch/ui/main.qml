@@ -569,10 +569,14 @@ Rectangle {
         height:visible?84:0;color:"white"
         Row {
             id:toolControls
-            anchors.fill:parent;anchors.margins:12;spacing:16
+            anchors.fill:parent;anchors.margins:toolsPanel.width<1000?8:12;spacing:toolsPanel.width<1000?8:16
             Row {
-                id:toolButtons;objectName:"toolButtons";spacing:6
+                id:toolButtons;objectName:"toolButtons";spacing:toolsPanel.width<1000?4:6
                 anchors.verticalCenter:parent.verticalCenter
+                Action {
+                    label:"Materials";iconName:"materials";width:64;height:60;objectName:"materialsButton"
+                    available:!root.saveBlocked;selected:root.materialsDialog;onTriggered:root.openMaterials()
+                }
                 Repeater {
                     model:Ink.tools
                     Action {
@@ -588,14 +592,14 @@ Rectangle {
             Rectangle {width:2;height:48;color:"black";anchors.verticalCenter:parent.verticalCenter}
             Row {
                 width:toolControls.width-toolButtons.width-2-toolControls.spacing*2
-                height:60;spacing:12;anchors.verticalCenter:parent.verticalCenter
+                height:60;spacing:toolsPanel.width<1000?8:12;anchors.verticalCenter:parent.verticalCenter
                 Text {
-                    objectName:"sizeLabel";width:82;anchors.verticalCenter:parent.verticalCenter
+                    id:sizeLabel;objectName:"sizeLabel";width:toolsPanel.width<1000?64:82;anchors.verticalCenter:parent.verticalCenter
                     text:"Size "+Math.round(root.brushSize);font.pixelSize:20;font.bold:true
                 }
                 Slider {
                     id:sizeSlider;objectName:"sizeSlider"
-                    width:parent.width-94;height:60;from:1;to:80;stepSize:1;value:root.brushSize
+                    width:parent.width-sizeLabel.width-parent.spacing;height:60;from:1;to:80;stepSize:1;value:root.brushSize
                     property string accessibleName:"Tool size"
                     property string accessibleDescription:"Size of the selected pencil, charcoal, eraser or smudge tool"
                     onMoved:root.brushSize=value
@@ -802,10 +806,6 @@ Rectangle {
             }
             Action {label:"Clear page";width:150;available:true;onTriggered:root.confirmation="clear"}
             Action {label:"Delete page";objectName:"deletePageButton";width:156;available:true;onTriggered:root.confirmation="delete"}
-            Action {
-                label:"Materials";iconName:"materials";width:64;objectName:"materialsButton"
-                available:!root.saveBlocked;selected:root.materialsDialog;onTriggered:root.openMaterials()
-            }
         }
         Text {
             anchors.left:parent.left;anchors.right:parent.right;anchors.margins:20;y:91

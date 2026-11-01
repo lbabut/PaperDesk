@@ -1,0 +1,25 @@
+{
+  "execution": "Final authenticated reMarkable 2 install and saved-file preservation checks",
+  "version": "4.1.3",
+  "IMG_VERSION": "3.29.0.153",
+  "pre_upgrade_rollback": "/home/root/.local/state/papersketch-install.dXhPwr",
+  "saved_files": {
+    "papersketch-install.dXhPwr": {
+      "files": 77,
+      "unchanged": true,
+      "differences": []
+    }
+  },
+  "notebook_document_unchanged": true,
+  "document_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "installed_hashes": {
+    "resources.rcc": "890d4b8bd46f2edb254142ef57285c4501b7669d641a9149c8bffb126c0147d0",
+    "native/papersketch-raster.so": "4d3e21df193d2add403700eea2a296f872b2d38d5dddfd62590ea1622b8c0434"
+  },
+  "global_native_sha256": "4d3e21df193d2add403700eea2a296f872b2d38d5dddfd62590ea1622b8c0434",
+  "production_app_opened": true,
+  "qml_errors": [],
+  "xochitl_pid": 29537,
+  "physical_panel_latency_measured": false,
+  "passed": true
+}

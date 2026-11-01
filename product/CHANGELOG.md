@@ -1,3 +1,7 @@
+# 4.1.3 — 2026-11-01
+
+- Moved the Paper Sketch Materials settings icon to the first position in the middle toolbar, before the 2H pencil.
+
 # 4.1.2 — 2026-11-01
 
 - Start pen strokes at initial contact, including stationary dots, without waiting for a drag or pen release.
