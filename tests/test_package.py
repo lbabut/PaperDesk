@@ -22,7 +22,7 @@ class PackageRegressionTests(unittest.TestCase):
     def test_visual_controls_avoid_the_unavailable_tablet_accessibility_attachment(self):
         # Desktop Qt exposes Accessible; the tested tablet firmware does not.
         # An attached property would prevent the whole app from loading there.
-        for name in ('literm', 'paperweb', 'paperrdp-login', 'paperrss', 'papercare', 'paperbooks', 'paperdots'):
+        for name in ('literm', 'paperweb', 'paperrdp-login', 'paperrss', 'papercare', 'paperbooks', 'paperdots', 'papersketch'):
             for qml in (RELEASE / 'payload/apps' / name / 'ui').glob('*.qml'):
                 self.assertNotIn('Accessible.', qml.read_text(), str(qml))
 
@@ -100,7 +100,7 @@ class PackageRegressionTests(unittest.TestCase):
 
     def test_hub_exposes_click_targets(self):
         qml = (RELEASE / "payload/apps/paperdesk/ui/main.qml").read_text()
-        for name in ("terminalButton", "webButton", "rdpButton", "rssButton"):
+        for name in ("terminalButton", "webButton", "rdpButton", "rssButton", "sketchButton", "dotsButton", "careButton"):
             self.assertIn(f'objectName: "{name}"', qml)
         self.assertNotIn("closeAfterLaunch", qml)
 
@@ -693,7 +693,7 @@ class PackageRegressionTests(unittest.TestCase):
     def test_qml_is_embedded_in_every_app_resource(self):
         rcc = TOOLCACHE / "qt-rcc-pkg/root/usr/lib/qt5/bin/rcc"
         library = TOOLCACHE / "qt-rcc-pkg/root/usr/lib/x86_64-linux-gnu"
-        for app_name in ("paperdesk", "literm", "paperweb", "paperrss", "paperrdp-login", "paperbooks", "paperdots"):
+        for app_name in ("paperdesk", "literm", "paperweb", "paperrss", "paperrdp-login", "paperbooks", "paperdots", "papersketch"):
             app_dir = RELEASE / "payload/apps" / app_name
             with tempfile.TemporaryDirectory() as directory:
                 rebuilt = pathlib.Path(directory) / "resources.rcc"

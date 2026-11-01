@@ -25,6 +25,9 @@ class SourceDistributionTests(unittest.TestCase):
         with tarfile.open(archive) as bundle:
             names = bundle.getnames()
             for name in ['product/install.sh', 'product/payload/apps/paperbooks/ui/main.qml',
+                         'product/payload/apps/papersketch/native/papersketch-raster.cpp',
+                         'product/payload/apps/papersketch/native/papersketch-raster.so',
+                         'product/payload/apps/papersketch/native/LICENSE',
                          'windows/installer.py', 'website/server.py', 'tests/test_source_distribution.py']:
                 self.assertIn(prefix + name, names)
             for name in names:

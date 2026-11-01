@@ -3,9 +3,13 @@ import threading
 import unittest
 import urllib.error
 import urllib.request
+import hashlib
+import io
 import json
 import re
+import tarfile
 import tempfile
+import zipfile
 from pathlib import Path
 
 
@@ -35,6 +39,30 @@ class WebsiteTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.module = load_server()
+        # Historical binaries are intentionally absent from source checkouts.
+        # Serve immutable synthetic historical artifacts from a temporary repo,
+        # while the current release route still opens the real built archive.
+        cls.artifacts = tempfile.TemporaryDirectory(prefix='paperdesk-site-artifacts-')
+        cls.module.REPO = Path(cls.artifacts.name)
+        distribution = cls.module.REPO / 'dist'
+        distribution.mkdir()
+        current = ROOT / 'dist' / f'paperdesk-{VERSION}.zip'
+        (distribution / current.name).symlink_to(current)
+        windows = distribution / f'paperdesk-windows-installer-{WINDOWS_VERSION}.zip'
+        with zipfile.ZipFile(windows, 'w') as archive:
+            archive.writestr('README.txt', 'Historical download route test fixture.\n')
+        linux = distribution / f'paperdesk-linux-installer-{LINUX_VERSION}.tar.gz'
+        with tarfile.open(linux, 'w:gz') as archive:
+            payload = b'Historical download route test fixture.\n'
+            entry = tarfile.TarInfo('README.txt')
+            entry.size = len(payload)
+            archive.addfile(entry, io.BytesIO(payload))
+        for archive in (windows, linux):
+            digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+            checksum = distribution / (archive.name + '.sha256')
+            checksum.write_text(digest + '  ' + archive.name + '\n')
+            archive.chmod(0o444)
+            checksum.chmod(0o444)
         cls.state = tempfile.TemporaryDirectory()
         cls.module.STATE_DIR = Path(cls.state.name)
         cls.module.STATS_DB = cls.module.STATE_DIR / 'stats.sqlite3'
@@ -50,6 +78,7 @@ class WebsiteTests(unittest.TestCase):
         cls.httpd.server_close()
         cls.thread.join(timeout=2)
         cls.state.cleanup()
+        cls.artifacts.cleanup()
 
     def request(self, path):
         url = f"http://127.0.0.1:{self.port}{path}"
@@ -67,7 +96,7 @@ class WebsiteTests(unittest.TestCase):
                 body,
             )
             self.assertIn("Support PaperDesk on Ko-fi", body)
-            self.assertIn("Seven thoughtful apps", body)
+            self.assertIn("Eight thoughtful apps", body)
             self.assertIn('id="tour"', body)
             self.assertNotIn("Founding Edition", body)
             self.assertNotIn("€29", body)

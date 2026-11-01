@@ -21,6 +21,7 @@ trap 'rm -rf "$TEST_CONFIG"; rm -f "$QML_OUTPUT"' EXIT INT TERM
 export XDG_CONFIG_HOME="$TEST_CONFIG"
 export XDG_DATA_HOME="$TEST_CONFIG/data"
 export XDG_CACHE_HOME="$TEST_CONFIG/cache"
+mkdir -p "$ROOT/work/papersketch-tests"
 
 python3 -m unittest discover -s "$ROOT/tests" -p 'test_*.py' -v
 "$QML_RUNNER" -input "$ROOT/tests/qml" -import "$ROOT/tests/qml/imports" | tee "$QML_OUTPUT"

@@ -24,6 +24,10 @@ if [ -z "$RCC_BIN" ]; then
     fi
 fi
 
+# The material engine is loaded globally by XOVI; never ship stale native code
+# beside updated UI/source. This requires the documented SDK/tool cache.
+python3 "$ROOT/scripts/build-sketch-raster.py"
+
 for resource_file in "$ROOT"/product/payload/apps/*/application.qrc; do
     resource_dir=$(dirname "$resource_file")
     (cd "$resource_dir" && "$RCC_BIN" --binary application.qrc -o resources.rcc)

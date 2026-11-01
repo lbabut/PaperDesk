@@ -1,0 +1,154 @@
+{
+  "benchmark": "alternating 9 host runs; each has 500 warmup and 2000 measured 1.5px segments",
+  "medians_us": {
+    "before": {
+      "smudge_p50_us": 81.463,
+      "smudge_p95_us": 139.953,
+      "pencil_p50_us": 6.647,
+      "pencil_p95_us": 9.778
+    },
+    "after": {
+      "smudge_p50_us": 62.668,
+      "smudge_p95_us": 134.207,
+      "pencil_p50_us": 6.187,
+      "pencil_p95_us": 10.009
+    }
+  },
+  "percent_change": {
+    "smudge_p50_us": -23.1,
+    "smudge_p95_us": -4.1,
+    "pencil_p50_us": -6.9,
+    "pencil_p95_us": 2.4
+  },
+  "all_runs": {
+    "before": [
+      {
+        "smudge_p50_us": 81.477,
+        "smudge_p95_us": 117.029,
+        "pencil_p50_us": 6.563,
+        "pencil_p95_us": 8.589
+      },
+      {
+        "smudge_p50_us": 81.34,
+        "smudge_p95_us": 120.289,
+        "pencil_p50_us": 6.647,
+        "pencil_p95_us": 8.612
+      },
+      {
+        "smudge_p50_us": 82.374,
+        "smudge_p95_us": 151.01,
+        "pencil_p50_us": 6.474,
+        "pencil_p95_us": 9.297
+      },
+      {
+        "smudge_p50_us": 81.311,
+        "smudge_p95_us": 139.953,
+        "pencil_p50_us": 6.681,
+        "pencil_p95_us": 10.569
+      },
+      {
+        "smudge_p50_us": 82.424,
+        "smudge_p95_us": 170.05,
+        "pencil_p50_us": 6.795,
+        "pencil_p95_us": 11.506
+      },
+      {
+        "smudge_p50_us": 82.258,
+        "smudge_p95_us": 161.693,
+        "pencil_p50_us": 6.689,
+        "pencil_p95_us": 11.091
+      },
+      {
+        "smudge_p50_us": 81.265,
+        "smudge_p95_us": 127.639,
+        "pencil_p50_us": 6.675,
+        "pencil_p95_us": 9.778
+      },
+      {
+        "smudge_p50_us": 81.463,
+        "smudge_p95_us": 135.889,
+        "pencil_p50_us": 6.601,
+        "pencil_p95_us": 9.8
+      },
+      {
+        "smudge_p50_us": 81.2,
+        "smudge_p95_us": 151.315,
+        "pencil_p50_us": 6.605,
+        "pencil_p95_us": 9.711
+      }
+    ],
+    "after": [
+      {
+        "smudge_p50_us": 62.845,
+        "smudge_p95_us": 134.207,
+        "pencil_p50_us": 6.267,
+        "pencil_p95_us": 10.534
+      },
+      {
+        "smudge_p50_us": 62.317,
+        "smudge_p95_us": 91.873,
+        "pencil_p50_us": 6.098,
+        "pencil_p95_us": 8.033
+      },
+      {
+        "smudge_p50_us": 61.986,
+        "smudge_p95_us": 86.589,
+        "pencil_p50_us": 6.064,
+        "pencil_p95_us": 7.762
+      },
+      {
+        "smudge_p50_us": 62.114,
+        "smudge_p95_us": 142.556,
+        "pencil_p50_us": 6.384,
+        "pencil_p95_us": 10.538
+      },
+      {
+        "smudge_p50_us": 62.86,
+        "smudge_p95_us": 146.595,
+        "pencil_p50_us": 6.315,
+        "pencil_p95_us": 11.032
+      },
+      {
+        "smudge_p50_us": 62.668,
+        "smudge_p95_us": 90.34,
+        "pencil_p50_us": 6.122,
+        "pencil_p95_us": 7.534
+      },
+      {
+        "smudge_p50_us": 62.714,
+        "smudge_p95_us": 142.779,
+        "pencil_p50_us": 6.219,
+        "pencil_p95_us": 10.164
+      },
+      {
+        "smudge_p50_us": 62.748,
+        "smudge_p95_us": 102.274,
+        "pencil_p50_us": 6.138,
+        "pencil_p95_us": 10.009
+      },
+      {
+        "smudge_p50_us": 62.66,
+        "smudge_p95_us": 139.764,
+        "pencil_p50_us": 6.187,
+        "pencil_p95_us": 9.428
+      }
+    ]
+  },
+  "scope": "Host material loop only; no input or display latency measurement",
+  "compiler": "14.2.0",
+  "architecture": "x86_64",
+  "source_sha256": {
+    "before": "1d4f79901f7eb6383a5568be45f609a5c4f07242d851d77d227fd7cbea6d65d6",
+    "after": "a3db3c2a0052eb9a61e9fa8b2f8e232c2b1d9811e71cf6c22fbde766fbead29a"
+  },
+  "measurement": {
+    "size": {
+      "smudge": 64,
+      "pencil": 24
+    },
+    "pressure": 0.7,
+    "strength": 1,
+    "distance_pixels": 1.5,
+    "pencil_tool": 2
+  }
+}

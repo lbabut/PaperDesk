@@ -1,6 +1,7 @@
 """Safety regressions for source copies; never contact a real server."""
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -17,6 +18,17 @@ class SourceSyncTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.bin = Path(self.temp.name)
         self.env = dict(os.environ, PATH=str(self.bin) + os.pathsep + os.environ["PATH"])
+        # Exercise the real script in a disposable authoritative root. Its
+        # production canonical-path protection remains unchanged in the repo.
+        self.source = self.bin / 'authoritative'
+        script_folder = self.source / 'scripts'
+        script_folder.mkdir(parents=True)
+        self.script = script_folder / SCRIPT.name
+        text = SCRIPT.read_text()
+        canonical = 'CANONICAL=/home/lukasz/Documents/Codex/PaperDesk'
+        self.assertIn(canonical, text)
+        self.script.write_text(text.replace(canonical,
+                              'CANONICAL=' + shlex.quote(str(self.source)), 1))
         rsync = self.bin / "rsync"
         rsync.write_text('#!/bin/sh\nprintf "ARG=%s\\n" "$@"\nexit "${FAKE_RSYNC_EXIT:-0}"\n')
         rsync.chmod(0o700)
@@ -24,9 +36,9 @@ class SourceSyncTests(unittest.TestCase):
         ssh.write_text('#!/bin/sh\necho UNEXPECTED_REMOTE_WRITE >&2\nexit 99\n')
         ssh.chmod(0o700)
 
-    def run_sync(self, *args, script=SCRIPT):
+    def run_sync(self, *args, script=None):
         return subprocess.run(
-            ["bash", str(script), *args], env=self.env, text=True,
+            ["bash", str(script or self.script), *args], env=self.env, text=True,
             capture_output=True, check=False,
         )
 
@@ -62,7 +74,7 @@ class SourceSyncTests(unittest.TestCase):
         folder = self.bin / "old-copy/scripts"
         folder.mkdir(parents=True)
         relocated = folder / SCRIPT.name
-        shutil.copyfile(SCRIPT, relocated)
+        shutil.copyfile(self.script, relocated)
         result = self.run_sync("--apply", script=relocated)
         self.assertEqual(result.returncode, 2)
         self.assertIn("authoritative project", result.stderr)

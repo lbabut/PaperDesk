@@ -1,16 +1,16 @@
 {
   "product": "PaperDesk",
   "channel": "stable",
-  "version": "3.0.3",
-  "publishedAt": "2026-10-20",
-  "archiveUrl": "/download/paperdesk-3.0.3.zip",
-  "archiveSha256": "bbfdf893ad018d63204a40afdc81994823ed00f9a0b051c38523687d46cb3ecc",
-  "archiveSize": 2529613,
+  "version": "4.0.0",
+  "publishedAt": "2026-11-01",
+  "archiveUrl": "/download/paperdesk-4.0.0.zip",
+  "archiveSha256": "739fc8d1f0b18251fb3b1dafa351360c277cfffdc6d443e8a4918b99541a7d0f",
+  "archiveSize": 2684575,
   "releaseNotes": [
-    "RDP now keeps the remote desktop, toolbar and shortcuts in the same landscape orientation while typing.",
-    "The real system keyboard follows landscape sessions and returns to its original layout when hidden or when you leave RDP. No replacement keyboard or global tablet rotation change.",
-    "Keyboard and Close buttons stay in place; shortcuts remain reachable. Saved profiles, passwords and app settings are preserved.",
-    "Verified on reMarkable 2 with physical touch: typing, Backspace, Enter, shortcuts, Close, portrait restoration and reconnecting. Expanded automated layout and lifecycle regression tests.",
-    "All seven apps remain included, including six Books sources and bounded PDF/EPUB downloads to My files. Update to signed version 3.0.3 in Care or install the project package over SSH. XOVI boot autostart stays disabled."
+    "Paper Sketch joins PaperDesk: graphite, charcoal, a pigment-lifting eraser, textured paper and pressure-sensitive marks with finger blending.",
+    "Drawing actions use icons, with tool size in the same toolbar and more space for the page. Tap a tool, choose its size and draw; finger blending is available away from the stylus.",
+    "Save the sketchbook manually or export full-grayscale PNGs to Documents. Installation retains existing sketches, settings and exports.",
+    "The installer checks the explicitly supported reMarkable OS 3.29.0.149 or 3.29.0.153 / ARMv7 environment before installing the native material renderer, backs up any existing renderer and preserves the prior module for removal.",
+    "All eight apps are included. Source code is available at https://github.com/lbabut/PaperDesk. The material model approximates dry media; software regression results do not measure physical pen-to-panel latency."
   ]
 }

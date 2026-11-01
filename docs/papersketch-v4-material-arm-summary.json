@@ -1,0 +1,27 @@
+{
+  "execution": "CPU-only benchmark on reMarkable 2 ARMv7 after all input/display probes completed",
+  "runs_per_phase": 9,
+  "medians_microseconds": {
+    "before": {
+      "smudge_p50_us": 1028.094,
+      "smudge_p95_us": 1095.094,
+      "pencil_p50_us": 74.498,
+      "pencil_p95_us": 84.498
+    },
+    "after": {
+      "smudge_p50_us": 650.982,
+      "smudge_p95_us": 699.854,
+      "pencil_p50_us": 63.873,
+      "pencil_p95_us": 73.248
+    }
+  },
+  "change_percent": {
+    "smudge_p50_us": -36.68,
+    "smudge_p95_us": -36.09,
+    "pencil_p50_us": -14.26,
+    "pencil_p95_us": -13.31
+  },
+  "workload_source": "tests/bench-sketch-material.cpp",
+  "raw_results": "docs/papersketch-v4-material-arm.jsonl",
+  "optical_panel_latency_measured": false
+}

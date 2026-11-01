@@ -220,8 +220,8 @@ margin-bottom:22px}
 
 .features{
 display:grid;
-grid-template-columns:repeat(3,minmax(0,1fr));
-border-radius:var(--radius) var(--radius) 0 0;
+grid-template-columns:repeat(4,minmax(0,1fr));
+border-radius:var(--radius);
 overflow:hidden;
 background:var(--white);
 border-top:1px solid var(--line);
