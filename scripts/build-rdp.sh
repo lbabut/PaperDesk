@@ -11,15 +11,18 @@ SOURCE="$ROOT/product/payload/apps/paperrdp/paperrdp.cpp"
 OUT="$ROOT/product/payload/apps/paperrdp/paperrdp"
 case ${1:-} in
     --tests) SOURCE="$ROOT/tests/rdp-regression.cpp"; OUT="$ROOT/work/tests/rdp-regression" ;;
+    --e2e) OUT="$ROOT/work/tests/paperrdp-e2e" ;;
     '') ;;
-    *) echo 'Usage: build-rdp.sh [--tests]' >&2; exit 64 ;;
+    *) echo 'Usage: build-rdp.sh [--tests|--e2e]' >&2; exit 64 ;;
 esac
 mkdir -p "$ROOT/work/tests"
 STAGED=$(mktemp "$ROOT/work/tests/rdp-build.XXXXXX")
 trap 'rm -f "$STAGED"' EXIT INT TERM
 export LD_LIBRARY_PATH="$TOOLS/usr/lib/x86_64-linux-gnu${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+EXTRA_DEFINE=
+if [ "${1:-}" = --e2e ]; then EXTRA_DEFINE=-DPAPERDESK_E2E; fi
 "$TOOLS/usr/bin/arm-linux-gnueabihf-g++-12" --sysroot="$TOOLS" \
-    -std=c++17 -O2 -marm -mfpu=neon -mfloat-abi=hard \
+    -std=c++17 -O2 -marm -mfpu=neon -mfloat-abi=hard $EXTRA_DEFINE \
     -I"$FREERDP/include" -I"$BUILD/include" -I"$FREERDP/winpr/include" -I"$BUILD/winpr/include" \
     -I"$SDK/usr/include" -I"$SDK/usr/include/arm-linux-gnueabihf" \
     "$SOURCE" "$ROOT/product/payload/apps/paperrdp/qtfb-client.cpp" \

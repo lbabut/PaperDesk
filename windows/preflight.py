@@ -41,14 +41,13 @@ case "$(uname -m)" in armv7l) ;; *) problem 'ARMv7 architecture used by reMarkab
 [ -s /home/root/xovi/extensions.d/appload.so ] || problem 'backend AppLoad (appload.so)'
 [ -d /home/root/xovi/exthome/appload ] || problem 'AppLoad apps directory'
 [ -s /home/root/xovi/extensions.d/qt-resource-rebuilder.so ] || problem 'qt-resource-rebuilder extension'
-[ -s /home/root/xovi/extensions.d/literm.so ] || problem 'LiTerm terminal backend (literm.so)'
 [ -d /run/systemd/system ] || problem 'running systemd for Care'
 [ -w /home/root ] || problem 'write access for apps and backups in /home/root'
 [ -w /etc/systemd/system ] || problem 'write access for Care services in /etc/systemd/system'
 openssl list -public-key-algorithms 2>/dev/null | grep -qi ED25519 || problem 'OpenSSL with Ed25519 signature support for Care'
 if [ "$missing" = 0 ]; then
     existing=0
-    for app in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperpet shims; do
+    for app in paperdesk paperterminal literm paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperpet shims; do
         if [ -e "/home/root/xovi/exthome/appload/$app" ]; then
             size=$(du -sk "/home/root/xovi/exthome/appload/$app" | awk '{print $1}') || exit 22
             case "$size" in ''|*[!0-9]*) problem 'size information for existing apps';; *) existing=$((existing + size));; esac
@@ -72,4 +71,4 @@ for app in __APP_IDS__; do
 done
 true
 '''.replace('__MINIMUM_KIB__', str(minimum_kib)).replace('__APP_IDS__',
-    'paperdesk literm paperweb paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperpet shims')
+    'paperdesk paperterminal literm paperweb paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperpet shims')

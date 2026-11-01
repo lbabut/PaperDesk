@@ -1,11 +1,12 @@
 #!/bin/sh
 
-# RMSSH: a deliberately small SSH launcher for the reMarkable 2 LiTerm app.
+# RMSSH: a deliberately small SSH launcher for the reMarkable 2 Paper Terminal app.
 set -u
 umask 077
 
 CONFIG_DIR="${HOME:-/home/root}/.config/rmssh"
 KNOWN_HOSTS="${HOME:-/home/root}/.ssh/known_hosts"
+STATE_FILE="${PAPERTERMINAL_STATE_FILE:-$CONFIG_DIR/state}"
 
 mkdir -p "$CONFIG_DIR" "${HOME:-/home/root}/.ssh"
 chmod 700 "$CONFIG_DIR"
@@ -15,15 +16,17 @@ chmod 600 "$KNOWN_HOSTS"
 
 # The graphical session picker must never type a connection command into an
 # active remote shell. This local, owner-only state is checked before sending.
+STATE_REVISION=0
 set_state() {
-    printf '%s %s\n' "$1" "$$" > "$CONFIG_DIR/state.$$"
-    mv "$CONFIG_DIR/state.$$" "$CONFIG_DIR/state"
+    STATE_REVISION=$((STATE_REVISION + 1))
+    printf '%s %s %s\n' "$1" "$$" "$STATE_REVISION" > "$STATE_FILE.$$"
+    mv "$STATE_FILE.$$" "$STATE_FILE"
 }
 cleanup() {
-    if [ "$(awk '{print $2}' "$CONFIG_DIR/state" 2>/dev/null)" = "$$" ]; then
-        rm -f "$CONFIG_DIR/state"
+    if [ "$(awk '{print $2}' "$STATE_FILE" 2>/dev/null)" = "$$" ]; then
+        rm -f "$STATE_FILE"
     fi
-    rm -f "$CONFIG_DIR/state.$$"
+    rm -f "$STATE_FILE.$$"
 }
 trap cleanup EXIT
 trap 'exit 129' HUP
@@ -72,6 +75,7 @@ connect_profile() {
 
     set -- ssh -tt \
         -o StrictHostKeyChecking=ask \
+        -o "UserKnownHostsFile=$KNOWN_HOSTS" \
         -o ServerAliveInterval=30 \
         -p "$_port"
     case "$_compression" in
@@ -110,20 +114,24 @@ quick_connect() {
     connect_profile "$_user@$_host" "$_user" "$_host" "$_port" "" "" "xterm-256color" "no"
 }
 
-# LiTerm may start the command a fraction of a second before its QML render
-# delegates are connected. Delay the first menu draw so its initial output is
-# never lost on the e-ink surface. Tests may explicitly set this to zero.
-sleep "${PAPERDESK_RMSSH_START_DELAY:-1}"
+# The native model keeps output before the first painted frame, so startup
+# needs no artificial delay. Tests can still request a deliberate delay.
+set_state starting
+if [ "${PAPERDESK_RMSSH_START_DELAY:-0}" != 0 ]; then
+    sleep "$PAPERDESK_RMSSH_START_DELAY"
+fi
 
 while :; do
     clear_screen
-    printf 'RMSSH — SSH terminal for reMarkable 2\n'
+    printf 'Paper Terminal — reMarkable 2\n'
     printf '====================================\n\n'
     printf '\n  n) New connection\n'
     printf '  l) Local recovery shell\n'
     printf '  q) Close application\n\n'
-    printf 'Choice: '
+    # Publish readiness before the final PTY write that wakes the frontend.
     set_state ready
+    printf 'Choice: '
+
     IFS= read -r _choice || exit 0
     case "$_choice" in
         n|N) quick_connect ;;
@@ -131,7 +139,7 @@ while :; do
         l|L)
             set_state busy
             clear_screen
-            printf 'Local shell. Type exit to return to RMSSH.\n\n'
+            printf 'Local shell. Type exit to return to Paper Terminal.\n\n'
             /bin/sh -l
             ;;
         q|Q) exit 0 ;;

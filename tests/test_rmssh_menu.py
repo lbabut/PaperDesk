@@ -32,7 +32,7 @@ class RmsshMenuTests(unittest.TestCase):
             result = subprocess.run(["sh", str(MENU)], input="c ::1 tester 2222\n\nq\n",
                                     text=True, capture_output=True, env=env, timeout=5)
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertRegex(log.read_text(), r"^busy [0-9]+\n")
+            self.assertRegex(log.read_text(), r"^busy [0-9]+ [0-9]+\n")
             self.assertIn("-p 2222 -l tester -- ::1", log.read_text())
             self.assertFalse((home / ".config/rmssh/state").exists(), "State must be cleaned up on exit")
             self.assertEqual((home / ".config/rmssh").stat().st_mode & 0o777, 0o700)
@@ -89,7 +89,7 @@ class RmsshMenuTests(unittest.TestCase):
             self.assertNotIn(" -C ", invocation)
             self.assertIn("-p 2222", invocation)
             self.assertIn("-l lukasz -- nostalgiczny", invocation)
-            self.assertNotIn("UserKnownHostsFile", invocation)
+            self.assertIn("UserKnownHostsFile=" + str(home / ".ssh/known_hosts"), invocation)
             self.assertNotIn("ConnectTimeout", invocation)
             self.assertNotIn("ServerAliveCountMax", invocation)
             self.assertNotIn("save profile", result.stdout.lower())

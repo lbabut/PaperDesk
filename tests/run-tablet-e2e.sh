@@ -205,7 +205,7 @@ ssh_tap_action() {
     local name=$1 coordinates target_x target_y
     sleep 1
     coordinates=$(remote "journalctl -u xochitl --since '@$RUN_STARTED' --no-pager" |
-        awk -v name="$name" '/PaperDesk SSH target/ { for (i=1; i<=NF-3; ++i) if ($i=="target" && $(i+1)==name) print $(i+2), $(i+3) }' | tail -n1)
+        awk -v name="$name" '/Paper Terminal target/ { for (i=1; i<=NF-3; ++i) if ($i=="target" && $(i+1)==name) print $(i+2), $(i+3) }' | tail -n1)
     read -r target_x target_y <<< "$coordinates"
     [[ "$target_x" =~ ^[0-9]+$ && "$target_y" =~ ^[0-9]+$ ]]
     tap "$target_x" "$target_y"
@@ -421,8 +421,8 @@ printf "\n[PaperDeskE2E]\ndotsCapture=true\n" >> /home/root/.config/remarkable/x
 systemctl restart xochitl
 sleep 8'
 elif [[ "$TARGET" == "ssh-sessions" ]]; then
-    AUTOSTART_APPLICATION=literm
-    remote 'sed -i '\''s/^applicationId=.*/applicationId=literm/; s/^autostart=.*/autostart=true/'\'' /home/root/.config/remarkable/xochitl.conf
+    AUTOSTART_APPLICATION=paperterminal
+    remote 'sed -i '\''s/^applicationId=.*/applicationId=paperterminal/; s/^autostart=.*/autostart=true/'\'' /home/root/.config/remarkable/xochitl.conf
 printf "\n[PaperDeskE2E]\nsshSessionCrud=true\n[PaperDeskSSH]\nsessionsJson=[]\n" >> /home/root/.config/remarkable/xochitl.conf
 systemctl restart xochitl
 sleep 8'
@@ -531,31 +531,31 @@ systemctl restart xochitl'
         ;;
     ssh-sessions)
         tap 155 158
-        wait_for_log 'PaperDesk SSH state list' 10
+        wait_for_log 'Paper Terminal state list' 10
         ssh_tap_action sshSessionNew
-        wait_for_log 'PaperDesk SSH state add' 8
+        wait_for_log 'Paper Terminal state add' 8
         ssh_tap_action sshSessionHostInput
         sleep 2
         viewport=$(remote "journalctl -u xochitl --since '@$RUN_STARTED' --no-pager" |
-            awk '/PaperDesk SSH state add/ { for (i=1;i<NF;++i) if ($i=="state") print $(i+4) }' | tail -n1)
+            awk '/Paper Terminal state add/ { for (i=1;i<NF;++i) if ($i=="state") print $(i+4) }' | tail -n1)
         [[ "$viewport" =~ ^[0-9]+$ ]] && (( viewport > 0 ))
         ssh_tap_action sshSessionSave
-        wait_for_log 'PaperDesk SSH state list 1' 8
+        wait_for_log 'Paper Terminal state list 1' 8
         ssh_tap_action sshSessionEdit
-        wait_for_log 'PaperDesk SSH state edit' 8
+        wait_for_log 'Paper Terminal state edit' 8
         ssh_tap_action sshSessionSave
         sleep 2
         ssh_tap_action sshSessionOpen
-        wait_for_log 'PaperDesk SSH opening saved session' 8
+        wait_for_log 'Paper Terminal opening saved session' 8
         sleep 3
         remote 'grep -q "^closed " /home/root/.config/rmssh/state'
         tap 155 158
-        wait_for_log 'PaperDesk SSH state list 1' 8
+        wait_for_log 'Paper Terminal state list 1' 8
         ssh_tap_action sshSessionDelete
         ssh_tap_action sshSessionDeleteCancel
         ssh_tap_action sshSessionDelete
         ssh_tap_action sshSessionDeleteConfirm
-        wait_for_log 'PaperDesk SSH state list 0' 8
+        wait_for_log 'Paper Terminal state list 0' 8
         ssh_tap_action sshSessionsBack
         tap 1305 56
         wait_for_log 'PaperDesk Terminal action close' 8
@@ -660,7 +660,7 @@ systemctl restart xochitl'
         ;;
     showcase)
         tap 360 500
-        wait_for_log 'PaperDesk touch launching literm' 10
+        wait_for_log 'PaperDesk touch launching paperterminal' 10
         tap 1249 158
         wait_for_log 'PaperDesk Terminal shortcuts opened' 8
         capture_screen "$ARTIFACT_DIR/showcase-terminal.png"
@@ -700,7 +700,7 @@ systemctl restart xochitl'
         for ((journey = 1; journey <= JOURNEY_LOOPS; ++journey)); do
             echo "User journey $journey/$JOURNEY_LOOPS: Terminal"
             tap 360 500
-            wait_for_log 'PaperDesk touch launching literm' 10
+            wait_for_log 'PaperDesk touch launching paperterminal' 10
             tap 1249 158
             wait_for_log 'PaperDesk Terminal shortcuts opened' 8
             tap 635 262
@@ -795,7 +795,7 @@ systemctl restart xochitl'
         ;;
     all)
         tap 360 500
-        wait_for_log 'PaperDesk touch launching literm' 10
+        wait_for_log 'PaperDesk touch launching paperterminal' 10
         tap 1249 158
         wait_for_log 'PaperDesk Terminal shortcuts opened' 8
         tap 635 262
@@ -867,7 +867,7 @@ systemctl restart xochitl'
         ;;
     terminal)
         tap 360 500
-        wait_for_log 'PaperDesk touch launching literm' 10
+        wait_for_log 'PaperDesk touch launching paperterminal' 10
         wait_for_log 'PaperDesk Terminal refresh startup' 8
         wait_for_log 'PaperDesk Terminal keyboard opened automatically' 8
         sleep 2
@@ -1216,7 +1216,7 @@ test -n "$raster"; test -f "$raster"; cat "$raster"' > "$ARTIFACT_DIR/rdp-landsc
         rdp_tap_action rdpCloseButton
         wait_for_log 'PaperDesk RDP action close' 8
         tap 360 500
-        wait_for_log 'PaperDesk touch launching literm' 10
+        wait_for_log 'PaperDesk touch launching paperterminal' 10
         tap 1306 52
         wait_for_log 'PaperDesk Terminal action close' 8
         assert_tablet_healthy 'landscape RDP gestures, native keyboard and Close'

@@ -7,6 +7,7 @@ Item {
     width: 1404
     height: 1872
     property var app: null
+    property string storedProfiles: ""
 
     TestCase {
         name: "PaperRdpNativeLogin"
@@ -18,6 +19,7 @@ Item {
             scene.app = component.createObject(scene)
             verify(scene.app !== null, component.errorString())
             waitForRendering(scene.app)
+            wait(80)
         }
 
         function cleanupTestCase() {
@@ -27,7 +29,9 @@ Item {
         function init() {
             AppLoadLauncher.reset()
             scene.app.connectionLaunching = false
-            scene.app.profileActionPending = false
+            scene.app.finishProfileOperation()
+            scene.app.profileRefreshRequired = false
+            scene.app.profileRevision = "a".repeat(64)
             scene.app.profileDomain = ""
             scene.app.editorMode = ""
             scene.app.deleteConfirmationIndex = -1
@@ -35,8 +39,37 @@ Item {
             scene.app.orientation = "portrait"
         }
 
+        function setProfiles(text) {
+            scene.storedProfiles = text
+            verify(scene.app.parseSavedProfiles(text))
+        }
+
+        function resultText(token, action, status, code, body, revision) {
+            return "PaperDeskProfileResult\t1\t" + token + "\t" + action + "\t" + status +
+                   "\t" + (revision || "b".repeat(64)) + "\t" + code + "\n" + (body || "")
+        }
+
+        function acknowledge(status, code, body) {
+            var token = scene.app.profileOperationToken, action = scene.app.profileOperationAction
+            verify(scene.app.acceptProfileOperationResult(token, resultText(token, action, status, code, body)))
+            if (status === "ok") scene.storedProfiles = body
+        }
+
+        function acknowledgeMutation() {
+            var args = AppLoadLauncher.lastArgs
+            compare(args[0], "--request")
+            var rows = scene.storedProfiles.split("\n").filter(function(line) { return line && line.charAt(0) !== "#" })
+            var index = Number(args[4])
+            if (args[3] === "--save") {
+                var row = "v2\t" + args.slice(5, 13).join("\t")
+                if (index < 0) { rows.unshift(row); rows = rows.slice(0, 8) }
+                else rows[index] = row
+            } else rows.splice(index, 1)
+            acknowledge("ok", "none", rows.join("\n") + "\n")
+        }
+
         function test_orientation_is_saved_per_profile_and_legacy_defaults_upright() {
-            scene.app.parseSavedProfiles("v1\t686f7374\t75736572\t\t3389\t\t75\t8\n" +
+            setProfiles("v1\t686f7374\t75736572\t\t3389\t\t75\t8\n" +
                 "v2\t77696465\t75736572\t\t3389\t\t75\t8\tlandscape\n")
             compare(scene.app.savedProfileCount, 2)
             scene.app.chooseProfile(1)
@@ -50,9 +83,9 @@ Item {
             mouseClick(wide, wide.width / 2, wide.height / 2)
             compare(scene.app.orientation, "landscape")
             scene.app.saveProfileChanges()
-            compare(AppLoadLauncher.lastArgs[9], "landscape")
-            compare(AppLoadLauncher.lastArgs[10], "v2")
-            scene.app.profileActionPending = false
+            compare(AppLoadLauncher.lastArgs[12], "landscape")
+            compare(AppLoadLauncher.lastArgs[13], "v2")
+            acknowledgeMutation()
             scene.app.chooseProfile(1)
             scene.app.chooseProfile(0)
             compare(scene.app.orientation, "landscape")
@@ -195,7 +228,7 @@ Item {
         }
 
         function test_profile_layout_is_vertical_clear_and_on_screen() {
-            scene.app.parseSavedProfiles(
+            setProfiles(
                 "v1\t" + scene.app.toHex("first-server") + "\t" + scene.app.toHex("first-user") +
                 "\t\t3389\t\t75\t8\n" +
                 "v1\t" + scene.app.toHex("second-server") + "\t" + scene.app.toHex("second-user") +
@@ -244,7 +277,7 @@ Item {
             var secondHost = scene.app.toHex("office")
             var secondUser = scene.app.toHex("admin")
             var secondDomain = scene.app.toHex("WORK")
-            scene.app.parseSavedProfiles(
+            setProfiles(
                 "v1\t" + host + "\t" + user + "\t" + domain + "\t3389\t" + scene.app.toHex("old") + "\t100\t16\n" +
                 "v1\t" + secondHost + "\t" + secondUser + "\t" + secondDomain + "\t3390\t\t75\t8\n")
             compare(scene.app.savedProfileCount, 2)
@@ -262,9 +295,9 @@ Item {
             scene.app.beginEditProfile()
             scene.app.saveProfileChanges()
             compare(AppLoadLauncher.lastApplicationId, "external::paperrdp-profile")
-            compare(AppLoadLauncher.lastArgs[0], "--save")
-            compare(AppLoadLauncher.lastArgs[1], "0")
-            scene.app.profileActionPending = false
+            compare(AppLoadLauncher.lastArgs[3], "--save")
+            compare(AppLoadLauncher.lastArgs[4], "0")
+            acknowledgeMutation()
             scene.app.chooseProfile(0)
             compare(findChild(scene.app, "passwordInput").text, "new")
             compare(scene.app.scalePercent, 50)
@@ -280,7 +313,7 @@ Item {
         }
 
         function test_profile_actions_new_edit_cancel_delete_and_connect() {
-            scene.app.parseSavedProfiles(
+            setProfiles(
                 "v1\t" + scene.app.toHex("first") + "\t" + scene.app.toHex("user") +
                 "\t\t3389\t\t75\t8\n" +
                 "v1\t" + scene.app.toHex("second") + "\t" + scene.app.toHex("admin") +
@@ -312,12 +345,14 @@ Item {
             verify(!scene.app.rememberPassword)
             mouseClick(save, save.width / 2, save.height / 2, Qt.LeftButton)
             compare(AppLoadLauncher.lastApplicationId, "external::paperrdp-profile")
-            compare(AppLoadLauncher.lastArgs[0], "--save")
-            compare(AppLoadLauncher.lastArgs[1], "-1")
-            compare(AppLoadLauncher.lastArgs[6], "")
+            compare(AppLoadLauncher.lastArgs[3], "--save")
+            compare(AppLoadLauncher.lastArgs[4], "-1")
+            compare(AppLoadLauncher.lastArgs[9], "")
+            compare(scene.app.savedProfileCount, 2)
+            verify(scene.app.profileActionPending)
+            acknowledgeMutation()
             compare(scene.app.savedProfileCount, 3)
 
-            scene.app.profileActionPending = false
             mouseClick(edit, edit.width / 2, edit.height / 2, Qt.LeftButton)
             compare(scene.app.editorMode, "edit")
             verify(!scene.app.rememberPassword)
@@ -325,20 +360,23 @@ Item {
             mouseClick(remember, remember.width / 2, remember.height / 2, Qt.LeftButton)
             verify(scene.app.rememberPassword)
             mouseClick(save, save.width / 2, save.height / 2, Qt.LeftButton)
-            compare(AppLoadLauncher.lastArgs[0], "--save")
-            compare(AppLoadLauncher.lastArgs[1], "0")
+            compare(AppLoadLauncher.lastArgs[3], "--save")
+            compare(AppLoadLauncher.lastArgs[4], "0")
             compare(scene.app.savedProfileCount, 3)
 
-            scene.app.profileActionPending = false
+            acknowledgeMutation()
             mouseClick(remove, remove.width / 2, remove.height / 2, Qt.LeftButton)
             compare(scene.app.deleteConfirmationIndex, 0)
             verify(deleteOverlay.visible)
-            compare(AppLoadLauncher.lastArgs[0], "--save")
+            compare(AppLoadLauncher.lastArgs[3], "--save")
             mouseClick(deleteConfirm, deleteConfirm.width / 2, deleteConfirm.height / 2, Qt.LeftButton)
-            verify(!deleteOverlay.visible)
+            verify(deleteOverlay.visible)
             compare(AppLoadLauncher.lastApplicationId, "external::paperrdp-profile")
-            compare(AppLoadLauncher.lastArgs[0], "--delete")
-            compare(AppLoadLauncher.lastArgs[1], "0")
+            compare(AppLoadLauncher.lastArgs[3], "--delete")
+            compare(AppLoadLauncher.lastArgs[4], "0")
+            compare(scene.app.savedProfileCount, 3)
+            acknowledgeMutation()
+            verify(!deleteOverlay.visible)
             compare(scene.app.savedProfileCount, 2)
 
             scene.app.profileActionPending = false
@@ -346,6 +384,171 @@ Item {
             mouseClick(primary, primary.width / 2, primary.height / 2, Qt.LeftButton)
             compare(AppLoadLauncher.lastApplicationId, "external::paperrdp")
             compare(AppLoadLauncher.lastArgs[0], "--host")
+        }
+
+        function prepareEdit() {
+            setProfiles("v1\t686f7374\t75736572\t\t3389\t6f6c64\t75\t8\n")
+            scene.app.chooseProfile(0)
+            scene.app.beginEditProfile()
+            findChild(scene.app, "serverInput").text = "edited"
+            findChild(scene.app, "passwordInput").text = "typed-only"
+            scene.app.rememberPassword = false
+        }
+
+        function test_save_waits_for_correlated_ack_and_keeps_opt_out_password_for_connection() {
+            prepareEdit()
+            scene.app.saveProfileChanges()
+            compare(scene.app.editorMode, "edit")
+            compare(scene.app.selectedProfileIndex, 0)
+            compare(AppLoadLauncher.lastArgs[9], "")
+            var token = scene.app.profileOperationToken
+            verify(!scene.app.acceptProfileOperationResult("old-token", resultText("old-token", "save", "ok", "none", "")))
+            verify(scene.app.profileActionPending)
+            verify(!scene.app.acceptProfileOperationResult(token, resultText("wrong-token", "save", "ok", "none", "")))
+            verify(scene.app.profileActionPending)
+            // While saving, Cancel, row selection and a second Save do nothing.
+            scene.app.cancelProfileEdit(); scene.app.chooseProfile(0); scene.app.saveProfileChanges()
+            compare(scene.app.editorMode, "edit")
+            compare(findChild(scene.app, "serverInput").text, "edited")
+            compare(AppLoadLauncher.launchCount, 1)
+            acknowledgeMutation()
+            compare(scene.app.editorMode, "")
+            compare(findChild(scene.app, "serverInput").text, "edited")
+            compare(findChild(scene.app, "passwordInput").text, "typed-only")
+            verify(!scene.app.rememberPassword)
+            verify(scene.storedProfiles.indexOf(scene.app.toHex("typed-only")) < 0)
+            scene.app.chooseProfile(0)
+            compare(findChild(scene.app, "passwordInput").text, "")
+        }
+
+        function test_lock_and_write_failure_keep_form_selection_and_allow_explicit_retry() {
+            for (var code of ["locked", "write", "launch"]) {
+                prepareEdit()
+                scene.app.saveProfileChanges()
+                var token = scene.app.profileOperationToken
+                if (code === "launch") scene.app.failProfileOperation(code)
+                else acknowledge("error", code, "")
+                verify(!scene.app.profileActionPending)
+                compare(scene.app.editorMode, "edit")
+                compare(scene.app.selectedProfileIndex, 0)
+                compare(findChild(scene.app, "serverInput").text, "edited")
+                compare(findChild(scene.app, "passwordInput").text, "typed-only")
+                verify(!scene.app.rememberPassword)
+                scene.app.saveProfileChanges()
+                verify(scene.app.profileActionPending)
+                verify(scene.app.profileOperationToken !== token)
+                acknowledge("error", "write", "")
+                scene.app.chooseProfile(0)
+                compare(findChild(scene.app, "serverInput").text, "host")
+                compare(findChild(scene.app, "passwordInput").text, "old")
+            }
+        }
+
+        function test_launcher_exception_preserves_form_and_does_not_claim_success() {
+            prepareEdit()
+            try {
+                AppLoadLauncher.launchHandler = function() { throw new Error("fixture launch failure") }
+                scene.app.saveProfileChanges()
+                verify(!scene.app.profileActionPending)
+                compare(scene.app.editorMode, "edit")
+                compare(findChild(scene.app, "serverInput").text, "edited")
+                verify(findChild(scene.app, "rdpProfileStatus").text.indexOf("Could not start") >= 0)
+            } finally { AppLoadLauncher.launchHandler = null }
+        }
+
+        function test_timeout_requires_refresh_and_ignores_late_previous_ack() {
+            prepareEdit()
+            scene.app.saveProfileChanges()
+            var oldToken = scene.app.profileOperationToken
+            scene.app.profileOperationDeadline = Date.now() - 1
+            scene.app.pollProfileOperation()
+            verify(!scene.app.profileActionPending)
+            verify(scene.app.profileRefreshRequired)
+            verify(findChild(scene.app, "rdpProfileRecoveryBar").visible)
+            compare(scene.app.editorMode, "edit")
+            var launches = AppLoadLauncher.launchCount
+            scene.app.saveProfileChanges()
+            compare(AppLoadLauncher.launchCount, launches)
+            var refresh = findChild(scene.app, "rdpProfileRefreshButton")
+            mouseClick(refresh, refresh.width / 2, refresh.height / 2)
+            compare(AppLoadLauncher.lastArgs[0], "--read")
+            verify(scene.app.profileActionPending)
+            verify(!scene.app.acceptProfileOperationResult(oldToken, resultText(oldToken, "save", "ok", "none", "")))
+            verify(scene.app.profileActionPending)
+            acknowledge("ok", "none", scene.storedProfiles)
+            verify(!scene.app.profileRefreshRequired)
+            compare(scene.app.editorMode, "edit")
+            compare(findChild(scene.app, "serverInput").text, "edited")
+            compare(findChild(scene.app, "passwordInput").text, "typed-only")
+        }
+
+        function test_stale_revision_refresh_rebinds_only_same_unique_profile() {
+            prepareEdit()
+            scene.app.saveProfileChanges()
+            acknowledge("error", "stale", "")
+            verify(scene.app.profileRefreshRequired)
+            scene.app.refreshSavedProfiles()
+            var replacement = "v1\t6f74686572\t75736572\t\t3389\t\t75\t8\n"
+            acknowledge("ok", "none", replacement + scene.storedProfiles)
+            compare(scene.app.selectedProfileIndex, 1)
+            compare(scene.app.editorMode, "edit")
+            compare(findChild(scene.app, "serverInput").text, "edited")
+            scene.app.saveProfileChanges()
+            compare(AppLoadLauncher.lastArgs[4], "1")
+            acknowledge("error", "stale", "")
+            scene.app.refreshSavedProfiles()
+            acknowledge("ok", "none", replacement)
+            compare(scene.app.editorMode, "add")
+            compare(scene.app.selectedProfileIndex, -1)
+            compare(findChild(scene.app, "serverInput").text, "edited")
+        }
+
+        function test_delete_failure_never_removes_row_and_stale_cannot_replay() {
+            setProfiles("v1\t686f7374\t75736572\t\t3389\t\t75\t8\n")
+            scene.app.chooseProfile(0)
+            scene.app.requestDeleteProfile()
+            scene.app.confirmDeleteProfile()
+            compare(scene.app.savedProfileCount, 1)
+            verify(findChild(scene.app, "rdpDeleteConfirmation").visible)
+            verify(findChild(scene.app, "rdpDeleteStatus").text.indexOf("wait") >= 0)
+            acknowledge("error", "stale", "")
+            compare(scene.app.savedProfileCount, 1)
+            compare(scene.app.selectedProfileIndex, 0)
+            verify(!findChild(scene.app, "rdpDeleteConfirmation").visible)
+            verify(findChild(scene.app, "rdpProfileRecoveryBar").visible)
+            var launches = AppLoadLauncher.launchCount
+            scene.app.requestDeleteProfile(); scene.app.confirmDeleteProfile()
+            compare(AppLoadLauncher.launchCount, launches)
+        }
+
+        function test_returning_focus_reads_only_saved_list_and_failure_keeps_selected_fields() {
+            setProfiles("v1\t686f7374\t75736572\t\t3389\t6f6c64\t75\t8\n")
+            scene.app.chooseProfile(0)
+            scene.app.gainedFocus()
+            compare(AppLoadLauncher.launchCount, 1)
+            compare(AppLoadLauncher.lastArgs[0], "--read")
+            verify(scene.app.profileActionPending)
+            acknowledge("error", "read", "")
+            compare(scene.app.selectedProfileIndex, 0)
+            compare(findChild(scene.app, "serverInput").text, "host")
+            compare(findChild(scene.app, "passwordInput").text, "old")
+            verify(scene.app.profileRefreshRequired)
+        }
+
+        function test_invalid_read_ack_keeps_old_list_and_form() {
+            prepareEdit()
+            scene.app.refreshSavedProfiles()
+            var token = scene.app.profileOperationToken
+            verify(!scene.app.acceptProfileOperationResult(token, resultText(token, "read", "ok", "none", "v2\tbroken\n")))
+            verify(scene.app.profileRefreshRequired)
+            compare(scene.app.savedProfileCount, 1)
+            compare(scene.app.selectedProfileIndex, 0)
+            compare(findChild(scene.app, "serverInput").text, "edited")
+            compare(findChild(scene.app, "passwordInput").text, "typed-only")
+            scene.app.refreshSavedProfiles()
+            acknowledge("error", "read", "")
+            compare(scene.app.savedProfileCount, 1)
+            verify(scene.app.profileRefreshRequired)
         }
 
         function test_profile_hex_round_trips_unicode() {

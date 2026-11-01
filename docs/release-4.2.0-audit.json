@@ -1,0 +1,36 @@
+{
+  "version": "4.2.0",
+  "date": "2026-11-01",
+  "baseline": "Released4.1.3",
+  "scope": [
+    "Independent Paper Terminal",
+    "RDP keys, keyboard viewport, scrolling, retry and confirmed profile operations"
+  ],
+  "preserved": "All Paper Sketch4.1.3 app files are byte-identical",
+  "terminal_and_rdp_firmware_tested": "reMarkable2 OS3.29.0.153",
+  "python_tests": 149,
+  "python_skipped": 2,
+  "qml_tests": 265,
+  "installer_filesystem_tests": 10,
+  "device_tests": [
+    "realAppLoad profileCRUD and write/lock/stale errors",
+    "portrait and landscape viewport",
+    "wire F1-F12/navigation/chords/wheel",
+    "disconnect and retry",
+    "changedcertificate denied"
+  ],
+  "physical_or_optical_latency_claim": false,
+  "native_rdp_sha256": "75b7e0e7c80ce469194d5ad4db5f8de485c65b7a25e2be1b4f932ca8ed5dfbf8",
+  "qml_skipped": 2,
+  "candidate_verified": true,
+  "preserved_app_file_counts": {
+    "papersketch": 21,
+    "paperbooks": 36,
+    "paperdots": 8,
+    "paperweb": 8,
+    "paperrss": 7,
+    "paperbooks-download": 3,
+    "paperweb-download": 4,
+    "shims": 1
+  }
+}

@@ -24,8 +24,8 @@ w terminalu. To hasło urządzenia, nie klucz licencyjny.
    Kontrola wymaga właściwego modelu, ARMv7, jednej z wersji firmware wyświetlonych przez kreator
    (odczyt `IMG_VERSION`, z rezerwowym `VERSION_ID`), zależności, narzędzi i miejsca na paczkę.
    Ostatnia linia musi brzmieć `PAPERDESK_COMPATIBILITY_OK`.
-   Dla PaperDesk 3.0.3 sprawdzono także USB na firmware 3.29.0.153.
-   Wersje XOVI/AppLoad/LiTerm sprawdź oddzielnie według listy kreatora:
+   Dla PaperDesk 4.2.0 sprawdzono także USB na firmware 3.29.0.153.
+   Wersje XOVI/AppLoad sprawdź oddzielnie według listy kreatora:
    obecność pliku nie dowodzi zgodności jego wersji.
 4. Najpierw zsynchronizuj lub wyeksportuj notatniki. Następnie wykonaj każde
    polecenie backupu oddzielnie: utwórz archiwum XOVI/AppLoad i istniejącego
@@ -104,7 +104,7 @@ o sprawdzenie i dopuszczenie pliku. Nie wyłączaj ochrony Windows.
 
 Przed instalacją sprawdza Windows 10/11 i środowisko 64-bitowe, dołączoną
 obsługę kryptografii, miejsce na komputerze oraz możliwość zapisu ustawień.
-Na tablecie sprawdza XOVI, backend AppLoad, LiTerm, qt-resource-rebuilder,
+Na tablecie sprawdza XOVI, backend AppLoad, qt-resource-rebuilder,
 architekturę ARMv7, systemd, wymagane narzędzia, obsługę Ed25519, uprawnienia
 zapisu i miejsce na paczkę oraz kopie zapasowe. Sprawdza też dostępność SFTP.
 Brak wymagania zatrzymuje instalację przed utworzeniem katalogu na tablecie.
@@ -124,7 +124,7 @@ instalacji. Test na fizycznym tablecie wymaga osobnego połączenia z urządzeni
 
 Przycisk **Prepare tablet and install PaperDesk** instaluje przypięte wersje
 XOVI 0.3.3 z qt-resource-rebuilder (wydanie v19-23052026), AppLoad 0.6.0
-i backend LiTerm 0.1.7, a następnie PaperDesk. Obsługuje wyłącznie
+a następnie PaperDesk, zawierający własny backend Paper Terminal. Obsługuje wyłącznie
 reMarkable 2 z systemem 3.29.0.149. Komputer musi mieć dostęp do internetu;
 pakiety są pobierane z oficjalnych wydań i weryfikowane przez SHA-256.
 

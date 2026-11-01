@@ -1,4 +1,4 @@
-# PaperDesk 4.1.3
+# PaperDesk 4.2.0
 
 PaperDesk turns a reMarkable 2 into a quiet, monochrome network workspace.
 The bundle adds eight apps directly to the AppLoad list and keeps their
@@ -25,9 +25,9 @@ hidden from users.
 - **PaperDesk Dots** — offline Kropki with Human / Computer selection for both
   players; three board sizes (including 5 mm squares), two AI levels, save,
   undo and pause/resume for computer games.
-- **PaperDesk SSH** — native keyboard, scrolling, resize gesture, Ctrl
+- **Paper Terminal** — native keyboard, scrolling, resize gesture, Ctrl
   shortcuts, readable black text, and saved connections with New/Open/Edit/Delete.
-  Connection entries store name, server, username and port, never passwords.
+  Saved sessions are numbered on the start screen; double-click opens them. Optional password storage uses private local files without encryption. Mouse reporting starts enabled, with F1–F12 and one-shot or held Ctrl/Alt shortcuts.
 - **Web Reader** — simplified pages without scripts, a remembered setting
   for showing or hiding pictures, compact cards with titles above images,
   pinch zoom, e-ink scrolling without animation, and PDF/EPUB downloads to My files with confirmation, cancellation, size and disk-space limits.
@@ -60,7 +60,7 @@ It also handles the newer AppLoad 0.6.0 screen-aspect reporting.
 - XOVI 0.3.3;
 - rm-xovi-extensions v19;
 - AppLoad 0.6.0;
-- LiTerm 0.1.7.
+- No LiTerm app or global terminal extension is required.
 
 This is the tested configuration. The installer accepts only OS 3.29.0.149 or 3.29.0.153
 and requires ARMv7 architecture before making changes: Paper Sketch registers a native

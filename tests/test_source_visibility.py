@@ -62,7 +62,7 @@ class SourceVisibilityTests(unittest.TestCase):
         self.assertIn('Browse source code on GitHub', self.home)
         self.assertIn('Download project package', self.home)
         self.assertIn('QML and C/C++ app code, installers, tests and licences', self.home)
-        ssh = re.search(r'<h3>PaperDesk SSH</h3>(.*?)</article>', self.home, re.S).group(1)
+        ssh = re.search(r'<h3>Paper Terminal</h3>(.*?)</article>', self.home, re.S).group(1)
         self.assertIn('graphical SSH client and terminal', ssh)
         self.assertIn('connecting to other computers', ssh)
 

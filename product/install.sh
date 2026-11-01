@@ -27,9 +27,18 @@ if [ ! -d "/home/root/xovi" ] || [ ! -d "$TARGET" ]; then
     exit 1
 fi
 
-for required in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch shims; do
+for required in paperdesk paperterminal paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch shims; do
     if [ ! -d "$PAYLOAD/apps/$required" ]; then
         echo "Incomplete package: missing payload/apps/$required" >&2
+        exit 1
+    fi
+done
+
+# Paper Terminal loads its own plugin from the app directory. Reject an
+# incomplete native payload before staging or changing the tablet.
+for required in native/qmldir native/libpaperterminal_native.so native/paperterminal-askpass; do
+    if [ ! -s "$PAYLOAD/apps/paperterminal/$required" ]; then
+        echo "Incomplete package: missing Paper Terminal $required" >&2
         exit 1
     fi
 done
@@ -78,6 +87,7 @@ REPLACING_APP=""
 NATIVE_STAGE=""
 NATIVE_REPLACING=0
 NATIVE_WAS_PRESENT=0
+LEGACY_TERMINAL_RETIRED=0
 INSTALL_COMPLETE=0
 cleanup_staging() {
     if [ -n "$REPLACING_APP" ] && [ ! -e "$TARGET/$REPLACING_APP" ] &&
@@ -99,6 +109,10 @@ cleanup_staging() {
         fi
     fi
     if [ -n "$NATIVE_STAGE" ]; then rm -f "$NATIVE_STAGE"; fi
+    if [ "$INSTALL_COMPLETE" = 0 ] && [ "$LEGACY_TERMINAL_RETIRED" = 1 ] &&
+       [ ! -e "$TARGET/literm" ] && [ -e "$STAGING/legacy-literm" ]; then
+        mv "$STAGING/legacy-literm" "$TARGET/literm" || return 1
+    fi
     rm -rf "$STAGING"
 }
 trap cleanup_staging EXIT
@@ -112,7 +126,7 @@ chmod 644 "$NATIVE_STAGE"
 ORIGINAL="$STATE/original"
 if [ ! -f "$STATE/original-recorded" ] && [ ! -f "$STATE/current-version" ]; then
     mkdir -p "$ORIGINAL/apps" "$ORIGINAL/system"
-    for app in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch paperpet shims; do
+    for app in paperdesk paperterminal literm paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch paperpet shims; do
         if [ -e "$TARGET/$app" ]; then
             cp -R "$TARGET/$app" "$ORIGINAL/apps/$app"
         fi
@@ -202,7 +216,7 @@ if [ -e "$TARGET/paperpet" ]; then
     cp -R "$TARGET/paperpet" "$BACKUP/apps/paperpet"
     rm -rf "$TARGET/paperpet"
 fi
-for app in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch shims; do
+for app in paperdesk paperterminal paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch shims; do
     REPLACING_APP=$app
     if [ -e "$TARGET/$app" ]; then
         cp -R "$TARGET/$app" "$BACKUP/apps/$app"
@@ -218,24 +232,31 @@ for app in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp p
     REPLACING_APP=""
 done
 
+# Retire only the old app frontend, after the independent terminal has been
+# installed. Keep its global extension and configuration as user data.
+if [ -e "$TARGET/literm" ]; then
+    cp -R "$TARGET/literm" "$BACKUP/apps/literm"
+    LEGACY_TERMINAL_RETIRED=1
+    mv "$TARGET/literm" "$STAGING/legacy-literm"
+fi
+
 if [ -f /home/root/.local/bin/rmssh-menu ]; then
     cp /home/root/.local/bin/rmssh-menu "$BACKUP/system/rmssh-menu"
 fi
 cp "$PAYLOAD/system/rmssh-menu" /home/root/.local/bin/rmssh-menu
 chmod 755 /home/root/.local/bin/rmssh-menu "$TARGET/paperrdp/paperrdp" \
     "$TARGET/paperrdp-profile/profile-manager" "$TARGET/paperbooks-download/book-download" \
-    "$TARGET/paperweb-download/web-download"
+    "$TARGET/paperweb-download/web-download" "$TARGET/paperterminal/native/paperterminal-askpass"
 
-# PaperDesk 2 keeps Terminal deliberately stateless. Preserve the retired
-# profile and alias files in this version backup, then remove their active
-# copies so upgrades cannot bring the old UI model back.
+# Preserve legacy connection profiles and host aliases in this version backup
+# while retaining their active user-owned copies.
 if [ -f /home/root/.config/rmssh/profiles ]; then
     cp /home/root/.config/rmssh/profiles "$BACKUP/system/rmssh-profiles"
 fi
 if [ -f /home/root/.config/rmssh/hosts ]; then
     cp /home/root/.config/rmssh/hosts "$BACKUP/system/rmssh-hosts"
 fi
-rm -f /home/root/.config/rmssh/profiles /home/root/.config/rmssh/hosts
+# Existing connection profiles and host aliases remain user data.
 
 for resource in paperdesk-appload-compat.qrr paperdesk-appload-window.qml paperdesk-appload.qml; do
     if [ -f "$QRR_DIR/$resource" ]; then
@@ -246,15 +267,14 @@ done
 
 if [ -f /home/root/.config/literm/settings.ini ]; then
     cp /home/root/.config/literm/settings.ini "$BACKUP/system/literm-settings.ini"
-else
-    cp "$PAYLOAD/system/literm-settings.ini" /home/root/.config/literm/settings.ini
 fi
 
-touch /home/root/.profile
-if ! grep -q '^# RMSSH-BEGIN' /home/root/.profile; then
+# The native terminal launches rmssh-menu directly. Remove only PaperDesk's
+# old login-shell hook so unrelated local shells no longer enter the menu.
+if [ -f /home/root/.profile ] && grep -q '^# RMSSH-BEGIN' /home/root/.profile; then
     cp /home/root/.profile "$BACKUP/system/profile"
-    printf '\n' >> /home/root/.profile
-    sed -n '/^# RMSSH-BEGIN/,/^# RMSSH-END/p' "$PAYLOAD/system/profile-hook.sh" >> /home/root/.profile
+    sed '/^# RMSSH-BEGIN/,/^# RMSSH-END/d' /home/root/.profile > /home/root/.profile.paperdesk-new
+    mv /home/root/.profile.paperdesk-new /home/root/.profile
 fi
 
 # The extension is replaced by a same-filesystem rename only after the app

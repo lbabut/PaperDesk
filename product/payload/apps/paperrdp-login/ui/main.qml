@@ -21,6 +21,17 @@ Rectangle {
     property int editorReturnIndex: -1
     property int deleteConfirmationIndex: -1
     property bool profileActionPending: false
+    property string profileRevision: ""
+    property bool profileRefreshRequired: false
+    property string profileOperationToken: ""
+    property string profileOperationAction: ""
+    property int profileOperationIndex: -1
+    property double profileOperationDeadline: 0
+    property int profileOperationPolls: 0
+    property bool profileResultReadPending: false
+    property int profileRequestSerial: 0
+    property string profileConfigurationUrl: "file:///home/root/.config/paperrdp/"
+    property bool legacyProfileAvailable: false
     property bool rememberPassword: true
     // Some reMarkable firmware reports a visible keyboard with an empty rect.
     property real keyboardInset: Qt.inputMethod.visible ? Math.min(height - 420,
@@ -103,28 +114,49 @@ Rectangle {
         })
     }
 
-    function parseSavedProfiles(text) {
-        savedProfiles.clear()
-        var lines = String(text || "").split("\n")
+    function decodeProfileList(text, strict) {
+        text = String(text || "")
+        if (text.length > 65536) return null
+        var records = [], lines = text.split("\n")
         for (var i = 0; i < lines.length; ++i) {
-            if (lines[i].length > 8192)
-                continue
+            if (lines[i] === "" || lines[i].charAt(0) === "#") continue
             var parts = lines[i].split("\t")
             var legacy = parts.length === 8 && parts[0] === "v1"
-            if (!legacy && !(parts.length === 9 && parts[0] === "v2"))
-                continue
-            if (!legacy && parts[8] !== "portrait" && parts[8] !== "landscape")
-                continue
-            if (parts[1].length > 4096 || parts[2].length > 4096 ||
-                    parts[3].length > 4096 || parts[5].length > 4096)
-                continue
-            addSavedProfile(fromHex(parts[1]), fromHex(parts[2]), fromHex(parts[3]),
-                            parts[4], parts[5], parts[6], parts[7], legacy ? "portrait" : parts[8])
+            var valid = lines[i].length <= 8192 && (legacy ||
+                (parts.length === 9 && parts[0] === "v2" &&
+                 (parts[8] === "portrait" || parts[8] === "landscape")))
+            if (valid) {
+                for (var h of [1, 2, 3, 5])
+                    valid = valid && parts[h].length <= 4096 && parts[h].length % 2 === 0 && /^[0-9a-f]*$/i.test(parts[h])
+                valid = valid && parts[1].length > 0 && parts[2].length > 0 &&
+                    /^[0-9]{1,5}$/.test(parts[4]) && Number(parts[4]) >= 1 && Number(parts[4]) <= 65535 &&
+                    /^(50|75|100)$/.test(parts[6]) && /^(8|16|24)$/.test(parts[7])
+            }
+            if (!valid) { if (strict) return null; else continue }
+            records.push({ profileHost: fromHex(parts[1]), profileUser: fromHex(parts[2]),
+                profileDomain: fromHex(parts[3]), profilePort: parts[4], profilePasswordHex: parts[5],
+                profileScale: Number(parts[6]), profileColorDepth: Number(parts[7]),
+                profileOrientation: legacy ? "portrait" : parts[8] })
+            if (records.length > 8) return null
         }
+        return records
+    }
+
+    function replaceProfileList(records) {
+        savedProfiles.clear()
+        for (var record of records) savedProfiles.append(record)
+    }
+
+    function parseSavedProfiles(text) {
+        var records = decodeProfileList(text, false)
+        if (records === null) return false
+        replaceProfileList(records)
         selectedProfileIndex = savedProfiles.count > 0 ? 0 : -1
+        return true
     }
 
     function chooseProfile(index) {
+        if (profileActionPending) return
         if (index < 0 || index >= savedProfiles.count)
             return
         var profile = savedProfiles.get(index)
@@ -159,6 +191,7 @@ Rectangle {
     }
 
     function beginAddProfile() {
+        if (profileActionPending) return
         editorReturnIndex = selectedProfileIndex
         selectedProfileIndex = -1
         deleteConfirmationIndex = -1
@@ -176,6 +209,7 @@ Rectangle {
     }
 
     function beginEditProfile() {
+        if (profileActionPending) return
         if (selectedProfileIndex < 0 || selectedProfileIndex >= savedProfiles.count) {
             statusText.text = "Select a saved profile first"
             return
@@ -192,6 +226,7 @@ Rectangle {
     }
 
     function cancelProfileEdit() {
+        if (profileActionPending) return
         var returnIndex = editorReturnIndex
         editorMode = ""
         deleteConfirmationIndex = -1
@@ -231,52 +266,181 @@ Rectangle {
                 String(scalePercent), String(colorDepth), orientation, "v2"]
     }
 
+    function finishProfileOperation() {
+        profileActionPending = false
+        profileOperationToken = ""
+        profileResultReadPending = false
+        profileLoaded = true
+    }
+
+    function failProfileOperation(code) {
+        var action = profileOperationAction
+        if (["locked", "stale", "write", "read", "corrupt", "invalid", "launch", "unknown"].indexOf(code) < 0)
+            code = "unknown"
+        finishProfileOperation()
+        // A timeout or failed final read can follow a committed write. Require
+        // an explicit read before another mutation; never replay it blindly.
+        if (action === "read" || code === "stale" || code === "unknown" || code === "corrupt" || code === "read")
+            profileRefreshRequired = true
+        var messages = {
+            locked: "Another profile update is running. Wait, then try again.",
+            stale: "Saved profiles changed. Refresh before saving or deleting.",
+            write: "Could not write profiles. Your previous profiles and edits are unchanged.",
+            read: "Could not read saved profiles. Refresh to recover.",
+            corrupt: "Saved profiles could not be validated. Refresh after repairing the file.",
+            invalid: "Profile data was rejected. Check the fields and try again.",
+            launch: "Could not start the profile manager. Your edits are still here.",
+            unknown: "Result unknown. Refresh saved profiles before trying again."
+        }
+        statusText.text = messages[code] || messages.unknown
+        // Reveal feedback rather than keep it behind the deletion overlay.
+        deleteConfirmationIndex = -1
+    }
+
+    function startProfileOperation(action, index, args) {
+        if (profileActionPending) return false
+        if (action !== "read" && (profileRefreshRequired || !/^(absent|[a-f0-9]{64})$/.test(profileRevision))) {
+            profileRefreshRequired = true
+            if (action === "delete") deleteConfirmationIndex = -1
+            statusText.text = "Refresh saved profiles before saving or deleting. Your edits will stay."
+            return false
+        }
+        var token = Date.now().toString(16) + "-" + (++profileRequestSerial).toString(16) + "-" +
+                    Math.floor(Math.random() * 0x100000000).toString(16)
+        profileOperationToken = token
+        profileOperationAction = action
+        profileOperationIndex = index
+        profileOperationPolls = 0
+        profileOperationDeadline = Date.now() + 8000
+        profileResultReadPending = false
+        profileActionPending = true
+        statusText.text = action === "read" ? "Reading saved profiles..." :
+                          action === "save" ? "Saving profile..." : "Deleting profile..."
+        var requestArgs = action === "read" ? ["--read", token] :
+                          ["--request", token, profileRevision].concat(args)
+        try {
+            var launched = AppLoadLauncher.launchApplication("external::paperrdp-profile", requestArgs, {}, false)
+            if (launched === false) { failProfileOperation("launch"); return false }
+        } catch (error) {
+            failProfileOperation("launch")
+            return false
+        }
+        return true
+    }
+
+    function refreshSavedProfiles() {
+        return startProfileOperation("read", -1, [])
+    }
+
+    function acceptProfileOperationResult(token, text) {
+        if (!profileActionPending || token !== profileOperationToken) return false
+        text = String(text || "")
+        if (text.length > 66048) { failProfileOperation("read"); return false }
+        var newline = text.indexOf("\n")
+        if (newline < 0) return false
+        var header = text.substr(0, newline).split("\t")
+        if (header.length !== 7 || header[0] !== "PaperDeskProfileResult" || header[1] !== "1" ||
+                header[2] !== token) return false
+        if (header[3] !== profileOperationAction || !/^(absent|[a-f0-9]{64})$/.test(header[5])) {
+            failProfileOperation("read"); return false
+        }
+        if (header[4] === "error") {
+            failProfileOperation(header[6]); return true
+        }
+        if (header[4] !== "ok" || header[6] !== "none") { failProfileOperation("read"); return false }
+        var records = decodeProfileList(text.substr(newline + 1), true)
+        if (header[5] === "absent" && (profileOperationAction !== "read" || (records && records.length > 0))) {
+            failProfileOperation("read"); return false
+        }
+        if (records === null) { failProfileOperation("read"); return false }
+        var action = profileOperationAction, index = profileOperationIndex
+        var preserveEditor = action === "read" && editorMode !== ""
+        var previous = selectedProfileIndex >= 0 && selectedProfileIndex < savedProfiles.count ?
+                       savedProfiles.get(selectedProfileIndex) : null
+        function recordKey(record) {
+            return JSON.stringify([record.profileHost, record.profileUser, record.profileDomain,
+                record.profilePort, record.profilePasswordHex, record.profileScale,
+                record.profileColorDepth, record.profileOrientation])
+        }
+        var previousKey = previous ? recordKey(previous) : ""
+        var typedPassword = passwordInput.text, optedOut = !rememberPassword
+        var wasRecovery = profileRefreshRequired
+        finishProfileOperation()
+        replaceProfileList(records)
+        profileRevision = header[5]
+        profileRefreshRequired = false
+        if (action === "read") {
+            var match = -1, matches = 0
+            for (var i = 0; i < records.length; ++i)
+                if (recordKey(records[i]) === previousKey) { match = i; ++matches }
+            if (matches !== 1) match = -1
+            selectedProfileIndex = match >= 0 ? match : records.length > 0 ? 0 : -1
+            if (preserveEditor) {
+                // A refresh can shift indices. Keep the typed form, and bind an
+                // edit only to the same stored endpoint, never a replacement row.
+                if (editorMode === "edit" && match < 0) { editorMode = "add"; selectedProfileIndex = -1 }
+                editorReturnIndex = selectedProfileIndex
+            } else if (selectedProfileIndex >= 0) chooseProfile(selectedProfileIndex)
+            else if (legacyProfileAvailable && !wasRecovery) editorMode = "add"
+            else if (!wasRecovery) clearProfileEditor()
+            statusText.text = preserveEditor || wasRecovery ? "Profiles refreshed. Review your edits before saving." :
+                legacyProfileAvailable && records.length === 0 ? "Previous connection loaded. Save it as a new profile." : "Saved profiles loaded"
+        } else {
+            editorMode = ""
+            editorReturnIndex = -1
+            deleteConfirmationIndex = -1
+            selectedProfileIndex = records.length ? Math.min(action === "save" && index < 0 ? 0 : index, records.length - 1) : -1
+            if (selectedProfileIndex >= 0) chooseProfile(selectedProfileIndex)
+            else clearProfileEditor()
+            if (action === "save" && optedOut) {
+                passwordInput.text = typedPassword
+                rememberPassword = false
+            }
+            statusText.text = action === "save" ? "Profile saved" : "Profile deleted"
+            Qt.inputMethod.hide()
+        }
+        return true
+    }
+
+    function pollProfileOperation() {
+        if (!profileActionPending) return
+        if (Date.now() >= profileOperationDeadline || ++profileOperationPolls > 40) {
+            failProfileOperation("unknown"); return
+        }
+        if (profileResultReadPending) return
+        var token = profileOperationToken
+        profileResultReadPending = true
+        var request = new XMLHttpRequest()
+        request.onreadystatechange = function() {
+            if (request.readyState !== XMLHttpRequest.DONE || token !== profileOperationToken) return
+            profileResultReadPending = false
+            if ((request.status === 0 || request.status === 200) && request.responseText.length > 0)
+                acceptProfileOperationResult(token, request.responseText)
+            else if (request.status !== 0 && request.status !== 404) failProfileOperation("read")
+        }
+        try {
+            request.open("GET", profileConfigurationUrl + "operations/" + token + ".result")
+            request.send()
+        } catch (error) { failProfileOperation("read") }
+    }
+
     function saveProfileChanges() {
-        if (profileActionPending || !editorIsValid())
-            return
+        if (profileActionPending || !editorIsValid()) return
         var replaceIndex = editorMode === "edit" ? selectedProfileIndex : -1
         if (editorMode !== "add" && editorMode !== "edit") {
-            statusText.text = "Choose Add or Edit first"
-            return
+            statusText.text = "Choose Add or Edit first"; return
         }
-        if (replaceIndex >= savedProfiles.count) {
-            statusText.text = "The selected profile no longer exists"
-            return
+        if (editorMode === "edit" && (replaceIndex < 0 || replaceIndex >= savedProfiles.count)) {
+            statusText.text = "The selected profile no longer exists"; return
         }
-        profileActionPending = true
-        AppLoadLauncher.launchApplication(
-            "external::paperrdp-profile", profileManagerArgs("save", replaceIndex), {}, false)
-        var values = {
-            profileHost: serverInput.text.trim(),
-            profileUser: usernameInput.text,
-            profileDomain: profileDomain,
-            profilePort: portInput.text,
-            profilePasswordHex: toHex(rememberPassword ? passwordInput.text : ""),
-            profileScale: scalePercent,
-            profileColorDepth: colorDepth,
-            profileOrientation: orientation
-        }
-        if (replaceIndex < 0) {
-            savedProfiles.insert(0, values)
-            if (savedProfiles.count > 8)
-                savedProfiles.remove(savedProfiles.count - 1)
-            selectedProfileIndex = 0
-            statusText.text = "Profile saved"
-            console.log("PaperDesk RDP profile saved", 0)
-        } else {
-            savedProfiles.set(replaceIndex, values)
-            selectedProfileIndex = replaceIndex
-            statusText.text = "Changes saved"
-            console.log("PaperDesk RDP profile saved", replaceIndex)
-        }
-        editorMode = ""
-        editorReturnIndex = -1
-        deleteConfirmationIndex = -1
-        Qt.inputMethod.hide()
-        profileActionGuard.restart()
+        startProfileOperation("save", replaceIndex, profileManagerArgs("save", replaceIndex))
     }
 
     function requestDeleteProfile() {
+        if (profileRefreshRequired) {
+            statusText.text = "Refresh saved profiles before deleting."
+            return
+        }
         if (profileActionPending || selectedProfileIndex < 0 ||
                 selectedProfileIndex >= savedProfiles.count) {
             statusText.text = "Select a saved profile first"
@@ -289,38 +453,24 @@ Rectangle {
     }
 
     function cancelDeleteProfile() {
+        if (profileActionPending) return
         deleteConfirmationIndex = -1
         statusText.text = "Deletion cancelled"
         console.log("PaperDesk RDP profile delete cancelled")
     }
 
     function confirmDeleteProfile() {
-        if (profileActionPending || deleteConfirmationIndex < 0 ||
-                deleteConfirmationIndex >= savedProfiles.count) {
+        if (profileActionPending) return
+        if (deleteConfirmationIndex < 0 || deleteConfirmationIndex >= savedProfiles.count) {
             deleteConfirmationIndex = -1
             statusText.text = "Select a saved profile first"
             return
         }
-        var removedIndex = deleteConfirmationIndex
-        profileActionPending = true
-        AppLoadLauncher.launchApplication(
-            "external::paperrdp-profile", profileManagerArgs("delete", removedIndex), {}, false)
-        savedProfiles.remove(removedIndex)
-        deleteConfirmationIndex = -1
-        editorMode = ""
-        editorReturnIndex = -1
-        if (savedProfiles.count > 0)
-            chooseProfile(Math.min(removedIndex, savedProfiles.count - 1))
-        else {
-            selectedProfileIndex = -1
-            clearProfileEditor()
-        }
-        statusText.text = "Profile deleted"
-        console.log("PaperDesk RDP profile deleted", removedIndex)
-        profileActionGuard.restart()
+        startProfileOperation("delete", deleteConfirmationIndex, profileManagerArgs("delete", deleteConfirmationIndex))
     }
 
     function openSelectedProfile() {
+        if (profileActionPending) return
         if (selectedProfileIndex < 0 || selectedProfileIndex >= savedProfiles.count) {
             statusText.text = "Select a saved profile first"
             return
@@ -332,30 +482,8 @@ Rectangle {
     }
 
     function loadSavedProfiles(fallbackProfile) {
-        var request = new XMLHttpRequest()
-        request.onreadystatechange = function() {
-            if (request.readyState !== XMLHttpRequest.DONE)
-                return
-            if ((request.status === 0 || request.status === 200) && request.responseText.trim().length > 0) {
-                parseSavedProfiles(request.responseText)
-                if (savedProfiles.count > 0)
-                    chooseProfile(0)
-                else {
-                    selectedProfileIndex = -1
-                    clearProfileEditor()
-                }
-            } else if (fallbackProfile && fallbackProfile.host && fallbackProfile.user) {
-                savedProfiles.clear()
-                addSavedProfile(fallbackProfile.host, fallbackProfile.user, fallbackProfile.domain,
-                                fallbackProfile.port, fallbackProfile.passwordHex,
-                                fallbackProfile.scale, fallbackProfile.depth, fallbackProfile.orientation)
-                selectedProfileIndex = 0
-                chooseProfile(0)
-            }
-            root.profileLoaded = true
-        }
-        request.open("GET", "file:///home/root/.config/paperrdp/profiles")
-        request.send()
+        legacyProfileAvailable = !!(fallbackProfile && fallbackProfile.host && fallbackProfile.user)
+        refreshSavedProfiles()
     }
 
     function loadProfile() {
@@ -393,7 +521,7 @@ Rectangle {
             }
             loadSavedProfiles(fallback)
         }
-        request.open("GET", "file:///home/root/.config/paperrdp/profile")
+        request.open("GET", profileConfigurationUrl + "profile")
         request.send()
     }
 
@@ -424,7 +552,8 @@ Rectangle {
     function gainedFocus() {
         connectionLaunchGuard.stop()
         connectionLaunching = false
-        loadProfile()
+        if (profileActionPending) pollProfileOperation()
+        else if (profileLoaded && editorMode === "" && !profileRefreshRequired) refreshSavedProfiles()
     }
 
     Component.onCompleted: {
@@ -493,10 +622,12 @@ Rectangle {
     }
 
     Timer {
-        id: profileActionGuard
-        interval: 900
-        repeat: false
-        onTriggered: root.profileActionPending = false
+        id: profileOperationPoll
+        objectName: "rdpProfileOperationPoll"
+        interval: 200
+        repeat: true
+        running: root.profileActionPending
+        onTriggered: root.pollProfileOperation()
     }
 
     Rectangle {
@@ -586,11 +717,43 @@ Rectangle {
         }
     }
 
+    Rectangle {
+        id: profileRecoveryBar
+        objectName: "rdpProfileRecoveryBar"
+        visible: root.profileRefreshRequired && !root.profileActionPending
+        anchors.top: toolbar.bottom
+        anchors.topMargin: 12
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: Math.min(parent.width - 180, 1040)
+        height: 88
+        color: "white"
+        border.color: "black"; border.width: 2; radius: 8
+        Text {
+            anchors.left: parent.left; anchors.leftMargin: 16
+            anchors.right: refreshButton.left; anchors.rightMargin: 16
+            anchors.verticalCenter: parent.verticalCenter
+            text: statusText.text
+            textFormat: Text.PlainText
+            wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight
+            font.pointSize: 14; font.bold: true
+        }
+        Rectangle {
+            id: refreshButton
+            objectName: "rdpProfileRefreshButton"
+            anchors.right: parent.right; anchors.margins: 8
+            anchors.verticalCenter: parent.verticalCenter
+            width: 200; height: 70; radius: 6
+            color: "black"
+            Text { anchors.centerIn: parent; text: "Refresh"; color: "white"; font.pointSize: 16; font.bold: true }
+            TapHandler { onTapped: root.refreshSavedProfiles() }
+        }
+    }
+
     Flickable {
         id: profileScroll
         objectName: "rdpProfileScroll"
         anchors.top: toolbar.bottom
-        anchors.topMargin: 20
+        anchors.topMargin: profileRecoveryBar.visible ? 112 : 20
         anchors.bottom: parent.bottom
         anchors.bottomMargin: root.keyboardInset + (root.editorMode !== "" ? 168 : 20)
         anchors.horizontalCenter: parent.horizontalCenter
@@ -603,6 +766,7 @@ Rectangle {
         flickDeceleration: 3000
         Column {
         id: profileContent
+        enabled: root.profileLoaded && !root.profileActionPending
         width: profileScroll.width
         spacing: 12
 
@@ -809,7 +973,7 @@ Rectangle {
                     font.pointSize: 16
                     font.bold: true
                 }
-                TapHandler { id: cancelEditTap; onTapped: root.cancelProfileEdit() }
+                TapHandler { id: cancelEditTap; enabled: !root.profileActionPending; onTapped: root.cancelProfileEdit() }
             }
 
             Rectangle {
@@ -1159,12 +1323,14 @@ Rectangle {
 
         Text {
             id: statusText
+            objectName: "rdpProfileStatus"
             visible: root.editorMode === ""
             width: parent.width
             text: root.profileLoaded ?
                   (root.editorMode === "" ? "Select a profile, then Connect — or choose New profile, Edit or Delete" :
                    "Review the fields, then save or cancel") :
                   "Loading saved profiles..."
+            textFormat: Text.PlainText
             color: "black"; font.pointSize: 14; font.bold: true; font.letterSpacing: 0.5; wrapMode: Text.WordWrap
         }
         }
@@ -1187,6 +1353,7 @@ Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             width: profileScroll.width
             text: statusText.text
+            textFormat: Text.PlainText
             font.pointSize: 15; font.bold: true; color: "black"
             maximumLineCount: 2; wrapMode: Text.WordWrap; elide: Text.ElideRight
         }
@@ -1238,7 +1405,10 @@ Rectangle {
                 }
                 Text {
                     width: parent.width
-                    text: "This removes the saved connection from this tablet. This action cannot be undone."
+                    objectName: "rdpDeleteStatus"
+                    text: root.profileActionPending ? "Deleting profile... Please wait for confirmation." :
+                          "This removes the saved connection from this tablet. This action cannot be undone."
+                    textFormat: Text.PlainText
                     color: "black"
                     font.pointSize: 16
                     wrapMode: Text.WordWrap
@@ -1268,7 +1438,7 @@ Rectangle {
                         font.pointSize: 16
                         font.bold: true
                     }
-                    TapHandler { id: deleteCancelTap; onTapped: root.cancelDeleteProfile() }
+                    TapHandler { id: deleteCancelTap; enabled: !root.profileActionPending; onTapped: root.cancelDeleteProfile() }
                 }
 
                 Rectangle {

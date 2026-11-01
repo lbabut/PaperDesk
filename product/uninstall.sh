@@ -15,7 +15,7 @@ NATIVE_RESTORE_STAGE=""
 trap 'if [ -n "$NATIVE_RESTORE_STAGE" ]; then rm -f "$NATIVE_RESTORE_STAGE"; fi' EXIT
 trap 'exit 1' HUP INT TERM
 
-for app in paperdesk literm paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch paperpet shims; do
+for app in paperdesk paperterminal paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch paperpet shims; do
     rm -rf "$TARGET/$app"
     if { [ -f "$STATE/original-recorded" ] || { [ "$app" = papersketch ] && [ -f "$STATE/sketch-original-recorded" ]; }; } && [ -e "$STATE/original/apps/$app" ]; then
         cp -R "$STATE/original/apps/$app" "$TARGET/$app"
@@ -33,6 +33,13 @@ if [ -f "$STATE/sketch-original-recorded" ]; then
     else
         rm -f /home/root/xovi/extensions.d/papersketch-raster.so
     fi
+fi
+
+# A legacy terminal saved before the PaperDesk installation can be restored.
+# Never remove or replace an app the user installed after this upgrade.
+if [ ! -e "$TARGET/literm" ] && [ -f "$STATE/original-recorded" ] &&
+   [ -e "$STATE/original/apps/literm" ]; then
+    cp -R "$STATE/original/apps/literm" "$TARGET/literm"
 fi
 
 rm -f /home/root/.local/bin/rmssh-menu

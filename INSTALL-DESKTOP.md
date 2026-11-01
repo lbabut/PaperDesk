@@ -24,8 +24,8 @@ w terminalu. To hasło urządzenia, nie klucz licencyjny.
    Kontrola wymaga właściwego modelu, ARMv7, jednej z wersji firmware wyświetlonych przez kreator
    (odczyt `IMG_VERSION`, z rezerwowym `VERSION_ID`), zależności, narzędzi i miejsca na paczkę.
    Ostatnia linia musi brzmieć `PAPERDESK_COMPATIBILITY_OK`.
-   Dla PaperDesk 3.0.3 sprawdzono także USB na firmware 3.29.0.153.
-   Wersje XOVI/AppLoad/LiTerm sprawdź oddzielnie według listy kreatora:
+   Dla PaperDesk 4.2.0 sprawdzono także USB na firmware 3.29.0.153.
+   Wersje XOVI/AppLoad sprawdź oddzielnie według listy kreatora:
    obecność pliku nie dowodzi zgodności jego wersji.
 4. Najpierw zsynchronizuj lub wyeksportuj notatniki. Następnie wykonaj każde
    polecenie backupu oddzielnie: utwórz archiwum XOVI/AppLoad i istniejącego

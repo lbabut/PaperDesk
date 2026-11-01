@@ -46,9 +46,10 @@ class ReleaseCompatibilityTests(unittest.TestCase):
         guide = (ROOT / 'website/guide-en.html').read_text()
         for fragment in re.findall(r'href="/guide-en.html#([^"]+)"', page):
             self.assertIn('id="' + fragment + '"', guide)
-        for label in ['SSH', 'Web', 'RDP', 'RSS', 'Books', 'Dots', 'Care']:
+        for label in ['Web', 'RDP', 'RSS', 'Books', 'Dots', 'Care']:
             self.assertIn('PaperDesk ' + label, page)
         self.assertIn('Paper Sketch', page)
+        self.assertIn('Paper Terminal', page)
 
     def test_deploy_does_not_replace_proxy_configuration_or_download_state(self):
         deploy = (ROOT / 'scripts/deploy-prod.sh').read_text()

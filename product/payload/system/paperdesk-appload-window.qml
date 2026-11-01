@@ -35,9 +35,19 @@ FocusScope {
     property bool systemKeyboardActive: false
     property bool systemKeyboardClearing: false
     property bool rdpShortcutsOpen: false
+    property int rdpShortcutPage: 0
     readonly property bool paperdeskRdp: appName === "PaperDesk RDP Engine"
     property bool rdpLandscape: false
     readonly property bool rdpKeyboardVisible: systemKeyboardActive || Qt.inputMethod.visible
+    property rect rdpKeyboardRectangle: Qt.inputMethod.keyboardRectangle
+    readonly property real rdpKeyboardInset: calculateRdpKeyboardInset(rdpKeyboardVisible, rdpKeyboardRectangle)
+    readonly property int rdpViewportHeight: Math.max(240, Math.floor(rdpChrome.height - 112 - rdpKeyboardInset))
+    readonly property int rdpViewportCommand: fullscreen && enabled && visible && !closing && rdpKeyboardVisible ? rdpViewportHeight : 0
+    property int rdpLastViewportCommand: -1
+    onRdpViewportCommandChanged: rdpViewportSync.restart()
+    onQtfbKeyChanged: { rdpLastViewportCommand = -1; rdpViewportSync.restart(); }
+    onPaperdeskRdpChanged: rdpViewportSync.restart()
+    onFullscreenChanged: rdpViewportSync.restart()
     // The raster, toolbar and shortcuts must keep the SAME coordinate space,
     // including while the native input panel appears or dismisses on PRESS.
     readonly property bool rdpChromeLandscape: rdpLandscape
@@ -45,6 +55,42 @@ FocusScope {
     readonly property bool rdpOwnsLandscapeKeyboard: paperdeskRdp && rdpLandscape &&
         systemKeyboardActive && enabled && visible && !closing
     onRdpOwnsLandscapeKeyboardChanged: updateRdpKeyboardLayout()
+
+    function calculateRdpKeyboardInset(visible, rectangle) {
+        if(!visible || rdpChrome.height <= 0) return 0;
+        const maximum = Math.max(0, rdpChrome.height - 112 - 240);
+        const fallback = rdpChrome.height * 0.38;
+        let inset = fallback;
+        if(rectangle.width > 0 && rectangle.height > 0 &&
+                isFinite(rectangle.x) && isFinite(rectangle.y) &&
+                isFinite(rectangle.width) && isFinite(rectangle.height)) {
+            // Qt reports window coordinates. Map the complete rectangle into
+            // the same rotated logical space as the raster and its toolbar.
+            const bounds = rdpChrome.mapFromItem(null, rectangle.x, rectangle.y,
+                                                rectangle.width, rectangle.height);
+            const coveredWidth = Math.max(0, Math.min(rdpChrome.width, bounds.x + bounds.width) - Math.max(0, bounds.x));
+            // A stale portrait rectangle after rotation is a narrow side
+            // strip. Use the safe fallback until the firmware reports the
+            // bottom-docked landscape keyboard's actual geometry.
+            if(coveredWidth >= rdpChrome.width * 0.5 && bounds.y >= 112 &&
+                    bounds.y < rdpChrome.height && bounds.y + bounds.height >= rdpChrome.height - 2)
+                inset = Math.max(fallback, rdpChrome.height - bounds.y);
+        }
+        return Math.min(maximum, Math.max(0, inset));
+    }
+    function sendRdpViewport(height) {
+        if(!paperdeskRdp || qtfbKey === -1 || !windowCanvas.active || height === rdpLastViewportCommand) return;
+        // A local raster command, not a remote key or desktop resize. The
+        // engine owns the matching aspect-fit transform and hit rejection.
+        windowCanvas.virtualKeyboardKeyDown(0x03000000 | height);
+        windowCanvas.virtualKeyboardKeyUp(0x03000000 | height);
+        rdpLastViewportCommand = height;
+    }
+    Timer {
+        id: rdpViewportSync
+        interval: 0
+        onTriggered: root.sendRdpViewport(root.rdpViewportCommand)
+    }
 
     function findRdpNativeKeyboardPanel(item, depth) {
         if(!item || depth > 32) return null;
@@ -227,10 +273,18 @@ FocusScope {
         windowCanvas.virtualKeyboardKeyDown(0x02ff0000 | index);
         windowCanvas.virtualKeyboardKeyUp(0x02ff0000 | index);
         rdpShortcutsOpen = false;
+        if(rdpKeyboardVisible) paperdeskSystemKeyboardInput.forceActiveFocus();
         console.log("PaperDesk RDP shortcut", index);
+    }
+    function sendRdpKey(key) {
+        windowCanvas.virtualKeyboardKeyDown(key);
+        windowCanvas.virtualKeyboardKeyUp(key);
+        rdpShortcutsOpen = false;
+        if(rdpKeyboardVisible) paperdeskSystemKeyboardInput.forceActiveFocus();
     }
     function completeClose() {
         if(root.closing) return;
+        sendRdpViewport(0);
         root.closing = true;
         deactivateVirtualKeyboard();
         hideSystemKeyboard();
@@ -254,6 +308,7 @@ FocusScope {
                     root.appPid, root.qtfbKey);
     }
     function requestClose(terminate) {
+        sendRdpViewport(0);
         deactivateVirtualKeyboard();
         if(terminate) coord.terminate();
         else coord.close();
@@ -608,6 +663,8 @@ FocusScope {
             onActiveChanged: () => {
                 if(windowCanvas.active) {
                     framebufferWasActive = true;
+                    root.rdpLastViewportCommand = -1;
+                    rdpViewportSync.restart();
                 } else if(qtfbKey != -1 && framebufferWasActive) {
                     // A real external framebuffer was active and has closed.
                     completeClose();
@@ -750,7 +807,12 @@ FocusScope {
                           event.key === Qt.Key_Left ||
                           event.key === Qt.Key_Right ||
                           event.key === Qt.Key_Up ||
-                          event.key === Qt.Key_Down;
+                          event.key === Qt.Key_Down ||
+                          event.key === Qt.Key_Home ||
+                          event.key === Qt.Key_End ||
+                          event.key === Qt.Key_PageUp ||
+                          event.key === Qt.Key_PageDown ||
+                          (event.key >= Qt.Key_F1 && event.key <= Qt.Key_F12);
             if(special) {
                 windowCanvas.virtualKeyboardKeyDown(event.key);
                 windowCanvas.virtualKeyboardKeyUp(event.key);
@@ -891,7 +953,6 @@ FocusScope {
                 objectName: "paperdeskRdpShortcutsTapHandler"
                 gesturePolicy: TapHandler.ReleaseWithinBounds
                 onTapped: {
-                    root.hideSystemKeyboard();
                     root.rdpShortcutsOpen = !root.rdpShortcutsOpen;
                     console.log("PaperDesk RDP shortcuts", root.rdpShortcutsOpen ? "opened" : "closed");
                 }
@@ -906,75 +967,156 @@ FocusScope {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
+        anchors.bottomMargin: root.rdpKeyboardInset
         color: "white"
         z: 100000
         visible: rdpToolbarOverlay.visible && root.rdpShortcutsOpen
-        TapHandler { gesturePolicy: TapHandler.ReleaseWithinBounds; onTapped: {} }
+        MouseArea { anchors.fill: parent }
 
         Text {
             id: rdpShortcutsTitle
             anchors.top: parent.top
-            anchors.topMargin: 48
+            anchors.topMargin: 20
             anchors.horizontalCenter: parent.horizontalCenter
             text: "Keyboard shortcuts"
             color: "black"
-            font.pointSize: 29
+            font.pointSize: 25
             font.bold: true
         }
-
-        Grid {
+        Row {
+            id: rdpShortcutTabs
             anchors.top: rdpShortcutsTitle.bottom
-            anchors.topMargin: 42
+            anchors.topMargin: 18
             anchors.horizontalCenter: parent.horizontalCenter
-            columns: 3
-            spacing: 22
-
+            spacing: 16
             Repeater {
-                id: rdpShortcutsRepeater
-                model: ["Ctrl+C", "Ctrl+V", "Ctrl+X", "Ctrl+A", "Alt+Tab",
-                        "Ctrl+Alt+Del", "Windows", "Escape", "Tab"]
+                model: ["Keys", "Navigation", "F1–F12"]
                 delegate: Rectangle {
-                    objectName: "paperdeskRdpShortcut_" + index
-                    width: 406
-                    height: 145
-                    radius: 8
-                    color: shortcutTap.pressed ? "black" : "white"
-                    border.color: "black"
-                    border.width: 2
+                    objectName: "paperdeskRdpShortcutTab_" + index
+                    width: 270; height: 76; radius: 8
+                    color: root.rdpShortcutPage === index ? "black" : "white"
+                    border.color: "black"; border.width: 2
                     Text {
                         anchors.centerIn: parent
-                        text: modelData
-                        color: shortcutTap.pressed ? "white" : "black"
-                        font.pointSize: 16
-                        font.bold: true
+                        text: modelData; font.pointSize: 18; font.bold: true
+                        color: root.rdpShortcutPage === index ? "white" : "black"
                     }
                     TapHandler {
-                        id: shortcutTap
                         gesturePolicy: TapHandler.ReleaseWithinBounds
-                        onTapped: root.sendRdpShortcut(index)
+                        onTapped: root.rdpShortcutPage = index
                     }
                 }
             }
         }
-
+        Flickable {
+            id: rdpShortcutScroll
+            objectName: "paperdeskRdpShortcutScroll"
+            anchors.top: rdpShortcutTabs.bottom
+            anchors.topMargin: 22
+            anchors.left: parent.left; anchors.right: parent.right
+            anchors.bottom: rdpShortcutsBackButton.top; anchors.bottomMargin: 18
+            clip: true
+            contentHeight: rdpShortcutGrid.height
+            boundsBehavior: Flickable.StopAtBounds
+            flickableDirection: Flickable.VerticalFlick
+            Grid {
+                id: rdpShortcutGrid
+                anchors.horizontalCenter: parent.horizontalCenter
+                columns: 4
+                spacing: 16
+                Repeater {
+                    id: rdpShortcutsRepeater
+                    model: root.rdpShortcutPage === 0 ? ["Ctrl+C", "Ctrl+V", "Ctrl+X", "Ctrl+A", "Alt+Tab",
+                            "Ctrl+Alt+Del", "Windows", "Escape", "Tab"] : []
+                    delegate: Rectangle {
+                        objectName: "paperdeskRdpShortcut_" + index
+                        width: Math.floor((rdpShortcutsPanel.width - 128) / 4)
+                        height: 112; radius: 8
+                        color: shortcutTap.pressed ? "black" : "white"
+                        border.color: "black"; border.width: 2
+                        Text {
+                            anchors.centerIn: parent
+                            text: modelData; font.pointSize: 16; font.bold: true
+                            color: shortcutTap.pressed ? "white" : "black"
+                        }
+                        TapHandler {
+                            id: shortcutTap
+                            gesturePolicy: TapHandler.ReleaseWithinBounds
+                            onTapped: root.sendRdpShortcut(index)
+                        }
+                    }
+                }
+                Repeater {
+                    model: root.rdpShortcutPage === 1 ? [
+                        {name: "Home", label: "Home", key: Qt.Key_Home},
+                        {name: "Up", label: "Up", key: Qt.Key_Up},
+                        {name: "End", label: "End", key: Qt.Key_End},
+                        {name: "PageUp", label: "Page up", key: Qt.Key_PageUp},
+                        {name: "Left", label: "Left", key: Qt.Key_Left},
+                        {name: "Down", label: "Down", key: Qt.Key_Down},
+                        {name: "Right", label: "Right", key: Qt.Key_Right},
+                        {name: "PageDown", label: "Page down", key: Qt.Key_PageDown},
+                        {name: "Delete", label: "Delete", key: Qt.Key_Delete},
+                        {name: "ShiftTab", label: "Shift+Tab", command: 30},
+                        {name: "Enter", label: "Enter", key: Qt.Key_Return},
+                        {name: "Fit", label: "Fit screen", command: 0x101}
+                    ] : []
+                    delegate: Rectangle {
+                        objectName: "paperdeskRdpNav_" + modelData.name
+                        width: Math.floor((rdpShortcutsPanel.width - 128) / 4)
+                        height: 112; radius: 8
+                        color: navTap.pressed ? "black" : "white"
+                        border.color: "black"; border.width: 2
+                        Text {
+                            anchors.centerIn: parent
+                            text: modelData.label; font.pointSize: 16; font.bold: true
+                            color: navTap.pressed ? "white" : "black"
+                        }
+                        TapHandler {
+                            id: navTap
+                            gesturePolicy: TapHandler.ReleaseWithinBounds
+                            onTapped: {
+                                if(modelData.command !== undefined) root.sendRdpShortcut(modelData.command);
+                                else root.sendRdpKey(modelData.key);
+                            }
+                        }
+                    }
+                }
+                Repeater {
+                    model: root.rdpShortcutPage === 2 ? 12 : 0
+                    delegate: Rectangle {
+                        objectName: "paperdeskRdpFunction_F" + (index + 1)
+                        width: Math.floor((rdpShortcutsPanel.width - 128) / 4)
+                        height: 112; radius: 8
+                        color: functionTap.pressed ? "black" : "white"
+                        border.color: "black"; border.width: 2
+                        Text {
+                            anchors.centerIn: parent
+                            text: "F" + (index + 1); font.pointSize: 20; font.bold: true
+                            color: functionTap.pressed ? "white" : "black"
+                        }
+                        TapHandler {
+                            id: functionTap
+                            gesturePolicy: TapHandler.ReleaseWithinBounds
+                            onTapped: root.sendRdpKey(Qt.Key_F1 + index)
+                        }
+                    }
+                }
+            }
+        }
         Rectangle {
             id: rdpShortcutsBackButton
             objectName: "paperdeskRdpShortcutsBackButton"
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
-            anchors.bottomMargin: 90
-            width: 310
-            height: 68
-            radius: 8
+            anchors.bottomMargin: 20
+            width: 310; height: 76; radius: 8
             color: shortcutsBackTap.pressed ? "white" : "black"
-            border.color: "black"
-            border.width: 2
+            border.color: "black"; border.width: 2
             Text {
                 anchors.centerIn: parent
-                text: "Back"
+                text: "Back"; font.pointSize: 16; font.bold: true
                 color: shortcutsBackTap.pressed ? "black" : "white"
-                font.pointSize: 16
-                font.bold: true
             }
             TapHandler {
                 id: shortcutsBackTap

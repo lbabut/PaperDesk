@@ -15,6 +15,10 @@ done
 test -s "$ROOT/website/update/stable.json.sig"
 test -s "$ROOT/website/update/latest.json.sig"
 BASELINE=$($SSH "$HOST" "cd '$DEST'; find website -type f ! -path '*/__pycache__/*' ! -path 'website/data/*' -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1")
+if [ -n "${PAPERDESK_EXPECTED_PRODUCTION_BASELINE:-}" ] && [ "$BASELINE" != "$PAPERDESK_EXPECTED_PRODUCTION_BASELINE" ]; then
+    echo 'Production differs from the reviewed release baseline; nothing staged.' >&2
+    exit 1
+fi
 NEXT=$($SSH "$HOST" "set -e; umask 022; next=\$(mktemp -d '$DEST.next.XXXXXX'); cp -a '$DEST/.' \"\$next/\"; printf '%s\n' \"\$next\"")
 case "$NEXT" in /home/azureuser/PaperDesk.next.??????) ;; *) echo 'Unsafe staging path' >&2; exit 1;; esac
 # Do not --delete: retain production-only assets and older download URLs.

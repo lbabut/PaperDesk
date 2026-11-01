@@ -1,134 +1,172 @@
 #!/bin/sh
+# AppLoad launches this helper asynchronously. Only a correlated, atomically
+# published result acknowledges an operation; starting the process is not an ACK.
 set -eu
-
+umask 077
 CONFIG_DIR=${PAPERDESK_RDP_CONFIG_DIR:-/home/root/.config/paperrdp}
 PROFILES="$CONFIG_DIR/profiles"
 LOCK="$CONFIG_DIR/.profile-manager.lock"
+RESULTS="$CONFIG_DIR/operations"
+TOKEN= ACTION= EXPECTED= OWN_LOCK= OWN_REQUEST= COMPLETED=
+TMP="$CONFIG_DIR/profiles.tmp.$$"
+SNAPSHOT="$CONFIG_DIR/profiles.read.$$"
+RESULT_TMP="$RESULTS/.result.$$"
 
-usage() {
-    printf 'Usage: %s --save INDEX HOST_HEX USER_HEX DOMAIN_HEX PORT PASSWORD_HEX SCALE DEPTH [ORIENTATION] VERSION\n' "$0" >&2
-    printf '       %s --delete INDEX\n' "$0" >&2
-    exit 64
+valid_token() {
+    case $1 in ''|*[!0123456789abcdefghijklmnopqrstuvwxyz-]*) return 1 ;; esac
+    [ "${#1}" -ge 8 ] && [ "${#1}" -le 64 ]
 }
-
+valid_revision() {
+    [ "$1" = absent ] && return 0
+    [ "${#1}" -eq 64 ] || return 1
+    case $1 in *[!0123456789abcdef]*) return 1 ;; esac
+}
 is_hex() {
-    case $1 in
-        *[!0123456789abcdefABCDEF]*) return 1 ;;
-    esac
+    [ "${#1}" -le 4096 ] || return 1
+    case $1 in *[!0123456789abcdefABCDEF]*) return 1 ;; esac
     [ $(( ${#1} % 2 )) -eq 0 ]
 }
-
-valid_index() {
-    case $1 in
-        -1|0|1|2|3|4|5|6|7) return 0 ;;
-        *) return 1 ;;
-    esac
-}
-
+valid_index() { case $1 in -1|0|1|2|3|4|5|6|7) return 0 ;; *) return 1 ;; esac; }
 valid_port() {
-    case $1 in
-        ''|*[!0-9]*) return 1 ;;
-    esac
-    [ "$1" -ge 1 ] && [ "$1" -le 65535 ]
+    case $1 in ''|*[!0-9]*) return 1 ;; esac
+    [ "${#1}" -le 5 ] && [ "$1" -ge 1 ] && [ "$1" -le 65535 ]
 }
-
-mkdir -p "$CONFIG_DIR"
-chmod 0700 "$CONFIG_DIR"
-if ! mkdir "$LOCK" 2>/dev/null; then
-    printf 'Another profile update is already running.\n' >&2
-    exit 75
-fi
+# The list and helper use the same bounded v1/v2 record grammar. Refuse a
+# corrupt list rather than reinterpret a filtered row index as another profile.
+valid_profiles() {
+    [ "$(wc -c < "$1")" -le 65536 ] || return 1
+    awk -F '\t' '
+        function hex(s) { return length(s)<=4096 && length(s)%2==0 && s !~ /[^0-9a-fA-F]/ }
+        /^#/ || /^$/ { next }
+        { if (length($0)>8192 || ++count>8 || !(($1=="v1" && NF==8) ||
+              ($1=="v2" && NF==9 && ($9=="portrait" || $9=="landscape"))) ||
+              !length($2) || !length($3) || !hex($2) || !hex($3) || !hex($4) || !hex($6) ||
+              $5 !~ /^[0-9]+$/ || length($5)>5 || $5+0<1 || $5+0>65535 ||
+              $7 !~ /^(50|75|100)$/ || $8 !~ /^(8|16|24)$/) exit 1 }
+    ' "$1"
+}
+revision() {
+    digest=$(sha256sum "$1") || return 1
+    printf '%s\n' "${digest%% *}"
+}
+prune_results() {
+    # Filenames are validated before removal. Keep at most 16 snapshots, since
+    # their profile bodies can contain a remembered password encoded as hex.
+    ls -1t "$RESULTS"/*.result 2>/dev/null | awk 'NR>16' |
+    while IFS= read -r old; do
+        base=${old##*/}; base=${base%.result}
+        if valid_token "$base" && [ "$base" != "$TOKEN" ]; then rm -f "$old"; fi
+    done
+}
+publish() {
+    status=$1 code=$2 rev=${3:-absent}
+    [ -n "$TOKEN" ] || return 0
+    {
+        printf 'PaperDeskProfileResult\t1\t%s\t%s\t%s\t%s\t%s\n' "$TOKEN" "$ACTION" "$status" "$rev" "$code"
+        if [ "$status" = ok ]; then cat "$SNAPSHOT"; fi
+    } > "$RESULT_TMP" || return 1
+    chmod 0600 "$RESULT_TMP" && mv "$RESULT_TMP" "$RESULTS/$TOKEN.result" || return 1
+    COMPLETED=1
+    prune_results || true
+}
+fail() {
+    code=$1 exit_code=${2:-74}
+    publish error "$code" "${CURRENT_REVISION:-absent}" || true
+    printf 'PaperDesk RDP profile operation failed (%s).\n' "$code" >&2
+    exit "$exit_code"
+}
 cleanup() {
-    rmdir "$LOCK" 2>/dev/null || true
+    if [ -n "$TOKEN" ] && [ -n "$OWN_REQUEST" ] && [ -z "$COMPLETED" ]; then
+        publish error unknown "${CURRENT_REVISION:-absent}" || true
+    fi
+    rm -f "$TMP" "$SNAPSHOT" "$RESULT_TMP"
+    if [ -n "$OWN_LOCK" ]; then rmdir "$LOCK" 2>/dev/null || true; fi
+    if [ -n "$OWN_REQUEST" ]; then rmdir "$RESULTS/.$TOKEN.pending" 2>/dev/null || true; fi
 }
-trap cleanup EXIT INT TERM
-
-TMP="$CONFIG_DIR/profiles.tmp.$$"
-trap 'rm -f "$TMP"; cleanup' EXIT INT TERM
+trap cleanup EXIT
+trap 'exit 74' INT TERM
 
 case ${1:-} in
-    --save)
-        [ "$#" -eq 10 ] || [ "$#" -eq 11 ] || usage
-        INDEX=$2
-        HOST_HEX=$3
-        USER_HEX=$4
-        DOMAIN_HEX=$5
-        PORT=$6
-        PASSWORD_HEX=$7
-        SCALE=$8
-        DEPTH=$9
-        # The final fixed argument is a format guard. It makes truncated calls
-        # fail closed before a credentials file can be replaced.
+    --read)
+        [ "$#" -eq 2 ] && valid_token "$2" || exit 64
+        TOKEN=$2 ACTION=read; shift 2 ;;
+    --request)
+        [ "$#" -ge 5 ] && valid_token "$2" && valid_revision "$3" || exit 64
+        TOKEN=$2 EXPECTED=$3; shift 3
+        case $1 in --save) ACTION=save ;; --delete) ACTION=delete ;; *) exit 64 ;; esac ;;
+    --save) ACTION=save ;;
+    --delete) ACTION=delete ;;
+    *) exit 64 ;;
+esac
+
+[ ! -L "$CONFIG_DIR" ] || exit 74
+mkdir -p "$CONFIG_DIR" && chmod 0700 "$CONFIG_DIR" || exit 74
+if [ -n "$TOKEN" ]; then
+    [ ! -L "$RESULTS" ] || exit 74
+    mkdir -p "$RESULTS" && chmod 0700 "$RESULTS" || exit 74
+    # Reusing a token never replays a mutation or overwrites its previous ACK.
+    [ ! -e "$RESULTS/$TOKEN.result" ] || exit 0
+    mkdir "$RESULTS/.$TOKEN.pending" 2>/dev/null || exit 75
+    OWN_REQUEST=1
+fi
+mkdir "$LOCK" 2>/dev/null || fail locked 75
+OWN_LOCK=1
+[ ! -L "$PROFILES" ] || fail read
+if [ -e "$PROFILES" ]; then
+    [ -f "$PROFILES" ] && cp "$PROFILES" "$SNAPSHOT" || fail read
+    CURRENT_REVISION=$(revision "$SNAPSHOT") || fail read
+else
+    : > "$SNAPSHOT" || fail read
+    CURRENT_REVISION=absent
+fi
+valid_profiles "$SNAPSHOT" || fail corrupt
+if [ -n "$EXPECTED" ] && [ "$EXPECTED" != "$CURRENT_REVISION" ]; then fail stale 73; fi
+if [ "$ACTION" = read ]; then
+    publish ok none "$CURRENT_REVISION" || fail read
+    exit 0
+fi
+
+case $ACTION in
+    save)
+        { [ "$#" -eq 10 ] || [ "$#" -eq 11 ]; } || fail invalid 64
+        INDEX=$2 HOST_HEX=$3 USER_HEX=$4 DOMAIN_HEX=$5 PORT=$6 PASSWORD_HEX=$7 SCALE=$8 DEPTH=$9
         if [ "$#" -eq 10 ]; then
-            [ "${10}" = v1 ] || usage
+            [ "${10}" = v1 ] || fail invalid 64
             ORIENTATION=portrait
         else
             ORIENTATION=${10}
-            [ "${11}" = v2 ] || usage
-            case $ORIENTATION in portrait|landscape) ;; *) usage ;; esac
+            [ "${11}" = v2 ] || fail invalid 64
+            case $ORIENTATION in portrait|landscape) ;; *) fail invalid 64 ;; esac
         fi
-        valid_index "$INDEX" || usage
-        [ -n "$HOST_HEX" ] && [ -n "$USER_HEX" ] || usage
-        is_hex "$HOST_HEX" && is_hex "$USER_HEX" && is_hex "$DOMAIN_HEX" &&
-            is_hex "$PASSWORD_HEX" || usage
-        valid_port "$PORT" || usage
-        case $SCALE in 50|75|100) ;; *) usage ;; esac
-        case $DEPTH in 8|16|24) ;; *) usage ;; esac
-        NEW_LINE=$(printf 'v2\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' \
-            "$HOST_HEX" "$USER_HEX" "$DOMAIN_HEX" "$PORT" \
-            "$PASSWORD_HEX" "$SCALE" "$DEPTH" "$ORIENTATION")
+        valid_index "$INDEX" && [ -n "$HOST_HEX" ] && [ -n "$USER_HEX" ] &&
+            is_hex "$HOST_HEX" && is_hex "$USER_HEX" && is_hex "$DOMAIN_HEX" &&
+            is_hex "$PASSWORD_HEX" && valid_port "$PORT" || fail invalid 64
+        case $SCALE in 50|75|100) ;; *) fail invalid 64 ;; esac
+        case $DEPTH in 8|16|24) ;; *) fail invalid 64 ;; esac
+        NEW_LINE=$(printf 'v2\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$HOST_HEX" "$USER_HEX" "$DOMAIN_HEX" "$PORT" "$PASSWORD_HEX" "$SCALE" "$DEPTH" "$ORIENTATION")
+        [ "${#NEW_LINE}" -le 8192 ] || fail invalid 64
         if [ "$INDEX" -eq -1 ]; then
-            {
-                printf '%s\n' "$NEW_LINE"
-                if [ -f "$PROFILES" ]; then
-                    awk -F '\t' '
-                        (($1 == "v1" && NF == 8) || ($1 == "v2" && NF == 9 && ($9 == "portrait" || $9 == "landscape"))) && kept < 7 { print; kept++ }
-                    ' "$PROFILES"
-                fi
-            } > "$TMP"
+            { printf '%s\n' "$NEW_LINE"; awk '!/^#/ && NF && kept++<7' "$SNAPSHOT"; } > "$TMP" || fail write
         else
-            awk -F '\t' -v wanted="$INDEX" -v replacement="$NEW_LINE" '
-                BEGIN { seen=0; found=0; kept=0 }
-                ($1 == "v1" && NF == 8) || ($1 == "v2" && NF == 9 && ($9 == "portrait" || $9 == "landscape")) {
-                    if (seen == wanted) { print replacement; found=1 }
-                    else { print }
-                    seen++
-                    kept++
-                    if (kept >= 8) exit
-                }
+            awk -v wanted="$INDEX" -v replacement="$NEW_LINE" '
+                !/^#/ && NF { if (seen++==wanted) { print replacement; found=1 } else print }
                 END { if (!found) exit 42 }
-            ' "$PROFILES" > "$TMP" || {
-                status=$?
-                [ "$status" -eq 42 ] && printf 'Profile index no longer exists.\n' >&2
-                exit "$status"
-            }
-        fi
-        ;;
-    --delete)
-        [ "$#" -eq 2 ] || usage
-        INDEX=$2
-        valid_index "$INDEX" && [ "$INDEX" -ge 0 ] || usage
-        awk -F '\t' -v wanted="$INDEX" '
-            BEGIN { seen=0; found=0; kept=0 }
-            ($1 == "v1" && NF == 8) || ($1 == "v2" && NF == 9 && ($9 == "portrait" || $9 == "landscape")) {
-                if (seen == wanted) found=1
-                else if (kept < 8) { print; kept++ }
-                seen++
-            }
-            END {
-                if (!found) exit 42
-                if (kept == 0) print "# PaperDesk profiles v1"
-            }
-        ' "$PROFILES" > "$TMP" || {
-            status=$?
-            [ "$status" -eq 42 ] && printf 'Profile index no longer exists.\n' >&2
-            exit "$status"
-        }
-        ;;
-    *) usage ;;
+            ' "$SNAPSHOT" > "$TMP" || { result=$?; [ "$result" -ne 42 ] || fail stale 73; fail write; }
+        fi ;;
+    delete)
+        [ "$#" -eq 2 ] && valid_index "$2" && [ "$2" -ge 0 ] || fail invalid 64
+        awk -v wanted="$2" '
+            !/^#/ && NF { if (seen++==wanted) found=1; else { print; kept++ } }
+            END { if (!found) exit 42; if (!kept) print "# PaperDesk profiles v1" }
+        ' "$SNAPSHOT" > "$TMP" || { result=$?; [ "$result" -ne 42 ] || fail stale 73; fail write; } ;;
 esac
-
-chmod 0600 "$TMP"
-mv "$TMP" "$PROFILES"
-chmod 0600 "$PROFILES"
+# Flush the prepared private file before replacement; a failed write/flush does
+# not change profiles. After replacement, any uncertainty requires a fresh read.
+PREPARED_REVISION=$(revision "$TMP") || fail write
+chmod 0600 "$TMP" && sync && mv "$TMP" "$PROFILES" || fail write
+sync || fail unknown
+cp "$PROFILES" "$SNAPSHOT" && valid_profiles "$SNAPSHOT" || fail unknown
+CURRENT_REVISION=$(revision "$SNAPSHOT") || fail unknown
+[ "$PREPARED_REVISION" = "$CURRENT_REVISION" ] || fail unknown
+publish ok none "$CURRENT_REVISION" || fail unknown
 printf 'PaperDesk RDP profiles updated.\n'

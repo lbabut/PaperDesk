@@ -6,7 +6,7 @@ rights of recipients.
 
 The repository contains components under different licences:
 
-- LiTerm-derived frontend: GNU GPL v2; see `product/licenses/LiTerm-GPL-2.0.txt`.
+- Paper Terminal frontend retaining LiTerm ancestry: GNU GPL v2; see `product/licenses/LiTerm-GPL-2.0.txt`.
 - AppLoad compatibility QML and QTFB shim: GNU GPL v3; see
   `product/licenses/AppLoad-GPL-3.0.txt` and `product/third_party_source/`.
 - Paper Sketch's optional legacy pen-preview extension derives from David

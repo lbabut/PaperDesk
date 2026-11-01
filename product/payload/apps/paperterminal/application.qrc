@@ -2,5 +2,8 @@
     <qresource>
         <file>ui/main.qml</file>
         <file>ui/Sessions.qml</file>
+        <file>ui/Home.qml</file>
+        <file>ui/Shortcuts.qml</file>
+        <file>native/qmldir</file>
     </qresource>
 </RCC>

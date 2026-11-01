@@ -4,7 +4,7 @@ PaperDesk turns a reMarkable 2 into a quiet, monochrome network workspace.
 It bundles touch-first tools designed around the limits of e-ink:
 
 - Paper Sketch — graphite and charcoal with stylus tilt, pressure calibration, paper presets and burnishing, virtual tip wear and sharpening, finger blending and cleaning, hard and kneaded erasers, manual saves and grayscale PNG export.
-- PaperDesk SSH — SSH, system keyboard, gestures, and common shortcuts.
+- Paper Terminal — SSH, system keyboard, gestures, and common shortcuts.
 - PaperDesk Dots — offline Kropki with human or computer players, three board sizes, saved games and undo.
 - PaperDesk Books — six free literature/textbook/research sources, offline text reading and native PDF/EPUB import, with saved language and service preferences.
 - Web — static, reader-first browsing with optional images and bounded PDF/EPUB downloads to native My files.
@@ -12,8 +12,8 @@ It bundles touch-first tools designed around the limits of e-ink:
 - RSS — RSS/Atom feeds, full-text reading, read state, and offline cache.
 - Care — signed updates, release notes, automatic verification, and rollback backups.
 
-The current release is **4.1.3**, targeting the tested reMarkable OS
-**3.29.0.149** with XOVI 0.3.3, AppLoad 0.6.0, and LiTerm 0.1.7.
+The current release is **4.2.0**, targeting the tested reMarkable OS
+**3.29.0.149** with XOVI 0.3.3, AppLoad 0.6.0. Paper Terminal requires no LiTerm runtime.
 
 The installer accepts only OS 3.29.0.149 or 3.29.0.153 because Sketch loads a native
 Qt extension into Xochitl. Other firmware versions are not validated.
@@ -44,7 +44,7 @@ archive also contains prepared ARM files for installation.
 
 Download the project-source + prepared ARM package and follow
 [the terminal installation guide](product/MANUAL-INSTALL.md) on Windows,
-Linux or macOS. Existing XOVI/AppLoad/LiTerm dependencies are required.
+Linux or macOS. Existing XOVI/AppLoad dependencies are required.
 No Windows EXE is needed. Graphical installer sources and historical artifacts
 are retained for developers; the public site does not link to installers.
 

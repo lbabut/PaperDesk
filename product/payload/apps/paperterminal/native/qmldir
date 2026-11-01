@@ -1,0 +1,3 @@
+module PaperTerminal.Native
+plugin paperterminal_native /home/root/xovi/exthome/appload/paperterminal/native
+classname PaperTerminalPlugin

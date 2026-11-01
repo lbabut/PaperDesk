@@ -1,7 +1,8 @@
 import QtQuick 2.15
 import QtQuick.Window 2.15
 import Qt.labs.settings 1.1
-import literm 1.0
+import net.asivery.ApploadUtils
+import "../native" as Native
 
 Rectangle {
     id: root
@@ -10,13 +11,14 @@ Rectangle {
     focus: true
 
     signal close
+    signal mouseReport(int button, bool accepted)
     property bool clearingInput: false
     property bool shortcutsOpen: false
     property bool displayOpen: false
-    property bool mouseMode: false
-    property var sessionStateRequest: null
-    property bool sessionOpening: false
+    property bool mouseMode: true
     property bool disposed: false
+    property bool runtimeErrorDismissed: false
+    property string modifierNotice: ""
     property bool ansiColors: terminalSettings.savedAnsiColors
     property real terminalFontSize: Math.max(16, Math.min(46, terminalSettings.savedFontSize))
     property real pendingFontSize: terminalFontSize
@@ -26,27 +28,18 @@ Rectangle {
         Qt.inputMethod.keyboardRectangle.y,
         Qt.inputMethod.keyboardRectangle.height,
         height)
-    property var shortcutKeys: [
-        { label: "Ctrl+C", key: Qt.Key_C, modifiers: Qt.ControlModifier },
-        { label: "Ctrl+D", key: Qt.Key_D, modifiers: Qt.ControlModifier },
-        { label: "Ctrl+Z", key: Qt.Key_Z, modifiers: Qt.ControlModifier },
-        { label: "Ctrl+L", key: Qt.Key_L, modifiers: Qt.ControlModifier },
-        { label: "TAB", key: Qt.Key_Tab, modifiers: Qt.NoModifier },
-        { label: "ESC", key: Qt.Key_Escape, modifiers: Qt.NoModifier },
-        { label: "LEFT", key: Qt.Key_Left, modifiers: Qt.NoModifier },
-        { label: "UP", key: Qt.Key_Up, modifiers: Qt.NoModifier },
-        { label: "DOWN", key: Qt.Key_Down, modifiers: Qt.NoModifier },
-        { label: "RIGHT", key: Qt.Key_Right, modifiers: Qt.NoModifier }
-    ]
 
     readonly property int toolbarButtonWidth: 176
     readonly property real commandButtonWidth: (width - 48 - 4 * 12) / 5
+    readonly property real terminalPanelHeight: Math.max(
+        shortcutsOpen ? shortcutsPanel.height : 0,
+        displayOpen ? displayPanel.height : 0)
 
     Settings {
         id: terminalSettings
         category: "PaperTerminal"
         property bool savedAnsiColors: false
-        property real savedFontSize: Math.max(26, Util.fontSize)
+        property real savedFontSize: 26
     }
 
     Settings {
@@ -58,22 +51,23 @@ Rectangle {
 
     function refreshTerminal(reason) {
         terminal.redraw()
-        terminalContent.opacity = terminalContent.opacity === 1.0 ? 0.999 : 1.0
-        if (root.Window.window !== null)
-            root.Window.window.update()
         if (e2eSettings.traceTouches)
             console.log("PaperDesk Terminal refresh", reason, root.terminalUpdateCount)
     }
 
     function unloading() {
         disposed = true
-        cancelSessionOpening()
+        terminal.clearModifiers()
+        modifierNotice = ""
+        terminal.stop()
         mouseMode = false
         Qt.inputMethod.hide()
     }
 
     function gainedFocus() {
-        if (!sessionsPanel.visible) terminal.forceActiveFocus()
+        if (sessionsPanel.visible) return
+        if (Qt.inputMethod.visible) systemInput.forceActiveFocus()
+        else terminal.forceActiveFocus()
     }
 
     function showSystemKeyboard() {
@@ -86,6 +80,10 @@ Rectangle {
         systemInput.focus = false
         terminal.forceActiveFocus()
         Qt.callLater(function() { root.refreshTerminal("keyboard hidden") })
+    }
+    function restoreTerminalInput() {
+        if (terminal.menuReady) root.hideSystemKeyboard()
+        else root.showSystemKeyboard()
     }
 
     function toggleSystemKeyboard() {
@@ -103,33 +101,49 @@ Rectangle {
         }
     }
 
-    function openSavedSession(host, user, port) {
-        if (sessionOpening || !sessionsPanel.valid(host, user, port)) return
-        sessionOpening = true
-        var request = new XMLHttpRequest()
-        sessionStateRequest = request
-        request.onreadystatechange = function() {
-            if (request.readyState !== XMLHttpRequest.DONE || disposed || sessionStateRequest !== request) return
-            sessionStateRequest = null; sessionOpening = false; sessionOpenTimeout.stop()
-            var state = request.responseText.trim()
-            if ((request.status === 0 || request.status === 200) && /^(ready|closed) [0-9]+$/.test(state)) {
-                // Only the local launcher consumes this value-only protocol.
-                // Never send it into a live SSH session or a recovery shell.
-                terminal.putString((state.indexOf("closed ") === 0 ? "\n" : "") + "c " + host + " " + user + " " + port + "\n")
-                console.log("PaperDesk SSH opening saved session")
-                sessionsPanel.visible = false
-                root.showSystemKeyboard()
-            } else sessionsPanel.message = "A session is still active. Return to Terminal and type exit before opening another connection."
+    function openSavedSession(host, user, port, credentialId) {
+        if (disposed || !sessionsPanel.valid(host, user, port)) return
+        terminal.clearModifiers()
+        modifierNotice = ""
+        // The native backend starts SSH with an argument vector. Connection
+        // values are never typed into a running terminal or remote shell.
+        if (terminal.connectTo(host, user, port, credentialId || "")) {
+            console.log("Paper Terminal opening saved session")
+            sessionsPanel.visible = false
+            root.showSystemKeyboard()
+        } else {
+            var message = terminal.sessionError || "The connection could not be opened. Return to the local menu and try again."
+            sessionsPanel.visible = true
+            sessionsPanel.replacementRequest = null
+            sessionsPanel.activeTerminalAvailable = !!terminal.replacementToken
+            sessionsPanel.showMessage(message)
+            terminalHome.message = message
+            Qt.inputMethod.hide()
+            if (terminal.replacementToken)
+                sessionsPanel.beginReplacement(host, user, port, credentialId || "", terminal.replacementToken)
         }
-        request.open("GET", "file:///home/root/.config/rmssh/state")
-        sessionOpenTimeout.restart(); request.send()
     }
-
-    function cancelSessionOpening() {
-        var request = sessionStateRequest
-        sessionStateRequest = null; sessionOpening = false
-        sessionOpenTimeout.stop()
-        if (request) request.abort()
+    function openReplacingSession(host, user, port, credentialId, expectedToken) {
+        if (disposed) return
+        terminal.clearModifiers()
+        root.modifierNotice = ""
+        if (terminal.connectReplacing(host, user, port, credentialId, expectedToken)) {
+            sessionsPanel.visible = false
+            root.showSystemKeyboard()
+        } else {
+            sessionsPanel.visible = true
+            sessionsPanel.activeTerminalAvailable = terminal.running
+            sessionsPanel.showMessage(terminal.sessionError || "The active session changed. Open the saved connection again to continue.")
+        }
+    }
+    function returnToActiveTerminal() {
+        sessionsPanel.visible = false
+        root.showSystemKeyboard()
+        // The Sessions layer hides the input panel as it closes. Refocus on
+        // the next event turn so keyboard input returns to the terminal.
+        Qt.callLater(function() {
+            if (!root.disposed && !sessionsPanel.visible) root.showSystemKeyboard()
+        })
     }
 
     function calculateKeyboardInset(visible, rectangleY, rectangleHeight, viewHeight) {
@@ -141,15 +155,17 @@ Rectangle {
         // On reMarkable OS 3.29 the input method occasionally reports an
         // empty rectangle. Keep the prompt above the native keyboard anyway.
         var safeFallback = viewHeight * 0.38
-        var maximumInset = Math.max(0, viewHeight - toolbar.height - 240)
+        // Reserve the expanded controls, terminal frame margins and at least
+        // 240 px of rendered terminal when the keyboard reports a large area.
+        var maximumInset = Math.max(0, viewHeight - toolbar.height - terminalPanelHeight - 18 - 20 - 32 - 240)
         return Math.min(maximumInset, Math.max(reportedHeight, coveredFromTop, safeFallback))
     }
 
     function sendShortcut(key, modifiers) {
         console.log("PaperDesk Terminal shortcut", key, modifiers)
         terminal.vkbKeyPress(key, modifiers)
-        systemInput.forceActiveFocus()
-        Qt.inputMethod.show()
+        if (Qt.inputMethod.visible) systemInput.forceActiveFocus()
+        else terminal.forceActiveFocus()
     }
 
     function setAnsiColors(enabled) {
@@ -173,7 +189,7 @@ Rectangle {
         displayOpen = false
         var returningFromSessions = sessionsPanel.visible
         sessionsPanel.visible = false
-        if (returningFromSessions) root.showSystemKeyboard()
+        if (returningFromSessions) root.restoreTerminalInput()
         gestureStatusText.text = mouseMode ? "MOUSE ON — TAP / HOLD" : "MOUSE OFF"
         gestureStatus.visible = true
         gestureStatusTimer.restart()
@@ -191,15 +207,14 @@ Rectangle {
             return
         var column = mouseCell(x, terminal.cellSize.width, terminal.terminalSize.width)
         var row = mouseCell(y, terminal.cellSize.height, terminal.terminalSize.height)
-        var prefix = "\u001b[<" + button + ";" + column + ";" + row
-        terminal.putString(prefix + "M")
-        terminal.putString(prefix + "m")
+        var accepted = terminal.sendMouse(column, row, button)
+        root.mouseReport(button, accepted)
         console.log("PaperDesk Terminal mouse", button === 2 ? "right" : "left", column, row)
     }
 
     Keys.onPressed: function(event) {
         if (sessionsPanel.visible) return
-        terminal.vkbKeyPress(event.key, event.modifiers)
+        terminal.vkbKeyPress(event.key, event.modifiers, event.text)
         event.accepted = true
     }
 
@@ -331,7 +346,7 @@ Rectangle {
                     root.displayOpen = false
                     var returningFromSessions = sessionsPanel.visible
                     sessionsPanel.visible = false
-                    if (returningFromSessions) root.showSystemKeyboard()
+                    if (returningFromSessions) root.restoreTerminalInput()
                     console.log("PaperDesk Terminal shortcuts", root.shortcutsOpen ? "opened" : "closed")
                 }
             }
@@ -353,8 +368,8 @@ Rectangle {
                 onTapped: {
                     root.shortcutsOpen = false; root.displayOpen = false
                     sessionsPanel.visible = !sessionsPanel.visible
-                    if (sessionsPanel.visible) Qt.inputMethod.hide()
-                    else root.showSystemKeyboard()
+                    if (sessionsPanel.visible) { terminal.clearModifiers(); root.modifierNotice = ""; Qt.inputMethod.hide() }
+                    else root.restoreTerminalInput()
                 }
             }
         }
@@ -387,7 +402,7 @@ Rectangle {
                     root.shortcutsOpen = false
                     var returningFromSessions = sessionsPanel.visible
                     sessionsPanel.visible = false
-                    if (returningFromSessions) root.showSystemKeyboard()
+                    if (returningFromSessions) root.restoreTerminalInput()
                     console.log("PaperDesk Terminal display panel", root.displayOpen ? "opened" : "closed")
                 }
             }
@@ -396,7 +411,7 @@ Rectangle {
         Rectangle {
             id: inputFrame
             objectName: "terminalInputFrame"
-            visible: Qt.inputMethod.visible
+            visible: Qt.inputMethod.visible && !sessionsPanel.visible
             anchors.left: parent.left
             anchors.leftMargin: 420
             anchors.right: closeButton.left
@@ -410,6 +425,7 @@ Rectangle {
 
             Text {
                 id: inputHint
+                objectName: "terminalInputHint"
                 anchors.fill: parent
                 anchors.leftMargin: 28
                 anchors.rightMargin: 14
@@ -418,11 +434,14 @@ Rectangle {
                 font.pointSize: 14
                 elide: Text.ElideRight
                 visible: systemInput.text.length === 0 && systemInput.preeditText.length === 0
-                text: "Keyboard input goes to SSH"
+                text: terminalHome.visible ? "Connection number + Enter" : "Keyboard input goes to SSH"
             }
 
             TextInput {
                 id: systemInput
+                // Committed input is forwarded immediately. The terminal
+                // paints its own static caret, avoiding idle e-ink blinking.
+                cursorVisible: false
                 // A visible editor is required for the native reMarkable input
                 // panel. Committed text is forwarded to the PTY and cleared.
                 anchors.fill: parent
@@ -461,15 +480,11 @@ Rectangle {
                                   event.key === Qt.Key_PageDown
                     var chord = (event.modifiers & (Qt.ControlModifier | Qt.AltModifier)) !== 0
                     if (special || chord) {
-                        terminal.vkbKeyPress(event.key, event.modifiers)
+                        terminal.vkbKeyPress(event.key, event.modifiers, event.text)
                         event.accepted = true
                     }
                 }
 
-                onActiveFocusChanged: {
-                    if (activeFocus)
-                        inputHint.text = "Keyboard input goes to SSH"
-                }
             }
 
             TapHandler {
@@ -491,7 +506,7 @@ Rectangle {
             spacing: 1
             Text {
                 width: parent.width
-                text: "PAPERDESK  /  SSH"
+                text: "PAPERDESK  /  TERMINAL"
                 color: "white"
                 font.pointSize: 10
                 font.bold: true
@@ -500,12 +515,20 @@ Rectangle {
             }
             Text {
                 width: parent.width
-                text: "PaperDesk SSH"
+                text: "Paper Terminal"
                 elide: Text.ElideRight
                 color: "white"
                 font.pointSize: 25
                 font.bold: true
                 horizontalAlignment: Text.AlignLeft
+            }
+            Text {
+                objectName: "terminalModifierStatus"
+                width: parent.width
+                text: root.modifierNotice || shortcutsPanel.modifierSummary
+                visible: text.length > 0
+                textFormat: Text.PlainText; elide: Text.ElideRight
+                color: "white"; font.pointSize: 14; font.bold: true
             }
         }
     }
@@ -517,72 +540,38 @@ Rectangle {
         anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom
         z: 30
         visible: false
-        enabled: !root.sessionOpening
         keyboardInset: root.keyboardInset
         traceTouches: e2eSettings.traceTouches
         fixtureCrud: e2eSettings.sshSessionCrud
-        onVisibleChanged: if (!visible && root.sessionOpening) root.cancelSessionOpening()
-        onDismissed: { visible = false; root.showSystemKeyboard() }
-        onConnectRequested: function(host, user, port) { root.openSavedSession(host, user, port) }
-    }
-    Timer {
-        id: sessionOpenTimeout
-        interval: 3000
-        onTriggered: {
-            var request = root.sessionStateRequest
-            root.sessionStateRequest = null; root.sessionOpening = false
-            if (request) request.abort()
-            sessionsPanel.message = "Could not reach the local SSH launcher. Reopen PaperDesk SSH and try again."
+        credentialStore: terminal
+        onVisibleChanged: if (visible) {
+            root.shortcutsOpen = false; root.displayOpen = false
+            terminal.clearModifiers(); root.modifierNotice = ""
         }
+        onDismissed: { visible = false; root.restoreTerminalInput() }
+        onConnectRequested: function(host, user, port, credentialId) { root.openSavedSession(host, user, port, credentialId) }
+        onReplacementRequested: function(host, user, port, credentialId, expectedToken) {
+            root.openReplacingSession(host, user, port, credentialId, expectedToken)
+        }
+        onActiveTerminalRequested: root.returnToActiveTerminal()
     }
-
-    Rectangle {
+    Shortcuts {
         id: shortcutsPanel
         z: 40
         visible: root.shortcutsOpen
         anchors.top: toolbar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 108
-        color: "white"
-        border.color: "black"
-        border.width: 2
-
-        Row {
-            anchors.centerIn: parent
-            spacing: 8
-
-            Repeater {
-                model: root.shortcutKeys
-
-                Rectangle {
-                    objectName: "terminalShortcut_" + modelData.label
-                    width: 126
-                    height: 76
-                    radius: 8
-                    color: shortcutMouse.pressed ? "black" : "white"
-                    border.color: "black"
-                    border.width: 2
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: modelData.label
-                        color: shortcutMouse.pressed ? "white" : "black"
-                        font.pointSize: 16
-                        font.bold: true
-                    }
-
-                    TapHandler {
-                        id: shortcutMouse
-                        onTapped: root.sendShortcut(modelData.key, modelData.modifiers)
-                    }
-                }
-            }
-        }
+        latchedModifiers: terminal.latchedModifiers
+        lockedModifiers: terminal.lockedModifiers
+        onShortcutRequested: function(key, modifiers) { root.sendShortcut(key, modifiers) }
+        onModifierTapped: function(modifier) { terminal.cycleModifier(modifier) }
+        onModifierHeld: function(modifier) { terminal.lockModifier(modifier) }
     }
 
     Rectangle {
         id: displayPanel
+        objectName: "terminalDisplayPanel"
         z: 40
         visible: root.displayOpen
         anchors.top: toolbar.bottom
@@ -646,7 +635,7 @@ Rectangle {
     Rectangle {
         id: terminalArea
         anchors.top: toolbar.bottom
-        anchors.topMargin: 18
+        anchors.topMargin: 18 + root.terminalPanelHeight
         anchors.left: parent.left
         anchors.leftMargin: 20
         anchors.right: parent.right
@@ -658,86 +647,46 @@ Rectangle {
         border.width: 2
         radius: 8
 
-        TextRender {
+        Native.TerminalView {
             id: terminal
             objectName: "terminalRenderer"
             anchors.fill: parent
             anchors.margins: 16
             focus: true
-            font.family: Util.fontFamily
+            font.family: "DejaVu Sans Mono"
             font.pointSize: root.terminalFontSize
-            // LiTerm fades rows below cutAfter. Without this property its
-            // default is zero, which made every terminal glyph 30% opaque.
-            property int cutAfter: height
-            dragMode: Util.dragMode
-            allowGestures: true
+            ansiColors: root.ansiColors
 
-            // LiTerm updates its QML delegates when terminal data arrives,
-            // but xochitl does not always mark that composed area dirty for
-            // the e-ink panel. Batch output and nudge the whole terminal layer
-            // at most four times per second.
+            onTerminalQuit: root.close()
+            onErrorChanged: root.runtimeErrorDismissed = false
+            onMenuReadyChanged: {
+                if (menuReady && !sessionsPanel.visible && !root.disposed) {
+                    clearModifiers()
+                    root.modifierNotice = ""
+                    terminalHome.message = ""
+                    root.hideSystemKeyboard()
+                }
+            }
+            onMenuInput: function(text) { if (terminalHome.visible) terminalHome.handleInput(text) }
+            onModifiersChanged: root.modifierNotice = ""
+            onInputRejected: function(reason) {
+                root.modifierNotice = reason
+                modifierNoticeTimer.restart()
+            }
             onDisplayBufferChanged: {
                 root.terminalUpdateCount += 1
                 if (e2eSettings.traceTouches)
                     console.log("PaperDesk Terminal display changed", root.terminalUpdateCount)
-                if (!screenRefreshTimer.running)
-                    screenRefreshTimer.start()
             }
+            Component.onCompleted: { start(); forceActiveFocus() }
+            Component.onDestruction: stop()
 
-            contentItem: Item {
-                id: terminalContent
-                width: parent.width
-                height: parent.height
+            DisplayMethodArea {
+                anchors.fill: parent
+                // AppLoad applies this waveform only to the terminal region.
+                // The native renderer coalesces dirty rows; it never blinks.
+                displayMethod: DisplayMethodArea.Fast
             }
-
-            // Consume ANSI foreground/background colors on the delegate root,
-            // but render the actual cell as high-contrast monochrome.
-            cellDelegate: Item {
-                property color color: "white"
-                Rectangle {
-                    anchors.fill: parent
-                    color: root.ansiColors ? parent.color : "white"
-                }
-            }
-            cellContentsDelegate: Item {
-                id: monochromeCell
-                property string text: ""
-                property color color: "black"
-                property font font
-                property bool blinking: false
-                width: monochromeText.implicitWidth
-
-                Text {
-                    id: monochromeText
-                    anchors.fill: parent
-                    text: monochromeCell.text
-                    textFormat: Text.PlainText
-                    color: root.ansiColors ? monochromeCell.color : "black"
-                    font.family: monochromeCell.font.family
-                    font.pointSize: monochromeCell.font.pointSize
-                    font.bold: root.ansiColors ? monochromeCell.font.bold : true
-                    font.italic: monochromeCell.font.italic
-                    font.underline: monochromeCell.font.underline
-                }
-            }
-            cursorDelegate: Rectangle {
-                color: "black"
-                opacity: 0.8
-            }
-            selectionDelegate: Rectangle {
-                color: "black"
-                opacity: 0.2
-            }
-
-            onTerminalQuit: root.close()
-
-            Component.onCompleted: {
-                setBackgroundWhite(true)
-                forceActiveFocus()
-                Qt.callLater(function() { root.refreshTerminal("component ready") })
-            }
-
-            onHeightChanged: Qt.callLater(function() { terminal.redraw() })
 
             MultiPointTouchArea {
                 id: terminalTouch
@@ -918,6 +867,74 @@ Rectangle {
                 }
             }
         }
+        Home {
+            id: terminalHome
+            anchors.fill: parent; anchors.margins: 16; z: 10
+            menuReady: terminal.menuReady
+            managementOpen: sessionsPanel.visible
+            savedSessions: sessionsPanel.savedSessions
+            onOpenRequested: function(index) { sessionsPanel.openIndex(index) }
+            onNewRequested: {
+                terminal.clearModifiers()
+                root.modifierNotice = ""
+                root.shortcutsOpen = false; root.displayOpen = false
+                sessionsPanel.visible = true
+                Qt.inputMethod.hide()
+                sessionsPanel.edit(true)
+            }
+            onLocalShellRequested: {
+                terminal.clearModifiers()
+                root.modifierNotice = ""
+                if (terminal.sendMenuCommand("l")) root.showSystemKeyboard()
+                else message = terminal.sessionError || "The local menu is not ready. Try again."
+            }
+            onCloseRequested: root.close()
+        }
+    }
+
+    Rectangle {
+        objectName: "terminalErrorPanel"
+        z: 60
+        anchors.left: terminalArea.left
+        anchors.right: terminalArea.right
+        anchors.bottom: terminalArea.bottom
+        color: "white"
+        border.color: "black"
+        border.width: 2
+        visible: terminal.error.length > 0 && !sessionsPanel.visible && !root.runtimeErrorDismissed
+        height: Math.max(110, terminalErrorText.implicitHeight + 36)
+        Text {
+            id: terminalErrorText
+            anchors.left: parent.left; anchors.right: retryButton.left
+            anchors.margins: 18
+            anchors.verticalCenter: parent.verticalCenter
+            text: terminal.error
+            textFormat: Text.PlainText
+            wrapMode: Text.WordWrap
+            color: "black"
+            font.pointSize: 16
+        }
+        Rectangle {
+            id: retryButton
+            objectName: "terminalRetryButton"
+            anchors.right: parent.right; anchors.rightMargin: 18
+            anchors.verticalCenter: parent.verticalCenter
+            width: 180; height: 76
+            color: retryTap.pressed ? "black" : "white"
+            border.color: "black"; border.width: 2; radius: 8
+            Text {
+                anchors.centerIn: parent; text: terminal.running ? "Dismiss" : "Open menu"
+                color: retryTap.pressed ? "white" : "black"
+                font.pointSize: 16
+            }
+            TapHandler {
+                id: retryTap
+                onTapped: {
+                    if (terminal.running) root.runtimeErrorDismissed = true
+                    else terminal.start()
+                }
+            }
+        }
     }
 
     Timer {
@@ -926,41 +943,22 @@ Rectangle {
         repeat: false
         onTriggered: gestureStatus.visible = false
     }
-
     Timer {
-        id: screenRefreshTimer
-        interval: 180
-        repeat: false
-        onTriggered: root.refreshTerminal("output")
+        id: modifierNoticeTimer
+        interval: 4000; repeat: false
+        onTriggered: root.modifierNotice = ""
     }
-
-    Timer {
-        id: startupRefreshTimer
-        interval: 700
-        repeat: true
-        property int remaining: 3
-        onTriggered: {
-            root.refreshTerminal("startup")
-            remaining -= 1
-            if (remaining <= 0)
-                stop()
-        }
-    }
-
-    Timer {
-        id: startupKeyboardTimer
-        interval: 500
-        repeat: false
-        onTriggered: {
-            if (sessionsPanel.visible) return
-            root.showSystemKeyboard()
-            console.log("PaperDesk Terminal keyboard opened automatically")
+    Connections {
+        target: Qt.application
+        function onStateChanged() {
+            if (Qt.application.state !== Qt.ApplicationActive) {
+                terminal.clearModifiers()
+                root.modifierNotice = ""
+            }
         }
     }
 
     Component.onCompleted: {
         terminal.forceActiveFocus()
-        startupRefreshTimer.start()
-        startupKeyboardTimer.start()
     }
 }

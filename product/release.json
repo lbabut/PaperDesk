@@ -1,6 +1,6 @@
 {
   "product": "PaperDesk",
-  "version": "4.1.3",
+  "version": "4.2.0",
   "releaseDate": "2026-11-01",
   "device": "reMarkable 2",
   "components": [
@@ -9,8 +9,8 @@
       "name": "Paper Sketch"
     },
     {
-      "id": "literm",
-      "name": "PaperDesk SSH"
+      "id": "paperterminal",
+      "name": "Paper Terminal"
     },
     {
       "id": "paperweb",
@@ -57,6 +57,11 @@
       "id": "papersketch-raster.so",
       "name": "Paper Sketch material renderer",
       "role": "XOVI native Qt extension; explicitly supported OS 3.29.0.149 and 3.29.0.153"
+    },
+    {
+      "id": "paperterminal-native",
+      "name": "Paper Terminal native backend",
+      "role": "app-local PTY, VT parser, renderer and optional SSH askpass helper"
     }
   ],
   "testedWith": {
@@ -64,7 +69,7 @@
     "xovi": "0.3.3",
     "rmXoviExtensions": "v19-23052026",
     "appLoad": "0.6.0",
-    "liTerm": "0.1.7",
-    "paperSketchOS": "3.29.0.153"
+    "paperSketchOS": "3.29.0.153",
+    "terminalAndRdpOS": "3.29.0.153"
   }
 }

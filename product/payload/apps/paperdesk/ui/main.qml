@@ -173,7 +173,7 @@ Rectangle {
                     radius: 31
                     Text {
                         anchors.centerIn: parent
-                        text: "V 4.1.3"
+                        text: "V 4.2.0"
                         color: "white"
                         font.pointSize: 13
                         font.bold: true
@@ -224,9 +224,9 @@ Rectangle {
                 Layout.fillHeight: true
                 number: "02"
                 mark: ">_"
-                title: "PaperDesk SSH"
+                title: "Paper Terminal"
                 subtitle: "Connect over SSH, use shortcuts and work with readable, zoomable text."
-                applicationId: "literm"
+                applicationId: "paperterminal"
             }
             ProductCard {
                 objectName: "webButton"

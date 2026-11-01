@@ -1,8 +1,9 @@
 {
-  "name": "PaperDesk SSH",
+  "name": "Paper Terminal",
+  "description": "Native SSH terminal optimized for e-ink",
   "loadsBackend": false,
   "entry": "/ui/main.qml",
-  "id": "literm",
+  "id": "paperterminal",
   "supportsScaling": true,
   "canHaveMultipleFrontends": false
 }

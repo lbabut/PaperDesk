@@ -1,13 +1,6 @@
-Paper Sketch 4.1.3 puts the Materials settings icon first in the middle toolbar, before the 2H pencil.
-
-Paper Sketch 4.1.2 starts each pen stroke at initial contact, including a stationary dot, without waiting for a drag or pen release.
-The material renderer reuses precomputed paper-response values to reduce repeated CPU work while retaining the same material equations and image output. Software diagnostics now separate input, material updates and tile painting; no optical e-ink latency is claimed.
-
-Paper Sketch 4.1.1 moves the Materials settings icon from the header into the bottom navigation bar.
-
-Paper Sketch 4.1 adds six dry-media simulation controls: tilt and contact shape, pressure calibration, paper and burnishing, tip wear and sharpening, finger contact and cleaning, and two eraser types.
-Stylus tilt shapes directional graphite and charcoal marks when tilt samples are available; missing tilt uses an upright tip. Pressure calibration adjusts the digital stylus response rather than matching a measured physical pencil.
-Choose Plain, Smooth or Rough paper for future contact; firm strokes gradually burnish the simulated grain without repainting existing artwork. Drawing wears the selected virtual tip; Sharpen restores its point.
-Finger blending uses a variable contact shape and carries pigment between marks; Clean finger clears the carried pigment. Hard erasers rub along the path, while kneaded erasers lift at initial touch, so lift and dab again to repeat.
-The compact icon toolbar, manual sketchbook saves and full-grayscale PNG export remain. Save before updating. Existing release archives and public GitHub source links remain available.
-These are digital approximations, not physical-media calibration results or measured optical pen-to-panel latency claims. PaperDesk still includes all eight apps.
+Paper Terminal replaces PaperDesk SSH with PaperDesk's own PTY, VT parser and e-ink renderer. No LiTerm app or global terminal extension is required.
+Saved SSH sessions appear as numbered start-screen choices. Double-click opens a session; optional password storage stays in private local files without encryption. Mouse reporting starts enabled, with F1-F12 and one-shot or held Ctrl/Alt shortcuts.
+RDP adds F1-F12 and navigation shortcuts, aspect-preserving desktop fit above the system keyboard in portrait and landscape, and two-finger document scrolling alongside pinch zoom.
+Retry reconnects an interrupted RDP session; a changed server certificate blocks it. Profile Save and Delete wait for a matching result and readback, preserving edits on write, lock or stale-profile errors.
+Automated tests and isolated real-AppLoad sessions ran on reMarkable 2 / OS 3.29.0.153, including key packets, scrolling, disconnect/retry and changed-certificate rejection. These checks do not measure optical e-ink latency or ghosting.
+All eight apps remain included, with the released Paper Sketch 4.1.3 files unchanged. Existing notebooks, sketchbooks, connection data and app settings are preserved; XOVI boot autostart remains disabled.

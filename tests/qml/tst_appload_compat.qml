@@ -66,8 +66,13 @@ Item {
                 windowLoader.item.z = 100
                 windowLoader.item.systemKeyboardActive = false
                 windowLoader.item.rdpShortcutsOpen = false
+                windowLoader.item.rdpShortcutPage = 0
                 windowLoader.item.rdpLandscape = false
                 windowLoader.item.rdpNativeKeyboardPanel = null
+                windowLoader.item.qtfbKey = -1
+                windowLoader.item.framebufferWasActive = false
+                windowLoader.item.rdpKeyboardRectangle = Qt.binding(function() { return Qt.inputMethod.keyboardRectangle })
+                findChild(windowLoader.item, "paperdeskWindowCanvas").active = true
                 keyboard.config = windowLoader.item.keyboardConfig
                 keyboard.active = true
             }
@@ -276,7 +281,7 @@ Item {
             const button = findChild(win, "paperdeskRdpShortcutsButton")
             mouseClick(button, button.width/2, button.height/2)
             verify(win.rdpShortcutsOpen)
-            verify(!win.systemKeyboardActive)
+            verify(win.systemKeyboardActive, "Opening shortcuts keeps the typing keyboard visible")
             const after = close.mapToItem(win, 0, 0)
             compare(after.x, before.x)
             compare(after.y, before.y)
@@ -288,6 +293,117 @@ Item {
                 verify(p.x + key.width <= panel.width)
                 verify(p.y + key.height <= panel.height)
             }
+        }
+
+        function test_rdp_keyboard_viewport_data() {
+            return [{tag: "portrait", landscape: false, keyboardHeight: 720},
+                    {tag: "landscape", landscape: true, keyboardHeight: 550}]
+        }
+        function test_rdp_keyboard_viewport(data) {
+            const win = windowLoader.item
+            win.appName = "PaperDesk RDP Engine"
+            win.rdpLandscape = data.landscape
+            if(!win.fullscreen) win.maximize()
+            const chrome = findChild(win, "paperdeskRdpChrome")
+            const canvas = findChild(win, "paperdeskWindowCanvas")
+            const close = findChild(win, "paperdeskRdpCloseButton")
+            const keyboardButton = findChild(win, "paperdeskRdpKeyboardButton")
+            const originalCanvas = {x: canvas.x, y: canvas.y, width: canvas.width, height: canvas.height}
+            const originalClose = close.mapToItem(win, 0, 0)
+            const originalKeyboard = keyboardButton.mapToItem(win, 0, 0)
+            win.qtfbKey = 42
+            tryCompare(canvas, "lastKeyDown", 0x03000000)
+            win.rdpKeyboardRectangle = chrome.mapToItem(null, 0, chrome.height - data.keyboardHeight,
+                                                       chrome.width, data.keyboardHeight)
+            win.systemKeyboardActive = true
+            const visibleHeight = chrome.height - 112 - data.keyboardHeight
+            tryCompare(win, "rdpViewportHeight", visibleHeight)
+            tryCompare(canvas, "lastKeyDown", 0x03000000 | visibleHeight)
+            compare(canvas.lastKeyUp, canvas.lastKeyDown)
+            compare(canvas.x, originalCanvas.x); compare(canvas.y, originalCanvas.y)
+            compare(canvas.width, originalCanvas.width); compare(canvas.height, originalCanvas.height)
+            // The framebuffer remains in its original input coordinate space.
+            // Native tests check aspect-fit pixels and reject letterbox hits.
+            compare(close.mapToItem(win, 0, 0), originalClose)
+            compare(keyboardButton.mapToItem(win, 0, 0), originalKeyboard)
+            for(const action of [close, keyboardButton]) {
+                verify(action.visible)
+                const bounds = action.mapToItem(chrome, 0, 0, action.width, action.height)
+                verify(bounds.y >= 0 && bounds.y + bounds.height <= 112)
+            }
+            const count = canvas.keyDownCount
+            win.sendRdpViewport(visibleHeight)
+            compare(canvas.keyDownCount, count, "Unchanged viewport does not send repeating commands")
+            win.enabled = false
+            tryCompare(canvas, "lastKeyDown", 0x03000000)
+            win.enabled = true
+            tryCompare(canvas, "lastKeyDown", 0x03000000 | visibleHeight)
+            win.hideSystemKeyboard()
+            tryCompare(canvas, "lastKeyDown", 0x03000000)
+            compare(win.rdpViewportHeight, chrome.height - 112)
+            compare(close.mapToItem(win, 0, 0), originalClose)
+        }
+
+        function test_rdp_keyboard_geometry_fallback_and_bounds() {
+            const win = windowLoader.item
+            win.appName = "PaperDesk RDP Engine"
+            if(!win.fullscreen) win.maximize()
+            for(const landscape of [false, true]) {
+                win.rdpLandscape = landscape
+                const chrome = findChild(win, "paperdeskRdpChrome")
+                compare(win.calculateRdpKeyboardInset(false, Qt.rect(0, 0, 0, 0)), 0)
+                const fallback = win.calculateRdpKeyboardInset(true, Qt.rect(0, 0, 0, 0))
+                compare(fallback, chrome.height * 0.38)
+                const excessive = chrome.mapToItem(null, 0, 113, chrome.width, chrome.height - 113)
+                compare(win.calculateRdpKeyboardInset(true, excessive), chrome.height - 112 - 240)
+            }
+            // A stale portrait report must not become a full-height cover
+            // after the native keyboard changes to the landscape layout.
+            compare(win.calculateRdpKeyboardInset(true, Qt.rect(0, 1160, 1404, 712)), 1404 * 0.38)
+        }
+
+        function test_rdp_navigation_and_function_tabs_send_native_keys_without_keyboard_toggle() {
+            const win = windowLoader.item
+            win.appName = "PaperDesk RDP Engine"
+            win.rdpLandscape = true
+            if(!win.fullscreen) win.maximize()
+            win.systemKeyboardActive = true
+            win.rdpShortcutsOpen = true
+            const canvas = findChild(win, "paperdeskWindowCanvas")
+            const panel = findChild(win, "paperdeskRdpShortcutsPanel")
+            const navTab = findChild(win, "paperdeskRdpShortcutTab_1")
+            mouseClick(navTab, navTab.width/2, navTab.height/2)
+            compare(win.rdpShortcutPage, 1)
+            waitForRendering(panel); wait(20)
+            verify(win.systemKeyboardActive)
+            for(const item of [{name: "Up", key: Qt.Key_Up}, {name: "Delete", key: Qt.Key_Delete},
+                               {name: "PageDown", key: Qt.Key_PageDown}]) {
+                win.rdpShortcutsOpen = true
+                const button = findChild(win, "paperdeskRdpNav_" + item.name)
+                verify(button.visible && button.width >= 240 && button.height >= 76)
+                mouseClick(button, button.width/2, button.height/2)
+                compare(canvas.lastKeyDown, item.key); compare(canvas.lastKeyUp, item.key)
+                verify(win.systemKeyboardActive && !win.rdpShortcutsOpen)
+            }
+            win.rdpShortcutsOpen = true
+            const functionsTab = findChild(win, "paperdeskRdpShortcutTab_2")
+            mouseClick(functionsTab, functionsTab.width/2, functionsTab.height/2)
+            waitForRendering(panel); wait(20)
+            for(let number = 1; number <= 12; ++number) {
+                win.rdpShortcutsOpen = true
+                const button = findChild(win, "paperdeskRdpFunction_F" + number)
+                verify(button.visible)
+                const bounds = button.mapToItem(panel, 0, 0, button.width, button.height)
+                verify(bounds.x >= 0 && bounds.x + bounds.width <= panel.width)
+                verify(bounds.y >= 0 && bounds.y + bounds.height < panel.height - 96)
+                mouseClick(button, button.width/2, button.height/2)
+                compare(canvas.lastKeyDown, Qt.Key_F1 + number - 1)
+                compare(canvas.lastKeyUp, canvas.lastKeyDown)
+                verify(win.systemKeyboardActive)
+            }
+            win.hideSystemKeyboard()
+            win.sendRdpKey(Qt.Key_F12)
+            verify(!win.systemKeyboardActive, "Sending a shortcut does not open the keyboard")
         }
 
         function test_rdp_shortcut_panel_sends_reserved_engine_action() {
@@ -326,6 +442,13 @@ Item {
             keyClick(Qt.Key_Return)
             compare(canvas.lastKeyDown, Qt.Key_Return)
             compare(canvas.lastKeyUp, Qt.Key_Return)
+            for(const key of [Qt.Key_Tab, Qt.Key_Delete, Qt.Key_Left, Qt.Key_Right, Qt.Key_Up,
+                              Qt.Key_Down, Qt.Key_Home, Qt.Key_End, Qt.Key_PageUp, Qt.Key_PageDown,
+                              Qt.Key_F1, Qt.Key_F5, Qt.Key_F12]) {
+                keyClick(key)
+                compare(canvas.lastKeyDown, key)
+                compare(canvas.lastKeyUp, key)
+            }
         }
 
         function test_inactive_internal_window_does_not_consume_close_signal() {

@@ -1,4 +1,5 @@
 import hashlib
+import struct
 from datetime import date
 import json
 import os
@@ -18,11 +19,22 @@ TOOLCACHE = pathlib.Path(
 )
 
 
+
+def resource_bytes_without_timestamps(path):
+    data = bytearray(path.read_bytes())
+    assert data[:4] == b"qres"
+    version, tree = struct.unpack_from(">II", data, 4)
+    assert version in (2, 3)
+    assert (len(data) - tree) % 22 == 0
+    for offset in range(tree, len(data), 22):
+        data[offset + 14:offset + 22] = b"\0" * 8
+    return data
+
 class PackageRegressionTests(unittest.TestCase):
     def test_visual_controls_avoid_the_unavailable_tablet_accessibility_attachment(self):
         # Desktop Qt exposes Accessible; the tested tablet firmware does not.
         # An attached property would prevent the whole app from loading there.
-        for name in ('literm', 'paperweb', 'paperrdp-login', 'paperrss', 'papercare', 'paperbooks', 'paperdots', 'papersketch'):
+        for name in ('paperterminal', 'paperweb', 'paperrdp-login', 'paperrss', 'papercare', 'paperbooks', 'paperdots'):
             for qml in (RELEASE / 'payload/apps' / name / 'ui').glob('*.qml'):
                 self.assertNotIn('Accessible.', qml.read_text(), str(qml))
 
@@ -100,17 +112,19 @@ class PackageRegressionTests(unittest.TestCase):
 
     def test_hub_exposes_click_targets(self):
         qml = (RELEASE / "payload/apps/paperdesk/ui/main.qml").read_text()
-        for name in ("terminalButton", "webButton", "rdpButton", "rssButton", "sketchButton", "dotsButton", "careButton"):
+        for name in ("terminalButton", "webButton", "rdpButton", "rssButton"):
             self.assertIn(f'objectName: "{name}"', qml)
         self.assertNotIn("closeAfterLaunch", qml)
 
     def test_every_product_action_has_a_stable_test_target(self):
         apps = RELEASE / "payload/apps"
         expected = {
-            "literm": (
+            "paperterminal": (
                 "terminalCloseButton", "terminalKeyboardButton",
                 "terminalMouseButton",
                 "terminalShortcutsButton", "terminalShortcut_",
+                "terminalModifierCtrl", "terminalModifierAlt",
+                "terminalShortcutKeysTab", "terminalShortcutFunctionTab",
                 "terminalDisplayButton", "terminalDisplayHighContrast",
                 "terminalDisplayAnsi", "terminalDisplaySmaller",
                 "terminalDisplayLarger", "terminalDisplayRefresh",
@@ -150,7 +164,8 @@ class PackageRegressionTests(unittest.TestCase):
             ),
         }
         for app_name, targets in expected.items():
-            qml = (apps / app_name / "ui/main.qml").read_text()
+            qml = "\n".join(path.read_text() for path in
+                            sorted((apps / app_name / "ui").glob("*.qml")))
             for target in targets:
                 self.assertIn(target, qml, f"{app_name}: missing action target {target}")
         self.assertNotIn('objectName: "rssFavouriteButton"',
@@ -161,7 +176,7 @@ class PackageRegressionTests(unittest.TestCase):
 
     def test_product_menus_use_touch_native_consistent_controls(self):
         apps = RELEASE / "payload/apps"
-        terminal = (apps / "literm/ui/main.qml").read_text()
+        terminal = (apps / "paperterminal/ui/main.qml").read_text()
         rdp = (apps / "paperrdp-login/ui/main.qml").read_text()
         web = (apps / "paperweb/ui/main.qml").read_text()
         rss = (apps / "paperrss/ui/main.qml").read_text()
@@ -182,10 +197,10 @@ class PackageRegressionTests(unittest.TestCase):
         apps = RELEASE / "payload/apps"
         qml = {
             name: (apps / name / "ui/main.qml").read_text()
-            for name in ("paperdesk", "literm", "paperweb", "paperrdp-login", "paperrss", "papercare")
+            for name in ("paperdesk", "paperterminal", "paperweb", "paperrdp-login", "paperrss", "papercare")
         }
         self.assertIn("PAPERDESK  /  E-INK WORKSPACE", qml["paperdesk"])
-        for name in ("literm", "paperweb", "paperrdp-login", "paperrss", "papercare"):
+        for name in ("paperterminal", "paperweb", "paperrdp-login", "paperrss", "papercare"):
             self.assertIn("PAPERDESK  /", qml[name], name)
             self.assertIn("radius: 8", qml[name], name)
         self.assertIn("var commonCss", qml["paperweb"])
@@ -195,9 +210,9 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("font.bold: false", qml["paperrss"])
         self.assertIn("width: Math.min(parent.width - 180, 1040)", qml["paperrdp-login"])
 
-    def test_app_icons_share_one_eink_system_and_terminal_is_paperdesk_ssh(self):
+    def test_app_icons_share_one_eink_system_and_terminal_is_paper_terminal(self):
         apps = RELEASE / "payload/apps"
-        visible = ("literm", "paperweb", "paperrdp-login", "paperrss", "papercare", "paperdots")
+        visible = ("paperterminal", "paperweb", "paperrdp-login", "paperrss", "papercare", "paperdots")
         for name in visible:
             icon = (apps / name / "icon.png").read_bytes()
             self.assertTrue(icon.startswith(b"\x89PNG\r\n\x1a\n"), name)
@@ -208,16 +223,16 @@ class PackageRegressionTests(unittest.TestCase):
             self.assertIn('stroke-width="14"', source, name)
             self.assertNotIn("<text", source, name)
 
-        manifest = json.loads((apps / "literm/manifest.json").read_text())
-        self.assertEqual(manifest["name"], "PaperDesk SSH")
-        terminal = (apps / "literm/ui/main.qml").read_text()
-        self.assertIn('text: "PaperDesk SSH"', terminal)
+        manifest = json.loads((apps / "paperterminal/manifest.json").read_text())
+        self.assertEqual(manifest["name"], "Paper Terminal")
+        terminal = (apps / "paperterminal/ui/main.qml").read_text()
+        self.assertIn('text: "Paper Terminal"', terminal)
 
     def test_release_documents_tested_firmware_and_extension_versions(self):
         readme = (RELEASE / "README.md").read_text()
         self.assertIn("3.29.0.149", readme)
         self.assertIn("AppLoad 0.6.0", readme)
-        self.assertIn("LiTerm 0.1.7", readme)
+        self.assertIn("No LiTerm app or global terminal extension is required.", readme)
         release = json.loads((RELEASE / "release.json").read_text())
         self.assertEqual(date.fromisoformat(release["releaseDate"]).isoformat(), release["releaseDate"])
         feed = json.loads((ROOT / "website/update/stable.json").read_text())
@@ -226,7 +241,30 @@ class PackageRegressionTests(unittest.TestCase):
             f'# {release["version"]} — {release["releaseDate"]}\n'))
         self.assertEqual(release["testedWith"]["remarkableOS"], "3.29.0.149")
         self.assertEqual(release["testedWith"]["appLoad"], "0.6.0")
-        self.assertEqual(release["testedWith"]["liTerm"], "0.1.7")
+        self.assertNotIn("liTerm", release["testedWith"])
+
+    def test_terminal_backend_is_self_contained_in_the_app(self):
+        app = RELEASE / 'payload/apps/paperterminal'
+        manifest = json.loads((app / 'manifest.json').read_text())
+        self.assertEqual(manifest['id'], 'paperterminal')
+        self.assertEqual(manifest['name'], 'Paper Terminal')
+        self.assertFalse((RELEASE / 'payload/apps/literm').exists())
+        self.assertIn('plugin paperterminal_native', (app / 'native/qmldir').read_text())
+        for filename in ('libpaperterminal_native.so', 'paperterminal-askpass'):
+            binary = (app / 'native' / filename).read_bytes()
+            self.assertEqual(binary[:6], b'\x7fELF\x01\x01')
+            self.assertEqual(binary[18:20], b'\x28\x00')
+        qml = (app / 'ui/main.qml').read_text()
+        self.assertIn('import "../native"', qml)
+        self.assertNotIn('import literm', qml)
+        installer = (RELEASE / 'install.sh').read_text()
+        self.assertIn('native/libpaperterminal_native.so', installer)
+        self.assertIn('native/paperterminal-askpass', installer)
+        prep = (ROOT / 'windows/prepare_tablet.py').read_text()
+        self.assertNotIn('github.com/asivery/rm-literm', prep)
+        self.assertNotIn('appload.so literm.so;', prep)
+        preflight = (ROOT / 'windows/preflight.py').read_text()
+        self.assertNotIn("problem 'LiTerm", preflight)
 
     def test_installer_records_the_packaged_version(self):
         installer = (RELEASE / "install.sh").read_text()
@@ -355,11 +393,29 @@ class PackageRegressionTests(unittest.TestCase):
         for value in ("scale_percent", "color_depth", "--scale-percent", "--color-depth", "--domain-hex"):
             self.assertIn(value, source)
             self.assertIn(value, login)
-        self.assertIn('/home/root/.config/paperrdp/profiles', source)
+        manager = (RELEASE / "payload/apps/paperrdp-profile/profile-manager").read_text()
+        # Connecting persists only the last connection. Explicit GUI Save/Delete
+        # owns the bounded saved list, preventing native writes racing its lock.
+        save_profile = source.split("bool saveProfile(const Profile& p) {", 1)[1].split(
+            "void loadProfile(Profile& p)", 1
+        )[0]
+        self.assertIn('profilePath=directory+"/profile"', save_profile)
+        self.assertIn("return writePrivateFile(path,temp,data)", save_profile)
+        self.assertNotIn('directory+"/profiles"', save_profile)
+        self.assertNotIn("profilesPath", save_profile)
+        self.assertNotIn("listData", save_profile)
+        self.assertIn('PROFILES="$CONFIG_DIR/profiles"', manager)
+        self.assertIn('LOCK="$CONFIG_DIR/.profile-manager.lock"', manager)
+        self.assertIn('mkdir "$LOCK"', manager)
+        self.assertIn('"$EXPECTED" != "$CURRENT_REVISION"', manager)
+        self.assertIn("++count>8", manager)
+        self.assertIn("kept++<7", manager)
+        self.assertIn('chmod 0600 "$TMP" && sync && mv "$TMP" "$PROFILES"', manager)
         self.assertIn("paperrdp-profile", (RELEASE / "install.sh").read_text())
         self.assertIn("paperrdp-profile", (RELEASE / "uninstall.sh").read_text())
-        self.assertIn("profiles.size()>8", source)
-        self.assertIn("writePrivateFile(profilesPath,profilesTemp,listData)", source)
+        self.assertIn('return ["--save", String(index)', login)
+        self.assertIn('return ["--delete", String(index)]', login)
+        self.assertIn('String(scalePercent), String(colorDepth), orientation, "v2"', login)
         self.assertIn('"external::paperrdp-profile"', login)
         self.assertIn('"Confirm delete"', login)
         self.assertIn('flickableDirection: Flickable.VerticalFlick', login)
@@ -433,14 +489,49 @@ class PackageRegressionTests(unittest.TestCase):
 
     def test_rdp_normalises_special_keys_from_every_keyboard_path(self):
         source = (RELEASE / "payload/apps/paperrdp/paperrdp.cpp").read_text()
+        normalizer = source.split("uint32_t specialKeyToScan(int key) {", 1)[1].split(
+            "BOOL sendKeyPacket", 1
+        )[0]
         for key in (
             "0x01000003", "0xff08", "0x08", "0x7f",
             "0x01000004", "0x01000005", "0xff0d", "0x0a", "0x0d",
+            "0x01000001", "0xff09", "0x09", "0x01000007", "0xffff",
+            "0x01000010", "0xff50", "0x01000011", "0xff57",
+            "0x01000012", "0xff51", "0x01000013", "0xff52",
+            "0x01000014", "0xff53", "0x01000015", "0xff54",
+            "0x01000016", "0xff55", "0x01000017", "0xff56",
         ):
-            self.assertIn(f"case {key}:", source)
+            self.assertIn(f"case {key}:", normalizer)
         self.assertIn("remoteInputKey(a,u.x,true)", source)
         self.assertIn("remoteInputKey(a,u.x,false)", source)
-        self.assertIn("if(specialKeyToScan(key))", source)
+        dispatch = source.split("void remoteInputKey(App& a,int rawKey,bool down) {", 1)[1].split(
+            "void sendChord", 1
+        )[0]
+        # Bare Qt/X11 navigation goes through the physical-key normalizer.
+        # Tagged Unicode normalizes only C0/DEL, preserving printable U+FFxx
+        # characters whose codepoints happen to equal X11 keysyms.
+        self.assertIn("if(handleClientCommand(a,rawKey,down)) return", dispatch)
+        self.assertIn("if(a.mode!=Mode::Remote) return", dispatch)
+        self.assertIn("if(encodedUnicode)", dispatch)
+        self.assertIn("if((key<0x20 || key==0x7f) && specialKeyToScan(key)) remoteKey(a,key,down)", dispatch)
+        self.assertIn("else if(down) sendUnicode(a,static_cast<uint16_t>(key))", dispatch)
+        self.assertNotIn("if(specialKeyToScan(key))", dispatch)
+        physical = source.split("void remoteKey(App& a,int key,bool down) {", 1)[1].split(
+            "void sendUnicode", 1
+        )[0]
+        self.assertIn("uint32_t scan=specialKeyToScan(key)", physical)
+        self.assertIn("if(!scan) scan=qtToScan(key)", physical)
+        self.assertIn("sendKeyPacket(a.rdp->context->input,down,scan)", physical)
+        packet = source.split("BOOL sendKeyPacket(rdpInput* input,BOOL down,UINT32 scan) {", 1)[1].split(
+            "BOOL sendMousePacket", 1
+        )[0]
+        self.assertIn("RDP_SCANCODE_EXTENDED(scan) ? KBD_FLAGS_EXTENDED : 0", packet)
+        self.assertIn("down ? 0 : KBD_FLAGS_RELEASE", packet)
+        self.assertIn("freerdp_input_send_keyboard_event(input,flags,RDP_SCANCODE_CODE(scan))", packet)
+        chord = source.split("void sendChord(App& a,", 1)[1].split("void sendShortcut(App& a,int index) {", 1)[0]
+        self.assertIn("MAKE_RDP_SCANCODE(key.first,key.second)", chord)
+        self.assertIn("MAKE_RDP_SCANCODE(it->first,it->second)", chord)
+        self.assertNotIn("freerdp_input_send_keyboard_event_ex", chord)
 
     def test_rss_full_text_has_dedicated_touch_scroller(self):
         qml = (RELEASE / "payload/apps/paperrss/ui/main.qml").read_text()
@@ -530,15 +621,20 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("PaperWeb keyboard hidden", qml)
         self.assertIn("onPressed: function(points) {\n                    root.dismissKeyboard()", qml)
 
-    def test_terminal_forces_initial_and_output_refreshes(self):
-        qml = (RELEASE / "payload/apps/literm/ui/main.qml").read_text()
+    def test_terminal_native_view_replaces_qml_refresh_workarounds(self):
+        qml = (RELEASE / "payload/apps/paperterminal/ui/main.qml").read_text()
         menu = (RELEASE / "payload/system/rmssh-menu").read_text()
-        self.assertIn('root.refreshTerminal("component ready")', qml)
-        self.assertIn('root.refreshTerminal("startup")', qml)
-        self.assertIn('root.refreshTerminal("output")', qml)
+        self.assertIn('Native.TerminalView {', qml)
+        self.assertIn('Component.onCompleted: { start(); forceActiveFocus() }', qml)
+        self.assertIn('terminal.stop()', qml)
+        self.assertNotIn('terminalContent.opacity', qml)
+        self.assertNotIn('id: screenRefreshTimer', qml)
+        self.assertNotIn('id: startupRefreshTimer', qml)
+        self.assertIn('displayMethod: DisplayMethodArea.Fast', qml)
         self.assertIn("PaperDesk Terminal display changed", qml)
-        self.assertIn("startupKeyboardTimer.start()", qml)
-        self.assertIn("PaperDesk Terminal keyboard opened automatically", qml)
+        # The start screen gives saved profiles the full viewport.
+        # Opening a session or the Keyboard button requests the input method.
+        self.assertNotIn("id: startupKeyboardTimer", qml)
         self.assertIn("function toggleSystemKeyboard()", qml)
         self.assertIn("function hideSystemKeyboard()", qml)
         self.assertIn('text: Qt.inputMethod.visible ? "Hide keyboard" : "Keyboard"', qml)
@@ -557,11 +653,11 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertNotIn("advanced_connect", menu)
 
     def test_terminal_mouse_mode_is_explicit_bounded_and_session_only(self):
-        qml = (RELEASE / "payload/apps/literm/ui/main.qml").read_text()
-        self.assertIn('property bool mouseMode: false', qml)
+        qml = (RELEASE / "payload/apps/paperterminal/ui/main.qml").read_text()
+        self.assertIn('property bool mouseMode: true', qml)
         self.assertIn('objectName: "terminalMouseButton"', qml)
         self.assertIn('mouseMode = false', qml.split("function unloading()", 1)[1].split("}", 1)[0])
-        self.assertIn('var prefix = "\\u001b[<"', qml)
+        self.assertIn('terminal.sendMouse(column, row, button)', qml)
         self.assertIn('root.sendMouseClick(points[i].x, points[i].y, 0)', qml)
         self.assertIn('root.sendMouseClick(terminalTouch.mouseStartX, terminalTouch.mouseStartY, 2)', qml)
         self.assertIn('terminalTouch.activePoint === -1', qml)
@@ -570,13 +666,12 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertNotIn('property bool savedMouseMode', qml)
 
     def test_terminal_display_modes_are_optional_persistent_and_high_contrast_by_default(self):
-        qml = (RELEASE / "payload/apps/literm/ui/main.qml").read_text()
+        qml = (RELEASE / "payload/apps/paperterminal/ui/main.qml").read_text()
         self.assertIn("property bool savedAnsiColors: false", qml)
         self.assertIn("property real savedFontSize:", qml)
         self.assertIn('target: "terminalDisplayHighContrast"', qml)
         self.assertIn('target: "terminalDisplayAnsi"', qml)
-        self.assertIn('color: root.ansiColors ? monochromeCell.color : "black"', qml)
-        self.assertIn('color: root.ansiColors ? parent.color : "white"', qml)
+        self.assertIn('ansiColors: root.ansiColors', qml)
         self.assertIn("terminalSettings.savedFontSize = root.terminalFontSize", qml)
 
     def test_web_requests_mobile_documents_by_default(self):
@@ -675,7 +770,7 @@ class PackageRegressionTests(unittest.TestCase):
         self.assertIn("return e2eSettings.traceTouches && e2eSettings.scenarioVersion === 20260927", qml)
 
     def test_close_is_rightmost_in_every_qml_app_header(self):
-        terminal = (RELEASE / "payload/apps/literm/ui/main.qml").read_text()
+        terminal = (RELEASE / "payload/apps/paperterminal/ui/main.qml").read_text()
         rdp_login = (RELEASE / "payload/apps/paperrdp-login/ui/main.qml").read_text()
         self.assertIn('id: closeButton\n            objectName: "terminalCloseButton"\n            anchors.right: parent.right', terminal)
         self.assertIn('anchors.right: closeButton.left', terminal)
@@ -693,7 +788,7 @@ class PackageRegressionTests(unittest.TestCase):
     def test_qml_is_embedded_in_every_app_resource(self):
         rcc = TOOLCACHE / "qt-rcc-pkg/root/usr/lib/qt5/bin/rcc"
         library = TOOLCACHE / "qt-rcc-pkg/root/usr/lib/x86_64-linux-gnu"
-        for app_name in ("paperdesk", "literm", "paperweb", "paperrss", "paperrdp-login", "paperbooks", "paperdots", "papersketch"):
+        for app_name in ("paperdesk", "paperterminal", "paperweb", "paperrss", "paperrdp-login", "paperbooks", "paperdots"):
             app_dir = RELEASE / "payload/apps" / app_name
             with tempfile.TemporaryDirectory() as directory:
                 rebuilt = pathlib.Path(directory) / "resources.rcc"
@@ -705,10 +800,14 @@ class PackageRegressionTests(unittest.TestCase):
                     check=True,
                 )
                 self.assertEqual(
-                    hashlib.sha256((app_dir / "resources.rcc").read_bytes()).hexdigest(),
-                    hashlib.sha256(rebuilt.read_bytes()).hexdigest(),
+                    resource_bytes_without_timestamps(app_dir / "resources.rcc"),
+                    resource_bytes_without_timestamps(rebuilt),
                     f"{app_name} resources.rcc is stale after editing QML",
                 )
+
+
+
+
 
 
 if __name__ == "__main__":

@@ -1,3 +1,12 @@
+# 4.2.0 — 2026-11-01
+
+- Paper Terminal replaces PaperDesk SSH with PaperDesk's own PTY, VT parser and e-ink renderer. No LiTerm app or global terminal extension is required.
+- Saved SSH sessions appear as numbered start-screen choices. Double-click opens a session; optional password storage stays in private local files without encryption. Mouse reporting starts enabled, with F1-F12 and one-shot or held Ctrl/Alt shortcuts.
+- RDP adds F1-F12 and navigation shortcuts, aspect-preserving desktop fit above the system keyboard in portrait and landscape, and two-finger document scrolling alongside pinch zoom.
+- Retry reconnects an interrupted RDP session; a changed server certificate blocks it. Profile Save and Delete wait for a matching result and readback, preserving edits on write, lock or stale-profile errors.
+- Automated tests and isolated real-AppLoad sessions ran on reMarkable 2 / OS 3.29.0.153, including key packets, scrolling, disconnect/retry and changed-certificate rejection. These checks do not measure optical e-ink latency or ghosting.
+- All eight apps remain included, with the released Paper Sketch 4.1.3 files unchanged. Existing notebooks, sketchbooks, connection data and app settings are preserved; XOVI boot autostart remains disabled.
+
 # 4.1.3 — 2026-11-01
 
 - Moved the Paper Sketch Materials settings icon to the first position in the middle toolbar, before the 2H pencil.

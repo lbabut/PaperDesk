@@ -46,24 +46,8 @@ Item {
             closeSpy.destroy()
         }
 
-        function test_sketch_button() {
-            clickAndVerify("sketchButton", "papersketch")
-        }
-
-        function test_dots_button() {
-            clickAndVerify("dotsButton", "paperdots")
-        }
-
-        function test_books_button() {
-            clickAndVerify("booksButton", "paperbooks")
-        }
-
-        function test_care_button() {
-            clickAndVerify("careButton", "papercare")
-        }
-
         function test_terminal_button() {
-            clickAndVerify("terminalButton", "literm")
+            clickAndVerify("terminalButton", "paperterminal")
         }
 
         function test_web_button() {

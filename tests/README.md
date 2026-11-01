@@ -3,9 +3,13 @@
 `qml/tst_design.qml` exercises all seven visible apps at tablet resolution.
 It checks shared Close geometry, the separate SSH command row and panel
 ownership, finger-sized Web options with explicit current state, the RDP Save
-dock and validation message, RSS actions and content-sized Care cards. The
-LiTerm mock is only a host layout/input stub; it does not simulate PTY
-rendering. The physical `terminal` scenario remains required. Desktop Qt has
+dock and validation message, RSS actions and content-sized Care cards.
+The runner stages the real Paper Terminal QML with a host build of its native
+plugin, exercising PTY input and rendering without loading the tablet ARM
+binary. Portable core tests cover VT parsing and bounded scrollback; native
+integration tests cover process lifecycle, resize, input and SSH validation.
+The physical `terminal` scenario remains required for e-ink refresh and the
+reMarkable system keyboard. Desktop Qt has
 an `Accessible` attachment that this firmware lacks; a package regression
 prevents adding that load-time dependency accidentally.
 
@@ -66,8 +70,60 @@ Save, Edit, Open (localhost port 1, not a user server), Delete/cancel and
 Delete/confirm. Settings are isolated and restored by the normal runner trap.
 `PAPERDESK_E2E_TARGET=rdp` additionally opens the real system keyboard, checks
 the fixed Save dock is above it, swipes the form and focuses Port. The host SSH
-protocol regression rejects active/unknown launcher state, so Open cannot type
-connection commands into a live remote shell.
+protocol regression checks that saved connections call the native connection
+API; the backend rejects active/unknown launcher state and passes SSH arguments
+directly to the process, so Open cannot type commands into a live remote shell.
+The app probe also exercises Open again from retained SSH exit diagnostics,
+visible busy-session feedback, default Mouse on, and the optional password
+save/forget flow. It backs up and restores the private credential directory.
+
+`tst_terminal_home.qml` checks the numbered start-screen list, pointer actions,
+numeric selection (including two-digit numbers), and changes to the shared
+saved-session model. The native tests verify that menu input is intercepted
+only in the current local menu and cannot be carried into a remote session.
+The AppLoad probe uses an isolated saved-profile list and a disposable
+localhost endpoint for the start-screen flow, then restores the full config.
+
+Session-switch regressions select the second of two profiles while a local
+shell is active, cancel without affecting that shell, then confirm Close and
+connect. Native tests reject stale process/menu-revision tokens and validate
+the replacement endpoint and credentials before ending the current session.
+
+RDP usability regressions cover exact keyboard scan-code flags, Unicode,
+two-finger wheel/pinch separation, zoom/pan, shared raster/input transforms,
+keyboard letterboxing, input reset, retry and changed-certificate rejection.
+Build the memory-only ARM regression binary with `scripts/build-rdp.sh --tests`.
+The real-device runner `tests/run-rdp-usability.py` additionally requires a
+private loopback FreeRDP sample-server fixture at
+`work/rdp-usability/server-src/fixture-server` (or `--server`), matching
+`server.crt`/`server.key` and `changed.crt`/`changed.key`, and the local
+`../PaperDesk-terminal/work/capture-terminal-screen.py` capture helper with
+the bundled Pillow-capable Python runtime. These diagnostic fixtures are not
+shipped in the product. Run without `--run` to prepare resources locally;
+`--run` temporarily restarts the idle tablet UI and restores its configuration,
+and `--deploy` retains the tested RDP apps only after every check succeeds.
+`--e2e` builds a separate fixture client in `work/tests/`; its bounded private
+FIFO and private config override are absent from the production binary.
+Profile helper tests use temporary directories and exercise concurrent writes,
+stale revisions, private correlated results, unknown outcomes and readback.
+The login QML tests also verify real launcher exceptions, delayed ACK and
+preserving unsaved fields after focus/refresh errors.
+Saved-session pointer regressions also check that one click selects, a
+double-click opens the clicked row exactly once, and the existing busy-session
+confirmation remains required.
+
+`tst_terminal_shortcuts.qml` exercises the function-key tab and pointer tap/hold
+behavior for one-shot and locked Ctrl/Alt. Native PTY tests and the isolated
+ARM raw-input probe verify the resulting bytes, modifier consumption,
+multi-character commit rejection and the distinction between explicit
+Ctrl+Alt combinations and a physical AltGr character.
+
+`tests/run-terminal-ssh-integration.py` requires Paramiko in its Python
+environment and a freshly built host helper (`scripts/build-terminal.py --test`).
+It starts a temporary loopback SSH server with synthetic credentials, then
+uses the real system OpenSSH client to verify manual host-key approval,
+persisted opt-in password authentication and opening another saved connection
+without returning to the menu first. HOME and known_hosts are isolated.
 
 Books regressions compare the actual result delegate and viewport before and
 after an offline save; real touch events exercise reader inertia and pinch.

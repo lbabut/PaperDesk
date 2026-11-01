@@ -9,7 +9,7 @@ import uuid
 
 SUPPORTED_OS = '3.29.0.149'
 RISK_NOTICE = (
-    'This installs unofficial XOVI, AppLoad, LiTerm and qt-resource-rebuilder components '
+    'This installs unofficial XOVI, AppLoad and qt-resource-rebuilder components '
     'inside the tablet interface, then installs PaperDesk.\n\n'
     'Risks include crashes, loss of unsaved work or data, an unusable interface, and '
     'manual recovery of the tablet. An interruption or incompatible modification can '
@@ -27,8 +27,6 @@ ASSETS = {
              '9aa00537ad41e9be0c3151992bfc25106465318cf5bb4c41cf59b3ddd4866377'),
     'appload': ('https://github.com/asivery/rm-appload/releases/download/v0.6.0/appload-arm32.tar.gz',
                 '25aa54735742ea63c0a043cba5496987dd4ca742d8b3fc26a21b7368372bf44f'),
-    'literm': ('https://github.com/asivery/rm-literm/releases/download/v0.1.7/literm-arm32.so',
-               '6e64d3dba3c05e56c8c883e29f6767f713ddcc9cc679909a537cc1cbc4cb8c6c'),
 }
 SYMLINKS = {
     'xovi/services/xochitl.service/exthome': '/home/root/xovi/exthome',
@@ -37,7 +35,6 @@ SYMLINKS = {
 REQUIRED_FILES = {
     'xovi/xovi.so', 'xovi/start', 'xovi/stock', 'xovi/rebuild_hashtable', 'xovi/debug',
     'xovi/extensions.d/qt-resource-rebuilder.so', 'xovi/extensions.d/appload.so',
-    'xovi/extensions.d/literm.so',
     'xovi/services/xochitl.service/qt-resource-rebuilder.conf',
     'xovi/scripts/debug/qt-resource-rebuilder.sh',
 }
@@ -86,11 +83,10 @@ def dependency_files(assets):
                     if member.size > 32 * 1024 * 1024:
                         raise ValueError('Dependency file is too large.')
                     files[target] = archive.extractfile(member).read()
-    files['xovi/extensions.d/literm.so'] = assets['literm']
     if set(files) != REQUIRED_FILES:
         raise ValueError('Incomplete dependency package.')
     for name in ['xovi/xovi.so', 'xovi/extensions.d/qt-resource-rebuilder.so',
-                 'xovi/extensions.d/appload.so', 'xovi/extensions.d/literm.so']:
+                 'xovi/extensions.d/appload.so']:
         data = files[name]
         if data[:6] != b'\x7fELF\x01\x01' or data[18:20] != b'\x28\x00':
             raise ValueError('Dependency is not an ARM32 ELF: ' + name)
@@ -166,7 +162,7 @@ fi
         quoted = shlex.quote(path)
         digest = hashlib.sha256(data).hexdigest()
         commands.append(f'if [ -e {quoted} ]; then [ -f {quoted} ] && [ "$(sha256sum {quoted} | awk \'{{print $1}}\')" = {digest} ] || {{ echo "Existing dependency differs: {path}. Use Install PaperDesk for an already prepared tablet, or ask your administrator."; exit 22; }}; fi')
-    commands.append("echo 'Pinned XOVI 0.3.3 / resources v19, AppLoad 0.6.0 and LiTerm 0.1.7: compatible.'")
+    commands.append("echo 'Pinned XOVI 0.3.3 / resources v19, AppLoad 0.6.0: compatible.'")
     return '\n'.join(commands)
 
 
@@ -226,7 +222,7 @@ for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25
     case "$pid" in ''|0|*[!0-9]*) sleep 1; continue;; esac
     if systemctl is-active --quiet xochitl && [ -r "/proc/$pid/maps" ]; then
         ready=1
-        for library in xovi.so qt-resource-rebuilder.so appload.so literm.so; do
+        for library in xovi.so qt-resource-rebuilder.so appload.so; do
             grep -Fq "/$library" "/proc/$pid/maps" || ready=0
         done
         [ "$ready" = 1 ] && break
