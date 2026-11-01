@@ -2,11 +2,30 @@
 #include <QtGui/QGuiApplication>
 #include <QtCore/QTemporaryDir>
 #include <QtCore/QThread>
+#include <QtCore/QEventLoop>
+#include <QtQuick/QQuickWindow>
+#include <QtQuick/QSGRendererInterface>
 #include <cassert>
+#include <functional>
 
 static void events(int milliseconds){QElapsedTimer timer;timer.start();while(timer.elapsed()<milliseconds){QCoreApplication::processEvents();QThread::msleep(1);}}
 static void pendingStroke(SketchRaster &board){board.begin();assert(board.advance(4,38,1,200,300,.6,true));assert(board.advance(4,38,1,220,330,.8,false));}
+// Await a real completed frame caused by show()/tile damage. The timer is
+// only a failure deadline; this helper never requests a full-window repaint.
+static void renderedFrame(QQuickWindow &window,const std::function<bool()> &ready){
+ QEventLoop loop;QTimer deadline;deadline.setSingleShot(true);deadline.setInterval(5000);
+ auto connection=QObject::connect(&window,&QQuickWindow::afterRendering,&loop,[&]{if(ready())loop.quit();},Qt::DirectConnection);
+ QObject::connect(&deadline,&QTimer::timeout,&loop,&QEventLoop::quit);
+ deadline.start();if(!ready())loop.exec();QObject::disconnect(connection);assert(ready());
+}
+class PaintCountTile:public SketchTile {
+public:
+ std::atomic<int> paintCount{0};
+ using SketchTile::SketchTile;
+ void paint(QPainter *painter)override{SketchTile::paint(painter);paintCount++;}
+};
 int main(int argc,char **argv){
+ QQuickWindow::setGraphicsApi(QSGRendererInterface::Software);
  QGuiApplication application(argc,argv);QTemporaryDir directory;assert(directory.isValid());
  SketchRaster batched(nullptr,directory.path()+"/batched"),immediate(nullptr,directory.path()+"/immediate");
  int batchEmissions=0,immediateEmissions=0;QRegion batchDamage,immediateDamage;
@@ -46,5 +65,19 @@ int main(int argc,char **argv){
  assert(source.saveCache(3,meta)&&source.flushSaves());pendingStroke(source);
  int loadEmissions=0;QObject::connect(&source,&SketchRaster::damaged,[&](const QRegion&r){assert(r==QRegion(source.image.rect()));loadEmissions++;});
  assert(source.loadCache(3,meta));assert(loadEmissions==1&&source.displayPending.isEmpty());events(40);assert(loadEmissions==1);
- puts("PASS first-dab immediacy, 16ms timer publication, full-shading physical equality, exact damage union, finish/cancel/reset/release/load lifecycle");
+ {
+  SketchRaster tiled(nullptr,directory.path()+"/two-tiles");QQuickWindow window;
+  window.resize(256,128);window.setColor(Qt::white);
+  PaintCountTile left(window.contentItem()),right(window.contentItem());
+  left.setWidth(128);left.setHeight(128);left.setRaster(&tiled);
+  right.setX(128);right.setWidth(128);right.setHeight(128);assert(right.setProperty("sourceX",128));right.setRaster(&tiled);
+  window.show();renderedFrame(window,[&]{return left.paintCount.load()>0&&right.paintCount.load()>0;});
+  const int previousLeft=left.paintCount.load(),previousRight=right.paintCount.load();
+  int emissions=0;QObject::connect(&tiled,&SketchRaster::damaged,[&](const QRegion&){emissions++;});
+  tiled.begin();assert(tiled.advance(4,38,1,20,20,.6,true));assert(tiled.advance(4,38,1,80,80,.8,false));
+  assert(emissions==1&&!tiled.displayPending.isEmpty()&&tiled.displayPublicationTimer.interval()==16);
+  renderedFrame(window,[&]{return emissions==2&&left.paintCount.load()>previousLeft&&left.opticalPixels(76,76,8,8)==tiled.pixels(76,76,8,8);});
+  assert(right.paintCount.load()==previousRight);tiled.finish();assert(emissions==2);
+ }
+ puts("PASS first-dab immediacy, 16ms timer publication, untouched tile not repainted, full-shading physical equality, exact damage union, finish/cancel/reset/release/load lifecycle");
 }

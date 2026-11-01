@@ -122,6 +122,30 @@ Item {
             fuzzyCompare(scene.app.page.strokes[0].points[0][0],420,1/scene.app.drawingScale);
             fuzzyCompare(scene.app.page.strokes[0].points[0][1],530,1/scene.app.drawingScale);
         }
+        function test_pen_contact_starts_before_motion_and_keeps_one_stroke() {
+            var canvas=findChild(scene.app,"drawingCanvas");
+            mousePress(canvas,420,530,Qt.LeftButton);
+            tryCompare(scene.app,"activeSource","pen",200);
+            verify(scene.app.activeStroke!==null,"Pen-down must draw without waiting for movement or release");
+            fuzzyCompare(scene.app.activeStroke.points[0][0],420,1/scene.app.drawingScale);
+            fuzzyCompare(scene.app.activeStroke.points[0][1],530,1/scene.app.drawingScale);
+            wait(100);
+            verify(scene.app.activeStroke!==null);
+            mouseMove(canvas,470,570,20);
+            mouseRelease(canvas,470,570,Qt.LeftButton);
+            tryCompare(scene.app,"activeSource","",200);
+            compare(scene.app.page.strokes.length,1,"Contact, movement and release must form one stroke");
+        }
+        function test_short_pen_motion_has_no_release_dot_data() {
+            return [0,1,3,6,12].map(function(distance){return {tag:"motion-"+distance,distance:distance};});
+        }
+        function test_short_pen_motion_has_no_release_dot(data) {
+            var canvas=findChild(scene.app,"drawingCanvas");
+            mousePress(canvas,420,530,Qt.LeftButton);
+            if(data.distance)mouseMove(canvas,420+data.distance,530,20);
+            mouseRelease(canvas,420+data.distance,530,Qt.LeftButton);wait(30);
+            compare(scene.app.page.strokes.length,1,"A short drag must not add a second dab at release");
+        }
         function test_smudge_transfers_gray_and_keeps_white_clean() {
             var canvas=findChild(scene.app,"drawingCanvas"),c=canvas.getContext("2d");
             c.fillStyle="white";c.fillRect(0,0,1200,1600);

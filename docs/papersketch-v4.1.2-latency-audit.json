@@ -1,0 +1,94 @@
+{
+  "version": "4.1.2",
+  "baseline_commit": "202fc75e64776e4b397a343aa34c49573e0db37d",
+  "hardware": "reMarkable 2",
+  "firmware": "3.29.0.153",
+  "first_paint_cases": [
+    {
+      "id": "latency-fresh-hb",
+      "before_contact_to_tile_ms": 56,
+      "after_contact_to_tile_ms": 30,
+      "before_contact_to_qt_input_ms": 39,
+      "after_contact_to_qt_input_ms": 12,
+      "before_probe_gap_max_ms": 55,
+      "after_probe_gap_max_ms": 22
+    },
+    {
+      "id": "latency-fresh-charcoal",
+      "before_contact_to_tile_ms": 55,
+      "after_contact_to_tile_ms": 27,
+      "before_contact_to_qt_input_ms": 38,
+      "after_contact_to_qt_input_ms": 11,
+      "before_probe_gap_max_ms": 30,
+      "after_probe_gap_max_ms": 30
+    },
+    {
+      "id": "latency-layered-hb",
+      "before_contact_to_tile_ms": 58,
+      "after_contact_to_tile_ms": 38,
+      "before_contact_to_qt_input_ms": 41,
+      "after_contact_to_qt_input_ms": 12,
+      "before_probe_gap_max_ms": 23,
+      "after_probe_gap_max_ms": 26
+    },
+    {
+      "id": "latency-layered-charcoal",
+      "before_contact_to_tile_ms": 55,
+      "after_contact_to_tile_ms": 23,
+      "before_contact_to_qt_input_ms": 37,
+      "after_contact_to_qt_input_ms": 11,
+      "before_probe_gap_max_ms": 25,
+      "after_probe_gap_max_ms": 28
+    }
+  ],
+  "long_shading_cases": [
+    {
+      "id": "pen-graphite",
+      "before_active_gap_ms": 54,
+      "after_active_gap_ms": 52,
+      "pressure_matches": 1259,
+      "pressure_fallbacks": 0,
+      "delivered_points": 1259,
+      "max_raw_batch": 2,
+      "blank_frames_after_visible": 0
+    },
+    {
+      "id": "pen-charcoal",
+      "before_active_gap_ms": 316,
+      "after_active_gap_ms": 138,
+      "pressure_matches": 1259,
+      "pressure_fallbacks": 0,
+      "delivered_points": 1259,
+      "max_raw_batch": 2,
+      "blank_frames_after_visible": 0
+    }
+  ],
+  "median_contact_to_tile_before_ms": 55.5,
+  "median_contact_to_tile_after_ms": 28.5,
+  "realism_evdev_actions": 18,
+  "source_hashes": {
+    "ui/main.qml": "26c0c0fd5227785d0291e0c8a0a08a38e2be950639d82575c9128b4ad7e4ea1e",
+    "native/papersketch-raster.cpp": "c6e390d0cd31d0312739e2288ecc576d868c701333a2d2abdc31023516aee05a",
+    "native/sketch-material.h": "dc72a2868b3b29e3855e63fe6dca907f3625dfb340e8bcf7e16ab4c196ec2556",
+    "native/papersketch-raster.so": "4d3e21df193d2add403700eea2a296f872b2d38d5dddfd62590ea1622b8c0434",
+    "resources.rcc": "8440ab12e6407004baca3881434ddc52bae5132432cea5b2b34627a51d27a0af"
+  },
+  "host_tests": {
+    "python_run": 140,
+    "python_skipped": 2,
+    "qml_passed": 217,
+    "qml_skipped": 2,
+    "native_passed": 13,
+    "failed": 0
+  },
+  "artwork_preserved": true,
+  "installed_payload_verified": true,
+  "physical_panel_latency_measured": false,
+  "universal_latency_bound_claimed": false,
+  "limitations": [
+    "Software timer/tile/frame observations are upper bounds with millisecond timestamp and 16 ms polling granularity; no camera measurement.",
+    "First-run and inter-run timing variability remains; the reported baseline/current cases do not establish a universal latency ceiling.",
+    "These are baseline/current runs on one tablet, not a statistical optical latency benchmark."
+  ],
+  "passed": true
+}

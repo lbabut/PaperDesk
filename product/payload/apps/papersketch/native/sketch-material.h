@@ -26,6 +26,26 @@ struct PaperMaterial {
     uint16_t inverse[256]{};
     double untilNext = 0;
 
+    struct GrainResponse { double grain, capacity; };
+    static const std::array<GrainResponse, 65536> &grainResponses() {
+        // These two values depend only on the 8-bit tooth and burnish pair,
+        // not on pressure, tool, pigment or position. Share the exact double
+        // results across pages instead of recomputing them in every dab.
+        static const auto responses = [] {
+            std::array<GrainResponse, 65536> values{};
+            for (int b = 0; b < 256; ++b) {
+                double polish = b * (1.0 / 255.0);
+                for (int t = 0; t < 256; ++t) {
+                    double grain = (t * (1.0 / 255.0)) * (1 - .45 * polish) + .18 * polish;
+                    double valley = std::clamp((.9 - grain) * (1.0 / .7), 0.0, 1.0);
+                    values[b * 256 + t] = {grain, .08 + .92 * valley * valley};
+                }
+            }
+            return values;
+        }();
+        return responses;
+    }
+
     static uint32_t hash(uint32_t x, uint32_t y) {
         uint32_t n = x * 374761393u + y * 668265263u + 0x9e3779b9u;
         n = (n ^ (n >> 13)) * 1274126177u;
@@ -62,6 +82,7 @@ struct PaperMaterial {
         tooth.resize(size_t(w) * h);
         burnish.assign(tooth.size(), 0);
         rebuildTooth();
+        (void)grainResponses(); // Initialize the shared table before drawing.
         for (int i = 0; i < 65536; ++i)
             optical[i] = uint8_t(std::lround(255 * std::exp(-i / 14000.0)));
         for (int i = 0; i < 256; ++i)
@@ -155,6 +176,7 @@ struct PaperMaterial {
         const double firmScale = p > .6 ? (p - .6) / .4 * strength : 0;
         const double stock = paperKind == 1 ? 1.2 : paperKind == 2 ? .65 : 1;
         const double burnishScale = 5 * firmScale * stock * (tool < 4 ? 1 : .45);
+        const auto *responses = tool < 6 ? grainResponses().data() : nullptr;
         // A footprint is at most 82 columns wide (80px size plus the two
         // fractional bounds). Reuse its coordinates across all scanlines.
         double columnSquared[82];
@@ -208,10 +230,9 @@ struct PaperMaterial {
                     fixed -= std::min(fixed, roundMass(fixed * contact * (kneaded ? .035 * p : .28)));
                 } else {
                     double polish = burnish[at] * (1.0 / 255.0);
-                    double grain = (tooth[at] * (1.0 / 255.0)) * (1 - .45 * polish) + .18 * polish;
-                    double contact = std::clamp((1.05 * p + .15 - grain * toothContact) * 2.0, 0.0, 1.0);
-                    double valley = std::clamp((.9 - grain) * (1.0 / .7), 0.0, 1.0);
-                    int capacity = std::max(1, int(capacityAtPressure * (.08 + .92 * valley * valley) * (1 - .22 * polish)));
+                    const auto &response = responses[unsigned(burnish[at]) * 256 + tooth[at]];
+                    double contact = std::clamp((1.05 * p + .15 - response.grain * toothContact) * 2.0, 0.0, 1.0);
+                    int capacity = std::max(1, int(capacityAtPressure * response.capacity * (1 - .22 * polish)));
                     int room = std::max(0, capacity - fixed - loose);
                     if (room > 0) {
                         double amount = dose * edge * contact * (1 - .35 * polish) * (room / double(capacity));
