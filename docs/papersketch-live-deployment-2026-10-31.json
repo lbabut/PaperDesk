@@ -1,0 +1,133 @@
+{
+  "execution": "production Paper Sketch on real reMarkable2 over Wi-Fi",
+  "xochitl_pid": 4270,
+  "rollback": "/home/root/.local/state/papersketch-install.b49lry",
+  "saved_pages": [
+    {
+      "page": 0,
+      "saved_sha256": "ef9c60e5cbf186435fdfa23aa53e64a57ec5210ea8effd7131823e6d5264b23d",
+      "unchanged": true
+    },
+    {
+      "page": 1,
+      "saved_sha256": "2f7fe1c0e19813052e084561d2e335efbf9792d9115be5ee22976b753aa4f3d4",
+      "unchanged": true
+    }
+  ],
+  "selected_page": 1,
+  "manifest_unchanged": true,
+  "saved_optical_sha256": "43043fcae21d2a7c776813b4038e74b9b7047748c2515b1a90c0e25cc0f4da51",
+  "loaded_optical_digests": [
+    "43043fcae21d2a7c776813b4038e74b9b7047748c2515b1a90c0e25cc0f4da51"
+  ],
+  "loaded_pixels_match_saved": true,
+  "installed_hashes": {
+    "resources.rcc": {
+      "canonical_sha256": "0ff71351a3e57ad122c9a55cf996d63d75d50b40ca31fbd7a833f57a7dc25569",
+      "installed_sha256": "0ff71351a3e57ad122c9a55cf996d63d75d50b40ca31fbd7a833f57a7dc25569",
+      "matches": true
+    },
+    "native/papersketch-raster.so": {
+      "canonical_sha256": "b627a0e042c10b176a8cd310fb8bf5f5f696eb7d98bf05cbe24e57ce2ae1f98a",
+      "installed_sha256": "b627a0e042c10b176a8cd310fb8bf5f5f696eb7d98bf05cbe24e57ce2ae1f98a",
+      "matches": true
+    }
+  },
+  "qml_errors": [],
+  "desktop_qml": {
+    "passed": 25,
+    "failed": 0,
+    "skipped_native_only": 1
+  },
+  "native_host_tests": [
+    "halftone tone/palette/phase",
+    "native tile halftone and grayscale fallback with unchanged PNG/cache",
+    "material conservation/palm cancellation/exact persistence"
+  ],
+  "live_input": {
+    "passed": true,
+    "max_input_tick_gap_ms": 39,
+    "fast_display": true,
+    "finger_transfers_pigment": true,
+    "pressure_matches": 55,
+    "pressure_fallbacks": 0
+  },
+  "shading_cases": [
+    {
+      "display_probe": "8x8 mean of actual binary tile display pixels",
+      "fast_display": true,
+      "pressure_matches": 1258,
+      "pressure_fallbacks": 1,
+      "display_binary": true,
+      "display_has_samples": true,
+      "optical_has_grays": true,
+      "display_mean": 219.3896484375,
+      "optical_mean": 222.1650390625,
+      "id": "pen-graphite",
+      "tool": 1,
+      "points": 1259,
+      "first": [
+        120,
+        399.9,
+        0.13
+      ],
+      "last": [
+        1079.9,
+        499.9,
+        0.88
+      ],
+      "raster_seen_ms": 1793482873851,
+      "tile_seen_ms": 1793482873868,
+      "max_input_tick_gap_ms": 43,
+      "blank_frames_after_visible": 0,
+      "full_screen": false,
+      "max_material_segment_ms": 0,
+      "retained_points": 2,
+      "metadata_bytes": 91,
+      "passed": true,
+      "tile_visible_before_release": true,
+      "injected_duration_ms": 5364
+    },
+    {
+      "display_probe": "8x8 mean of actual binary tile display pixels",
+      "fast_display": true,
+      "pressure_matches": 1259,
+      "pressure_fallbacks": 0,
+      "display_binary": true,
+      "display_has_samples": true,
+      "optical_has_grays": true,
+      "display_mean": 157.1337890625,
+      "optical_mean": 159.541015625,
+      "id": "pen-charcoal",
+      "tool": 4,
+      "points": 1259,
+      "first": [
+        120,
+        900,
+        0.13
+      ],
+      "last": [
+        1079.9,
+        1199.9,
+        0.88
+      ],
+      "raster_seen_ms": 1793482884717,
+      "tile_seen_ms": 1793482884766,
+      "max_input_tick_gap_ms": 132,
+      "blank_frames_after_visible": 0,
+      "full_screen": true,
+      "max_material_segment_ms": 11,
+      "retained_points": 2,
+      "metadata_bytes": 91,
+      "passed": true,
+      "tile_visible_before_release": true,
+      "injected_duration_ms": 5441
+    }
+  ],
+  "drawing_state_saved_automatically": false,
+  "optical_panel_latency_measured": false,
+  "physical_speed_improvement_proven": false,
+  "display_tradeoff": "Grayscale RAM and exports; fixed fine black/white halftone for UFast screen display, unchanged at pen-up",
+  "boot_autostart_changed": false,
+  "passed": true
+}

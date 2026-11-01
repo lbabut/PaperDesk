@@ -1,0 +1,82 @@
+{
+  "candidate_qml_sha256": "53bdb70eb80954fbe8f586710313837b240171161c3e502345d7d964f83f46f9",
+  "source_qml_sha256": "53bdb70eb80954fbe8f586710313837b240171161c3e502345d7d964f83f46f9",
+  "source_engine_sha256": "ec3448ca328ea7abd0cc96b05da82286cdacdaad02e34d2241ff2f13dc559ccb",
+  "backup": "/home/root/.local/state/papersketch-native.QB3gLO",
+  "artwork_before_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "evdev_injections": [
+    {
+      "mode": "finger",
+      "contact_ms": 1793474724097,
+      "release_ms": 1793474725087,
+      "writes_ok": true
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793474727845,
+      "release_ms": 1793474728833,
+      "writes_ok": true
+    }
+  ],
+  "results": {
+    "execution": "reMarkable evdev input through production pointer handlers",
+    "cases": [],
+    "input_probe": {
+      "execution": "reMarkable evdev input through production pointer handlers",
+      "physical_panel_latency_measured": false,
+      "idle_max_tick_gap_ms": 227,
+      "autosave_document_matches": true,
+      "autosave_cache_matches": true,
+      "autosave_reload_matches": true,
+      "touch_before": {
+        "core": 76,
+        "beside": 255
+      },
+      "touch": {
+        "tool": 7,
+        "points": 28,
+        "first": [
+          331.1,
+          398.9,
+          0.7
+        ],
+        "last": [
+          470,
+          400,
+          0.7
+        ],
+        "core": 181,
+        "beside": 173,
+        "tile_core": 181,
+        "tile_beside": 173,
+        "passed": true
+      },
+      "pen": {
+        "pressure_min": 0.21,
+        "pressure_max": 0.88,
+        "tool": 4,
+        "points": 55,
+        "first": [
+          700,
+          699.9,
+          0.21
+        ],
+        "last": [
+          900,
+          720,
+          0.88
+        ],
+        "raster_seen_ms": 1793474728318,
+        "tile_seen_ms": 1793474728892,
+        "passed": true,
+        "post_release_to_tile_ms": 59
+      },
+      "native_raster_active": true,
+      "passed": true,
+      "polling_granularity_ms": 16
+    }
+  },
+  "runtime_seconds": 55.51,
+  "artwork_after_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "artwork_preserved": true
+}

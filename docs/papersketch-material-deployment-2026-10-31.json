@@ -1,0 +1,21 @@
+{
+  "rollback": "/home/root/.local/state/papersketch-install.NzWaSW",
+  "saved_optical_sha256": "f6554a56f866a69104b0232673a919dc0a84296fa726f3596f2015e877788ccc",
+  "loaded_ram_optical_sha256": "f6554a56f866a69104b0232673a919dc0a84296fa726f3596f2015e877788ccc",
+  "saved_artwork_pixels_preserved": true,
+  "drawing_file_unchanged_on_open": true,
+  "artifacts": {
+    "resources": {
+      "sha256": "95dabeb8d978c48925778cd41fc3f76fe9a0ebd5ef9f811827da8141c2747ed4",
+      "matches_build": true
+    },
+    "raster": {
+      "sha256": "c6aa0c3d0bae77a4ce4b5ae4ff0389b46d39bb6f6cd7391102d887182044ac20",
+      "matches_build": true
+    }
+  },
+  "xochitl_active": true,
+  "manual_save_only": true,
+  "xovi_boot_autostart_enabled_by_installer": false,
+  "qml_errors": []
+}

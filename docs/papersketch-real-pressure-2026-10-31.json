@@ -1,0 +1,10 @@
+{
+  "contact_samples": 17815,
+  "raw_min": 1,
+  "raw_p10": 1684,
+  "raw_p50": 3856,
+  "raw_p90": 4095,
+  "raw_max": 4095,
+  "axis_max": 4095,
+  "source": "read-only Wacom events during actual user drawing"
+}

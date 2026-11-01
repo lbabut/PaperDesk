@@ -1,0 +1,41 @@
+{
+  "candidate_qml_sha256": "5020980812d35dfe49e278c2724200c6a49615eb0f84240b9944200208e4aed0",
+  "source_qml_sha256": "5020980812d35dfe49e278c2724200c6a49615eb0f84240b9944200208e4aed0",
+  "source_engine_sha256": "273635d47eface6a86d727fc8a6d43fc3b310cb35db316fd755bc43aa3e09917",
+  "backup": "/home/root/.local/state/papersketch-native.px2rDQ",
+  "artwork_before_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "evdev_injections": [
+    {
+      "mode": "finger",
+      "contact_ms": 1793481518898,
+      "release_ms": 1793481519888,
+      "writes_ok": true,
+      "id": "size-slider"
+    }
+  ],
+  "results": {
+    "execution": "real tablet size-slider pointer and rendered-frame probe",
+    "controls_probe": {
+      "value_updates": 159,
+      "painted_frames": 129,
+      "max_input_tick_gap_ms": 42,
+      "max_probe_tick_gap_ms": 174,
+      "gaps_over_70ms": [
+        {
+          "ms": 174,
+          "pressed": false,
+          "since_ready": 796
+        }
+      ],
+      "final_size": 79,
+      "first_value_to_frame_ms": 11,
+      "real_device": true,
+      "optical_panel_latency_measured": false,
+      "passed": true
+    },
+    "cases": []
+  },
+  "runtime_seconds": 40.82,
+  "artwork_after_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "artwork_preserved": true
+}
