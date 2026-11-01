@@ -10,7 +10,7 @@ var tools = [
     {name:"Smudge", kind:"smudge", size:40, opacity:0.6, grain:0}
 ];
 function clamp(n,a,b) { return Math.max(a, Math.min(b,n)); }
-function book() { return {version:1, index:0, pages:[{strokes:[], paper:"plain"}]}; }
+function book() { return {version:1, index:0, nextCacheSlot:1, pages:[{strokes:[], paper:"plain",cacheSlot:0}]}; }
 function point(x,y,p) {
     return [Math.round(clamp(x,0,WIDTH)*10)/10,Math.round(clamp(y,0,HEIGHT)*10)/10,
             Math.round(clamp(isFinite(p) && p>0 ? p : 0.5,0.04,1)*100)/100];
@@ -31,11 +31,14 @@ function decode(raw) {
     if(!b || b.version!==1 || !Array.isArray(b.pages) || !b.pages.length || b.pages.length>12)
         throw Error("Invalid sketchbook");
     if(!Number.isInteger(b.index) || b.index<0 || b.index>=b.pages.length) throw Error("Invalid page");
-    var total=0;
+    var total=0,slots={},nextSlot=0;
     for(var i=0;i<b.pages.length;i++) {
         var page=b.pages[i];
         if(!page || ["plain","dots","grid"].indexOf(page.paper)<0 || !Array.isArray(page.strokes))
             throw Error("Invalid paper");
+        var slot=page.cacheSlot===undefined?i:page.cacheSlot;
+        if(!Number.isInteger(slot)||slot<0||slot>1000000000||slots[slot])throw Error("Invalid page identity");
+        slots[slot]=true;page.cacheSlot=slot;nextSlot=Math.max(nextSlot,slot+1);
         for(var j=0;j<page.strokes.length;j++) {
             var s=page.strokes[j];
             if(!s || (s.renderer!==undefined && s.renderer!==2 && s.renderer!==3 && s.renderer!==4 && s.renderer!==5 && s.renderer!==6 && s.renderer!==7 && s.renderer!==8) || !Number.isInteger(s.tool) || s.tool<0 || s.tool>=tools.length ||
@@ -52,6 +55,7 @@ function decode(raw) {
             }
         }
     }
+    b.nextCacheSlot=Number.isInteger(b.nextCacheSlot)&&b.nextCacheSlot>=nextSlot?b.nextCacheSlot:nextSlot;
     return b;
 }
 function noise(x,y,seed) {

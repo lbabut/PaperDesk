@@ -1,6 +1,6 @@
 # Paper Sketch (development)
 
-A grayscale bitmap sketchbook for reMarkable 2 / XOVI AppLoad. Choose a pencil or charcoal and its size; pressure comes from the stylus. Finger contact smears pigment. Undo, Redo, the strength slider and shade swatches have been removed.
+A grayscale bitmap sketchbook for reMarkable 2 / XOVI AppLoad. Choose a pencil or charcoal and its size; pressure comes from the stylus. Finger smearing is always enabled; there is no on/off button. The app keeps one sketchbook, with page creation and deletion. Undo, Redo, the strength slider and shade swatches have been removed.
 
 ## Material model
 
@@ -14,7 +14,7 @@ The material kernel writes the authoritative bitmap as pointer events arrive. Sc
 
 There is no post-stroke undo history and no page snapshot at the start of a stylus stroke. Small temporary patches exist only during a finger gesture so that stylus proximity can cancel an accidental palm mark. They are discarded when the gesture finishes. Finger input pauses while the stylus is in range.
 
-Pressure packets are read from Wacom evdev in a separate, non-grabbing reader and matched to the delivered screen position. This avoids applying a newer pressure to an older movement queued by Qt. The material response uses a curved pressure response and pressure-dependent pigment capacity, so light shading does not reach the same density as a hard stroke as quickly.
+Pressure and position packets are read from Wacom evdev in a separate, non-grabbing reader and matched to the delivered screen position. When Qt combines movement events, the renderer consumes up to 64 recent intervening sensor samples from the same pen contact, retaining the captured curve and pressure changes. It adds no look-ahead delay. Contact boundaries and evdev resynchronization prevent joining separate gestures. A missing raw match falls back to the delivered point without replaying an already-painted fallback segment. This avoids applying a newer pressure to an older movement queued by Qt. The material response uses a curved pressure response and pressure-dependent pigment capacity, so light shading does not reach the same density as a hard stroke as quickly.
 
 The size slider performs no legacy preview status reads or writes in bitmap mode. Its black handle uses the tablet's UFast display hint; the grayscale drawing surface retains Fast.
 
@@ -42,6 +42,14 @@ Each atomic .material page stores its optical bitmap, fixed/loose pigment and fi
 
 Legacy notebooks and PNG caches are retained. Existing artwork is loaded from its matching bitmap cache, or replayed once if necessary, and imported without modifying its optical pixels. Subsequent opening uses the material bitmap directly. Missing material pages block saving instead of silently replacing artwork with a blank page. PNG export remains available.
 
+## Pages and named PNG export
+
+Page bitmaps have stable cache slots independent of their position in the notebook. Deleting a middle page therefore does not rename or accidentally load another page's image. Deletion remains in RAM until Save. Discard restores the last saved notebook structure. Deleting the last page leaves a blank replacement. After an atomic manifest commit, the writer removes caches that were referenced by the previous saved notebook and are now deleted; unrelated older orphan caches and PNG exports are retained.
+
+Export PNG opens a file-name field and the tablet keyboard. PNGs are written atomically to the current user's Documents folder, normally /home/root/Documents on the tablet, with an explicit replacement confirmation for an existing name. Exports retain the full grayscale RAM image. Export does not implicitly save the notebook. File-system errors remain visible in the export dialog.
+
+Legacy notebooks acquire cache-slot identities in memory while preserving existing bitmap filenames and metadata compatibility. The cache-slot field is excluded from page-cache signatures. Recovery from a newer bitmap header updates the live page object and notebook together. No user bitmap is rewritten simply by opening the app.
+
 ## Build and install
 
 The tool cache defaults to /home/lukasz/Documents/Codex/2026-09-25/m-2/work and can be selected with PAPERDESK_TOOLCACHE.
@@ -58,9 +66,11 @@ The optional legacy pen extension can be built with scripts/build-sketch-native.
 
 ## Verification
 
-- Desktop QtTest: 25 passed, no failures, one native-only skip; simplified controls and absence of Undo/Redo are checked.
+- Desktop QtTest: 30 passed, no failures, one native-only skip; simplified controls and absence of Undo/Redo are checked.
 - tests/test-sketch-material.cpp checks clean white paper, graphite/charcoal differences, a minimum-size nib, pigment conservation, pressure, erasing and motion resampling.
 - tests/test-sketch-material-integration.cpp checks absence of post-stroke snapshots, tentative palm cancellation, and exact reload of optical pixels, pigment and fingertip state.
+- tests/test-sketch-workflow.cpp verifies named Documents PNGs, collision/path handling, raw curved motion across coalesced events, fallback/contact boundaries, and removal of deleted caches only after a successful saved manifest. tests/test-sketch-pen.cpp checks ordered contact samples and the bounded FIFO.
+- Latest real-device UI evidence: docs/papersketch-workflow-device-2026-11-01.json, docs/papersketch-workflow-files-2026-11-01.json, docs/papersketch-raw-shading-2026-11-01.json and docs/papersketch-raw-input-2026-11-01.json. The workflow taps the production export and delete buttons, checks keyboard focus/visibility, confirms duplicate-name handling, deletes a middle page, reloads surviving art, tests last-page deletion/discard and recovers a newer bitmap header. The exported 1200×1600 PNG is independently decoded and compared byte-for-byte with the grayscale RAM digest. Private fixture exports are removed after validation.
 - tests/test-sketch-raster.cpp covers the legacy native import, tile, export and cache paths without undo.
 - On-device evidence: docs/papersketch-material-arm-2026-10-31.json and docs/papersketch-material-manual-input-2026-10-31.json and docs/papersketch-material-shading-2026-10-31.json. The input probe exercises Linux evdev through the production pointer handlers and samples actual painted tiles during the gesture and after pen-up.
 - Long shading tests inject 1,260 pen samples per gesture (21 traversals across the page in about 5.3 seconds). Both graphite and fullscreen charcoal remain visible before pen-up with no sampled blank frames. The current pressure-engine probe (docs/papersketch-pressure-shading-2026-10-31.json) observes maximum input timer gaps of 51 ms for graphite and 127 ms for the heavier charcoal case. This is still a material responsiveness limitation; a passing no-blank-frame test is not a guarantee of comfortable drawing. Only two diagnostic points are retained. The manual-save probe confirms no automatic save and no changes to disk state while drawing.

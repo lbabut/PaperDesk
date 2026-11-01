@@ -15,7 +15,11 @@ Rectangle {
     property real brushSize: Ink.tools[tool].size
     property real strength: 1.0
     property int tone: 0
-    property bool fingerSmudge: true
+    readonly property bool fingerSmudge: true
+    property string lastSavedDocument:""
+    property bool exportDialog:false
+    property bool exportOverwrite:false
+    property string exportMessage:""
     property bool fullScreen:false
     property bool dirty:false
     property string pageDiskMetadata:""
@@ -213,16 +217,16 @@ Rectangle {
         if(!ready || saveBlocked || busy) return false;
         var saveStarted=Date.now();
         if(nativeRasterActive){
-            nativeRaster.saveNotebook(JSON.stringify({document:JSON.stringify(notebook),selectedTool:tool,selectedSize:brushSize,selectedStrength:strength,selectedTone:tone,useFinger:fingerSmudge}),pageIndex,JSON.stringify(page));
+            nativeRaster.saveNotebook(JSON.stringify({document:JSON.stringify(notebook),selectedTool:tool,selectedSize:brushSize,selectedStrength:strength,selectedTone:tone,useFinger:true}),pageSlot(pageIndex),cacheMetadata());
             if(!nativeRaster.flushSaves()){notice="Save failed. Your drawing is still in memory.";return false;}
-            dirty=false;newUnsavedPage=false;pageDiskMetadata=JSON.stringify(page);notice="Saved";
+            dirty=false;newUnsavedPage=false;pageDiskMetadata=JSON.stringify(page);lastSavedDocument=JSON.stringify(notebook);notice="Saved";
             console.log("PaperSketch manual save",Date.now()-saveStarted,"ms");return true;
         }
         saved.checkpoint=saved.document;
         saved.document=JSON.stringify(notebook);
         saved.selectedTool=tool; saved.selectedSize=brushSize;
         saved.selectedStrength=strength;saved.selectedTone=tone;saved.useFinger=fingerSmudge;
-        dirty=false;newUnsavedPage=false;pageDiskMetadata=JSON.stringify(page);notice="Saved";
+        dirty=false;newUnsavedPage=false;pageDiskMetadata=JSON.stringify(page);lastSavedDocument=JSON.stringify(notebook);notice="Saved";
         console.log("PaperSketch manual save",Date.now()-saveStarted,"ms");
         return true;
     }
@@ -231,10 +235,14 @@ Rectangle {
         
         pending=[];paintBounds=null;clearPreview();
         if(nativeRaster && !page.strokes.length && !page.bitmap){nativeRaster.resetWhite();nativeRasterActive=true;resetCanvas=false;replaying=false;guide.requestPaint();return;}
-        if(nativeRaster && nativeRaster.loadCache(pageIndex,JSON.stringify(page))){
+        if(nativeRaster && nativeRaster.loadCache(pageSlot(pageIndex),cacheMetadata())){
             nativeRasterActive=true;resetCanvas=false;replaying=false;
             var meta=nativeRaster.materialAvailable?nativeRaster.pageMetadata():"";
-            if(meta && page.bitmap)notebook.pages[pageIndex]=JSON.parse(meta);
+            if(meta && page.bitmap && meta!==cacheMetadata()){
+                var slot=pageSlot(pageIndex),updated=JSON.parse(meta),pages=notebook.pages.slice(),book={};
+                updated.cacheSlot=slot;pages[pageIndex]=updated;
+                for(var key in notebook)book[key]=notebook[key];book.pages=pages;notebook=book;
+            }
             flattenBitmap();console.log("PaperSketch optical digest",nativeRaster.opticalDigest());guide.requestPaint();return;
         }
         if(page.bitmap){saveBlocked=true;notice="Bitmap could not be loaded. Original files retained.";replaying=false;return;}
@@ -309,8 +317,7 @@ Rectangle {
         if(choice==="cancel"){confirmation="";pendingLeave=null;return;}
         if(choice==="save" && !saveBook())return;
         if(choice==="discard"){
-            if(newUnsavedPage && notebook.pages.length>1)notebook.pages.splice(pageIndex,1);
-            else if(pageDiskMetadata)notebook.pages[pageIndex]=JSON.parse(pageDiskMetadata);
+            pageIndex=0;notebook=Ink.decode(lastSavedDocument||JSON.stringify(Ink.book()));
             dirty=false;newUnsavedPage=false;
         }
         confirmation="";executeLeave();
@@ -320,7 +327,7 @@ Rectangle {
         if(action.kind==="close"){unloading();close();return;}
         if(action.kind==="new"){
             if(notebook.pages.length>=12){notice="12 pages per sketchbook.";return;}
-            notebook.pages.push({strokes:[],paper:"plain"});performPage(notebook.pages.length-1);newUnsavedPage=true;dirty=true;return;
+            notebook.pages.push(blankPage());performPage(notebook.pages.length-1);newUnsavedPage=true;dirty=true;return;
         }
         performPage(Math.max(0,Math.min(action.index,notebook.pages.length-1)));
     }
@@ -329,21 +336,41 @@ Rectangle {
     }
     function selectPage(index){if(index!==pageIndex)requestLeave({kind:"page",index:index});}
     function newPage(){requestLeave({kind:"new"});}
+    function pageSlot(index){var value=notebook.pages[index].cacheSlot;return value===undefined?index:value;}
+    function cacheMetadata(){
+        var data={};for(var key in page)if(key!=="cacheSlot")data[key]=page[key];
+        return JSON.stringify(data);
+    }
+    function blankPage(){var slot=notebook.nextCacheSlot||notebook.pages.length;notebook.nextCacheSlot=slot+1;return {strokes:[],paper:"plain",cacheSlot:slot};}
+    function deletePage(){
+        var index=pageIndex,pages=notebook.pages.slice(),next=notebook.nextCacheSlot;
+        pages.splice(index,1);
+        if(!pages.length){pages=[blankPage()];next=notebook.nextCacheSlot;}
+        pageIndex=0;notebook={version:1,index:Math.min(index,pages.length-1),pages:pages,nextCacheSlot:next};
+        performPage(notebook.index);dirty=true;notice="Page deleted · Save to keep this change";
+    }
     function confirmAction() {
         var action=confirmation;confirmation="";
+        if(action==="delete"){deletePage();return;}
         if(action==="clear" && bitmapMode){nativeRaster.clearPage();page.revision++;revision++;dirty=true;return;}
         if(action==="clear") {page.strokes=[];}
         if(action==="book") {
             if(saveBlocked)saveBlocked=false;
-            notebook=Ink.book();pageIndex=0;
+            pageIndex=0;notebook=Ink.book();lastSavedDocument=JSON.stringify(notebook);
         }
         totalPoints=Ink.count(notebook);revision++;redraw(action==="book");dirty=true;
     }
     function exportPage() {
-        if(busy) return;
-        exportPath="/home/root/.local/share/paperdesk/sketch/PaperSketch-"+Date.now()+"-page-"+(pageIndex+1)+".png";
-        if(nativeRasterActive){var ok=nativeRaster.save(exportPath);notice=ok?"PNG saved: "+exportPath:"PNG export failed";return;}
-        exportPending=true;paper.requestPaint();
+        if(busy)return;
+        exportMessage="";exportOverwrite=false;exportName.text="Sketch-"+(pageIndex+1);
+        exportDialog=true;exportName.forceActiveFocus();Qt.inputMethod.show();
+    }
+    function closeExport(){exportDialog=false;exportOverwrite=false;Qt.inputMethod.hide();root.forceActiveFocus();}
+    function saveExport(){
+        if(!nativeRasterActive){exportMessage="Export is unavailable until the bitmap renderer is ready.";return;}
+        var result=nativeRaster.exportPng(exportName.text,exportOverwrite);
+        if(result.ok){exportPath=result.path;notice="PNG saved: "+result.path;closeExport();}
+        else{exportMessage=result.error;exportOverwrite=result.exists===true;}
     }
     Component.onCompleted: {
         initNativeRaster();
@@ -363,8 +390,8 @@ Rectangle {
         tool=Ink.clamp(preferences.selectedTool,0,7);
         brushSize=Ink.clamp(preferences.selectedSize,1,80);
         strength=1;
-        tone=0;fingerSmudge=preferences.useFinger;
-        pageIndex=notebook.index;totalPoints=Ink.count(notebook);ready=true;redraw(true);dirty=false;
+        tone=0;
+        pageIndex=notebook.index;totalPoints=Ink.count(notebook);ready=true;redraw(true);dirty=false;lastSavedDocument=JSON.stringify(notebook);
         console.log("PaperSketch opened",notebook.pages.length,"pages",totalPoints,"points",saveBlocked?"save-blocked":"ready");
     }
 
@@ -435,11 +462,7 @@ Rectangle {
                         handle:Rectangle {x:parent.leftPadding+parent.visualPosition*(parent.availableWidth-width);y:10;width:28;height:32;radius:4;color:"black"}
                     }
                 }
-                Action {
-                    label:root.fingerSmudge?"Finger: smudge":"Finger: off";width:216;height:64
-                    selected:root.fingerSmudge
-                    onTriggered:{root.fingerSmudge=!root.fingerSmudge;}
-                }
+
             }
         }
     }
@@ -571,7 +594,7 @@ Rectangle {
                 acceptedDevices:PointerDevice.Stylus | PointerDevice.Airbrush | PointerDevice.Mouse
                 acceptedButtons:Qt.LeftButton
                 dragThreshold:0
-                enabled:!root.replaying && !root.saveBlocked && !root.confirmation
+                enabled:!root.replaying && !root.saveBlocked && !root.confirmation && !root.exportDialog
                 onActiveChanged:{
                     if(active) {
                         
@@ -587,7 +610,7 @@ Rectangle {
                 id:penDot
                 acceptedDevices:PointerDevice.Stylus | PointerDevice.Airbrush | PointerDevice.Mouse
                 acceptedButtons:Qt.LeftButton
-                enabled:!root.replaying && !root.saveBlocked && !root.confirmation
+                enabled:!root.replaying && !root.saveBlocked && !root.confirmation && !root.exportDialog
                 onTapped:function(eventPoint,button) {
                     root.beginStroke(eventPoint.position,"pen",root.tool,eventPoint.pressure);
                     root.finishStroke();
@@ -598,7 +621,7 @@ Rectangle {
                 acceptedDevices:PointerDevice.TouchScreen
                 minimumPointCount:1;maximumPointCount:1
                 dragThreshold:10
-                enabled:root.fingerSmudge && !root.penNearby && !root.penBlocked && !root.replaying && !root.saveBlocked && !root.confirmation
+                enabled:root.fingerSmudge && !root.penNearby && !root.penBlocked && !root.replaying && !root.saveBlocked && !root.confirmation && !root.exportDialog
                 onActiveChanged:{
                     if(active) {
                         root.beginStroke(centroid.pressPosition,"finger",7);
@@ -628,15 +651,15 @@ Rectangle {
             Action {label:"New page";width:144;available:true;onTriggered:root.newPage()}
             Action {
                 label:root.page.paper==="plain"?"Plain":root.page.paper==="dots"?"Dots":"Grid"
-                width:110;available:!root.busy
+                width:110;available:true
                 onTriggered:{var kinds=["plain","dots","grid"];root.page.paper=kinds[(kinds.indexOf(root.page.paper)+1)%3];root.revision++;guide.requestPaint();root.dirty=true}
             }
             Action {label:"Clear page";width:150;available:true;onTriggered:root.confirmation="clear"}
-            Action {label:"New book";width:146;available:true;onTriggered:root.confirmation="book"}
+            Action {label:"Delete page";objectName:"deletePageButton";width:156;available:true;onTriggered:root.confirmation="delete"}
         }
         Text {
             anchors.left:parent.left;anchors.right:parent.right;anchors.margins:20;y:91
-            text:root.notice || (root.saveBlocked?"Save paused":Ink.tools[root.tool].name+" · Pen · Finger smudge "+(root.fingerSmudge?"on":"off")+(root.dirty?" · Unsaved changes":" · Saved"))
+            text:root.notice || (root.saveBlocked?"Save paused":Ink.tools[root.tool].name+" · Finger smudge"+(root.dirty?" · Unsaved changes":" · Saved"))
             elide:Text.ElideMiddle;font.pixelSize:19;color:"#444444"
         }
     }
@@ -659,19 +682,42 @@ Rectangle {
             anchors.centerIn:parent;spacing:30
             Text {
                 width:840;wrapMode:Text.WordWrap;font.pixelSize:32;font.bold:true
-                text:root.confirmation==="leave"?"Save changes before continuing?":root.confirmation==="clear"?"Clear this page permanently?":"Start a new sketchbook? Export any drawings you want to keep first."
+                text:root.confirmation==="leave"?"Save changes before continuing?":root.confirmation==="delete"?"Delete this page?":"Clear this page permanently?"
             }
             Text {
                 width:840;wrapMode:Text.WordWrap;font.pixelSize:23
-                text:root.confirmation==="leave"?"Your drawing is in memory. Choose Save, Discard or Cancel.":root.confirmation==="book"?"This replaces the current sketchbook. PNG exports remain on the tablet.":"Other pages will stay in your sketchbook."
+                text:root.confirmation==="leave"?"Your drawing is in memory. Choose Save, Discard or Cancel.":"The current page and its unsaved marks will be removed. Other pages stay in your sketchbook. Choose Save afterward to keep this change."
             }
             Row {
                 spacing:20
                 Action {label:"Cancel";width:220;objectName:"cancelLeave";onTriggered:root.confirmation==="leave"?root.resolveLeave("cancel"):root.confirmation=""}
                 Action {label:"Discard";width:220;objectName:"discardLeave";visible:root.confirmation==="leave";onTriggered:root.resolveLeave("discard")}
                 Action {label:"Save";width:220;objectName:"saveLeave";visible:root.confirmation==="leave";onTriggered:root.resolveLeave("save")}
-                Action {label:root.confirmation==="clear"?"Clear page":"New book";visible:root.confirmation!=="leave";width:240;onTriggered:root.confirmAction()}
+                Action {label:root.confirmation==="delete"?"Delete page":"Clear page";objectName:"confirmPageAction";visible:root.confirmation!=="leave";width:240;onTriggered:root.confirmAction()}
             }
         }
     }
+    Rectangle {
+        anchors.fill:parent;color:"white";visible:root.exportDialog;z:12
+        MouseArea{anchors.fill:parent}
+        Column {
+            width:Math.min(parent.width-80,1000);anchors.horizontalCenter:parent.horizontalCenter;y:100;spacing:26
+            Text{text:"Export PNG";font.pixelSize:36;font.bold:true}
+            Text{width:parent.width;wrapMode:Text.Wrap;text:"Save in "+(root.nativeRaster?root.nativeRaster.documentsDirectory():"Documents");font.pixelSize:23}
+            TextField {
+                id:exportName;objectName:"exportName";width:parent.width;height:86;font.pixelSize:29;color:"black"
+                placeholderText:"File name";inputMethodHints:Qt.ImhNoPredictiveText|Qt.ImhNoAutoUppercase
+                background:Rectangle{color:"white";border.color:"black";border.width:2;radius:5}
+                onTextEdited:{root.exportOverwrite=false;root.exportMessage="";}
+                onAccepted:root.saveExport()
+                onActiveFocusChanged:if(activeFocus&&root.exportDialog)Qt.inputMethod.show()
+            }
+            Text{width:parent.width;wrapMode:Text.Wrap;text:root.exportMessage;font.pixelSize:24;visible:text!==""}
+            Row{spacing:24
+                Action{label:"Cancel";objectName:"cancelExport";width:220;onTriggered:root.closeExport()}
+                Action{label:root.exportOverwrite?"Replace PNG":"Save PNG";objectName:"saveExport";width:240;onTriggered:root.saveExport()}
+            }
+        }
+    }
+
 }

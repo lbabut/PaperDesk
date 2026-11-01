@@ -22,6 +22,7 @@ p.add_argument("--smoke",action="store_true")
 p.add_argument("--input-probe",action="store_true")
 p.add_argument("--shading-probe",action="store_true")
 p.add_argument("--controls-probe",action="store_true")
+p.add_argument("--workflow-probe",action="store_true")
 p.add_argument("--output",default="docs/papersketch-native-2026-10-31.json")
 a=p.parse_args()
 root=pathlib.Path(__file__).resolve().parents[1]
@@ -48,7 +49,7 @@ for name,text in [("baseline",baseline),("constant-fast",candidate)]:
     (folder/"ui/main.qml").write_text(text.replace(needle,'category: "PaperDeskSketchNativeBench'+name+namespace_suffix+'"'))
     shutil.copy2(source/"engine.js",folder/"engine.js")
     shutil.copy2(source/"ui/native-tile.qml",folder/"ui/native-tile.qml")
-harness=(root/("tests/device/papersketch-controls.qml" if a.controls_probe else "tests/device/papersketch-shading.qml" if a.shading_probe else "tests/device/papersketch-input.qml" if a.input_probe else "tests/device/papersketch-native.qml")).read_text()
+harness=(root/("tests/device/papersketch-workflow.qml" if a.workflow_probe else "tests/device/papersketch-controls.qml" if a.controls_probe else "tests/device/papersketch-shading.qml" if a.shading_probe else "tests/device/papersketch-input.qml" if a.input_probe else "tests/device/papersketch-native.qml")).read_text()
 if a.smoke:harness=harness.replace("property bool smokeOnly:false","property bool smokeOnly:true")
 if a.baseline_qml:harness=harness.replace('"constant-fast"','"tiled-fast"')
 elif candidate==baseline:harness=harness.replace('["baseline","constant-fast"]','["production-1","production-2"]')
@@ -91,9 +92,9 @@ mask=remote("systemctl is-enabled remarkable-fail.service || true").decode().str
 mask_here=mask not in ("masked","masked-runtime")
 original=None
 injected=set()
-report={"candidate_qml_sha256":hashlib.sha256(candidate.encode()).hexdigest(),"source_qml_sha256":hashlib.sha256(baseline.encode()).hexdigest(),"source_engine_sha256":hashlib.sha256((source/"engine.js").read_bytes()).hexdigest(),"backup":backup}
+report={"candidate_qml_sha256":hashlib.sha256(candidate.encode()).hexdigest(),"source_qml_sha256":hashlib.sha256(baseline.encode()).hexdigest(),"source_engine_sha256":hashlib.sha256((source/"engine.js").read_bytes()).hexdigest(),"backup":backup,"cache_namespace":"PaperDeskSketchNativeBenchbaseline"+namespace_suffix}
 try:
-    if a.input_probe or a.shading_probe or a.controls_probe:
+    if a.input_probe or a.shading_probe or a.controls_probe or a.workflow_probe:
         cache=pathlib.Path("/home/lukasz/Documents/Codex/2026-09-25/m-2/work/arm-toolchain/root")
         env=dict(__import__("os").environ,LD_LIBRARY_PATH=str(cache/"usr/lib/x86_64-linux-gnu"))
         driver=work/"input-driver-arm"
@@ -121,7 +122,7 @@ try:
     result=None
     for attempt in range(65):
         logs=remote("journalctl -u xochitl _PID="+pid+" --no-pager").decode()
-        if a.input_probe or a.shading_probe or a.controls_probe:
+        if a.input_probe or a.shading_probe or a.controls_probe or a.workflow_probe:
             for line in logs.splitlines():
                 if "PAPERSKETCH_INPUT_READY " not in line:continue
                 payload=line.split("PAPERSKETCH_INPUT_READY ",1)[1];payload=payload[:payload.rfind("}")+1]
@@ -160,7 +161,7 @@ try:
     if cpu_start is not None:
         cpu_wall=time.monotonic()-cpu_start[0]
         report["process_cpu_sample"]={"wall_seconds":round(cpu_wall,3),"cpu_seconds":round((cpu_ticks()-cpu_start[1])/ticks,3),"reference":"one CPU core; sampling starts after the first benchmark case is observed"}
-    if a.input_probe or a.shading_probe or a.controls_probe:
+    if a.input_probe or a.shading_probe or a.controls_probe or a.workflow_probe:
         for event in report.get("evdev_injections",[]):
             if event["mode"]=="pen" and "input_probe" in result:
                 result["input_probe"]["pen"]["post_release_to_tile_ms"]=result["input_probe"]["pen"]["tile_seen_ms"]-event["release_ms"]
@@ -174,7 +175,7 @@ try:
     report["runtime_seconds"]=round(time.monotonic()-started,2)
     print(json.dumps(result,indent=2),flush=True)
 finally:
-    if a.input_probe or a.shading_probe or a.controls_probe:remote("rm -f /tmp/papersketch-input-driver")
+    if a.input_probe or a.shading_probe or a.controls_probe or a.workflow_probe:remote("rm -f /tmp/papersketch-input-driver")
     if original is not None:
         remote("systemctl stop xochitl")
         remote("cp -p "+b+"/xochitl.conf /home/root/.config/remarkable/xochitl.conf")
@@ -201,3 +202,6 @@ if a.shading_probe:
 
 if a.controls_probe:
     assert report["results"]["controls_probe"]["passed"],"Real-device slider probe failed"
+
+if a.workflow_probe:
+    assert report["results"]["workflow_probe"]["passed"],"Named export and stable page deletion workflow failed"

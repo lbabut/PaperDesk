@@ -276,6 +276,41 @@ Item {
             mouseClick(button,28,28,Qt.LeftButton);wait(50);verify(!scene.app.fullScreen);
             compare(findChild(scene.app,"sketchHeader").height,88);
         }
+        function test_single_book_always_on_finger_and_delete_control() {
+            verify(scene.app.fingerSmudge);verify(findChild(scene.app,"deletePageButton")!==null);
+            function labels(item){var out=[];if(item.label!==undefined)out.push(item.label);for(var i=0;i<item.children.length;i++)out=out.concat(labels(item.children[i]));return out;}
+            var all=labels(scene.app);verify(all.indexOf("New book")<0);verify(all.indexOf("Finger: smudge")<0);verify(all.indexOf("Finger: off")<0);
+        }
+        function test_delete_middle_preserves_page_identity_and_discard() {
+            line(1,100,100,.7);scene.app.saveBook();scene.app.newPage();tryCompare(scene.app,"replaying",false,10000);
+            line(4,300,300,.7);scene.app.saveBook();scene.app.newPage();tryCompare(scene.app,"replaying",false,10000);
+            line(3,600,600,.7);scene.app.saveBook();scene.app.selectPage(1);tryCompare(scene.app,"replaying",false,10000);
+            scene.app.confirmation="delete";scene.app.confirmAction();tryCompare(scene.app,"replaying",false,10000);
+            compare(scene.app.pageCount,2);compare(scene.app.pageIndex,1);compare(scene.app.page.cacheSlot,2);
+            compare(scene.app.page.strokes[0].tool,3);verify(scene.app.dirty);
+            scene.app.requestLeave({kind:"page",index:0});scene.app.resolveLeave("discard");tryCompare(scene.app,"replaying",false,10000);
+            compare(scene.app.pageCount,3);compare(scene.app.notebook.pages[1].cacheSlot,1);
+            scene.app.selectPage(1);tryCompare(scene.app,"replaying",false,10000);scene.app.confirmation="delete";scene.app.confirmAction();tryCompare(scene.app,"replaying",false,10000);scene.app.saveBook();
+            scene.app.newPage();tryCompare(scene.app,"replaying",false,10000);compare(scene.app.page.cacheSlot,3);
+            scene.app.requestLeave({kind:"page",index:0});scene.app.resolveLeave("discard");tryCompare(scene.app,"replaying",false,10000);
+            compare(scene.app.pageCount,2);compare(scene.app.notebook.pages[1].cacheSlot,2);
+        }
+        function test_delete_last_keeps_one_blank_page_until_discard() {
+            line(1,100,100,.7);scene.app.saveBook();var slot=scene.app.page.cacheSlot;
+            scene.app.confirmation="delete";scene.app.confirmAction();tryCompare(scene.app,"replaying",false,10000);
+            compare(scene.app.pageCount,1);compare(scene.app.page.strokes.length,0);verify(scene.app.page.cacheSlot>slot);
+            scene.app.requestLeave({kind:"page",index:0});scene.app.resolveLeave("discard");tryCompare(scene.app,"replaying",false,10000);
+            compare(scene.app.page.cacheSlot,slot);compare(scene.app.page.strokes.length,1);
+        }
+        function test_named_export_dialog_and_cancel() {
+            scene.app.exportPage();verify(scene.app.exportDialog);
+            var name=findChild(scene.app,"exportName");verify(name.visible);name.text="My drawing";
+            scene.app.closeExport();verify(!scene.app.exportDialog);
+        }
+        function test_duplicate_cache_identity_is_rejected() {
+            var b=Ink.book();b.pages.push({strokes:[],paper:"plain",cacheSlot:0});
+            var failed=false;try{Ink.decode(JSON.stringify(b))}catch(e){failed=true}verify(failed);
+        }
         function test_validation() {
             var b=Ink.book(),s=Ink.stroke(0,5,0,0.5,1);
             s.points.push(Ink.point(-1,1800,2));b.pages[0].strokes.push(s);

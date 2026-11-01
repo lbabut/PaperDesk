@@ -1,0 +1,293 @@
+{
+  "execution": "installed production Paper Sketch on real reMarkable2 over Wi-Fi",
+  "xochitl_pid": 9990,
+  "rollback": "/home/root/.local/state/papersketch-install.WE8kRE",
+  "saved_pages": [
+    {
+      "page": 0,
+      "cache_slot": 0,
+      "saved_sha256": "ef9c60e5cbf186435fdfa23aa53e64a57ec5210ea8effd7131823e6d5264b23d",
+      "unchanged": true
+    },
+    {
+      "page": 1,
+      "cache_slot": 1,
+      "saved_sha256": "41d11992a1de30be799daed047648c1a5d7cacb60b3fa17723c7c3fa23b437e4",
+      "unchanged": true
+    },
+    {
+      "page": 2,
+      "cache_slot": 2,
+      "saved_sha256": "ef140d88e7ae9898508f88f0b4b4189490965e0eec66ebd280be6050c67b28f7",
+      "unchanged": true
+    },
+    {
+      "page": 3,
+      "cache_slot": 3,
+      "saved_sha256": "489f6cc8fce78a8a01173cb85ffc30507b2d3f9ffc1b09dec82382a6d917681f",
+      "unchanged": true
+    }
+  ],
+  "selected_page": 3,
+  "manifest_unchanged": true,
+  "saved_optical_sha256": "d9fb698156ad966783e7ba49b31f620f894b9918490fa9339daca4b5522685f7",
+  "loaded_optical_digests": [
+    "d9fb698156ad966783e7ba49b31f620f894b9918490fa9339daca4b5522685f7"
+  ],
+  "loaded_pixels_match_saved": true,
+  "installed_hashes": {
+    "resources.rcc": {
+      "canonical_sha256": "39b343c1f4a6b463d10fc2f1d3c18c05da691bc3568417e3d84f03169f043290",
+      "installed_sha256": "39b343c1f4a6b463d10fc2f1d3c18c05da691bc3568417e3d84f03169f043290",
+      "matches": true
+    },
+    "native/papersketch-raster.so": {
+      "canonical_sha256": "e7619ab265d40fd3b6842b7e2ee25b3cf62b0b5923c271c6f08f795e2a1ca803",
+      "installed_sha256": "e7619ab265d40fd3b6842b7e2ee25b3cf62b0b5923c271c6f08f795e2a1ca803",
+      "matches": true
+    }
+  },
+  "qml_errors": [],
+  "desktop_qml": {
+    "passed": 30,
+    "failed": 0,
+    "native_only_skip": 1
+  },
+  "host_native_tests": [
+    "named atomic PNG and collisions/invalid paths",
+    "coalesced curved motion and fallback/contact boundaries",
+    "bounded raw FIFO",
+    "stable page deletion cleanup after manifest commit",
+    "incremental tile rendering/PNG/cache",
+    "material/palm cancellation/persistence"
+  ],
+  "workflow": {
+    "real_device": true,
+    "fixture_saved": true,
+    "finger_always_on": true,
+    "removed_buttons": true,
+    "name_focused": true,
+    "keyboard_visible": true,
+    "export_path": "/home/root/Documents/PaperSketch-test-1793529793639.png",
+    "export_optical_digest": "36e6018b54a5e3de8f4f3a43524a5b686da52a3a952bc5a4b756457e22ebd3ac",
+    "export_named": true,
+    "collision_confirmation": true,
+    "middle_delete": true,
+    "slots_after_delete": [
+      0,
+      2
+    ],
+    "deletion_saved": true,
+    "new_page_uses_new_slot": true,
+    "new_page_discard": true,
+    "reload_preserves_surviving_art": true,
+    "metadata_recovery": true,
+    "last_page_becomes_blank": true,
+    "delete_discard_restores": true,
+    "passed": true
+  },
+  "export_files": {
+    "execution": "real tablet PNG decoded by ffmpeg and private fixture cache inspection",
+    "png_dimensions": [
+      1200,
+      1600
+    ],
+    "grayscale_extrema": [
+      23,
+      255
+    ],
+    "pixel_digest_matches_exported_ram": true,
+    "private_fixture_page_cache_exists": {
+      "0": false,
+      "1": false,
+      "2": true
+    },
+    "deleted_cache_removed_after_save": true,
+    "test_export_removed": true,
+    "passed": true
+  },
+  "input_probe": {
+    "execution": "reMarkable evdev input through production pointer handlers",
+    "physical_panel_latency_measured": false,
+    "idle_max_tick_gap_ms": 19,
+    "new_book_max_tick_gap_ms": 304,
+    "no_automatic_save": true,
+    "dirty_before_save": true,
+    "manual_save_ok": true,
+    "manual_save_ms": 417,
+    "clean_after_save": true,
+    "autosave_document_matches": true,
+    "autosave_cache_matches": true,
+    "autosave_reload_matches": true,
+    "touch_before": {
+      "core": 30,
+      "beside": 255
+    },
+    "touch": {
+      "tool": 7,
+      "points": 29,
+      "first": [
+        331.1,
+        398.9,
+        0.7
+      ],
+      "last": [
+        470,
+        400,
+        0.7
+      ],
+      "core": 79,
+      "beside": 217,
+      "tile_core": 79,
+      "tile_beside": 217,
+      "passed": true
+    },
+    "pen": {
+      "matched_pressure_samples": 55,
+      "fallback_pressure_samples": 0,
+      "blank_frames_after_visible": 0,
+      "pressure_min": 0.13,
+      "pressure_max": 0.88,
+      "tool": 4,
+      "points": 55,
+      "first": [
+        700,
+        699.9,
+        0.13
+      ],
+      "last": [
+        900,
+        720,
+        0.88
+      ],
+      "raster_seen_ms": 1793530214137,
+      "tile_seen_ms": 1793530214161,
+      "passed": true,
+      "post_release_to_tile_ms": -480
+    },
+    "disk_unchanged_during_drawing": true,
+    "active_input_max_tick_gap_ms": 57,
+    "fast_display": true,
+    "tile_values": "painted optical snapshot before display halftone",
+    "bitmap_mode": true,
+    "serialized_book_bytes": 123,
+    "native_raster_active": true,
+    "passed": true,
+    "polling_granularity_ms": 16
+  },
+  "shading": {
+    "cases": [
+      {
+        "raw_replayed_samples": 1,
+        "max_raw_batch": 2,
+        "active_input_tick_gap_ms": 44,
+        "slow_ticks": [],
+        "display_probe": "8x8 mean of actual binary tile display pixels",
+        "fast_display": true,
+        "pressure_matches": 1259,
+        "pressure_fallbacks": 0,
+        "display_binary": true,
+        "display_has_samples": true,
+        "optical_has_grays": true,
+        "display_mean": 219.3896484375,
+        "optical_mean": 222.14453125,
+        "id": "pen-graphite",
+        "tool": 1,
+        "points": 1259,
+        "first": [
+          120,
+          399.9,
+          0.13
+        ],
+        "last": [
+          1079.9,
+          499.9,
+          0.88
+        ],
+        "raster_seen_ms": 1793530128578,
+        "tile_seen_ms": 1793530128594,
+        "max_input_tick_gap_ms": 44,
+        "blank_frames_after_visible": 0,
+        "full_screen": false,
+        "max_material_segment_ms": 0,
+        "retained_points": 2,
+        "metadata_bytes": 123,
+        "passed": true,
+        "tile_visible_before_release": true,
+        "injected_duration_ms": 5378
+      },
+      {
+        "raw_replayed_samples": 1,
+        "max_raw_batch": 2,
+        "active_input_tick_gap_ms": 148,
+        "slow_ticks": [
+          {
+            "gap_ms": 94,
+            "contact": true,
+            "previous_contact": true
+          },
+          {
+            "gap_ms": 81,
+            "contact": true,
+            "previous_contact": true
+          },
+          {
+            "gap_ms": 89,
+            "contact": true,
+            "previous_contact": true
+          },
+          {
+            "gap_ms": 91,
+            "contact": true,
+            "previous_contact": true
+          },
+          {
+            "gap_ms": 148,
+            "contact": true,
+            "previous_contact": true
+          }
+        ],
+        "display_probe": "8x8 mean of actual binary tile display pixels",
+        "fast_display": true,
+        "pressure_matches": 1259,
+        "pressure_fallbacks": 0,
+        "display_binary": true,
+        "display_has_samples": true,
+        "optical_has_grays": true,
+        "display_mean": 156.884765625,
+        "optical_mean": 159.529296875,
+        "id": "pen-charcoal",
+        "tool": 4,
+        "points": 1259,
+        "first": [
+          120,
+          900,
+          0.13
+        ],
+        "last": [
+          1079.9,
+          1199.9,
+          0.88
+        ],
+        "raster_seen_ms": 1793530139414,
+        "tile_seen_ms": 1793530139451,
+        "max_input_tick_gap_ms": 148,
+        "blank_frames_after_visible": 0,
+        "full_screen": true,
+        "max_material_segment_ms": 6,
+        "retained_points": 2,
+        "metadata_bytes": 123,
+        "passed": true,
+        "tile_visible_before_release": true,
+        "injected_duration_ms": 5265
+      }
+    ],
+    "no_automatic_save": true,
+    "passed": true
+  },
+  "automatic_save": false,
+  "optical_panel_latency_measured": false,
+  "natural_paper_equivalence_proven": false,
+  "boot_autostart_changed": false,
+  "passed": true
+}
