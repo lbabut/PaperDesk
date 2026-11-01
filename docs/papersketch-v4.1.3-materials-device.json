@@ -1,0 +1,383 @@
+{
+  "candidate_qml_sha256": "b776b4fbf1efc539ab2804af792d8994154ac8146f10b527a628f60a7c3b546e",
+  "source_qml_sha256": "b776b4fbf1efc539ab2804af792d8994154ac8146f10b527a628f60a7c3b546e",
+  "source_engine_sha256": "85e40646d3a71637569f52eb6b821bb90581a3d7316a21b24addb898f407500d",
+  "source_icon_sha256": "f2f8c03e93f4e0386edf6b5a80b78bf5412fb66d34d4f6f3c18918b6decf37bf",
+  "backup": "/home/root/.local/state/papersketch-native.wb7Mej",
+  "cache_namespace": "PaperDeskSketchNativeBenchbaseline1793541730016456324",
+  "artwork_before_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "evdev_injections": [
+    {
+      "mode": "finger",
+      "contact_ms": 1793541775997,
+      "release_ms": 1793541776078,
+      "writes_ok": true,
+      "id": "materials-open"
+    },
+    {
+      "mode": "finger",
+      "contact_ms": 1793541778843,
+      "release_ms": 1793541778933,
+      "writes_ok": true,
+      "id": "paper-rough"
+    },
+    {
+      "mode": "finger",
+      "contact_ms": 1793541781680,
+      "release_ms": 1793541781770,
+      "writes_ok": true,
+      "id": "tip-sharpen"
+    },
+    {
+      "mode": "finger",
+      "contact_ms": 1793541784570,
+      "release_ms": 1793541784653,
+      "writes_ok": true,
+      "id": "finger-clean"
+    },
+    {
+      "mode": "finger",
+      "contact_ms": 1793541787425,
+      "release_ms": 1793541787506,
+      "writes_ok": true,
+      "id": "eraser-kneaded"
+    },
+    {
+      "mode": "finger",
+      "contact_ms": 1793541790353,
+      "release_ms": 1793541790438,
+      "writes_ok": true,
+      "id": "materials-done"
+    },
+    {
+      "mode": "finger",
+      "contact_ms": 1793541793191,
+      "release_ms": 1793541793272,
+      "writes_ok": true,
+      "id": "fixture-save"
+    },
+    {
+      "mode": "finger",
+      "contact_ms": 1793541796078,
+      "release_ms": 1793541796158,
+      "writes_ok": true,
+      "id": "calibration-open-materials"
+    },
+    {
+      "mode": "finger",
+      "contact_ms": 1793541799056,
+      "release_ms": 1793541799137,
+      "writes_ok": true,
+      "id": "calibration-open"
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793541801937,
+      "release_ms": 1793541802956,
+      "writes_ok": true,
+      "id": "calibration-light"
+    },
+    {
+      "mode": "finger",
+      "contact_ms": 1793541805741,
+      "release_ms": 1793541805821,
+      "writes_ok": true,
+      "id": "calibration-next-light"
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793541808609,
+      "release_ms": 1793541809602,
+      "writes_ok": true,
+      "id": "calibration-normal"
+    },
+    {
+      "mode": "finger",
+      "contact_ms": 1793541812365,
+      "release_ms": 1793541812453,
+      "writes_ok": true,
+      "id": "calibration-next-normal"
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793541815239,
+      "release_ms": 1793541816242,
+      "writes_ok": true,
+      "id": "calibration-firm"
+    },
+    {
+      "mode": "finger",
+      "contact_ms": 1793541818999,
+      "release_ms": 1793541819079,
+      "writes_ok": true,
+      "id": "calibration-save"
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793541824298,
+      "release_ms": 1793541825295,
+      "writes_ok": true,
+      "id": "upright"
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793541828070,
+      "release_ms": 1793541829059,
+      "writes_ok": true,
+      "id": "tilt"
+    },
+    {
+      "mode": "finger",
+      "contact_ms": 1793541831870,
+      "release_ms": 1793541832862,
+      "writes_ok": true,
+      "id": "finger-contact"
+    }
+  ],
+  "results": {
+    "execution": "real tablet material controls, isolated pressure wizard, tilt and contact geometry through production input handlers",
+    "realism_probe": {
+      "real_device": true,
+      "physical_panel_latency_measured": false,
+      "ui_controls": {
+        "rough_paper": true,
+        "sharpen_tip": true,
+        "clean_finger": true,
+        "kneaded_eraser": true,
+        "calibration_wizard": true
+      },
+      "calibration_samples": [
+        {
+          "stage": 0,
+          "delivered": 60,
+          "pressure_matches": [
+            60,
+            0
+          ]
+        },
+        {
+          "stage": 1,
+          "delivered": 60,
+          "pressure_matches": [
+            60,
+            0
+          ]
+        },
+        {
+          "stage": 2,
+          "delivered": 60,
+          "pressure_matches": [
+            60,
+            0
+          ]
+        }
+      ],
+      "fixture_surface_changed": true,
+      "fixture_finger_loaded": true,
+      "fixture_tip_worn": true,
+      "fixture_saved": true,
+      "calibration_summary": "Calibrated for your hand",
+      "calibration_saved": true,
+      "calibration_optical_unchanged": true,
+      "calibration_physical_state_unchanged": true,
+      "calibration_dirty_unchanged": true,
+      "calibration_notebook_unchanged": true,
+      "calibration_restored": true,
+      "fixture_reload_exact": true,
+      "upright": {
+        "profile": {
+          "rows": 28,
+          "darkness_sum": 141680,
+          "source": "native optical pigment image"
+        },
+        "contact": {
+          "calibrated": true,
+          "finger_geometry_matches": 0,
+          "paper_kind": 0,
+          "pen_match_calls": 60,
+          "pen_match_misses": 0,
+          "pen_max_stale_age_ms": -1,
+          "pen_nearest_miss_age_ms": -1,
+          "pen_nearest_miss_distance_px": -1,
+          "pen_samples_at_miss": 0,
+          "pen_stale_position_misses": 0,
+          "pen_youngest_miss_age_ms": -1,
+          "tilt_samples": 0,
+          "tilt_x": 0,
+          "tilt_y": 0
+        },
+        "pressure_min": 0.54993894993895,
+        "pressure_max": 0.55,
+        "samples": 60,
+        "pressure_matches": [
+          60,
+          0
+        ],
+        "raw_replay": [
+          1,
+          2
+        ],
+        "first": [
+          219.9,
+          900,
+          0.54993894993895
+        ],
+        "last": [
+          980,
+          900,
+          0.55
+        ],
+        "emission": {
+          "emitted_ms": 1793541823519,
+          "start": [
+            336.725,
+            1049.125
+          ],
+          "end": [
+            1067.275,
+            1049.125
+          ],
+          "canvas_origin": [
+            125.25,
+            184
+          ],
+          "canvas_scale": [
+            0.96125,
+            0.96125
+          ],
+          "drawing_scale": 0.96125
+        },
+        "max_probe_tick_gap_ms": 49,
+        "gaps_over_70ms": []
+      },
+      "tilt": {
+        "profile": {
+          "rows": 42,
+          "darkness_sum": 212520,
+          "source": "native optical pigment image"
+        },
+        "contact": {
+          "calibrated": true,
+          "finger_geometry_matches": 0,
+          "paper_kind": 0,
+          "pen_match_calls": 60,
+          "pen_match_misses": 0,
+          "pen_max_stale_age_ms": -1,
+          "pen_nearest_miss_age_ms": -1,
+          "pen_nearest_miss_distance_px": -1,
+          "pen_samples_at_miss": 0,
+          "pen_stale_position_misses": 0,
+          "pen_youngest_miss_age_ms": -1,
+          "tilt_samples": 61,
+          "tilt_x": 0,
+          "tilt_y": -0.8
+        },
+        "pressure_min": 0.54993894993895,
+        "pressure_max": 0.55,
+        "samples": 60,
+        "pressure_matches": [
+          60,
+          0
+        ],
+        "raw_replay": [
+          1,
+          2
+        ],
+        "first": [
+          219.9,
+          900,
+          0.54993894993895
+        ],
+        "last": [
+          980,
+          900,
+          0.55
+        ],
+        "emission": {
+          "emitted_ms": 1793541825767,
+          "start": [
+            336.725,
+            1049.125
+          ],
+          "end": [
+            1067.275,
+            1049.125
+          ],
+          "canvas_origin": [
+            125.25,
+            184
+          ],
+          "canvas_scale": [
+            0.96125,
+            0.96125
+          ],
+          "drawing_scale": 0.96125
+        },
+        "max_probe_tick_gap_ms": 42,
+        "gaps_over_70ms": []
+      },
+      "tilt_pressure_matched": true,
+      "tilt_effect": true,
+      "palm_gate": {
+        "pen_proximity_observed": true,
+        "finger_disabled_while_pen_nearby": true,
+        "simultaneous_physical_palm_contact_tested": false
+      },
+      "finger_contact": {
+        "calibrated": true,
+        "finger_geometry_matches": 31,
+        "paper_kind": 0,
+        "pen_match_calls": 0,
+        "pen_match_misses": 0,
+        "pen_max_stale_age_ms": -1,
+        "pen_nearest_miss_age_ms": -1,
+        "pen_nearest_miss_distance_px": -1,
+        "pen_samples_at_miss": 0,
+        "pen_stale_position_misses": 0,
+        "pen_youngest_miss_age_ms": -1,
+        "tilt_samples": 0,
+        "tilt_x": 0,
+        "tilt_y": 0
+      },
+      "finger_geometry": true,
+      "physical_state_saved": true,
+      "saved_physical_state": {
+        "finger_digest": "1040cf447f8aeeeaa5cce197e13655a5bf935e93b27dd24fd93bd9ff5bca8152",
+        "paper_kind": 0,
+        "surface_digest": "278e71c330d2c38aa5e86878471ee524bec9bd638d575cc3a6433469a01895c7",
+        "wear": [
+          0,
+          0.0018624175824175947,
+          0,
+          0,
+          0.006509719780219781,
+          0
+        ]
+      },
+      "restored_physical_state": {
+        "finger_digest": "1040cf447f8aeeeaa5cce197e13655a5bf935e93b27dd24fd93bd9ff5bca8152",
+        "paper_kind": 0,
+        "surface_digest": "278e71c330d2c38aa5e86878471ee524bec9bd638d575cc3a6433469a01895c7",
+        "wear": [
+          0,
+          0.0018624175824175947,
+          0,
+          0,
+          0.006509719780219781,
+          0
+        ]
+      },
+      "physical_state_reload_exact": true,
+      "calibration_survives_second_reload": true,
+      "calibration_raw_pressure_matched": true,
+      "passed": true,
+      "last_phase": 24,
+      "runtime_ms": 70516,
+      "runtime_errors": []
+    },
+    "cases": []
+  },
+  "runtime_seconds": 99.62,
+  "artwork_after_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "artwork_preserved": true
+}

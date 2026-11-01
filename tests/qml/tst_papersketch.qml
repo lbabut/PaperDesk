@@ -360,8 +360,11 @@ Item {
             try {
                 for(var i=0;i<widths.length;i++) {
                     scene.width=widths[i];wait(40);
-                    var first=findChild(scene.app,"tool0"),last=findChild(scene.app,"tool7");
+                    var materials=findChild(scene.app,"materialsButton"),first=findChild(scene.app,"tool0"),last=findChild(scene.app,"tool7");
+                    var m=materials.mapToItem(panel,0,0);
                     var a=first.mapToItem(panel,0,0),b=last.mapToItem(panel,last.width,last.height),s=slider.mapToItem(panel,0,0);
+                    verify(m.x>=0 && m.x+materials.width<a.x,"Materials must be the first icon in the middle bar");
+                    compare(m.y,a.y);compare(materials.height,first.height);
                     verify(a.x>=0 && a.y>=0 && b.y<=panel.height);
                     verify(s.x>b.x,"Tool icons and size control must not overlap");
                     compare(s.y,a.y);compare(slider.height,first.height);
