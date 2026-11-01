@@ -1,3 +1,7 @@
+# 4.1.1 — 2026-11-01
+
+- Moved the Paper Sketch Materials settings icon from the header into the bottom navigation bar.
+
 # 4.1.0 — 2026-11-01
 
 - Added directional tilt contact for graphite and charcoal, with an upright-tip fallback when tilt data is unavailable.
