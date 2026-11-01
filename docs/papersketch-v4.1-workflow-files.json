@@ -1,0 +1,20 @@
+{
+  "execution": "real tablet PNG decoded by ffmpeg and private fixture cache inspection",
+  "png_dimensions": [
+    1200,
+    1600
+  ],
+  "grayscale_extrema": [
+    19,
+    255
+  ],
+  "pixel_digest_matches_exported_ram": true,
+  "private_fixture_page_cache_exists": {
+    "0": false,
+    "1": false,
+    "2": true
+  },
+  "deleted_cache_removed_after_save": true,
+  "test_export_removed": true,
+  "passed": true
+}

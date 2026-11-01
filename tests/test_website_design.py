@@ -43,8 +43,8 @@ class WebsiteDesignTests(unittest.TestCase):
         page = Page(text)
         image = next(a['content'] for t, a in page.tags
                      if t == 'meta' and a.get('property') == 'og:image')
-        self.assertEqual(image, 'https://paperdesk.lukaszbabut.info/assets/press/paperdesk-social-v4.png')
-        self.assertTrue((ROOT / 'website/assets/press/paperdesk-social-v4.png').is_file())
+        self.assertEqual(image, 'https://paperdesk.lukaszbabut.info/assets/press/paperdesk-social-v4-1.png')
+        self.assertTrue((ROOT / 'website/assets/press/paperdesk-social-v4-1.png').is_file())
         hero = text[text.index('id="top"'):text.index('class="edition-strip"')]
         self.assertIn('Requires XOVI + AppLoad', hero)
         self.assertIn('href="#compatibility"', hero)
@@ -60,6 +60,7 @@ class WebsiteDesignTests(unittest.TestCase):
                      if t == 'meta' and a.get('property') == 'og:title')
         self.assertTrue(title.startswith('PaperDesk ' + major + ' —'))
         self.assertTrue((ROOT / 'website/assets/press/paperdesk-social.png').is_file())
+        self.assertTrue((ROOT / 'website/assets/press/paperdesk-social-v4.png').is_file())
 
     def test_shared_control_tokens_and_no_remote_fonts(self):
         styles = (ROOT / 'website/styles.css').read_text()

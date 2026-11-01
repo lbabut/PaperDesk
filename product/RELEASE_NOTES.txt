@@ -1,5 +1,6 @@
-Paper Sketch joins PaperDesk: graphite, charcoal, a pigment-lifting eraser, textured paper and pressure-sensitive marks with finger blending.
-Drawing actions use icons, with tool size in the same toolbar and more space for the page. Tap a tool, choose its size and draw; finger blending is available away from the stylus.
-Save the sketchbook manually or export full-grayscale PNGs to Documents. Installation retains existing sketches, settings and exports.
-The installer checks the explicitly supported reMarkable OS 3.29.0.149 or 3.29.0.153 / ARMv7 environment before installing the native material renderer, backs up any existing renderer and preserves the prior module for removal.
-All eight apps are included. Source code is available at https://github.com/lbabut/PaperDesk. The material model approximates dry media; software regression results do not measure physical pen-to-panel latency.
+Paper Sketch 4.1 adds six dry-media simulation controls: tilt and contact shape, pressure calibration, paper and burnishing, tip wear and sharpening, finger contact and cleaning, and two eraser types.
+Stylus tilt shapes directional graphite and charcoal marks when tilt samples are available; missing tilt uses an upright tip. Pressure calibration adjusts the digital stylus response rather than matching a measured physical pencil.
+Choose Plain, Smooth or Rough paper for future contact; firm strokes gradually burnish the simulated grain without repainting existing artwork. Drawing wears the selected virtual tip; Sharpen restores its point.
+Finger blending uses a variable contact shape and carries pigment between marks; Clean finger clears the carried pigment. Hard erasers rub along the path, while kneaded erasers lift at initial touch, so lift and dab again to repeat.
+The compact icon toolbar, manual sketchbook saves and full-grayscale PNG export remain. Save before updating. Existing release archives and public GitHub source links remain available.
+These are digital approximations, not physical-media calibration results or measured optical pen-to-panel latency claims. PaperDesk still includes all eight apps.

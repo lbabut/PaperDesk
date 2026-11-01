@@ -9,4 +9,15 @@ int main(){
  for(int i=0;i<100;i++)pen.push(i,300,.5,6);
  auto end=pen.match(99,300);n=pen.between(0,end,path);assert(n==64&&path[63].id==end.id&&path[0].id==end.id-63);
  pen.pause();assert(pen.at(100,200)<0);
+ pen.push(100,200,.5,8,.6,-.3);auto tilted=pen.match(100,200);
+ assert(tilted.tiltX==.6&&tilted.tiltY==-.3);
+ pen.pause();pen.resetMatchDiagnostics();assert(pen.matchDiagnostics().calls==0);
+ pen.push(123,456,.5,20);
+ {std::lock_guard<std::mutex> lock(pen.mutex);pen.samples[(pen.head+pen.samples.size()-1)%pen.samples.size()].time-=1500;}
+ assert(pen.match(123,456).p<0); // Existing1000ms acceptance window is unchanged.
+ auto stats=pen.matchDiagnostics();
+ assert(stats.calls==1&&stats.misses==1&&stats.stalePositionMisses==1&&stats.samplesAtMiss==1);
+ assert(stats.nearestMissAge>=1500&&stats.youngestMissAge>=1500&&stats.nearestMissDistance==0&&stats.maxStaleAge>=1500);
+ pen.resetMatchDiagnostics();assert(pen.matchDiagnostics().misses==0);
+ assert(pen.match(500,500).p<0&&pen.matchDiagnostics().stalePositionMisses==0);
 }

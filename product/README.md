@@ -1,4 +1,4 @@
-# PaperDesk 4.0.0
+# PaperDesk 4.1.0
 
 PaperDesk turns a reMarkable 2 into a quiet, monochrome network workspace.
 The bundle adds eight apps directly to the AppLoad list and keeps their
@@ -7,12 +7,13 @@ hidden from users.
 
 ## Apps
 
-- **Paper Sketch** — a grayscale sketchbook with pressure-sensitive graphite and
-  charcoal, a pigment-lifting eraser, textured paper and finger blending. Choose
-  the tool and size in one compact icon toolbar. Save pages manually and export
-  grayscale PNGs to Documents. The material simulation approximates dry media;
-  the e-ink screen uses fine black-and-white halftoning while saved art retains
-  grayscale.
+- **Paper Sketch** — a grayscale sketchbook with graphite and charcoal, stylus
+  tilt, pressure calibration, Plain/Smooth/Rough paper and simulated burnishing,
+  tip wear and sharpening, variable finger contact and cleaning, and hard or
+  kneaded erasers. The tool and size share one compact icon toolbar. Save pages
+  manually and export grayscale PNGs to Documents. The material simulation
+  approximates dry media; the e-ink screen uses fine black-and-white halftoning
+  while saved art retains grayscale.
 
 - **PaperDesk Books** — an offline library with reading positions, language
   and source preferences, with Gutenberg, Wolne Lektury, OpenStax, arXiv, Europe PMC and unrestricted Open Library editions. PDF/EPUB editions use the built-in reader through My files.
@@ -119,6 +120,30 @@ pen-preview code under `payload/apps/papersketch/native/LICENSE`. The bundled QT
 `third_party_source`. PaperDesk application code, the AppLoad QML
 compatibility patch, and the PaperRDP client are shipped in the package.
 
+## Paper Sketch 4.1 controls
+
+- **Tilt and contact:** available tilt samples shape directional elliptical
+  graphite marks and broader charcoal side contact. Without tilt samples, the
+  renderer uses an upright tip.
+- **Pressure calibration:** adjusts the digital stylus response, feeding distinct
+  width and pigment deposition responses. This does not establish a match to a
+  measured physical pencil or paper. The three-step practice pad asks for light,
+  normal and comfortably firm lines. Save response stores the profile; Cancel
+  keeps the previous one. Calibration does not draw on your page.
+- **Paper and burnishing:** Plain, Smooth and Rough change future tooth contact
+  without repainting existing pigment. Firm marks gradually smooth a simulated
+  burnishing map.
+- **Wear and sharpening:** drawing gradually broadens and flattens the virtual
+  tip. Sharpen resets the selected tool's simulated wear.
+- **Finger contact and cleaning:** blending uses a variable contact shape and
+  carries pigment between marks. Clean finger clears the carried pigment.
+- **Hard and kneaded erasers:** hard erasers rub continuously along a path;
+  kneaded erasers lift at initial contact. Lift and dab again across the page
+  to lighten a broader area.
+
+These controls remain a dry-media simulation. No real-media human calibration
+or measured optical pen-to-panel latency is claimed.
+
 ## Paper Sketch data
 
 The sketchbook is under `/home/root/.local/share/paperdesk/sketch`. Drawing
@@ -127,6 +152,18 @@ Cancel. Export creates a PNG in Documents and does not implicitly save the
 sketchbook. Installation and removal retain artwork and exports. The installer
 backs up an existing native renderer before replacing it and restores a
 pre-existing renderer when PaperDesk is removed.
+
+A 4.1 material page adds per-pixel burnishing, the page's paper preset and virtual
+nib wear to the atomic page state. Older v1 material pages open with unburnished
+paper while preserving their optical pixels. Explicit Save commits the new
+material state together with pigment and artwork; tool wear also follows the
+saved toolkit across pages. Discard restores saved toolkit state. Pressure
+calibration is saved separately when Save response is chosen in its practice
+wizard.
+
+Keep a copy of the pre-upgrade sketchbook before its first 4.1 save if you need
+to return to 4.0: the older material reader does not understand v2 pages. Old
+release packages remain available, but a package alone is not a data downgrade.
 
 ## Source
 
@@ -142,7 +179,7 @@ all module launches and safe menu actions, system keyboard, persistent
 settings, RSS refresh and full-text retrieval, AppLoad window cleanup,
 physical scroll and pinch gestures, and scaled RDP sessions.
 
-The v4 source adds Paper Sketch to the bundle. Native material and display tests
+The v4.1 source extends Paper Sketch with six material controls. Native material and display tests
 cover pigment conservation, pressure, erasing, event sampling, persistence and
 incremental repainting. Physical pen feel and optical panel latency remain
 separate from software regression results; this release does not claim that a

@@ -1,24 +1,28 @@
-# Paper Sketch 4
+# Paper Sketch 4.1
 
-A grayscale bitmap sketchbook for reMarkable 2 and XOVI AppLoad. Four pencil grades (2H, HB, 2B, 6B), charcoal, soft charcoal, an eraser and a smudge tool share one compact icon toolbar with the size slider. Finger blending is always enabled; stylus proximity cancels tentative palm marks. The full-screen mode leaves a small menu button to restore the controls.
+A grayscale bitmap sketchbook for reMarkable 2 and XOVI AppLoad. Four pencil grades (2H, HB, 2B, 6B), charcoal, soft charcoal, hard and kneaded erasing, and a smudge tool share one compact icon toolbar with the size slider. Finger blending is always enabled; stylus proximity cancels tentative palm marks. The full-screen mode leaves a small menu button to restore the controls.
 
 ## Dry materials
 
-Each paper pixel stores fixed and loose pigment separately. Stable multiscale grain controls contact and capacity. Pencil hardness changes deposition and binding; charcoal leaves more loose dust. Stylus pressure affects footprint, deposition, pickup and erasing. Erasing lifts pigment. A persistent fingertip map carries pigment from dark areas onto clean paper, including after a lift. Transfer and mixing conserve pigment exactly; erasing intentionally removes it.
+Each paper pixel stores fixed and loose pigment separately. Multiscale grain controls contact and capacity, with plain, smooth and rough paper stocks. Pencil hardness changes deposition and binding; charcoal leaves more loose dust. Stylus pressure has separate width and deposition profiles for each medium. When hardware tilt is available, the tip becomes a directional ellipse and tilted charcoal gains a broader side with firmer shoulders. Without tilt, the tip remains upright.
 
-Version 4 makes zero contact a true no-op, scales fingertip friction with pressure and retains distances from very small input events. Constants and footprint coordinates are reused in the hot loop. The same path split into different event counts has matching material output in the regression fixtures. See [the material audit](../../../../docs/papersketch-v4-material-audit.md) for the model, benchmarks and limitations.
+Firm strokes gradually smooth the local paper surface and compact some loose pigment into the fixed fraction. Modest nib wear accumulates by traveled distance and broadens the tip; Sharpen resets the selected medium's wear. Changing paper stock changes future contact without rewriting drawn pigment. The hard eraser rubs along a stroke; the kneaded eraser gently lifts mainly loose pigment once per contact. Lift and dab again to remove more.
 
-This remains a dry-media approximation. It does not simulate stylus tilt, sharpening, nib wear, paper deformation or graphite sheen. Unit tests and software timings cannot establish equivalence to physical paper or measure the panel's optical latency.
+A persistent fingertip map carries pigment from dark areas onto clean paper, including after a lift. The contact can be an oriented ellipse. Transfer and mixing conserve pigment exactly; erasing intentionally removes it. Zero pressure or strength leaves both surfaces unchanged. The spatial sampler retains even very small input distances, including the evolving surface and wear state. See [the 4.1 material audit](../../../../docs/papersketch-v4.1-material-audit.md) for the model, benchmarks and limitations.
+
+This remains an uncalibrated dry-media approximation. Tilt, wear and surface smoothing are simulated responses, not measurements of real nib geometry or paper deformation. Graphite sheen, actual skin ridges, skin oils and a specific paper's fibers are not modeled. Unit tests and software timings cannot establish equivalence to physical paper or measure the panel's optical latency.
 
 ## Live drawing and display
 
 The native material kernel updates the authoritative image while the pointer moves. A bounded, non-grabbing Wacom reader matches position and pressure, and recovers intervening samples when Qt combines movements. Separate contacts are never joined. JavaScript retains only diagnostic endpoints rather than a growing stroke history.
 
-Damaged native tiles update immediately without replacing the image at pen-up. The display uses a fixed 8 by 8 black-and-white halftone for the fast e-ink waveform. Pigment, saved pages and PNG exports retain full grayscale. No drawing-time disk writes or automatic saves are performed.
+Material pixels update at every raw sample. The first dab publishes its changed tiles immediately; subsequent disjoint damage notifications are collected in 16 ms windows and flushed immediately at pen-up. Reset, load and release discard pending notifications from the previous image. This bounds display notification work without changing the material sampler; a reduction in measured tablet latency has not yet been established. The display uses a fixed 8 by 8 black-and-white halftone for the fast e-ink waveform. Pigment, saved pages and PNG exports retain full grayscale. No drawing-time disk writes or automatic saves are performed.
 
 ## Saving and compatibility
 
 Save commits the optical image, pigment and fingertip state together in an atomic material page from a background writer, then commits the compact notebook manifest. Close and page changes offer Save, Discard and Cancel. Stable cache slots keep page deletion from changing another page's identity. A matching newer page header can recover from an interrupted manifest commit; a missing or damaged page blocks saving instead of silently replacing artwork with white paper. Compressed material pages have a fixed decoded-size bound.
+
+Paper and eraser choices stay in memory until explicit Save. The native notebook manifest includes those preferences; the legacy renderer writes its Settings fields only through the explicit save path. Changing a material or restoring a page does not schedule an additional Settings store. Pen calibration is separate: the wizard's Save response explicitly commits its pressure profile, while Cancel keeps the previous profile and does not save the drawing.
 
 Legacy notebooks and matching bitmap caches are retained and imported without changing their optical pixels. New marks use material state, not a growing vector history. There is no Undo/Redo history.
 
@@ -43,6 +47,6 @@ The native host suite checks material pressure/conservation/resampling, bounded 
 python3 tests/run-sketch-native.py --host TABLET_IP --key KEY_PATH --known-hosts KNOWN_HOSTS_PATH --host-key-alias 10.11.99.1 --controls-probe --output docs/papersketch-v4-controls-device.json
 ```
 
-The same runner offers `--input-probe`, `--shading-probe` and `--workflow-probe`. Do not run tablet input tests concurrently. Device and deployment evidence for this release is stored under `docs/papersketch-v4-*`.
+The same runner offers `--input-probe`, `--shading-probe`, `--workflow-probe` and `--realism-probe`. The realism probe records emission coordinates and canvas scale, per-stroke UI timer gaps, pressure match/fallback counts, replay statistics and first/last endpoints. Native miss diagnostics report stale-position matches and retained-sample ages. Upright and tilted strokes must satisfy the same strict pressure-matching checks before their optical footprints can be compared. These software diagnostics do not measure physical panel latency or prove the cause of an input delay. Do not run tablet input tests concurrently. Device and deployment evidence for this release is stored under `docs/papersketch-v4.1-*`.
 
 The optional legacy `papersketch-ink` preview extension is separate from the material renderer and is not installed by the v4 package. It derives from David @ TheoryStudios' MIT-licensed RemarkableAnimator extension; retain `native/LICENSE`. Project licensing is described in the repository's `LICENSES.md`.

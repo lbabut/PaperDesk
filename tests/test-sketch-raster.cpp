@@ -42,10 +42,10 @@ int main(int argc,char **argv){
     }};
     paintTile();checkTile(256,256);
     board.image.setPixel(270,280,qRgb(35,35,35));board.image.setPixel(370,375,qRgb(205,205,205));
-    emit board.changed(QRect(270,280,1,1));emit board.changed(QRect(370,375,1,1));
+    board.publishDirty(QRect(270,280,1,1));board.publishDirty(QRect(370,375,1,1));
     paintTile();checkTile(256,256);paintTile();checkTile(256,256);
     tile.setProperty("sourceX",384);paintTile();checkTile(384,256);
-    board.image=blended;emit board.changed(board.image.rect());tile.setProperty("sourceX",256);paintTile();checkTile(256,256);
+    board.image=blended;board.publishDirty(board.image.rect());tile.setProperty("sourceX",256);paintTile();checkTile(256,256);
     assert(board.save(dir.filePath("drawing.png")));QImage exported(dir.filePath("drawing.png"));assert(exported.size()==board.image.size() && exported.pixel(300,300)==board.image.pixel(300,300));
     bool saved=false;QObject::connect(&board,&SketchRaster::saveCompleted,&board,[&]{saved=true;});
     const QString document=R"({"document":"fixture-book"})";

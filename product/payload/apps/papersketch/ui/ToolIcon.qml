@@ -61,6 +61,12 @@ Canvas {
             path(c,"M6 30 L27 7 Q29 5 32 7 L49 22 Q51 24 49 27 L33 45 H21 Z",bg,fg);
             path(c,"M17 18 L40 37 M6 30 L21 45 H33 L40 37 L17 18 Z",fg,fg);
             path(c,"M30 46 H52",null,fg);
+        } else if(iconName==="materials") {
+            path(c,"M8 7 H43 V43 H8 Z",bg,fg);
+            path(c,"M14 14 H26 M14 20 H24 M14 27 H21 M14 34 H19",null,fg);
+            path(c,"M28 35 L38 13 L45 16 L35 38 L29 42 Z",bg,fg);
+            path(c,"M29 35 L35 38 M28 40 L29 42 L33 40 Z",fg,fg);
+            path(c,"M18 13 H19 M22 33 H23 M19 39 H20",null,fg,2);
         } else if(iconName==="smudge") {
             path(c,"M22 42 C15 36 11 31 12 28 Q13 24 17 27 L22 32 V9 Q22 3 27 4 Q31 4 31 10 V23 Q32 20 35 21 Q38 22 38 26 Q39 23 42 25 Q45 26 44 30 Q47 28 49 32 L48 39 Q47 46 39 47 H29 Z",bg,fg);
             path(c,"M31 23 V31 M38 26 V32 M44 30 V34 M5 43 Q9 39 14 43 M4 48 Q10 44 16 48",null,fg);

@@ -1,0 +1,75 @@
+{
+  "date": "2026-11-01",
+  "architecture": "x86_64",
+  "compiler": "14.2.0",
+  "scope": "CPU-only material loop, not input/display/panel latency",
+  "method": "9 alternating runs per surface; entire1260-point charcoal38px pressure-ramp shading trajectory each run; initialization/reset excluded",
+  "equivalence": "48 full1260-point trajectories:8tools x3paper stocks x2initial surfaces, tilted tips, rotated elliptical finger and kneaded eraser; bitwise mass/image/finger/burnish/wear/sampler residue",
+  "reference_header": "tests/fixtures/sketch-material-v41-before-saturation.h",
+  "reference_sha256": "d525e063cd8a45152a3925830d82747c2dc4f1b2f4d8fea3383355610303744d",
+  "candidate_sha256": "3a9991e19a646a56c0b68059cdb20f237d2cdcbf004f94829c38e6bb53c34f6e",
+  "source": "tests/bench-sketch-material-saturation.cpp",
+  "source_sha256": "9a59c842181d13feb9d9c5a820c28578eddc09ec0ba03c2ddb045afe21ab4dec",
+  "results": [
+    {
+      "bitwise_all_8_tools_3_papers_tilt_finger_kneaded": true,
+      "trajectories_compared": 48,
+      "saturated": false,
+      "reference_median_us": 73420,
+      "candidate_median_us": 70675,
+      "change_percent": -3.74,
+      "reference_runs_us": [
+        74364,
+        74135,
+        72105,
+        71519,
+        73490,
+        71417,
+        73023,
+        73420,
+        74201
+      ],
+      "candidate_runs_us": [
+        70675,
+        71614,
+        71662,
+        68968,
+        71233,
+        75902,
+        70167,
+        70460,
+        70629
+      ]
+    },
+    {
+      "bitwise_all_8_tools_3_papers_tilt_finger_kneaded": true,
+      "trajectories_compared": 48,
+      "saturated": true,
+      "reference_median_us": 71724,
+      "candidate_median_us": 36849,
+      "change_percent": -48.62,
+      "reference_runs_us": [
+        74054,
+        70106,
+        71311,
+        73496,
+        80044,
+        73936,
+        70454,
+        71724,
+        71593
+      ],
+      "candidate_runs_us": [
+        37419,
+        39550,
+        35001,
+        36849,
+        38843,
+        37728,
+        36614,
+        34866,
+        34836
+      ]
+    }
+  ]
+}

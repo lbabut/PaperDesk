@@ -36,6 +36,7 @@ function decode(raw) {
         var page=b.pages[i];
         if(!page || ["plain","dots","grid"].indexOf(page.paper)<0 || !Array.isArray(page.strokes))
             throw Error("Invalid paper");
+        if(page.materialPaperKind!==undefined && (!Number.isInteger(page.materialPaperKind) || page.materialPaperKind<0 || page.materialPaperKind>2))throw Error("Invalid material paper");
         var slot=page.cacheSlot===undefined?i:page.cacheSlot;
         if(!Number.isInteger(slot)||slot<0||slot>1000000000||slots[slot])throw Error("Invalid page identity");
         slots[slot]=true;page.cacheSlot=slot;nextSlot=Math.max(nextSlot,slot+1);

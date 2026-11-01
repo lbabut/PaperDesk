@@ -1,3 +1,13 @@
+# 4.1.0 — 2026-11-01
+
+- Added directional tilt contact for graphite and charcoal, with an upright-tip fallback when tilt data is unavailable.
+- Added stylus pressure calibration for the digital response, feeding distinct width and pigment deposition responses; no physical-pencil equivalence is claimed.
+- Added Plain, Smooth and Rough paper contact presets and a persistent simulated burnishing map; changing paper preserves existing pigment.
+- Added distance-based virtual tip wear and Sharpen for the selected tool.
+- Added variable finger contact and Clean finger to clear pigment carried by the fingertip.
+- Added two eraser models: a hard eraser that rubs along the stroke, and a kneaded eraser that lifts pigment once per contact for repeated dabbing.
+- Updated installation guides, Care version and the project site. Source links remain on public GitHub; earlier release archives remain unchanged.
+
 # 4.0.0 — 2026-11-01
 
 - Added Paper Sketch to the installable bundle: pressure-sensitive graphite and charcoal, textured paper, pigment-lifting eraser and finger blending.
