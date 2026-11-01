@@ -23,6 +23,7 @@ p.add_argument("--input-probe",action="store_true")
 p.add_argument("--shading-probe",action="store_true")
 p.add_argument("--controls-probe",action="store_true")
 p.add_argument("--workflow-probe",action="store_true")
+p.add_argument("--realism-probe",action="store_true")
 p.add_argument("--output",default="docs/papersketch-native-2026-10-31.json")
 a=p.parse_args()
 root=pathlib.Path(__file__).resolve().parents[1]
@@ -50,7 +51,7 @@ for name,text in [("baseline",baseline),("constant-fast",candidate)]:
     shutil.copy2(source/"engine.js",folder/"engine.js")
     for qml_name in ("native-tile.qml","ToolIcon.qml"):
         shutil.copy2(source/"ui"/qml_name,folder/"ui"/qml_name)
-harness=(root/("tests/device/papersketch-workflow.qml" if a.workflow_probe else "tests/device/papersketch-controls.qml" if a.controls_probe else "tests/device/papersketch-shading.qml" if a.shading_probe else "tests/device/papersketch-input.qml" if a.input_probe else "tests/device/papersketch-native.qml")).read_text()
+harness=(root/("tests/device/papersketch-realism.qml" if a.realism_probe else "tests/device/papersketch-workflow.qml" if a.workflow_probe else "tests/device/papersketch-controls.qml" if a.controls_probe else "tests/device/papersketch-shading.qml" if a.shading_probe else "tests/device/papersketch-input.qml" if a.input_probe else "tests/device/papersketch-native.qml")).read_text()
 if a.smoke:harness=harness.replace("property bool smokeOnly:false","property bool smokeOnly:true")
 if a.baseline_qml:harness=harness.replace('"constant-fast"','"tiled-fast"')
 elif candidate==baseline:harness=harness.replace('["baseline","constant-fast"]','["production-1","production-2"]')
@@ -95,7 +96,7 @@ original=None
 injected=set()
 report={"candidate_qml_sha256":hashlib.sha256(candidate.encode()).hexdigest(),"source_qml_sha256":hashlib.sha256(baseline.encode()).hexdigest(),"source_engine_sha256":hashlib.sha256((source/"engine.js").read_bytes()).hexdigest(),"source_icon_sha256":hashlib.sha256((source/"ui/ToolIcon.qml").read_bytes()).hexdigest(),"backup":backup,"cache_namespace":"PaperDeskSketchNativeBenchbaseline"+namespace_suffix}
 try:
-    if a.input_probe or a.shading_probe or a.controls_probe or a.workflow_probe:
+    if a.input_probe or a.shading_probe or a.controls_probe or a.workflow_probe or a.realism_probe:
         cache=pathlib.Path("/home/lukasz/Documents/Codex/2026-09-25/m-2/work/arm-toolchain/root")
         env=dict(__import__("os").environ,LD_LIBRARY_PATH=str(cache/"usr/lib/x86_64-linux-gnu"))
         driver=work/"input-driver-arm"
@@ -123,7 +124,7 @@ try:
     result=None
     for attempt in range(65):
         logs=remote("journalctl -u xochitl _PID="+pid+" --no-pager").decode()
-        if a.input_probe or a.shading_probe or a.controls_probe or a.workflow_probe:
+        if a.input_probe or a.shading_probe or a.controls_probe or a.workflow_probe or a.realism_probe:
             for line in logs.splitlines():
                 if "PAPERSKETCH_INPUT_READY " not in line:continue
                 payload=line.split("PAPERSKETCH_INPUT_READY ",1)[1];payload=payload[:payload.rfind("}")+1]
@@ -162,7 +163,7 @@ try:
     if cpu_start is not None:
         cpu_wall=time.monotonic()-cpu_start[0]
         report["process_cpu_sample"]={"wall_seconds":round(cpu_wall,3),"cpu_seconds":round((cpu_ticks()-cpu_start[1])/ticks,3),"reference":"one CPU core; sampling starts after the first benchmark case is observed"}
-    if a.input_probe or a.shading_probe or a.controls_probe or a.workflow_probe:
+    if a.input_probe or a.shading_probe or a.controls_probe or a.workflow_probe or a.realism_probe:
         for event in report.get("evdev_injections",[]):
             if event["mode"]=="pen" and "input_probe" in result:
                 result["input_probe"]["pen"]["post_release_to_tile_ms"]=result["input_probe"]["pen"]["tile_seen_ms"]-event["release_ms"]
@@ -172,11 +173,15 @@ try:
                 event=next(e for e in report["evdev_injections"] if e["id"]==case["id"])
                 case["tile_visible_before_release"]=case["tile_seen_ms"]<event["release_ms"]
                 case["injected_duration_ms"]=event["release_ms"]-event["contact_ms"]
+    if a.realism_probe:
+        runtime_errors=[line for line in logs.splitlines() if ("bench.qml:" in line or "baseline/ui/main.qml:" in line) and any(error in line for error in ("TypeError:","ReferenceError:","SyntaxError:"))]
+        result["realism_probe"]["runtime_errors"]=runtime_errors
+        result["realism_probe"]["passed"]=result["realism_probe"]["passed"] and not runtime_errors
     report["results"]=result
     report["runtime_seconds"]=round(time.monotonic()-started,2)
     print(json.dumps(result,indent=2),flush=True)
 finally:
-    if a.input_probe or a.shading_probe or a.controls_probe or a.workflow_probe:remote("rm -f /tmp/papersketch-input-driver")
+    if a.input_probe or a.shading_probe or a.controls_probe or a.workflow_probe or a.realism_probe:remote("rm -f /tmp/papersketch-input-driver")
     if original is not None:
         remote("systemctl stop xochitl")
         remote("cp -p "+b+"/xochitl.conf /home/root/.config/remarkable/xochitl.conf")
@@ -206,3 +211,11 @@ if a.controls_probe:
 
 if a.workflow_probe:
     assert report["results"]["workflow_probe"]["passed"],"Named export and stable page deletion workflow failed"
+
+if a.realism_probe:
+    assert not report["results"]["realism_probe"].get("runtime_errors"),"Realism harness or production UI emitted a runtime error"
+    assert report["results"]["realism_probe"]["passed"],"Real-device material controls, calibration, tilt or physical-state persistence failed"
+    required={"materials-open","paper-rough","tip-sharpen","finger-clean","eraser-kneaded","materials-done","fixture-save","calibration-open-materials","calibration-open","calibration-light","calibration-next-light","calibration-normal","calibration-next-normal","calibration-firm","calibration-save","upright","tilt","finger-contact"}
+    events=report.get("evdev_injections",[])
+    assert required.issubset({event["id"] for event in events}),"Realism probe skipped a required physical UI/input action"
+    assert all(event.get("writes_ok") for event in events),"Realism input driver reported incomplete event writes"

@@ -7,6 +7,48 @@ Item {
     id: scene
     width:1404;height:1872
     property var app:null
+    Component {
+        id:realismBackend
+        QtObject {
+            property bool materialAvailable:false
+            property bool fastDisplay:false
+            property bool penInRange:false
+            property int maxSmudgeMs:0
+            property int paperKind:0
+            property bool kneaded:false
+            property int sharpenedTool:-1
+            property int cleanCount:0
+            property int beginCount:0
+            property int finishCount:0
+            property int samples:0
+            property bool calibrationActive:false
+            property int calibrationStage:0
+            property bool calibrationSaved:false
+            property string calibrationError:""
+            property bool resetFails:false
+            property bool nextFails:false
+            property int flushCount:0
+            function setMaterialOptions(paper,eraser){paperKind=paper;kneaded=eraser}
+            function materialPaperKind(){return paperKind}
+            function sharpen(tool){sharpenedTool=tool}
+            function cleanFinger(){cleanCount++}
+            function toolWear(tool){return .5}
+            function documentsDirectory(){return "Documents"}
+            function saveNotebook(document,page,metadata){return false}
+            function flushSaves(){flushCount++;return true}
+            function startCalibration(){calibrationActive=true;calibrationStage=0;samples=0}
+            function nextCalibration(){if(nextFails)return false;calibrationStage++;return true}
+            function finishCalibration(){if(calibrationError)return {ok:false,error:calibrationError};calibrationActive=false;calibrationSaved=true;return {ok:true}}
+            function cancelCalibration(){calibrationActive=false}
+            function resetCalibration(){if(resetFails)return false;calibrationSaved=false;return true}
+            function calibrationSummary(){return calibrationSaved?"Your pressure response":"Standard pressure response"}
+            function begin(tentative){beginCount++}
+            function finish(){finishCount++}
+            function setInputTransform(x,y,sx,sy){}
+            function pressureAt(x,y,fallback){return fallback}
+            function advance(tool,size,strength,x,y,p,first){samples++;return true}
+        }
+    }
     TestCase {
         name:"PaperSketch"
         when:windowShown
@@ -20,6 +62,7 @@ Item {
         function cleanupTestCase(){scene.app.destroy()}
         function artifactPath(name){return Qt.resolvedUrl("../../work/papersketch-tests/"+name).toString().replace(/^file:\/\//,"")}
         function init(){
+            scene.app.materialsDialog=false;scene.app.calibrationDialog=false;
             scene.app.fullScreen=false;scene.app.confirmation="book";scene.app.confirmAction();
             tryCompare(scene.app,"replaying",false,10000);
         }
@@ -313,6 +356,143 @@ Item {
             verify(scene.app.brushSize>70,"Dragging the integrated slider must change the actual tool size");
             compare(findChild(scene.app,"sizeLabel").text,"Size "+Math.round(scene.app.brushSize));
         }
+        function test_material_panel_actions_and_saved_options_restore() {
+            var original=scene.app.nativeRaster,backend=realismBackend.createObject(scene);
+            try {
+                scene.app.nativeRaster=backend;scene.app.paperKind=0;scene.app.kneadedEraser=false;
+                var materials=findChild(scene.app,"materialsButton");
+                verify(materials.iconName.length>0);compare(materials.ToolTip.text,"Materials");
+                mouseClick(materials,materials.width/2,materials.height/2,Qt.LeftButton);
+                verify(scene.app.materialsDialog);
+                var rough=findChild(scene.app,"paperTexture2");mouseClick(rough,rough.width/2,rough.height/2,Qt.LeftButton);
+                compare(scene.app.paperKind,2);compare(backend.paperKind,2);compare(scene.app.page.materialPaperKind,2);
+                scene.app.tool=4;
+                var sharpen=findChild(scene.app,"sharpenButton");mouseClick(sharpen,100,30,Qt.LeftButton);compare(backend.sharpenedTool,4);
+                var clean=findChild(scene.app,"cleanFingerButton");mouseClick(clean,100,30,Qt.LeftButton);compare(backend.cleanCount,1);
+                var kneaded=findChild(scene.app,"kneadedEraserButton");mouseClick(kneaded,100,30,Qt.LeftButton);
+                compare(scene.app.tool,6);verify(scene.app.kneadedEraser);verify(backend.kneaded);verify(!sharpen.available);
+                verify(scene.app.dirty,"Physical material changes must be saved with the drawing");
+                grabImage(scene).save(artifactPath("materials-panel-v41.png"));
+                var done=findChild(scene.app,"closeMaterials");mouseClick(done,70,30,Qt.LeftButton);verify(!scene.app.materialsDialog);
+                verify(scene.app.saveBook());
+                var saved=findChild(scene.app,"sketchSettings");
+                compare(saved.paperKind,2);verify(saved.kneadedEraser);
+                var stored={selectedTool:saved.selectedTool,selectedSize:saved.selectedSize,paperKind:saved.paperKind,kneadedEraser:saved.kneadedEraser},book=Ink.decode(saved.document);
+                compare(book.pages[0].materialPaperKind,2);
+                // The desktop Settings test double has no disk storage. Exercise
+                // the same serialized preference restore path used on startup.
+                scene.app.materialOptionsLoading=true;scene.app.paperKind=0;scene.app.kneadedEraser=false;scene.app.materialOptionsLoading=false;
+                scene.app.restoreToolPreferences(stored);
+                compare(scene.app.paperKind,2);verify(scene.app.kneadedEraser);compare(backend.paperKind,2);verify(backend.kneaded);
+                scene.app.page.materialPaperKind=1;scene.app.restoreMaterialOptions(false);compare(scene.app.paperKind,1);compare(backend.paperKind,1);
+            } finally {
+                scene.app.nativeRaster=original;backend.destroy();
+                scene.app.materialsDialog=false;scene.app.paperKind=0;scene.app.kneadedEraser=false;
+            }
+        }
+        function test_material_preferences_wait_for_explicit_save() {
+            var original=scene.app.nativeRaster,backend=realismBackend.createObject(scene),saved=findChild(scene.app,"sketchSettings");
+            var oldPaper=saved.paperKind,oldEraser=saved.kneadedEraser,nextPaper=(oldPaper+1)%3,nextEraser=!oldEraser;
+            try {
+                scene.app.nativeRaster=backend;
+                scene.app.paperKind=nextPaper;scene.app.kneadedEraser=nextEraser;
+                compare(saved.paperKind,oldPaper);compare(saved.kneadedEraser,oldEraser);
+                verify(scene.app.dirty);compare(backend.paperKind,nextPaper);compare(backend.kneaded,nextEraser);
+                delete scene.app.page.materialPaperKind;scene.app.restoreMaterialOptions(false);
+                compare(scene.app.paperKind,nextPaper,"A new page inherits the current in-memory paper choice");
+                compare(saved.paperKind,oldPaper);compare(saved.kneadedEraser,oldEraser);
+                verify(scene.app.saveBook());compare(saved.paperKind,nextPaper);compare(saved.kneadedEraser,nextEraser);
+            } finally {
+                scene.app.nativeRaster=original;backend.destroy();saved.paperKind=oldPaper;saved.kneadedEraser=oldEraser;
+                scene.app.materialOptionsLoading=true;scene.app.paperKind=oldPaper;scene.app.kneadedEraser=oldEraser;scene.app.materialOptionsLoading=false;
+            }
+        }
+        function test_calibration_pad_isolated_three_stages_save_reset_and_cancel() {
+            line(1,100,100,.6);scene.app.saveBook();
+            var original=scene.app.nativeRaster,backend=realismBackend.createObject(scene),before=JSON.stringify(scene.app.notebook),wasDirty=scene.app.dirty;
+            try {
+                scene.app.nativeRaster=backend;scene.app.openMaterials();
+                var calibrate=findChild(scene.app,"calibratePressureButton");mouseClick(calibrate,100,30,Qt.LeftButton);
+                verify(scene.app.calibrationDialog);verify(backend.calibrationActive);verify(!scene.app.materialsDialog);
+                var pad=findChild(scene.app,"calibrationPad"),next=findChild(scene.app,"nextCalibrationButton");
+                verify(!next.available);verify(!findChild(scene.app,"penInput").enabled);verify(!findChild(scene.app,"fingerInput").enabled);
+                // Exercise the dedicated pointer path before completing each stage.
+                mousePress(pad,80,80,Qt.LeftButton);mouseMove(pad,150,100,20);mouseMove(pad,220,120,20);mouseRelease(pad,220,120,Qt.LeftButton);
+                verify(backend.samples>0);verify(backend.beginCount>0);verify(backend.finishCount>0);
+                for(var stage=0;stage<3;stage++) {
+                    compare(scene.app.calibrationStage,stage);
+                    verify(findChild(scene.app,"calibrationPrompt").text.indexOf((stage+1)+" of 3")===0);
+                    for(var i=0;i<20;i++)scene.app.sampleCalibration(Qt.point(100+i*8,130+stage*20),.15+stage*.3,i===0);
+                    scene.app.finishCalibrationStroke();verify(next.available);
+                    if(stage===2)grabImage(scene).save(artifactPath("pressure-calibration-v41.png"));
+                    mouseClick(next,100,30,Qt.LeftButton);
+                }
+                verify(!scene.app.calibrationDialog);verify(scene.app.materialsDialog);verify(backend.calibrationSaved);
+                compare(JSON.stringify(scene.app.notebook),before);compare(scene.app.dirty,wasDirty);
+                compare(scene.app.activeStroke,null);
+                var reset=findChild(scene.app,"resetPressureButton");mouseClick(reset,100,30,Qt.LeftButton);verify(!backend.calibrationSaved);
+                backend.calibrationSaved=true;scene.app.startPressureCalibration();
+                scene.app.sampleCalibration(Qt.point(100,100),.25,true);scene.app.finishCalibrationStroke();
+                var cancel=findChild(scene.app,"cancelCalibrationButton");mouseClick(cancel,100,30,Qt.LeftButton);
+                verify(!scene.app.calibrationDialog);verify(!backend.calibrationActive);verify(backend.calibrationSaved);
+                compare(JSON.stringify(scene.app.notebook),before);compare(scene.app.dirty,wasDirty);
+            } finally {
+                scene.app.nativeRaster=original;backend.destroy();scene.app.materialsDialog=false;scene.app.calibrationDialog=false;
+            }
+        }
+        function test_calibration_validation_error_can_restart() {
+            var original=scene.app.nativeRaster,backend=realismBackend.createObject(scene);
+            try {
+                scene.app.nativeRaster=backend;scene.app.startPressureCalibration();backend.calibrationStage=2;
+                backend.calibrationError="Use distinct light, normal and firm pressure.";
+                for(var i=0;i<20;i++)scene.app.sampleCalibration(Qt.point(80+i*5,100),.5,i===0);
+                scene.app.nextPressureCalibration();
+                verify(scene.app.calibrationDialog);verify(!backend.calibrationSaved);
+                compare(findChild(scene.app,"calibrationError").text,backend.calibrationError);
+                var restart=findChild(scene.app,"restartCalibrationButton");verify(restart.visible);mouseClick(restart,100,30,Qt.LeftButton);
+                compare(scene.app.calibrationStage,0);compare(scene.app.calibrationSamples,0);compare(scene.app.calibrationMessage,"");
+                scene.app.cancelPressureCalibration();
+            } finally {scene.app.nativeRaster=original;backend.destroy();scene.app.materialsDialog=false;scene.app.calibrationDialog=false;}
+        }
+        function test_calibration_rejected_step_and_failed_reset_preserve_profile() {
+            var original=scene.app.nativeRaster,backend=realismBackend.createObject(scene);
+            try {
+                scene.app.nativeRaster=backend;backend.calibrationSaved=true;backend.resetFails=true;
+                scene.app.resetPressureCalibration();verify(backend.calibrationSaved);
+                verify(scene.app.notice.indexOf("could not be reset")>=0);
+                scene.app.startPressureCalibration();backend.nextFails=true;
+                for(var i=0;i<20;i++)scene.app.sampleCalibration(Qt.point(80+i*5,100),.2,i===0);
+                scene.app.nextPressureCalibration();compare(scene.app.calibrationStage,0);compare(scene.app.calibrationSamples,20);
+                verify(scene.app.calibrationMessage.indexOf("more lines")>=0);verify(backend.calibrationSaved);
+                scene.app.cancelPressureCalibration();
+            } finally {scene.app.nativeRaster=original;backend.destroy();scene.app.materialsDialog=false;scene.app.calibrationDialog=false;}
+        }
+        function test_failed_page_load_blocks_material_mutation_and_save() {
+            var original=scene.app.nativeRaster,backend=realismBackend.createObject(scene),blocked=scene.app.saveBlocked;
+            try {
+                scene.app.nativeRaster=backend;scene.app.saveBlocked=true;
+                verify(!findChild(scene.app,"materialsButton").available);verify(!scene.app.materialsAvailable);
+                scene.app.openMaterials();verify(!scene.app.materialsDialog);
+                scene.app.tool=1;scene.app.sharpenTool();scene.app.cleanFinger();scene.app.startPressureCalibration();
+                compare(backend.sharpenedTool,-1);compare(backend.cleanCount,0);verify(!backend.calibrationActive);verify(!scene.app.calibrationDialog);
+                verify(!scene.app.saveBook(),"A failed bitmap load must never save a replacement blank page");
+                scene.app.materialsDialog=true;
+                verify(!findChild(scene.app,"paperTexture2").available);verify(!findChild(scene.app,"calibratePressureButton").available);
+            } finally {scene.app.nativeRaster=original;backend.destroy();scene.app.saveBlocked=blocked;scene.app.materialsDialog=false;scene.app.calibrationDialog=false;}
+        }
+        function test_native_rejected_save_keeps_dirty_drawing() {
+            var original=scene.app.nativeRaster,wasActive=scene.app.nativeRasterActive,backend=realismBackend.createObject(scene);
+            try {
+                scene.app.nativeRaster=backend;scene.app.nativeRasterActive=true;scene.app.dirty=true;
+                var document=JSON.stringify(scene.app.notebook);
+                verify(!scene.app.saveBook());verify(scene.app.dirty);compare(backend.flushCount,0);
+                verify(scene.app.notice.indexOf("Save failed")===0);compare(JSON.stringify(scene.app.notebook),document);
+            } finally {scene.app.nativeRasterActive=wasActive;scene.app.nativeRaster=original;backend.destroy();}
+        }
+        function test_device_realism_harness_compiles() {
+            var component=Qt.createComponent("../device/papersketch-realism.qml");
+            compare(component.status,Component.Ready,component.errorString());
+        }
         function test_manual_save_and_cancel_discard_page_prompt() {
             line(1,120,120,0.7);verify(scene.app.dirty);
             scene.app.requestClose();compare(scene.app.confirmation,"leave");
@@ -365,6 +545,12 @@ Item {
         function test_duplicate_cache_identity_is_rejected() {
             var b=Ink.book();b.pages.push({strokes:[],paper:"plain",cacheSlot:0});
             var failed=false;try{Ink.decode(JSON.stringify(b))}catch(e){failed=true}verify(failed);
+        }
+        function test_material_paper_kind_validation_keeps_legacy_pages() {
+            var legacy=Ink.book();compare(Ink.decode(JSON.stringify(legacy)).pages[0].materialPaperKind,undefined);
+            for(var i=0;i<3;i++){legacy.pages[0].materialPaperKind=i;compare(Ink.decode(JSON.stringify(legacy)).pages[0].materialPaperKind,i);}
+            var bad=[-1,3,.5,"1",null];
+            for(var j=0;j<bad.length;j++){legacy.pages[0].materialPaperKind=bad[j];var rejected=false;try{Ink.decode(JSON.stringify(legacy))}catch(e){rejected=true}verify(rejected,"Invalid material paper kind must be rejected");}
         }
         function test_validation() {
             var b=Ink.book(),s=Ink.stroke(0,5,0,0.5,1);

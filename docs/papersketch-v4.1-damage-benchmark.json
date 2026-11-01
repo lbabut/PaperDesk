@@ -1,0 +1,67 @@
+{
+  "scope": "CPU-only Qt QRegion damage fan-out; not drawing throughput, tablet input or optical latency",
+  "architecture": "x86_64",
+  "source": "tests/bench-sketch-damage.cpp",
+  "source_sha256": "8eee33275dd147efe4338bbcd22f9c8bbd7ec0391c11d9cd806ce1c451bc24ce",
+  "cases_per_round": 120,
+  "events_per_case": 1260,
+  "tile_listeners_per_event": 130,
+  "rounds": 7,
+  "pending_regions_cleared_every_samples": 4,
+  "touched_tile_counts_equal": true,
+  "medians_ms": {
+    "current": 554.493,
+    "bbox_guard": 197.674,
+    "bbox_and_single_rect": 172.345
+  },
+  "fanout_speedup": {
+    "bbox_guard": 2.8050881754808423,
+    "bbox_and_single_rect": 3.2173431199048426
+  },
+  "runs": [
+    {
+      "round": 0,
+      "mode0_ms": 509.34,
+      "mode1_ms": 196.823,
+      "mode2_ms": 165.775
+    },
+    {
+      "round": 1,
+      "mode0_ms": 586.204,
+      "mode1_ms": 209.438,
+      "mode2_ms": 195.099
+    },
+    {
+      "round": 2,
+      "mode0_ms": 565.398,
+      "mode1_ms": 190.927,
+      "mode2_ms": 156.14
+    },
+    {
+      "round": 3,
+      "mode0_ms": 593.448,
+      "mode1_ms": 202.339,
+      "mode2_ms": 179.449
+    },
+    {
+      "round": 4,
+      "mode0_ms": 544.898,
+      "mode1_ms": 196.82,
+      "mode2_ms": 164.407
+    },
+    {
+      "round": 5,
+      "mode0_ms": 531.004,
+      "mode1_ms": 219.032,
+      "mode2_ms": 233.39
+    },
+    {
+      "round": 6,
+      "mode0_ms": 554.493,
+      "mode1_ms": 197.674,
+      "mode2_ms": 172.345
+    }
+  ],
+  "date": "2026-11-01",
+  "baseline_note": "current denotes initial 4.1 QRegion intersection for every listener; does not denote 4.0 QRect fan-out"
+}

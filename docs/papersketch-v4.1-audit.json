@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "version": "4.1.0",
+  "date": "2026-11-01",
+  "status": "prepublication_validation_complete",
+  "release_ready": true,
+  "scope": [
+    {
+      "id": "input_response",
+      "change": "Region-based live damage publication, bounded calibration preview and material preferences retained in memory until explicit Save; assess fast charcoal shading with the device probe.",
+      "device_evidence": "docs/papersketch-v4.1-shading-device.json"
+    },
+    {
+      "id": "tilt_contact",
+      "change": "Read normalized pen tilt and render an oriented elliptical pencil/charcoal footprint.",
+      "device_evidence": "docs/papersketch-v4.1-realism-device.json"
+    },
+    {
+      "id": "pressure_calibration",
+      "change": "Separate grade width/dose profiles and an isolated three-stage light/normal/firm calibration with atomic profile persistence.",
+      "device_evidence": "docs/papersketch-v4.1-realism-device.json"
+    },
+    {
+      "id": "paper_and_wear",
+      "change": "Plain/smooth/rough paper, persistent burnish and independent nib wear with selected-tool sharpening.",
+      "device_evidence": "docs/papersketch-v4.1-realism-device.json"
+    },
+    {
+      "id": "finger_transport",
+      "change": "Persistent conservative pigment transfer with contact geometry, a capacitance proxy, speed-sensitive blending and a clean-finger action.",
+      "device_evidence": "docs/papersketch-v4.1-realism-device.json"
+    },
+    {
+      "id": "erasers",
+      "change": "Hard rubbing eraser and kneaded eraser that gently lifts once per contact.",
+      "device_evidence": "docs/papersketch-v4.1-realism-device.json"
+    }
+  ],
+  "verified_evidence": {
+    "qml_host": {
+      "passed": 211,
+      "failed": 0,
+      "native_only_skipped": 2,
+      "log": "work/release-4.1-final-kernel-ui-tests.log"
+    },
+    "material_audit": "docs/papersketch-v4.1-material-audit.md",
+    "host_material_benchmark": "docs/papersketch-v4.1-material-benchmark.json",
+    "realism_harness": "tests/device/papersketch-realism.qml",
+    "device_runner": "tests/run-sketch-native.py --realism-probe",
+    "device_input_report": "docs/papersketch-v4.1-input-device.json",
+    "device_shading_report": "docs/papersketch-v4.1-shading-device.json",
+    "device_realism_report": "docs/papersketch-v4.1-realism-device.json",
+    "final_source_hashes": {
+      "engine.js": "85e40646d3a71637569f52eb6b821bb90581a3d7316a21b24addb898f407500d",
+      "ui/main.qml": "698f7e4787f0244e4c5c4b8c18654556771fbffa23b9ebb0374635b2a199332a",
+      "ui/ToolIcon.qml": "f2f8c03e93f4e0386edf6b5a80b78bf5412fb66d34d4f6f3c18918b6decf37bf",
+      "resources.rcc": "8329bf2863984553d692b16f725975f5265aff407ffe4b99caee64a152d45cc2",
+      "native/papersketch-raster.cpp": "674bb5b6126b33d62315eabc90fc0e713b199cb0b900c9602856616e7249792e",
+      "native/papersketch-raster.so": "8870efa8a0cb91951ed4ced1fb6ef942d04d8ddce323eafbb8db5e91793bb2fa",
+      "native/sketch-material.h": "3a9991e19a646a56c0b68059cdb20f237d2cdcbf004f94829c38e6bb53c34f6e",
+      "native/sketch-pen.h": "33336085a9dda74f5c6796ec9905e376280980d265dce447d93ecb9f9823f622",
+      "native/sketch-touch.h": "4f60e9ec885df94afe3749641c5b2c9bed614f78922b6c8d26f6946183aa5c99",
+      "native/sketch-pressure.h": "c0dd54ad9789cec7f89ed90d2f09483d0978eb1ef82fad81ca60befcd7a3ab15"
+    },
+    "release_artifacts": {
+      "installable_zip": {
+        "name": "paperdesk-4.1.0.zip",
+        "bytes": 2721423,
+        "sha256": "dadfb04085b84b727c46d3f21d54b7daf8f76d4e7349abdce32b67ad6da4126c"
+      },
+      "source_tar_checksum": "dist/paperdesk-sources-4.1.0.tar.gz.sha256",
+      "note": "Source archive checksum is external to avoid a self-reference; it is generated after this report."
+    },
+    "production_verification": {
+      "status": "pending_until_separate_deployment_report_is_published",
+      "report_url": "https://github.com/lbabut/PaperDesk/releases/download/v4.1.0/paperdesk-4.1.0-deployment.json"
+    },
+    "python_host": {
+      "run": 140,
+      "failed": 0,
+      "skipped": 2
+    },
+    "native_host": {
+      "suites": [
+        "material",
+        "material-realism",
+        "pressure",
+        "touch",
+        "pen",
+        "display",
+        "material-integration",
+        "workflow",
+        "realism-integration",
+        "kit-state",
+        "publication",
+        "raster"
+      ],
+      "passed": true,
+      "focused_address_undefined_leak_sanitizers_passed": true
+    },
+    "device_probes": {
+      "realism": {
+        "report": "docs/papersketch-v4.1-realism-device.json",
+        "passed": true,
+        "artwork_preserved": true
+      },
+      "input": {
+        "report": "docs/papersketch-v4.1-input-device.json",
+        "passed": true,
+        "artwork_preserved": true
+      },
+      "shading": {
+        "report": "docs/papersketch-v4.1-shading-device.json",
+        "passed": true,
+        "artwork_preserved": true
+      },
+      "controls": {
+        "report": "docs/papersketch-v4.1-controls-device.json",
+        "passed": true,
+        "artwork_preserved": true
+      },
+      "workflow": {
+        "report": "docs/papersketch-v4.1-workflow-device.json",
+        "passed": true,
+        "artwork_preserved": true
+      }
+    },
+    "device_export_files_report": "docs/papersketch-v4.1-workflow-files.json",
+    "tablet_deployment_report": "docs/papersketch-v4.1-tablet-deployment.json",
+    "damage_fanout_benchmark": "docs/papersketch-v4.1-damage-benchmark.json",
+    "saturated_kernel_benchmark": "docs/papersketch-v4.1-saturated-material-benchmark.json"
+  },
+  "limits": [
+    "Physical tip-to-panel latency has not been measured by these software probes.",
+    "Touch capacitance and contact area are proxies; the device does not provide true finger force.",
+    "The realism harness observes pen-proximity palm gating, not simultaneous physical palm contact.",
+    "Fast e-ink display remains binary halftone; optical pigment values and panel appearance are separate evidence.",
+    "Material constants and nib geometry are chosen approximations rather than measured matches to specific art supplies.",
+    "No graphite sheen, skin oils, finger ridges or full paper deformation is simulated.",
+    "Legacy bitmap imports cannot recover the original medium and use the existing inferred pigment split.",
+    "Earlier pre-saturation host-loop measurements show slower pencil and faster smudge processing; they do not measure the final device throughput."
+  ],
+  "tilt_comparison": {
+    "upright_rows": 28,
+    "tilted_rows": 42,
+    "pressure_matched": true,
+    "raw_matches_upright": [
+      60,
+      0
+    ],
+    "raw_matches_tilt": [
+      60,
+      0
+    ],
+    "probe_loop_max_gap_ms": [
+      41,
+      40
+    ]
+  },
+  "software_input_tick_gaps_ms": {
+    "pen-graphite": 54,
+    "pen-charcoal": 190
+  },
+  "software_timing_note": "The wider 4.1 footprints differ from 4.0. These are software loop gaps during evdev injection, not optical panel latency or a controlled physical-media comparison."
+}

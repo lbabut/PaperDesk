@@ -87,6 +87,7 @@ static void testNoContactAndInvalidInput() {
         unchanged.point(tool, 160, 160, 1, 24, nan);
         unchanged.segment(tool, 160, 160, 1, 200, 160, nan, 1);
         assert(unchanged.m == original.m && unchanged.img == original.img && unchanged.finger == original.finger);
+        assert(unchanged.p.burnish == original.p.burnish && unchanged.p.wear == original.p.wear);
     }
     original.point(-1, 160, 160);
     original.point(8, 160, 160);
@@ -156,6 +157,7 @@ static void testResampling() {
     for (int i = 1; i <= 16384; ++i)
         micro.segment(4, 60 + (i - 1) / 4096.0, 160, 1, 60 + i / 4096.0, 160, 1, 1);
     assert(whole.m == micro.m);
+    assert(whole.p.burnish == micro.p.burnish && whole.p.wear == micro.p.wear);
     Fixture ramp, split;
     ramp.segment(2, 32, 160, .125, 32, 160, .125, 0);
     ramp.segment(2, 32, 160, .125, 288, 160, 1, 1);
@@ -164,6 +166,7 @@ static void testResampling() {
         split.segment(2, 32 + (i - 1) * .5, 160, .125 + .875 * (i - 1) / 512,
                       32 + i * .5, 160, .125 + .875 * i / 512, 1);
     assert(ramp.m == split.m && ramp.img == split.img);
+    assert(ramp.p.burnish == split.p.burnish && ramp.p.wear == split.p.wear);
     // Smudging has the same sampling guarantee, including fingertip state.
     sparse.line(4, 160, 80, 160, 240);
     dense = sparse;
