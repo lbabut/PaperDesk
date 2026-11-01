@@ -12,7 +12,7 @@ It bundles touch-first tools designed around the limits of e-ink:
 - RSS — RSS/Atom feeds, full-text reading, read state, and offline cache.
 - Care — signed updates, release notes, automatic verification, and rollback backups.
 
-The current release is **4.1.0**, targeting the tested reMarkable OS
+The current release is **4.1.1**, targeting the tested reMarkable OS
 **3.29.0.149** with XOVI 0.3.3, AppLoad 0.6.0, and LiTerm 0.1.7.
 
 The installer accepts only OS 3.29.0.149 or 3.29.0.153 because Sketch loads a native
@@ -22,6 +22,7 @@ Paper Sketch 4.1 models six aspects of dry media: tilt/contact shape, pressure
 response, paper tooth and burnishing, virtual tip wear, finger contact and two
 eraser behaviors. These are digital approximations. Calibration adjusts stylus
 input; no physical-pencil matching or optical panel latency is claimed.
+Open the Materials settings icon in the bottom navigation bar for these controls.
 
 Browse the source at <https://github.com/lbabut/PaperDesk>. The release project
 archive also contains prepared ARM files for installation.

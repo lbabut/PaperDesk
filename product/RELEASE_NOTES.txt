@@ -1,3 +1,5 @@
+Paper Sketch 4.1.1 moves the Materials settings icon from the header into the bottom navigation bar.
+
 Paper Sketch 4.1 adds six dry-media simulation controls: tilt and contact shape, pressure calibration, paper and burnishing, tip wear and sharpening, finger contact and cleaning, and two eraser types.
 Stylus tilt shapes directional graphite and charcoal marks when tilt samples are available; missing tilt uses an upright tip. Pressure calibration adjusts the digital stylus response rather than matching a measured physical pencil.
 Choose Plain, Smooth or Rough paper for future contact; firm strokes gradually burnish the simulated grain without repainting existing artwork. Drawing wears the selected virtual tip; Sharpen restores its point.

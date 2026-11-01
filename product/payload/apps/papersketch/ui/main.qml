@@ -556,11 +556,6 @@ Rectangle {
             anchors.right:parent.right;anchors.rightMargin:20;anchors.verticalCenter:parent.verticalCenter
             label:"Close";width:100;objectName:"closeButton";onTriggered:root.requestClose()
         }
-        Action {
-            anchors.right:headerClose.left;anchors.rightMargin:12;anchors.verticalCenter:parent.verticalCenter
-            label:"Materials";iconName:"materials";width:64;objectName:"materialsButton"
-            available:!root.saveBlocked;selected:root.materialsDialog;onTriggered:root.openMaterials()
-        }
         Rectangle {anchors.bottom:parent.bottom;width:parent.width;height:2;color:"black"}
     }
     Rectangle {
@@ -798,6 +793,10 @@ Rectangle {
             }
             Action {label:"Clear page";width:150;available:true;onTriggered:root.confirmation="clear"}
             Action {label:"Delete page";objectName:"deletePageButton";width:156;available:true;onTriggered:root.confirmation="delete"}
+            Action {
+                label:"Materials";iconName:"materials";width:64;objectName:"materialsButton"
+                available:!root.saveBlocked;selected:root.materialsDialog;onTriggered:root.openMaterials()
+            }
         }
         Text {
             anchors.left:parent.left;anchors.right:parent.right;anchors.margins:20;y:91

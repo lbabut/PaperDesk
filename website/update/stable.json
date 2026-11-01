@@ -1,12 +1,14 @@
 {
   "product": "PaperDesk",
   "channel": "stable",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "publishedAt": "2026-11-01",
-  "archiveUrl": "/download/paperdesk-4.1.0.zip",
-  "archiveSha256": "dadfb04085b84b727c46d3f21d54b7daf8f76d4e7349abdce32b67ad6da4126c",
-  "archiveSize": 2721423,
+  "archiveUrl": "/download/paperdesk-4.1.1.zip",
+  "archiveSha256": "a1042c016f9cd95dc0f10584c1d14b400841eea2c24045e8316dc35094148482",
+  "archiveSize": 2721532,
   "releaseNotes": [
+    "Paper Sketch 4.1.1 moves the Materials settings icon from the header into the bottom navigation bar.",
+    "",
     "Paper Sketch 4.1 adds six dry-media simulation controls: tilt and contact shape, pressure calibration, paper and burnishing, tip wear and sharpening, finger contact and cleaning, and two eraser types.",
     "Stylus tilt shapes directional graphite and charcoal marks when tilt samples are available; missing tilt uses an upright tip. Pressure calibration adjusts the digital stylus response rather than matching a measured physical pencil.",
     "Choose Plain, Smooth or Rough paper for future contact; firm strokes gradually burnish the simulated grain without repainting existing artwork. Drawing wears the selected virtual tip; Sharpen restores its point.",
