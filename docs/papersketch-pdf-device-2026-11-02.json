@@ -1,0 +1,40 @@
+{
+  "candidate_qml_sha256": "c1158d8a4c2d0670088235b3fc7a39a958fb5ac60b25959909ae5cdd3b609430",
+  "source_qml_sha256": "c1158d8a4c2d0670088235b3fc7a39a958fb5ac60b25959909ae5cdd3b609430",
+  "source_engine_sha256": "85e40646d3a71637569f52eb6b821bb90581a3d7316a21b24addb898f407500d",
+  "source_icon_sha256": "f2f8c03e93f4e0386edf6b5a80b78bf5412fb66d34d4f6f3c18918b6decf37bf",
+  "backup": "/home/root/.local/state/papersketch-native.W8yCjg",
+  "cache_namespace": "PaperDeskSketchNativeBenchbaseline1793613062976791991",
+  "artwork_before_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "evdev_injections": [
+    {
+      "mode": "finger",
+      "contact_ms": 1793613115327,
+      "release_ms": 1793613115407,
+      "writes_ok": true,
+      "id": "pdf-add"
+    }
+  ],
+  "results": {
+    "execution": "real AppLoad, PDF writer, evdev Add PDF tap and native DocumentImporter",
+    "cases": [],
+    "pdf_probe": {
+      "execution": "real AppLoad, PDF writer, evdev Add PDF tap and native DocumentImporter",
+      "document_id": "177f3cdd-22d3-49e4-82e4-bed14e51fa4c",
+      "optical_digest": "9ce6157dcb89fc4ccdd3ddab7b62d46d5c1d6b60e9d03b9ac4213a5afa79670f",
+      "title": "PaperSketch PDF test \u0141\u0105ka 100% # 1793613100350",
+      "library_name": "PaperSketch PDF test \u0141\u0105ka 100% # 1793613100350",
+      "library_entry_visible": true,
+      "pdf_staging_path": "/home/root/.local/share/paperdesk/sketch/pdf-export-vsCrVd/PaperSketch PDF test \u0141\u0105ka 100% # 1793613100350.pdf",
+      "keyboard_visible": true,
+      "drawing_unchanged": true,
+      "no_automatic_save": true,
+      "drawing_still_dirty": true,
+      "dialog_closed": true,
+      "passed": true
+    }
+  },
+  "runtime_seconds": 46.1,
+  "artwork_after_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "artwork_preserved": true
+}

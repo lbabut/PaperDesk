@@ -25,14 +25,15 @@ p.add_argument("--latency-probe",action="store_true")
 p.add_argument("--latency-fresh-only",action="store_true",help="limit the latency probe to fresh-page HB and charcoal")
 p.add_argument("--controls-probe",action="store_true")
 p.add_argument("--workflow-probe",action="store_true")
+p.add_argument("--pdf-probe",action="store_true")
 p.add_argument("--realism-probe",action="store_true")
 p.add_argument("--output",default="docs/papersketch-native-2026-10-31.json")
 a=p.parse_args()
 if a.latency_fresh_only and not a.latency_probe:
     p.error("--latency-fresh-only requires --latency-probe")
-if a.latency_probe and any((a.smoke,a.input_probe,a.shading_probe,a.controls_probe,a.workflow_probe,a.realism_probe)):
+if a.latency_probe and any((a.smoke,a.input_probe,a.shading_probe,a.controls_probe,a.workflow_probe,a.realism_probe,a.pdf_probe)):
     p.error("--latency-probe must run separately from other probes")
-uses_input=a.input_probe or a.shading_probe or a.latency_probe or a.controls_probe or a.workflow_probe or a.realism_probe
+uses_input=a.pdf_probe or a.input_probe or a.shading_probe or a.latency_probe or a.controls_probe or a.workflow_probe or a.realism_probe
 root=pathlib.Path(__file__).resolve().parents[1]
 work=root/"work/papersketch-native"
 app=work/"papersketch-native-bench"
@@ -63,6 +64,7 @@ if a.latency_fresh_only:
     marker="property bool freshOnly:false"
     assert harness.count(marker)==1,"Latency harness fresh-only option is missing"
     harness=harness.replace(marker,"property bool freshOnly:true")
+if a.pdf_probe:harness=(root/"tests/device/papersketch-pdf.qml").read_text()
 if a.smoke:harness=harness.replace("property bool smokeOnly:false","property bool smokeOnly:true")
 if a.baseline_qml:harness=harness.replace('"constant-fast"','"tiled-fast"')
 elif candidate==baseline:harness=harness.replace('["baseline","constant-fast"]','["production-1","production-2"]')
@@ -271,3 +273,6 @@ if a.latency_probe:
     assert required=={case["id"] for case in probe["cases"]},"Latency probe did not report exactly the requested cases"
     assert all(event.get("writes_ok") for event in events),"Latency input driver reported incomplete event writes"
     assert probe["passed"],"Latency diagnostic incomplete; inspect its error and case reports"
+
+if a.pdf_probe:
+    assert report["results"]["pdf_probe"]["passed"] and any(e.get("id")=="pdf-add" and e.get("writes_ok") for e in report.get("evdev_injections",[])),"PDF native library import failed"

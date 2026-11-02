@@ -30,16 +30,12 @@ Rectangle {
    a.newPage();result.fixture_saved=line(a,3,700,800)&&result.fixture_saved;
    result.finger_always_on=a.fingerSmudge;
    var names=labels(a);result.removed_buttons=names.indexOf("New book")<0&&names.indexOf("Finger: smudge")<0&&names.indexOf("Finger: off")<0;
-   exportDigest=a.nativeRaster.opticalDigest();a.exportPage();find(a,"exportName").text=exportBase;
-   result.name_focused=find(a,"exportName").activeFocus;phase=2;at=now;return;
-  }
-  if(phase===2&&now-at>1000){result.keyboard_visible=Qt.inputMethod.visible;tap(find(a,"saveExport"),"export-save");phase=3;return;}
-  if(phase===3){
-   if(a.exportDialog)return;
-   exportFile=a.exportPath;result.export_path=exportFile;result.export_optical_digest=exportDigest;
-   result.export_named=exportFile.indexOf("/Documents/"+exportBase+".png")>=0;
-   a.exportPage();find(a,"exportName").text=exportBase;a.saveExport();
-   result.collision_confirmation=a.exportOverwrite&&a.exportDialog;a.closeExport();
+   exportDigest=a.nativeRaster.opticalDigest();
+   var png=a.nativeRaster.exportPng(exportBase);exportFile=png.path;
+   result.export_path=exportFile;result.export_optical_digest=exportDigest;
+   result.export_named=png.ok&&exportFile.indexOf("/Documents/"+exportBase+".png")>=0;
+   var collision=a.nativeRaster.exportPng(exportBase);
+   result.collision_confirmation=!collision.ok&&collision.exists;
    a.selectPage(1);at=now;phase=4;return;
   }
   if(phase===4&&now-at>1000){tap(find(a,"deletePageButton"),"delete-menu");phase=5;return;}
@@ -63,8 +59,8 @@ Rectangle {
    result.last_page_becomes_blank=a.pageCount===1&&a.page.cacheSlot>2&&a.dirty;
    a.requestLeave({kind:"page",index:0});a.resolveLeave("discard");
    result.delete_discard_restores=a.pageCount===1&&a.page.cacheSlot===2&&a.nativeRaster.opticalDigest()===exportDigest;
-   result.passed=result.fixture_saved&&result.finger_always_on&&result.removed_buttons&&result.name_focused&&result.export_named&&result.collision_confirmation&&result.middle_delete&&result.deletion_saved&&result.new_page_uses_new_slot&&result.new_page_discard&&result.reload_preserves_surviving_art&&result.last_page_becomes_blank&&result.delete_discard_restores&&result.metadata_recovery;
-   console.log("PAPERSKETCH_NATIVE_RESULT "+JSON.stringify({execution:"real tablet named PNG export and stable page deletion through production UI",workflow_probe:result,cases:[]}));
+   result.passed=result.fixture_saved&&result.finger_always_on&&result.removed_buttons&&result.export_named&&result.collision_confirmation&&result.middle_delete&&result.deletion_saved&&result.new_page_uses_new_slot&&result.new_page_discard&&result.reload_preserves_surviving_art&&result.last_page_becomes_blank&&result.delete_discard_restores&&result.metadata_recovery;
+   console.log("PAPERSKETCH_NATIVE_RESULT "+JSON.stringify({execution:"real tablet stable page deletion, cache lifecycle and native PNG compatibility",workflow_probe:result,cases:[]}));
    phase=10;ticker.stop();
   }
  }

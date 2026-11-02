@@ -1,0 +1,8 @@
+{
+  "installed": true,
+  "rollback": "/home/root/.local/state/papersketch-install.XCHrgX",
+  "saved_user_files_preserved": true,
+  "opened_pages": 6,
+  "native_sha256": "ae1dc6653e3d2237e4c02a4c7a76a4d7babec7e7fcf522f88f658686ce3a49c0",
+  "startup_log": "Nov 02 09:57:01 reMarkable xochitl[25765]: 09:57:01.340 qml                      PaperSketch native raster available (initNativeRaster qrc:/FAJCLFVENH/ui/main.qml:143)\nNov 02 09:57:02 reMarkable xochitl[25765]: 09:57:02.339 qml                      PaperSketch optical digest e1b6745cd3c1c38da3a58cc52e593e94d22b47e719bba1f9b42056d378bd4177 (redraw qrc:/FAJCLFVENH/ui/main.qml:354)\nNov 02 09:57:02 reMarkable xochitl[25765]: 09:57:02.342 qml                      PaperSketch opened 6 pages 0 points ready (expression for onCompleted qrc:/FAJCLFVENH/ui/main.qml:584)"
+}

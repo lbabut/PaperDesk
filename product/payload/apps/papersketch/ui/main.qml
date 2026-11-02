@@ -32,6 +32,10 @@ Rectangle {
     onKneadedEraserChanged:if(ready && !materialOptionsLoading)applyMaterialOptions(true)
     readonly property bool fingerSmudge: true
     property string lastSavedDocument:""
+    property var exportBridge:null
+    property var pendingPdfExport:null
+    property bool exportBusy:false
+    property string exportedDocumentId:""
     property bool exportDialog:false
     property bool exportOverwrite:false
     property string exportMessage:""
@@ -472,17 +476,93 @@ Rectangle {
         }
         totalPoints=Ink.count(notebook);revision++;redraw(action==="book");dirty=true;
     }
+    function pdfImporter(){
+        if(exportBridge && exportBridge.importer)return exportBridge.importer;
+        try{
+            exportBridge=Qt.createQmlObject('import QtQml; import xofm.libs.library; QtObject { property var importer: DocumentImporter; property var lib: Library }',root,"PaperSketchPdfBridge");
+            if(exportBridge.importer && typeof exportBridge.importer.importFromUrls==="function")return exportBridge.importer;
+            exportBridge.destroy();exportBridge=null;
+        }catch(e){exportBridge=null;}
+        return null;
+    }
     function exportPage() {
         if(busy)return;
-        exportMessage="";exportOverwrite=false;exportName.text="Sketch-"+(pageIndex+1);
-        exportDialog=true;exportName.forceActiveFocus();Qt.inputMethod.show();
+        exportMessage=pendingPdfExport?"A PDF import is still pending. Check My files before exporting again.":"";
+        if(!pendingPdfExport)exportName.text="Sketch-"+(pageIndex+1);
+        exportDialog=true;
+        if(!pendingPdfExport){exportName.forceActiveFocus();Qt.inputMethod.show();}
     }
-    function closeExport(){exportDialog=false;exportOverwrite=false;Qt.inputMethod.hide();root.forceActiveFocus();}
+    function closeExport(){exportDialog=false;Qt.inputMethod.hide();root.forceActiveFocus();}
     function saveExport(){
+        if(pendingPdfExport)return;
         if(!nativeRasterActive){exportMessage="Export is unavailable until the bitmap renderer is ready.";return;}
-        var result=nativeRaster.exportPng(exportName.text,exportOverwrite);
-        if(result.ok){exportPath=result.path;notice="PNG saved: "+result.path;closeExport();}
-        else{exportMessage=result.error;exportOverwrite=result.exists===true;}
+        var importer=pdfImporter();
+        if(!importer){exportMessage="My files is unavailable in this session. The drawing is still in Paper Sketch.";return;}
+        var result=nativeRaster.exportPdf(exportName.text);
+        if(!result.ok){exportMessage=result.error;return;}
+        exportPath=result.path;exportedDocumentId="";
+        pendingPdfExport={path:result.path,title:result.title,started:Date.now(),reported:false,candidates:[],timedOut:false};
+        exportBusy=true;exportMessage="Adding PDF to My files…";Qt.inputMethod.hide();
+        var url="file://"+result.path.split("/").map(encodeURIComponent).join("/");
+        try{importer.importFromUrls([url],"");}
+        catch(e){exportBusy=false;pendingPdfExport=null;exportMessage="Could not start import. PDF kept at "+exportPath;}
+    }
+    function pdfSourceMatches(source){
+        if(!pendingPdfExport||!source)return false;
+        var value=String(source);if(value==="file://"+pendingPdfExport.path)return true;
+        try{return decodeURIComponent(value)==="file://"+pendingPdfExport.path;}catch(e){return false;}
+    }
+    function pdfImported(document,collection,source){
+        if(!pdfSourceMatches(source))return;
+        pendingPdfExport.reported=true;
+        resolvePdfImport();
+    }
+    function pdfEntryAdded(entryId){
+        if(!pendingPdfExport||!exportBridge)return;
+        var id=String(entryId).replace(/^\{|\}$/g,"");
+        if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))return;
+        var entry=exportBridge.lib.entryForId(id);
+        if(!entry||entry.isTrashed||entry.visibleName!==pendingPdfExport.title)return;
+        if(pendingPdfExport.candidates.indexOf(id)<0)pendingPdfExport.candidates.push(id);
+        resolvePdfImport();
+    }
+    function resolvePdfImport(){
+        var job=pendingPdfExport;
+        if(!job||!job.reported||job.candidates.length!==1)return;
+        var entry=exportBridge.lib.entryForId(job.candidates[0]);
+        if(!entry||entry.isTrashed||entry.visibleName!==job.title)return;
+        exportedDocumentId=job.candidates[0];pendingPdfExport=null;exportBusy=false;
+        nativeRaster.discardPdfExport(job.path);
+        notice="PDF added to My files · "+job.title+". It can sync to the reMarkable app.";
+        console.log("PaperSketch PDF imported",exportedDocumentId,job.title);
+        closeExport();
+    }
+    function pdfImportFailed(source){
+        if(!pdfSourceMatches(source))return;
+        pendingPdfExport=null;exportBusy=false;
+        exportMessage="The PDF could not be added to My files. A copy is kept at "+exportPath;
+        notice=exportMessage;
+    }
+    Connections{
+        target:root.exportBridge?root.exportBridge.importer:null;ignoreUnknownSignals:true
+        function onImported(document,collection,source){root.pdfImported(document,collection,source);}
+        function onFailed(source){root.pdfImportFailed(source);}
+    }
+    Connections{
+        target:root.exportBridge?root.exportBridge.lib:null;ignoreUnknownSignals:true
+        function onEntryAdded(entryId){root.pdfEntryAdded(entryId);}
+        function onEntryImported(entryId,visibleName,errorMessage){if(!errorMessage)root.pdfEntryAdded(entryId);}
+    }
+    Timer{
+        interval:1000;repeat:true;running:root.pendingPdfExport!==null
+        onTriggered:{
+            var job=root.pendingPdfExport;
+            if(job&&!job.timedOut&&Date.now()-job.started>30000){
+                job.timedOut=true;root.exportBusy=false;
+                root.exportMessage="Import has not been confirmed. Check My files before trying again. PDF kept at "+job.path;
+                root.notice=root.exportMessage;
+            }
+        }
     }
     Component.onCompleted: {
         initNativeRaster();
@@ -553,7 +633,7 @@ Rectangle {
             anchors.left: parent.left;anchors.leftMargin: 20;anchors.verticalCenter: parent.verticalCenter;spacing:12
             Text {text:"Paper Sketch";font.pixelSize:root.width<1000?24:32;font.bold:true;width:root.width<1000?120:236;anchors.verticalCenter:parent.verticalCenter}
             Action {label:"Save";width:112;objectName:"saveButton";available:!root.saveBlocked;onTriggered:root.saveBook()}
-            Action {label:"Export PNG";width:154;objectName:"exportButton";available:true;onTriggered:root.exportPage()}
+            Action {label:"Export PDF";width:154;objectName:"exportButton";available:true;onTriggered:root.exportPage()}
             Action {label:"Full screen";width:156;objectName:"fullScreenButton";available:true;onTriggered:root.fullScreen=true}
         }
         Action {
@@ -958,20 +1038,20 @@ Rectangle {
         MouseArea{anchors.fill:parent}
         Column {
             width:Math.min(parent.width-80,1000);anchors.horizontalCenter:parent.horizontalCenter;y:100;spacing:26
-            Text{text:"Export PNG";font.pixelSize:36;font.bold:true}
-            Text{width:parent.width;wrapMode:Text.Wrap;text:"Save in "+(root.nativeRaster?root.nativeRaster.documentsDirectory():"Documents");font.pixelSize:23}
+            Text{text:"Export PDF";font.pixelSize:36;font.bold:true}
+            Text{width:parent.width;wrapMode:Text.Wrap;text:"Add a PDF copy of this page to My files. It can sync to the reMarkable app for sharing.";font.pixelSize:23}
             TextField {
                 id:exportName;objectName:"exportName";width:parent.width;height:86;font.pixelSize:29;color:"black"
-                placeholderText:"File name";inputMethodHints:Qt.ImhNoPredictiveText|Qt.ImhNoAutoUppercase
+                placeholderText:"Document name";enabled:!root.pendingPdfExport;inputMethodHints:Qt.ImhNoPredictiveText|Qt.ImhNoAutoUppercase
                 background:Rectangle{color:"white";border.color:"black";border.width:2;radius:5}
-                onTextEdited:{root.exportOverwrite=false;root.exportMessage="";}
+                onTextEdited:root.exportMessage=""
                 onAccepted:root.saveExport()
                 onActiveFocusChanged:if(activeFocus&&root.exportDialog)Qt.inputMethod.show()
             }
             Text{width:parent.width;wrapMode:Text.Wrap;text:root.exportMessage;font.pixelSize:24;visible:text!==""}
             Row{spacing:24
                 Action{label:"Cancel";objectName:"cancelExport";width:220;onTriggered:root.closeExport()}
-                Action{label:root.exportOverwrite?"Replace PNG":"Save PNG";objectName:"saveExport";width:240;onTriggered:root.saveExport()}
+                Action{label:root.exportBusy?"Adding PDF…":"Add PDF";available:!root.pendingPdfExport;objectName:"saveExport";width:240;onTriggered:root.saveExport()}
             }
         }
     }

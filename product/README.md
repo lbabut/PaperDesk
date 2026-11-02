@@ -1,4 +1,4 @@
-# PaperDesk 4.2.1
+# PaperDesk 4.2.2
 
 PaperDesk turns a reMarkable 2 into a quiet, monochrome network workspace.
 The bundle adds eight apps directly to the AppLoad list and keeps their
@@ -13,7 +13,7 @@ hidden from users.
   kneaded erasers. Materials settings are the first icon in the middle toolbar,
   before the 2H pencil.
   The tool and size share one compact icon toolbar. Save pages
-  manually and export grayscale PNGs to Documents. The material simulation
+  manually and export grayscale PDFs to My files. The material simulation
   approximates dry media; the e-ink screen uses fine black-and-white halftoning
   while saved art retains grayscale. Strokes start at initial pen contact,
   including stationary dots. The renderer reuses the same paper-response values
@@ -152,7 +152,7 @@ or measured optical pen-to-panel latency is claimed.
 
 The sketchbook is under `/home/root/.local/share/paperdesk/sketch`. Drawing
 changes RAM until Save is chosen; Close and page changes offer Save, Discard or
-Cancel. Export creates a PNG in Documents and does not implicitly save the
+Cancel. Export adds a PDF copy to My files and does not implicitly save the
 sketchbook. Installation and removal retain artwork and exports. The installer
 backs up an existing native renderer before replacing it and restores a
 pre-existing renderer when PaperDesk is removed.

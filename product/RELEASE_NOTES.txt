@@ -1,5 +1,5 @@
-Paper Sketch finger blending now spreads graphite and charcoal more visibly, with a stable fingertip footprint and no extra weakening during fast movements.
-Touch pressure is matched directly to the contact position instead of using constant Qt touch pressure. Lighter and firmer contact produce different transfer amounts.
-The final finger transfer response is reduced by 10 percent from the owner-tested stronger blend. Pigment remains conserved between paper and fingertip.
-Existing saved pages retain their optical image and material state. Changes affect new rubbing; notebooks and PNG exports are preserved.
-Paper Terminal, RDP and the other released apps remain included. XOVI still starts manually; boot autostart is not enabled.
+Paper Sketch exports the current page as a lossless grayscale PDF and adds it to My files using the native reMarkable document importer.
+After normal cloud synchronization, the PDF is available for sharing from the reMarkable companion app. Each export creates a separate PDF copy.
+The dialog asks for a document name and confirms success only after both native import completion and the matching new library entry. Duplicate clicks and uncertain imports do not create automatic retries.
+Export leaves the active sketchbook in memory and does not save, flatten or replace its artwork. Existing PNG exports remain untouched.
+Host tests and real-tablet checks verify the embedded PDF image, import error handling and the Add PDF action. Other released apps are preserved.

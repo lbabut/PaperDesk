@@ -1,3 +1,11 @@
+# 4.2.2 — 2026-11-02
+
+- Paper Sketch exports the current page as a lossless grayscale PDF and adds it to My files using the native reMarkable document importer.
+- After normal cloud synchronization, the PDF is available for sharing from the reMarkable companion app. Each export creates a separate PDF copy.
+- The dialog asks for a document name and confirms success only after both native import completion and the matching new library entry. Duplicate clicks and uncertain imports do not create automatic retries.
+- Export leaves the active sketchbook in memory and does not save, flatten or replace its artwork. Existing PNG exports remain untouched.
+- Host tests and real-tablet checks verify the embedded PDF image, import error handling and the Add PDF action. Other released apps are preserved.
+
 # 4.2.1 — 2026-11-02
 
 - Paper Sketch finger blending now spreads graphite and charcoal more visibly, with a stable fingertip footprint and no extra weakening during fast movements.

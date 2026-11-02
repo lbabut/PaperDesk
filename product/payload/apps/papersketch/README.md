@@ -1,4 +1,4 @@
-# Paper Sketch 4.2.1
+# Paper Sketch 4.2.2
 
 A grayscale bitmap sketchbook for reMarkable 2 and XOVI AppLoad. Four pencil grades (2H, HB, 2B, 6B), charcoal, soft charcoal, hard and kneaded erasing, and a smudge tool share one compact icon toolbar with the size slider. Finger blending is always enabled; stylus proximity cancels tentative palm marks. Materials settings are the first icon in the middle toolbar, before the 2H pencil. The full-screen mode leaves a small menu button to restore the controls.
 
@@ -28,7 +28,7 @@ Paper and eraser choices stay in memory until explicit Save. The native notebook
 
 Legacy notebooks and matching bitmap caches are retained and imported without changing their optical pixels. New marks use material state, not a growing vector history. There is no Undo/Redo history.
 
-Export PNG opens a file-name field and the system keyboard, writes grayscale atomically to Documents and confirms replacement of an existing file. Export does not implicitly save the notebook. Invalid names and file-system failures remain visible.
+Export PDF asks for a document name, writes a one-page lossless grayscale PDF atomically in a private export job, and adds it to My files through the native reMarkable DocumentImporter. After normal cloud synchronization, it can be shared from the reMarkable companion app. Each export creates an independent copy. Success requires the matching source-completion signal and a new, non-trashed library entry with the expected name; staging is removed only after confirmation. Pending imports block repeat clicks, and failures or timeouts retain the PDF and explain their status. Export does not save or change the sketchbook. Existing Documents PNG exports are retained.
 
 The v4 installer stages the native renderer alongside the AppLoad application, verifies package checksums before mutation, retains the prior module for rollback, and preserves sketchbooks and PNG exports. Its native ABI guard accepts the supported reMarkable 2 firmware versions listed in the package metadata; it does not enable XOVI boot autostart.
 
@@ -43,12 +43,14 @@ python3 scripts/test-sketch-native.py
 sh tests/run-ui-tests.sh
 ```
 
+The PDF host test uses Poppler tools pdfimages and pdfinfo to verify the embedded grayscale image.
+
 The native host suite checks material pressure/conservation/resampling, bounded input, tentative palm cancellation, exact cache reload, incremental tile damage, grayscale PNG export and cache corruption rejection. The QML suite checks toolbar geometry, tool selection, size changes, persistence and page/export dialogs. Real-device diagnostics use an isolated test notebook and restore the original settings:
 
 ```sh
 python3 tests/run-sketch-native.py --host TABLET_IP --key KEY_PATH --known-hosts KNOWN_HOSTS_PATH --host-key-alias 10.11.99.1 --controls-probe --output docs/papersketch-v4-controls-device.json
 ```
 
-The same runner offers `--input-probe`, `--shading-probe`, `--workflow-probe`, `--realism-probe` and `--latency-probe`. The latency probe compares HB and charcoal on fresh and layered in-memory pages, records input-to-raster/tile/frame software timestamps and event-loop gaps, and reads optional native advance/publication/tile timing counters. `--baseline-qml` accepts a preserved UI source for comparison; install the corresponding native renderer deliberately before each run. The realism probe records emission coordinates and canvas scale, per-stroke UI timer gaps, pressure match/fallback counts, replay statistics and first/last endpoints. Native miss diagnostics report stale-position matches and retained-sample ages. Upright and tilted strokes must satisfy the same strict pressure-matching checks before their optical footprints can be compared. These software diagnostics do not measure physical panel latency or prove the cause of an input delay. Do not run tablet input tests concurrently. Earlier 4.1 device and deployment evidence is stored under `docs/papersketch-v4.1-*`; keep new latency comparisons in separate versioned reports.
+The same runner offers `--pdf-probe`, `--input-probe`, `--shading-probe`, `--workflow-probe`, `--realism-probe` and `--latency-probe`. The latency probe compares HB and charcoal on fresh and layered in-memory pages, records input-to-raster/tile/frame software timestamps and event-loop gaps, and reads optional native advance/publication/tile timing counters. `--baseline-qml` accepts a preserved UI source for comparison; install the corresponding native renderer deliberately before each run. The realism probe records emission coordinates and canvas scale, per-stroke UI timer gaps, pressure match/fallback counts, replay statistics and first/last endpoints. Native miss diagnostics report stale-position matches and retained-sample ages. Upright and tilted strokes must satisfy the same strict pressure-matching checks before their optical footprints can be compared. These software diagnostics do not measure physical panel latency or prove the cause of an input delay. Do not run tablet input tests concurrently. Earlier 4.1 device and deployment evidence is stored under `docs/papersketch-v4.1-*`; keep new latency comparisons in separate versioned reports.
 
 The optional legacy `papersketch-ink` preview extension is separate from the material renderer and is not installed by the v4 package. It derives from David @ TheoryStudios' MIT-licensed RemarkableAnimator extension; retain `native/LICENSE`. Project licensing is described in the repository's `LICENSES.md`.

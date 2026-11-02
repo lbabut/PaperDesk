@@ -1,0 +1,19 @@
+{
+  "version": "4.2.2",
+  "date": "2026-11-02",
+  "baseline": "Verified public 4.2.1 source and production website",
+  "tests": {
+    "python_run": 149,
+    "python_skipped": 2,
+    "qml_passed": 269,
+    "qml_skipped": 2,
+    "native_groups": 15
+  },
+  "real_tablet_pdf_import": true,
+  "physical_add_pdf_tap": true,
+  "native_library_pdf_exactly_matches_ram": true,
+  "user_saved_sketchbook_preserved": true,
+  "unrelated_app_payloads_byte_identical": true,
+  "companion_app_share_ui_tested": false,
+  "notes": "PDF is added using the native library importer and participates in normal reMarkable cloud synchronization; direct phone app interaction was not available."
+}

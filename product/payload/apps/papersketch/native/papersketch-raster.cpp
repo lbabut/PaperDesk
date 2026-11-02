@@ -10,6 +10,9 @@
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QDateTime>
 #include <QtGui/QImage>
+#include <QtGui/QPdfWriter>
+#include <QtGui/QPageSize>
+#include <QtCore/QTemporaryDir>
 #include <QtGui/QRegion>
 #include <QtGui/QPainter>
 #include <QtQml/qqml.h>
@@ -335,6 +338,44 @@ public:
         if(image.isNull()||!file.open(QIODevice::WriteOnly)||!image.save(&file,"PNG")||!file.commit())
             return {{"ok",false},{"error","PNG could not be saved. Your drawing is still in memory."}};
         return {{"ok",true},{"path",path}};
+    }
+
+    QSet<QString> pendingPdfPaths;
+    Q_INVOKABLE QVariantMap exportPdf(QString name){
+        bool controls=false;for(auto ch:name)if(ch.unicode()<32||ch.unicode()==127)controls=true;
+        name=name.trimmed();if(name.endsWith(".pdf",Qt::CaseInsensitive))name.chop(4);
+        bool invalid=controls||name.isEmpty()||name.startsWith('.')||name.contains('/')||name.contains(QChar(92))||name.toUtf8().size()>240;
+        for(auto ch:name)if(ch.unicode()<32)invalid=true;
+        if(invalid)return {{"ok",false},{"error","Choose a document name without folders or control characters."}};
+        if(image.isNull())return {{"ok",false},{"error","The drawing is not ready for export."}};
+        if(!QDir().mkpath(cacheDirectory))return {{"ok",false},{"error","Cannot create the PDF export folder."}};
+        QTemporaryDir job(QDir(cacheDirectory).filePath("pdf-export-XXXXXX"));
+        if(!job.isValid())return {{"ok",false},{"error","Cannot create the PDF export folder."}};
+        auto path=QDir(job.path()).filePath(name+".pdf");
+        QSaveFile file(path);bool written=false;
+        if(file.open(QIODevice::WriteOnly)){
+            {
+                QPdfWriter writer(&file);writer.setResolution(144);
+                writer.setPageSize(QPageSize(QSizeF(600,800),QPageSize::Point));
+                writer.setPageMargins(QMarginsF(0,0,0,0),QPageLayout::Point);
+                writer.setTitle(name);writer.setCreator("Paper Sketch");
+                QPainter painter;
+                if(painter.begin(&writer)){
+                    painter.setRenderHint(QPainter::LosslessImageRendering,true);
+                    painter.drawImage(QRect(0,0,writer.width(),writer.height()),image.convertToFormat(QImage::Format_Grayscale8));
+                    written=painter.end();
+                }
+            }
+            if(written)written=file.commit();
+        }
+        if(!written)return {{"ok",false},{"error","PDF could not be created. Your drawing is still in memory."}};
+        pendingPdfPaths.insert(path);job.setAutoRemove(false);
+        return {{"ok",true},{"path",path},{"title",name}};
+    }
+    Q_INVOKABLE bool discardPdfExport(const QString &path){
+        if(!pendingPdfPaths.contains(path))return false;
+        if(!QFile::remove(path))return false;
+        pendingPdfPaths.remove(path);QDir().rmdir(QFileInfo(path).absolutePath());return true;
     }
 
     QString cachePath(int page)const{return (cacheDirectory+QStringLiteral("/cache-%1-%2.bin")).arg(QString::fromLatin1(QCryptographicHash::hash(cacheNamespace.toUtf8(),QCryptographicHash::Sha256).toHex().left(12))).arg(page);}

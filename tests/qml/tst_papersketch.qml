@@ -7,6 +7,35 @@ Item {
     id: scene
     width:1404;height:1872
     property var app:null
+    QtObject{
+        id:pdfRaster
+        property bool materialAvailable:false
+        property bool penInRange:false
+        property bool fastDisplay:true
+        property int maxSmudgeMs:0
+        property int calls:0
+        property int discarded:0
+        property bool fail:false
+        function exportPdf(name){calls++;return fail?{ok:false,error:"PDF write failed"}:{ok:true,path:"/tmp/export/Łąka 100% #.pdf",title:"Łąka 100% #"};}
+        function discardPdfExport(path){discarded++;return true;}
+    }
+    QtObject{
+        id:pdfImporter
+        property int calls:0
+        property string source:""
+        signal imported(var document,var collection,var source)
+        signal failed(var source)
+        function importFromUrls(urls,parent){calls++;source=urls[0];}
+    }
+    QtObject{
+        id:pdfLibrary
+        property var entries:({})
+        signal entryAdded(var entryId)
+        signal entryImported(var entryId,var visibleName,var errorMessage)
+        function entryForId(id){return entries[id]||null;}
+    }
+    QtObject{id:pdfBridge;property var importer:pdfImporter;property var lib:pdfLibrary}
+
     Component {
         id:realismBackend
         QtObject {
@@ -563,6 +592,51 @@ Item {
             compare(scene.app.pageCount,1);compare(scene.app.page.strokes.length,0);verify(scene.app.page.cacheSlot>slot);
             scene.app.requestLeave({kind:"page",index:0});scene.app.resolveLeave("discard");tryCompare(scene.app,"replaying",false,10000);
             compare(scene.app.page.cacheSlot,slot);compare(scene.app.page.strokes.length,1);
+        }
+        function withPdfExport(run){
+            var a=scene.app,oldRaster=a.nativeRaster,oldActive=a.nativeRasterActive;
+            pdfRaster.calls=0;pdfRaster.discarded=0;pdfRaster.fail=false;pdfImporter.calls=0;pdfLibrary.entries={};
+            a.nativeRaster=pdfRaster;a.nativeRasterActive=true;a.exportBridge=pdfBridge;a.pendingPdfExport=null;
+            try{a.exportPage();run(a);}
+            finally{a.pendingPdfExport=null;a.exportBusy=false;a.closeExport();a.exportBridge=null;a.nativeRaster=oldRaster;a.nativeRasterActive=oldActive;}
+        }
+        function test_pdf_import_needs_matching_source_and_new_entry(){
+            withPdfExport(function(a){
+                a.saveExport();a.saveExport();compare(pdfRaster.calls,1);compare(pdfImporter.calls,1);
+                verify(pdfImporter.source.indexOf("%25")>=0);verify(pdfImporter.source.indexOf("%23")>=0);
+                var id="12345678-1234-1234-1234-123456789abc";
+                pdfLibrary.entries=({"12345678-1234-1234-1234-123456789abc":{visibleName:"Łąka 100% #",isTrashed:false}});
+                pdfImporter.imported({},"","file:///tmp/unrelated.pdf");verify(a.pendingPdfExport!==null);
+                pdfLibrary.entryAdded(id);verify(a.pendingPdfExport!==null);compare(pdfRaster.discarded,0);
+                pdfImporter.imported({},"",pdfImporter.source);
+                compare(a.exportedDocumentId,id);compare(a.pendingPdfExport,null);compare(pdfRaster.discarded,1);verify(!a.exportDialog);
+            });
+        }
+        function test_pdf_import_source_can_arrive_before_entry(){
+            withPdfExport(function(a){
+                a.saveExport();pdfImporter.imported({},"","file://"+a.exportPath);verify(a.pendingPdfExport!==null);
+                pdfLibrary.entries=({"12345678-1234-1234-1234-123456789abc":{visibleName:"Other",isTrashed:false}});
+                pdfLibrary.entryAdded("12345678-1234-1234-1234-123456789abc");verify(a.pendingPdfExport!==null);
+                pdfLibrary.entries=({"12345678-1234-1234-1234-123456789abc":{visibleName:"Łąka 100% #",isTrashed:false}});
+                pdfLibrary.entryAdded("12345678-1234-1234-1234-123456789abc");compare(a.pendingPdfExport,null);
+            });
+        }
+        function test_pdf_import_failure_preserves_copy_and_write_failure_stops_import(){
+            withPdfExport(function(a){
+                pdfRaster.fail=true;a.saveExport();compare(pdfImporter.calls,0);compare(a.pendingPdfExport,null);
+                pdfRaster.fail=false;a.saveExport();pdfImporter.failed("file:///tmp/other.pdf");verify(a.pendingPdfExport!==null);
+                pdfImporter.failed(pdfImporter.source);compare(a.pendingPdfExport,null);compare(pdfRaster.discarded,0);
+                verify(a.exportMessage.indexOf("copy is kept")>=0);verify(a.exportDialog);
+            });
+        }
+        function test_pdf_import_timeout_blocks_duplicate_but_accepts_late_completion(){
+            withPdfExport(function(a){
+                a.saveExport();a.pendingPdfExport.started=Date.now()-31000;wait(1200);
+                verify(a.pendingPdfExport.timedOut);verify(!a.exportBusy);a.saveExport();compare(pdfImporter.calls,1);
+                pdfLibrary.entries=({"12345678-1234-1234-1234-123456789abc":{visibleName:"Łąka 100% #",isTrashed:false}});
+                pdfImporter.imported({},"",pdfImporter.source);pdfLibrary.entryAdded("12345678-1234-1234-1234-123456789abc");
+                compare(a.pendingPdfExport,null);compare(pdfRaster.discarded,1);
+            });
         }
         function test_named_export_dialog_and_cancel() {
             scene.app.exportPage();verify(scene.app.exportDialog);
