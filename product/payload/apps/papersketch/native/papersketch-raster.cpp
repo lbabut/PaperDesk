@@ -216,6 +216,23 @@ public:
         std::array<double,3> values{{a[0].toDouble(-1),a[1].toDouble(-1),a[2].toDouble(-1)}};
         if(PaperPressure::valid(values)){pressureCurve.anchors=values;pressureCurve.calibrated=true;}
     }
+    QString toolPreferencesPath()const{return cachePath(0)+".tools.json";}
+    static bool validToolPreferences(const QJsonObject &o){
+        auto sizes=o.value("sizes").toArray();double selected=o.value("selectedTool").toDouble(-1);
+        if(o.value("version").toDouble(-1)!=1||selected<0||selected>8||std::floor(selected)!=selected||sizes.size()!=9||!o.value("kneadedEraser").isBool())return false;
+        for(const auto &value:sizes){double size=value.toDouble(-1);if(!std::isfinite(size)||size<1||size>80)return false;}
+        return true;
+    }
+    Q_INVOKABLE QString loadToolPreferences()const{
+        QFile file(toolPreferencesPath());if(!file.open(QIODevice::ReadOnly)||file.size()>4096)return {};
+        auto raw=file.readAll();auto doc=QJsonDocument::fromJson(raw);
+        return doc.isObject()&&validToolPreferences(doc.object())?QString::fromUtf8(raw):QString();
+    }
+    Q_INVOKABLE bool saveToolPreferences(const QString &value){
+        auto raw=value.toUtf8();if(raw.size()>4096)return false;
+        auto doc=QJsonDocument::fromJson(raw);if(!doc.isObject()||!validToolPreferences(doc.object()))return false;
+        return QDir().mkpath(cacheDirectory)&&atomicWrite(toolPreferencesPath(),doc.toJson(QJsonDocument::Compact));
+    }
     Q_INVOKABLE void startCalibration(){pressureCurve.start();emit calibrationChanged();}
     Q_INVOKABLE bool nextCalibration(){bool ok=pressureCurve.next();emit calibrationChanged();return ok;}
     Q_INVOKABLE QVariantMap finishCalibration(){

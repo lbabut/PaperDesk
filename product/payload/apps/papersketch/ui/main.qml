@@ -12,7 +12,11 @@ Rectangle {
     signal close
     property var notebook: Ink.book()
     property int tool: 1
-    property real brushSize: Ink.tools[tool].size
+    property real brushSize: Ink.tools[1].size
+    property var toolSizes:Ink.tools.map(function(t){return t.size;})
+    property bool toolPreferencesReady:false
+    property bool toolPreferencesLoading:false
+    property bool toolPreferencesDirty:false
     property real strength: 1.0
     property int tone: 0
     property int paperKind: 0
@@ -29,7 +33,7 @@ Rectangle {
     readonly property int calibrationStage:calibrationRevision>=0 && nativeRaster && nativeRaster.calibrationStage!==undefined?nativeRaster.calibrationStage:0
     readonly property string calibrationStatus:calibrationRevision>=0 && nativeRaster && typeof nativeRaster.calibrationSummary==="function"?nativeRaster.calibrationSummary():"Standard pressure response"
     onPaperKindChanged:if(ready && !materialOptionsLoading)applyMaterialOptions(true)
-    onKneadedEraserChanged:if(ready && !materialOptionsLoading)applyMaterialOptions(true)
+    onKneadedEraserChanged:{if(ready && !materialOptionsLoading)applyMaterialOptions(false);rememberToolPreferences();}
     readonly property bool fingerSmudge: true
     property string lastSavedDocument:""
     property var exportBridge:null
@@ -129,8 +133,20 @@ Rectangle {
     property var nativeRequest: null
     property string nativeState: ""
     property bool closing: false
-    onToolChanged:if(ready && !bitmapMode)nativeHeartbeat()
-    onBrushSizeChanged:if(ready && !bitmapMode)nativeHeartbeat()
+    onToolChanged:{
+        if(toolPreferencesReady && !toolPreferencesLoading){
+            toolPreferencesLoading=true;brushSize=toolSize(tool);toolPreferencesLoading=false;
+            rememberToolPreferences();
+        }
+        if(ready && !bitmapMode)nativeHeartbeat();
+    }
+    onBrushSizeChanged:{
+        if(toolPreferencesReady && !toolPreferencesLoading){
+            var sizes=toolSizes.slice();sizes[tool]=Ink.clamp(brushSize,1,80);toolSizes=sizes;
+            rememberToolPreferences();
+        }
+        if(ready && !bitmapMode)nativeHeartbeat();
+    }
     onControlsVisibleChanged:if(ready && !bitmapMode) {nativeArmed=false;if(nativeReady)nativeWrite("off");}
     Timer { interval:400;running:root.visible && !root.closing && !root.bitmapMode;repeat:true;triggeredOnStart:true;onTriggered:root.nativeHeartbeat() }
     function nativeWrite(value) {
@@ -186,8 +202,8 @@ Rectangle {
     }
     function applyMaterialOptions(changed) {
         paperKind=Ink.clamp(Math.round(paperKind),0,2);
-        // Keep changes in memory until explicit Save. Qt.labs.Settings starts
-        // a delayed whole-object store whenever one of its properties changes.
+        // Paper texture belongs to the page and is committed with explicit Save.
+        // Tool choices use their own small preference file.
         if(changed)page.materialPaperKind=paperKind;
         if(materialsAvailable){nativeRaster.setMaterialOptions(paperKind,kneadedEraser);if(changed)materialStateChanged();}
     }
@@ -198,14 +214,54 @@ Rectangle {
         paperKind=Ink.clamp(kind===undefined?paperKind:kind,0,2);
         materialOptionsLoading=false;applyMaterialOptions(false);
     }
+    function toolSize(index){var n=toolSizes[index];return isFinite(n)?Ink.clamp(n,1,80):(Ink.tools[index]||Ink.tools[1]).size;}
+    function selectTool(index){tool=index;brushSize=toolSize(index);}
+    function rememberToolPreferences(){
+        if(!toolPreferencesReady || toolPreferencesLoading || materialOptionsLoading)return;
+        toolPreferencesDirty=true;toolPreferencesTimer.restart();
+    }
+    function toolPreferencesDocument(){return JSON.stringify({version:1,selectedTool:tool,sizes:toolSizes,kneadedEraser:kneadedEraser});}
+    function flushToolPreferences(){
+        if(!toolPreferencesReady || !toolPreferencesDirty)return true;
+        if(busy){toolPreferencesTimer.restart();return false;}
+        var raw=toolPreferencesDocument(),ok=true;
+        if(nativeRaster && typeof nativeRaster.saveToolPreferences==="function")ok=nativeRaster.saveToolPreferences(raw);
+        else {fallbackToolPreferences.document=raw;if(typeof fallbackToolPreferences.sync==="function")fallbackToolPreferences.sync();}
+        if(ok)toolPreferencesDirty=false;
+        else {notice="Tool settings could not be saved.";toolPreferencesTimer.restart();}
+        return ok;
+    }
+    function loadPersistentToolPreferences(){
+        var raw=nativeRaster && typeof nativeRaster.loadToolPreferences==="function"?nativeRaster.loadToolPreferences():fallbackToolPreferences.document;
+        var p=null;
+        try {
+            var candidate=JSON.parse(raw);
+            if(candidate.version===1 && Number.isInteger(candidate.selectedTool) && candidate.selectedTool>=0 && candidate.selectedTool<Ink.tools.length &&
+               Array.isArray(candidate.sizes) && candidate.sizes.length===Ink.tools.length && candidate.sizes.every(function(n){return typeof n==="number"&&isFinite(n)&&n>=1&&n<=80;}) &&
+               typeof candidate.kneadedEraser==="boolean")p=candidate;
+        }catch(e){}
+        if(p){
+            toolPreferencesLoading=true;materialOptionsLoading=true;
+            toolSizes=p.sizes.slice();tool=p.selectedTool;brushSize=toolSize(tool);kneadedEraser=p.kneadedEraser;
+            materialOptionsLoading=false;toolPreferencesLoading=false;applyMaterialOptions(false);
+        }
+        toolPreferencesReady=true;toolPreferencesDirty=false;
+        if(!p)rememberToolPreferences();
+    }
     function restoreToolPreferences(preferences) {
-        materialOptionsLoading=true;
-        tool=Ink.clamp(preferences.selectedTool,0,Ink.tools.length-1);
-        brushSize=Ink.clamp(preferences.selectedSize,1,80);
+        toolPreferencesLoading=true;materialOptionsLoading=true;
+        var selected=preferences.selectedTool;
+        tool=typeof selected==="number"&&isFinite(selected)?Ink.clamp(Math.round(selected),0,Ink.tools.length-1):1;
+        var sizes=Ink.tools.map(function(t){return t.size;});
+        if(Array.isArray(preferences.toolSizes) && preferences.toolSizes.length===Ink.tools.length)
+            for(var i=0;i<sizes.length;i++)if(isFinite(preferences.toolSizes[i]))sizes[i]=Ink.clamp(preferences.toolSizes[i],1,80);
+        var size=preferences.selectedSize;
+        if(typeof size==="number"&&isFinite(size))sizes[tool]=Ink.clamp(size,1,80);
+        toolSizes=sizes;brushSize=toolSize(tool);
         strength=1;tone=0;
         paperKind=preferences.paperKind===undefined?saved.paperKind:Ink.clamp(preferences.paperKind,0,2);
         kneadedEraser=preferences.kneadedEraser===undefined?saved.kneadedEraser:preferences.kneadedEraser===true;
-        materialOptionsLoading=false;applyMaterialOptions(false);
+        materialOptionsLoading=false;toolPreferencesLoading=false;applyMaterialOptions(false);
     }
     function openMaterials() {
         if(busy || replaying || saveBlocked)return;
@@ -289,6 +345,8 @@ Rectangle {
         property int paperKind: 0
         property bool kneadedEraser: false
     }
+    Settings {id:fallbackToolPreferences;category:saved.category+".ToolPreferences";property string document:""}
+    Timer{id:toolPreferencesTimer;interval:500;onTriggered:root.flushToolPreferences()}
     ListModel { id:liveSegments }
     Timer {
         id:clearPreviewTimer;interval:80
@@ -354,17 +412,17 @@ Rectangle {
         if(activeStroke!==null && activeStroke.tool!==7)return;
         paper.requestPaint();
     }
-    function unloading() { if(calibrationDialog && nativeRaster)nativeRaster.cancelCalibration();closing=true;if(nativeReady)nativeWrite("off");if(nativeRaster)nativeRaster.release() }
+    function unloading() { flushToolPreferences();if(calibrationDialog && nativeRaster)nativeRaster.cancelCalibration();closing=true;if(nativeReady)nativeWrite("off");if(nativeRaster)nativeRaster.release() }
     function saveBook() {
         if(!ready || saveBlocked || busy) return false;
         var saveStarted=Date.now();
         if(nativeRasterActive){
-            if(nativeRaster.saveNotebook(JSON.stringify({document:JSON.stringify(notebook),selectedTool:tool,selectedSize:brushSize,selectedStrength:strength,selectedTone:tone,useFinger:true,paperKind:paperKind,kneadedEraser:kneadedEraser}),pageSlot(pageIndex),cacheMetadata())===false){
+            if(nativeRaster.saveNotebook(JSON.stringify({document:JSON.stringify(notebook),selectedTool:tool,selectedSize:brushSize,toolSizes:toolSizes,selectedStrength:strength,selectedTone:tone,useFinger:true,paperKind:paperKind,kneadedEraser:kneadedEraser}),pageSlot(pageIndex),cacheMetadata())===false){
                 notice="Save failed. Your drawing is still in memory.";return false;
             }
             if(!nativeRaster.flushSaves()){notice="Save failed. Your drawing is still in memory.";return false;}
             dirty=false;newUnsavedPage=false;pageDiskMetadata=JSON.stringify(page);lastSavedDocument=JSON.stringify(notebook);notice="Saved";
-            console.log("PaperSketch manual save",Date.now()-saveStarted,"ms");return true;
+            flushToolPreferences();console.log("PaperSketch manual save",Date.now()-saveStarted,"ms");return true;
         }
         saved.checkpoint=saved.document;
         saved.document=JSON.stringify(notebook);
@@ -415,7 +473,7 @@ Rectangle {
         maxPaintMs=0;maxQueueWaitMs=0;
         nativeStroke=bitmapMode || (source==="pen" && selected!==7 && nativeArmed);
         activeSource=source;
-        activeStroke=Ink.stroke(selected,hardwareEraser?Ink.tools[6].size:(selected===7?Math.max(brushSize,source==="finger"?64:32):brushSize),tone,hardwareEraser?1:strength,Date.now());
+        activeStroke=Ink.stroke(selected,hardwareEraser?toolSize(6):(selected===7?Math.max(brushSize,source==="finger"?64:32):brushSize),tone,hardwareEraser?1:strength,Date.now());
         activeStroke.hardwareEraser=hardwareEraser;activeStroke.rawInput=fromRaw;activeStroke.inputSamples=fromRaw?1:0;
         if(hardwareEraser && materialsAvailable)nativeRaster.setMaterialOptions(paperKind,false);
         if(bitmapMode)activeStroke.renderer=8;
@@ -627,7 +685,7 @@ Rectangle {
             }
         }
         restoreToolPreferences(preferences);
-        pageIndex=notebook.index;totalPoints=Ink.count(notebook);ready=true;redraw(true);dirty=false;lastSavedDocument=JSON.stringify(notebook);
+        pageIndex=notebook.index;totalPoints=Ink.count(notebook);ready=true;redraw(true);dirty=false;lastSavedDocument=JSON.stringify(notebook);loadPersistentToolPreferences();
         console.log("PaperSketch opened",notebook.pages.length,"pages",totalPoints,"points",saveBlocked?"save-blocked":"ready");
     }
 
@@ -714,7 +772,7 @@ Rectangle {
                         iconName:["pencil-2h","pencil-hb","pencil-2b","pencil-6b","charcoal","soft-charcoal","eraser","smudge","rapidograph"][index]
                         selected:root.tool===index
                         objectName:"tool"+index
-                        onTriggered:{root.tool=index;root.brushSize=modelData.size}
+                        onTriggered:root.selectTool(index)
                     }
                 }
             }
@@ -994,8 +1052,8 @@ Rectangle {
             }
             Row {
                 spacing:16
-                Action{label:"Hard eraser";width:230;objectName:"hardEraserButton";selected:!root.kneadedEraser;available:root.materialsAvailable;onTriggered:{root.kneadedEraser=false;root.tool=6;root.brushSize=Ink.tools[6].size}}
-                Action{label:"Kneaded eraser";width:250;objectName:"kneadedEraserButton";selected:root.kneadedEraser;available:root.materialsAvailable;onTriggered:{root.kneadedEraser=true;root.tool=6;root.brushSize=Ink.tools[6].size}}
+                Action{label:"Hard eraser";width:230;objectName:"hardEraserButton";selected:!root.kneadedEraser;available:root.materialsAvailable;onTriggered:{root.kneadedEraser=false;root.selectTool(6)}}
+                Action{label:"Kneaded eraser";width:250;objectName:"kneadedEraserButton";selected:root.kneadedEraser;available:root.materialsAvailable;onTriggered:{root.kneadedEraser=true;root.selectTool(6)}}
             }
             Text{width:parent.width;wrapMode:Text.Wrap;text:root.kneadedEraser?"Press to lift pigment gently. Press harder or move to lift more. Lift and dab again.":"Rub to remove pigment and bring back highlights.";font.pixelSize:22}
             Rectangle{width:parent.width;height:2;color:"black"}
