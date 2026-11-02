@@ -67,3 +67,7 @@ The optional legacy `papersketch-ink` preview extension is separate from the mat
 ## Rear eraser contact strength (4.2.5)
 
 A positive rear contact uses the ordinary hard eraser at full contact pressure, independently of the drawing-nib calibration. Zero pressure remains a hover and does not erase; a stationary rise starts the first erasing dab. Flipping back clears this override. A manually selected eraser and all drawing tools retain their pressure response. Permanent Rapidograph ink remains unaffected.
+
+## Fine details and fast strokes (4.2.6)
+
+The tablet canvas consumes ordered native pen contacts with their original position, pressure and tilt, including short contacts and releases. Small pen reversals are preserved. The drawing, saved pages and exports retain full quality; the experimental progressive-preview renderer remains absent.

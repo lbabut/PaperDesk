@@ -1,3 +1,11 @@
+# 4.2.6 — 2026-11-02
+
+- Paper Sketch preserves short pen contacts and fast back-and-forth strokes through an ordered native input queue.
+- Drawing uses the captured pen position, pressure and tilt directly, with separate contact and release events. Coalesced UI motion no longer selects samples from another nearby contact or truncates a long path to the latest 64 samples.
+- Fine pen movements are no longer discarded by the previous 0.35-pixel motion threshold. Rendering, saved artwork and exports retain full quality.
+- Toolbar actions, finger blending, pressure calibration and mouse fallback remain available. Rear-stylus erasing retains its full contact strength and permanent Rapidograph ink remains intact.
+- Regression checks cover short contacts during a GUI stall, long curved input, subpixel reversals, rapid shading and input interruption recovery.
+
 # 4.2.5 — 2026-11-02
 
 - Paper Sketch uses the ordinary hard eraser at full contact strength when the rear end of a compatible stylus touches the page.

@@ -1,4 +1,4 @@
-# PaperDesk 4.2.5 — manual SSH installation
+# PaperDesk 4.2.6 — manual SSH installation
 
 Source + prepared ARM tablet files, not a from-scratch build or a Windows EXE.
 Browse sources at <https://github.com/lbabut/PaperDesk>. Download the project
@@ -22,19 +22,19 @@ Verify the tablet host-key fingerprint independently; stop on unexpected changes
 Linux commands (macOS: use shasum -a 256 -c instead of sha256sum -c):
 
 ```sh
-curl -fLO https://paperdesk.lukaszbabut.info/download/paperdesk-sources-4.2.5.tar.gz
-curl -fLO https://paperdesk.lukaszbabut.info/download/paperdesk-sources-4.2.5.tar.gz.sha256
-sha256sum -c paperdesk-sources-4.2.5.tar.gz.sha256
-# macOS: shasum -a 256 -c paperdesk-sources-4.2.5.tar.gz.sha256
+curl -fLO https://paperdesk.lukaszbabut.info/download/paperdesk-sources-4.2.6.tar.gz
+curl -fLO https://paperdesk.lukaszbabut.info/download/paperdesk-sources-4.2.6.tar.gz.sha256
+sha256sum -c paperdesk-sources-4.2.6.tar.gz.sha256
+# macOS: shasum -a 256 -c paperdesk-sources-4.2.6.tar.gz.sha256
 ```
 
 Windows PowerShell: compare the entire SHA-256 in the two outputs:
 
 ```powershell
-curl.exe -fLO https://paperdesk.lukaszbabut.info/download/paperdesk-sources-4.2.5.tar.gz
-curl.exe -fLO https://paperdesk.lukaszbabut.info/download/paperdesk-sources-4.2.5.tar.gz.sha256
-Get-FileHash .\paperdesk-sources-4.2.5.tar.gz -Algorithm SHA256
-Get-Content .\paperdesk-sources-4.2.5.tar.gz.sha256
+curl.exe -fLO https://paperdesk.lukaszbabut.info/download/paperdesk-sources-4.2.6.tar.gz
+curl.exe -fLO https://paperdesk.lukaszbabut.info/download/paperdesk-sources-4.2.6.tar.gz.sha256
+Get-FileHash .\paperdesk-sources-4.2.6.tar.gz -Algorithm SHA256
+Get-Content .\paperdesk-sources-4.2.6.tar.gz.sha256
 ```
 
 Stop on any mismatch. A checksum is not publisher authentication.
@@ -44,8 +44,8 @@ Stop on any mismatch. A checksum is not publisher authentication.
 All subsequent commands work in PowerShell and Linux/macOS terminals.
 
 ```sh
-tar -xzf paperdesk-sources-4.2.5.tar.gz
-cd paperdesk-sources-4.2.5
+tar -xzf paperdesk-sources-4.2.6.tar.gz
+cd paperdesk-sources-4.2.6
 ssh root@10.11.99.1 'uname -m; cat /etc/os-release; df -h /home/root'
 ssh root@10.11.99.1 'test -x /home/root/xovi/start && test -d /home/root/xovi/exthome/appload && test -f /home/root/xovi/extensions.d/qt-resource-rebuilder.so && echo READY'
 ```
@@ -57,10 +57,10 @@ product/uninstall.sh before running them.
 ## Transfer and verify on the tablet
 
 ```sh
-ssh root@10.11.99.1 'test ! -e /home/root/paperdesk-install-4.2.5 && mkdir -m 700 /home/root/paperdesk-install-4.2.5'
-tar --exclude=paperdesk.local.conf -czf paperdesk-tablet-4.2.5.tar.gz -C product .
-scp paperdesk-tablet-4.2.5.tar.gz root@10.11.99.1:/home/root/paperdesk-install-4.2.5/
-ssh root@10.11.99.1 'cd /home/root/paperdesk-install-4.2.5 && tar -xzf paperdesk-tablet-4.2.5.tar.gz && sha256sum -c SHA256SUMS'
+ssh root@10.11.99.1 'test ! -e /home/root/paperdesk-install-4.2.6 && mkdir -m 700 /home/root/paperdesk-install-4.2.6'
+tar --exclude=paperdesk.local.conf -czf paperdesk-tablet-4.2.6.tar.gz -C product .
+scp paperdesk-tablet-4.2.6.tar.gz root@10.11.99.1:/home/root/paperdesk-install-4.2.6/
+ssh root@10.11.99.1 'cd /home/root/paperdesk-install-4.2.6 && tar -xzf paperdesk-tablet-4.2.6.tar.gz && sha256sum -c SHA256SUMS'
 ```
 
 Stop if the staging directory already exists; inspect the earlier attempt.
@@ -69,13 +69,13 @@ Every inner checksum must say OK. Do not proceed after an error.
 ## Install, start and verify
 
 ```sh
-ssh root@10.11.99.1 'cd /home/root/paperdesk-install-4.2.5 && sh ./install.sh'
+ssh root@10.11.99.1 'cd /home/root/paperdesk-install-4.2.6 && sh ./install.sh'
 ssh root@10.11.99.1 '/home/root/xovi/start'
 ssh root@10.11.99.1 'cat /home/root/.local/share/paperdesk/current-version'
 ```
 
 Run each command only after the preceding command succeeds. Expect version
-4.2.5. Open and close Sketch, SSH, Web, RDP, RSS, Books, Dots and Care. Verify notebooks
+4.2.6. Open and close Sketch, SSH, Web, RDP, RSS, Books, Dots and Care. Verify notebooks
 remain accessible. Backups and app data stay in /home/root/.local/share/paperdesk
 and the apps' settings/data directories. Sketch artwork stays in
 /home/root/.local/share/paperdesk/sketch; PNG exports stay in Documents. Save
@@ -113,7 +113,7 @@ artwork. Calibration adjusts digital input, not a measured physical pencil.
 Use Care → Remove PaperDesk, or:
 
 ```sh
-ssh root@10.11.99.1 'sh /home/root/paperdesk-install-4.2.5/uninstall.sh'
+ssh root@10.11.99.1 'sh /home/root/paperdesk-install-4.2.6/uninstall.sh'
 ssh root@10.11.99.1 '/home/root/xovi/start'
 ```
 

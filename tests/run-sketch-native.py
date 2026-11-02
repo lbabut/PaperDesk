@@ -28,13 +28,14 @@ p.add_argument("--workflow-probe",action="store_true")
 p.add_argument("--pdf-probe",action="store_true")
 p.add_argument("--realism-probe",action="store_true")
 p.add_argument("--eraser-probe",action="store_true")
+p.add_argument("--fidelity-probe",action="store_true")
 p.add_argument("--output",default="docs/papersketch-native-2026-10-31.json")
 a=p.parse_args()
 if a.latency_fresh_only and not a.latency_probe:
     p.error("--latency-fresh-only requires --latency-probe")
-if a.latency_probe and any((a.smoke,a.input_probe,a.shading_probe,a.controls_probe,a.workflow_probe,a.realism_probe,a.pdf_probe,a.eraser_probe)):
+if a.latency_probe and any((a.smoke,a.input_probe,a.shading_probe,a.controls_probe,a.workflow_probe,a.realism_probe,a.pdf_probe,a.eraser_probe,a.fidelity_probe)):
     p.error("--latency-probe must run separately from other probes")
-uses_input=a.eraser_probe or a.pdf_probe or a.input_probe or a.shading_probe or a.latency_probe or a.controls_probe or a.workflow_probe or a.realism_probe
+uses_input=a.fidelity_probe or a.eraser_probe or a.pdf_probe or a.input_probe or a.shading_probe or a.latency_probe or a.controls_probe or a.workflow_probe or a.realism_probe
 root=pathlib.Path(__file__).resolve().parents[1]
 work=root/"work/papersketch-native"
 app=work/"papersketch-native-bench"
@@ -60,7 +61,7 @@ for name,text in [("baseline",baseline),("constant-fast",candidate)]:
     shutil.copy2(source/"engine.js",folder/"engine.js")
     for qml_name in ("native-tile.qml","ToolIcon.qml"):
         shutil.copy2(source/"ui"/qml_name,folder/"ui"/qml_name)
-harness=(root/("tests/device/papersketch-stylus-eraser.qml" if a.eraser_probe else "tests/device/papersketch-latency.qml" if a.latency_probe else "tests/device/papersketch-realism.qml" if a.realism_probe else "tests/device/papersketch-workflow.qml" if a.workflow_probe else "tests/device/papersketch-controls.qml" if a.controls_probe else "tests/device/papersketch-shading.qml" if a.shading_probe else "tests/device/papersketch-input.qml" if a.input_probe else "tests/device/papersketch-native.qml")).read_text()
+harness=(root/("tests/device/papersketch-input-fidelity.qml" if a.fidelity_probe else "tests/device/papersketch-stylus-eraser.qml" if a.eraser_probe else "tests/device/papersketch-latency.qml" if a.latency_probe else "tests/device/papersketch-realism.qml" if a.realism_probe else "tests/device/papersketch-workflow.qml" if a.workflow_probe else "tests/device/papersketch-controls.qml" if a.controls_probe else "tests/device/papersketch-shading.qml" if a.shading_probe else "tests/device/papersketch-input.qml" if a.input_probe else "tests/device/papersketch-native.qml")).read_text()
 if a.latency_fresh_only:
     marker="property bool freshOnly:false"
     assert harness.count(marker)==1,"Latency harness fresh-only option is missing"
@@ -187,8 +188,8 @@ try:
                 event=next(e for e in report["evdev_injections"] if e["id"]==case["id"])
                 case["tile_visible_before_release"]=case["tile_seen_ms"]<event["release_ms"]
                 case["injected_duration_ms"]=event["release_ms"]-event["contact_ms"]
-    if a.realism_probe or a.latency_probe:
-        probe_name="latency_probe" if a.latency_probe else "realism_probe"
+    if a.realism_probe or a.latency_probe or a.fidelity_probe or a.eraser_probe:
+        probe_name="latency_probe" if a.latency_probe else "fidelity_probe" if a.fidelity_probe else "eraser_probe" if a.eraser_probe else "realism_probe"
         runtime_errors=[line for line in logs.splitlines() if ("bench.qml:" in line or "baseline/ui/main.qml:" in line) and any(error in line for error in ("TypeError:","ReferenceError:","SyntaxError:"))]
         result[probe_name]["runtime_errors"]=runtime_errors
         result[probe_name]["passed"]=result[probe_name]["passed"] and not runtime_errors
@@ -282,4 +283,10 @@ if a.eraser_probe:
     assert report["results"]["eraser_probe"]["passed"],"Rear stylus eraser probe failed"
     events=report.get("evdev_injections",[])
     assert {"rear-tap","rear-drag","pen-after-rear"}.issubset({e["id"] for e in events})
+    assert all(e.get("writes_ok") for e in events)
+
+if a.fidelity_probe:
+    assert report["results"]["fidelity_probe"]["passed"],"Input fidelity probe failed"
+    events=report.get("evdev_injections",[])
+    assert {"tiny-contacts","fast-shading"}.issubset({e["id"] for e in events})
     assert all(e.get("writes_ok") for e in events)

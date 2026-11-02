@@ -1,0 +1,11 @@
+# Paper Sketch input fidelity (4.2.6)
+
+The previous drawing path used Qt movement delivery to look up nearby raw samples. Its replay selected at most the newest 64 samples, and a positional match could select a later contact at the same place. The native renderer also rejected pen movement below 0.35 pixels. Short contacts could finish before a useful movement reached that path.
+
+The tablet canvas now consumes an ordered stream of down/sample/up frames from the existing verified Wacom reader. Zero-pressure down frames and release boundaries are retained. Position, pressure, tilt and the rear-tool flag travel together; drawing bypasses spatial pressure matching and Qt movement coalescing. A GUI batch limit bounds processing but leaves the remaining events queued. Rendering remains synchronous and full quality.
+
+The queue is bounded to 8192 events. A real overflow or kernel SYN_DROPPED produces an explicit interruption boundary, clears the active stroke and waits for fresh contact, avoiding a fabricated line across missing data. Canvas geometry is captured with a contact so toolbar taps cannot turn into strokes after a layout change. Enabling input mid-contact waits for a fresh down. Finger input, pressure calibration, toolbar handling and fallback mouse input retain their paths.
+
+Host checks cover a complete 600-point curved path after a GUI stall, 80 tiny contacts, subpixel reversals, 100 repeated contacts at the same position, viewport changes and interruption recovery. The tablet probe retained all 40 short strokes during a 150 ms GUI stall and all 1200 rapid-shading samples, with zero queue overruns. The owner confirmed that drawing was clearly better and strokes stopped disappearing. These checks do not measure optical panel latency.
+
+Final validation: 19 native test groups, 55 QML tests (0 failed, 2 skipped) and 66 release/website/runner checks passed. The final tablet checks passed for the rear eraser, normal nib, tiny-contact queue, fast shading, material toolbar, three-stage pressure calibration, tilt, finger geometry and exact saved-state reload. The 1200-sample shading probe completed in software 14 ms after the injected input release in this run; this is not an optical-latency measurement. Raw device reports remain local.

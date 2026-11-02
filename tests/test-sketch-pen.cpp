@@ -1,5 +1,6 @@
 #include "../product/payload/apps/papersketch/native/sketch-pen.h"
 #include <cassert>
+#include <cstdio>
 int main(){
  PaperPen pen;pen.push(100,200,.2,4);auto first=pen.match(100,200);
  pen.push(110,210,.5,4);pen.push(120,200,.9,4);auto last=pen.match(120,200);
@@ -23,4 +24,50 @@ int main(){
  assert(stats.nearestMissAge>=1500&&stats.youngestMissAge>=1500&&stats.nearestMissDistance==0&&stats.maxStaleAge>=1500);
  pen.resetMatchDiagnostics();assert(pen.matchDiagnostics().misses==0);
  assert(pen.match(500,500).p<0&&pen.matchDiagnostics().stalePositionMisses==0);
+
+ // Closed contacts survive a stalled GUI, even at exactly the same position.
+ pen.pause();pen.enableInput(true);int wakes=0;pen.setInputWake([&]{wakes++;});
+ for(unsigned c=100;c<200;c++){
+  pen.frame(100.125,200.0625,0,c,.1,-.2,false,true);
+  pen.frame(100.1875,200.0625,.8,c,.1,-.2,false,true);
+  pen.frame(100.1875,200.0625,0,c,.1,-.2,false,false);
+ }
+ assert(wakes==1);unsigned received=0,closed=0;uint64_t previous=0;
+ while(pen.inputPending()){
+  auto batch=pen.takeInput();assert(batch.size()<=64);
+  for(const auto &event:batch){assert(event.sample.id>previous);previous=event.sample.id;
+   assert(event.sample.contact==100+received/3);assert(event.phase==int(received%3)+1);
+   assert(event.sample.tiltX==.1&&event.sample.tiltY==-.2);if(event.phase==3)closed++;received++;
+  }
+ }
+ assert(received==300&&closed==100&&pen.inputStats()[1]==0);
+ // The contact keeps its original viewport; toolbar taps are excluded.
+ pen.setViewport(10,20,2,2);
+ pen.frame(610.25,820.125,.5,300,0,0,true,true);
+ pen.setViewport(100,200,1,1);
+ pen.frame(610.25,820.125,0,300,0,0,true,false);
+ auto geometry=pen.takeInput();assert(geometry.size()==2);
+ assert(geometry[0].sample.x==300.125&&geometry[0].sample.y==400.0625&&geometry[0].sample.eraser);
+ assert(geometry[1].sample.x==300.125);
+ pen.frame(50,50,.5,301,0,0,false,true);pen.frame(150,250,.5,301,0,0,false,true);pen.frame(150,250,0,301,0,0,false,false);
+ assert(!pen.inputPending()); // Entering from a toolbar cannot start a stroke.
+ pen.enableInput(false);pen.frame(200,300,.5,302,0,0,false,true);
+ pen.enableInput(true);pen.frame(210,310,.6,302,0,0,false,true);pen.frame(210,310,0,302,0,0,false,false);
+ assert(!pen.inputPending()); // Arming does not capture a half-finished contact.
+ pen.frame(200,300,.5,303,0,0,false,true);pen.frame(200,300,0,303,0,0,false,false);
+ assert(pen.takeInput().size()==2);
+
+ pen.frame(200,300,.5,304,0,0,false,true);pen.takeInput();pen.discontinuity();
+ auto boundary=pen.takeInput();assert(boundary.size()==1&&boundary[0].phase==4);
+ pen.frame(205,300,.6,304,0,0,false,true);pen.frame(205,300,0,304,0,0,false,false);assert(!pen.inputPending());
+ pen.frame(210,300,.6,305,0,0,false,true);pen.frame(210,300,0,305,0,0,false,false);assert(pen.takeInput().size()==2);
+
+ pen.setViewport(0,0,1,1);
+ pen.frame(200,300,.5,400,0,0,false,true);
+ for(int i=0;i<8200;i++)pen.frame(200+i*.001,300,.5,400,0,0,false,true);
+ auto overrun=pen.takeInput();assert(overrun.size()==1&&overrun[0].phase==4);
+ pen.frame(210,300,0,400,0,0,false,false);
+ pen.frame(200,300,.5,401,0,0,false,true);pen.frame(200,300,0,401,0,0,false,false);
+ assert(pen.takeInput().size()==2);
+ puts("PASS ordered closed-contact queue, bounded drains without truncation, subpixel geometry and canvas gating");
 }

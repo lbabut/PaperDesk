@@ -102,10 +102,26 @@ public:
     bool displayFast=true;
     bool fastDisplay()const{return displayFast;}
     void setFastDisplay(bool value){if(displayFast==value)return;displayFast=value;emit displayModeChanged();publishDirty(image.rect());}
+    Q_PROPERTY(bool rawPenInputAvailable READ rawPenInputAvailable NOTIFY proximityChanged)
+    bool penReaderReady=false;
+    bool rawPenInputAvailable()const{return penReaderReady;}
+    Q_INVOKABLE void setRawPenInputEnabled(bool value){penSamples.enableInput(value);}
+    void notifyPenInput(){QMetaObject::invokeMethod(this,[this]{emit penInputReady();},Qt::QueuedConnection);}
+    Q_INVOKABLE QVariantList takePenInput(){
+        auto events=penSamples.takeInput();QVariantList result;
+        for(const auto &event:events){const auto &p=event.sample;
+            result.append(QVariant(QVariantList{event.phase,p.x,p.y,p.p,p.tiltX,p.tiltY,p.eraser,p.contact}));
+        }
+        // A batch limit bounds one GUI turn; remaining events stay queued.
+        if(penSamples.inputPending())notifyPenInput();
+        return result;
+    }
+    Q_INVOKABLE QVariantList penInputStats()const{auto s=penSamples.inputStats();return {qulonglong(s[0]),qulonglong(s[1]),qulonglong(s[2])};}
+    Q_SIGNAL void penInputReady();
     PaperPen penSamples;PaperTouch touchSamples;PaperPressure pressureCurve;
     double inputX=0,inputY=0,inputScaleX=1,inputScaleY=1;int pressureMatches=0,pressureFallbacks=0;
     int tiltSamples=0,touchGeometryMatches=0,touchMatches=0,touchFallbacks=0;bool kitLoaded=false;
-    Q_INVOKABLE void setInputTransform(double x,double y,double sx,double sy){inputX=x;inputY=y;inputScaleX=sx;inputScaleY=sy;}
+    Q_INVOKABLE void setInputTransform(double x,double y,double sx,double sy){inputX=x;inputY=y;inputScaleX=sx;inputScaleY=sy;penSamples.setViewport(x,y,sx,sy);}
     PaperPen::Sample pendingSample;uint64_t lastRawId=0;unsigned lastContact=0;int rawReplayed=0,rawBatchMax=0;bool collectingDamage=false;QRegion collectedDamage;
     Q_INVOKABLE double pressureAt(double x,double y,double fallback){
         pendingSample=penSamples.match(inputX+x*inputScaleX,inputY+y*inputScaleY);
@@ -284,8 +300,8 @@ public:
          writeError=false;saves.push_back(std::move(job));}
         saveWake.notify_one();
     }
-    SketchRaster(QObject *parent=nullptr,QString directory="/home/root/.local/share/paperdesk/sketch",QString exports=QString()):QObject(parent),cacheDirectory(directory),exportDirectoryOverride(exports){image.fill(Qt::white);displayPublicationTimer.setInterval(16);displayPublicationTimer.setSingleShot(true);displayPublicationTimer.setTimerType(Qt::PreciseTimer);connect(&displayPublicationTimer,&QTimer::timeout,this,[this]{bool hadDamage=!displayPending.isEmpty();flushDisplayDamage();if(hadDamage&&livePublication)displayPublicationTimer.start();});proximityTimer.setInterval(40);connect(&proximityTimer,&QTimer::timeout,this,[this]{bool nearby=penSamples.nearby.load();if(nearby!=penNearby){if(nearby&&tentativeTouch)cancel();penNearby=nearby;emit proximityChanged();}});proximityTimer.start();writer=std::thread([this]{writeLoop();});}
-    ~SketchRaster() override {{std::lock_guard<std::mutex> lock(saveMutex);stopping=true;}saveWake.notify_one();writer.join();if(pressureFd>=0)close(pressureFd);}
+    SketchRaster(QObject *parent=nullptr,QString directory="/home/root/.local/share/paperdesk/sketch",QString exports=QString()):QObject(parent),cacheDirectory(directory),exportDirectoryOverride(exports){image.fill(Qt::white);displayPublicationTimer.setInterval(16);displayPublicationTimer.setSingleShot(true);displayPublicationTimer.setTimerType(Qt::PreciseTimer);connect(&displayPublicationTimer,&QTimer::timeout,this,[this]{bool hadDamage=!displayPending.isEmpty();flushDisplayDamage();if(hadDamage&&livePublication)displayPublicationTimer.start();});proximityTimer.setInterval(40);connect(&proximityTimer,&QTimer::timeout,this,[this]{bool nearby=penSamples.nearby.load(),reader=penSamples.ready.load();if(nearby!=penNearby||reader!=penReaderReady){if(nearby&&tentativeTouch)cancel();penNearby=nearby;penReaderReady=reader;emit proximityChanged();}});proximityTimer.start();penSamples.setInputWake([this]{notifyPenInput();});writer=std::thread([this]{writeLoop();});}
+    ~SketchRaster() override {penSamples.shutdown();{std::lock_guard<std::mutex> lock(saveMutex);stopping=true;}saveWake.notify_one();writer.join();if(pressureFd>=0)close(pressureFd);}
     mutable int pressureFd=-1;mutable double pressureLast=.5;mutable QElapsedTimer pressureAge;
     Q_INVOKABLE double penPressure(double fallback)const{
         if(pressureFd<0){
@@ -479,9 +495,9 @@ public:
         if(rearEraserStroke&&tool==6&&p>0)p=1;
 
         double dx=x-lastX,dy=y-lastY;
-        double threshold=tentativeTouch?std::clamp(size*.08,1.0,3.0):.35;
+        double threshold=tentativeTouch?std::clamp(size*.08,1.0,3.0):0;
         bool pendingKneaded=tool==6&&physics.kneaded&&p>0&&(!physics.kneadedContact||pressureCurve.map(p)>lastP+.0001);
-        if(!first && dx*dx+dy*dy<threshold*threshold&&!pendingKneaded&&!awaitingPenContact)return false;
+        if(!first && (tentativeTouch?dx*dx+dy*dy<threshold*threshold:dx==0&&dy==0)&&!pendingKneaded&&!awaitingPenContact)return false;
         physics.tiltX=tiltX;physics.tiltY=tiltY;
         if(tiltX!=0||tiltY!=0)tiltSamples++;
         if(tentativeTouch){
@@ -513,6 +529,10 @@ public:
         physics.segment(reinterpret_cast<uint32_t*>(material.bits()),reinterpret_cast<uint32_t*>(image.bits()),reinterpret_cast<uint16_t*>(finger.bits()),tool,size,0,strength,ax,ay,ap,x,y,p,first?0:1);
         int elapsed=timer.elapsed();if(elapsed>slowest){slowest=elapsed;emit timingChanged();}
         pendingDirty=pendingDirty.united(dirty);publishDirty(dirty);lastX=x;lastY=y;lastP=p;return true;
+    }
+    Q_INVOKABLE bool advancePenInput(int tool,double size,double strength,double x,double y,double p,bool first,double tiltX,double tiltY){
+        SketchLatency::Scope timing(std::atomic_load_explicit(&latency,std::memory_order_acquire),SketchLatency::Stage::Advance);
+        return advancePoint(tool,size,strength,x,y,p,first,tiltX,tiltY);
     }
     Q_INVOKABLE bool advance(int tool,double size,double strength,double x,double y,double p,bool first){
         SketchLatency::Scope timing(std::atomic_load_explicit(&latency,std::memory_order_acquire),SketchLatency::Stage::Advance);

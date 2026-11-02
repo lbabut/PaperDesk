@@ -15,6 +15,9 @@
 #include <cstdint>
 #include <algorithm>
 #include <limits>
+#include <deque>
+#include <vector>
+#include <functional>
 struct PaperPen {
  struct Sample{double x=0,y=0,p=-1;long long time=0;uint64_t id=0;unsigned contact=0;double tiltX=0,tiltY=0;bool eraser=false;};
  struct MatchDiagnostics {
@@ -23,13 +26,62 @@ struct PaperPen {
   long long nearestMissAge=-1,youngestMissAge=-1,maxStaleAge=-1;
   double nearestMissDistance=-1;
  } matchStats;
+ struct InputEvent { Sample sample; int phase=0; }; // 1 down, 2 sample, 3 up, 4 gap
+ std::deque<InputEvent> input;std::function<void()> inputWake;
+ bool inputEnabled=false,frameDown=false;unsigned frameContact=0,inputContact=0;
+ double viewX=0,viewY=0,viewSX=1,viewSY=1,contactX=0,contactY=0,contactSX=1,contactSY=1;
+ void setViewport(double x,double y,double sx,double sy){if(!std::isfinite(x)||!std::isfinite(y)||!std::isfinite(sx)||!std::isfinite(sy)||sx<=0||sy<=0)return;std::lock_guard<std::mutex> lock(mutex);viewX=x;viewY=y;viewSX=sx;viewSY=sy;}
+ uint64_t inputReceived=0,inputOverflows=0;static constexpr size_t inputCapacity=8192;
+ void setInputWake(std::function<void()> wake){std::lock_guard<std::mutex> lock(mutex);inputWake=std::move(wake);}
+ void enableInput(bool value){std::lock_guard<std::mutex> lock(mutex);if(inputEnabled==value)return;inputEnabled=value;input.clear();inputContact=0;}
+ std::vector<InputEvent> takeInput(size_t limit=64){
+  std::lock_guard<std::mutex> lock(mutex);std::vector<InputEvent> result;result.reserve(std::min(limit,input.size()));
+  while(!input.empty()&&result.size()<limit){result.push_back(input.front());input.pop_front();}return result;
+ }
+ bool inputPending()const{std::lock_guard<std::mutex> lock(mutex);return !input.empty();}
+ std::array<uint64_t,3> inputStats()const{std::lock_guard<std::mutex> lock(mutex);return {inputReceived,inputOverflows,input.size()};}
+ void frame(double x,double y,double p,unsigned contact,double tx,double ty,bool eraser,bool down){
+  if(!std::isfinite(x)||!std::isfinite(y)||!std::isfinite(p))return;
+  std::function<void()> wake;
+  {
+   std::lock_guard<std::mutex> lock(mutex);
+   Sample sample{x,y,p,now(),++serial,contact,std::clamp(tx,-1.0,1.0),std::clamp(ty,-1.0,1.0),eraser};
+   if(down){samples[head]=sample;head=(head+1)%samples.size();if(count<samples.size())count++;}
+   bool first=down&&(!frameDown||contact!=frameContact);
+   int phase=0;
+   if(inputEnabled){
+    if(first){
+     bool inside=x>=viewX&&y>=viewY&&x<viewX+1200*viewSX&&y<viewY+1600*viewSY;
+     inputContact=inside?contact:0;phase=inside?1:0;
+     contactX=viewX;contactY=viewY;contactSX=viewSX;contactSY=viewSY;
+    }
+    else if(inputContact==contact&&inputContact)phase=down?2:3;
+    if(phase){
+     if(input.size()==inputCapacity){
+      // Explicit loss boundary: never join a stroke across an overrun.
+      input.clear();inputContact=0;inputOverflows++;phase=0;
+      InputEvent boundary{};boundary.phase=4;input.push_back(boundary);wake=inputWake;
+     }else{
+      bool empty=input.empty();Sample point=sample;point.x=(x-contactX)/contactSX;point.y=(y-contactY)/contactSY;input.push_back({point,phase});inputReceived++;
+      if(empty)wake=inputWake;
+     }
+    }
+   }
+   if(!down)inputContact=0;
+   frameDown=down;frameContact=contact;
+  }
+  if(wake)wake();
+ }
+ void observeFrame(bool down,unsigned contact){std::lock_guard<std::mutex> lock(mutex);frameDown=down;frameContact=contact;}
+ void discontinuity(){std::function<void()> wake;{std::lock_guard<std::mutex> lock(mutex);input.clear();inputContact=0;frameDown=true;inputOverflows++;if(inputEnabled){InputEvent boundary{};boundary.phase=4;input.push_back(boundary);wake=inputWake;}}if(wake)wake();}
  std::array<Sample,2048> samples{};unsigned head=0,count=0;uint64_t serial=0;mutable std::mutex mutex;
  std::atomic<bool> stop{false},enabled{true},ready{false},nearby{false},eraserNearby{false};std::thread thread;
  static long long now(){return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();}
  PaperPen(){thread=std::thread([this]{readLoop();});}
- ~PaperPen(){stop=true;thread.join();}
- void activate(){std::lock_guard<std::mutex> lock(mutex);head=0;count=0;nearby=false;eraserNearby=false;enabled=true;}
- void pause(){enabled=false;nearby=false;eraserNearby=false;std::lock_guard<std::mutex> lock(mutex);head=0;count=0;}
+ void shutdown(){stop=true;if(thread.joinable())thread.join();}
+ ~PaperPen(){shutdown();}
+ void activate(){std::lock_guard<std::mutex> lock(mutex);head=0;count=0;input.clear();inputContact=0;nearby=false;eraserNearby=false;enabled=true;}
+ void pause(){enabled=false;nearby=false;eraserNearby=false;std::lock_guard<std::mutex> lock(mutex);head=0;count=0;input.clear();inputContact=0;inputEnabled=false;}
  void resetMatchDiagnostics(){std::lock_guard<std::mutex> lock(mutex);matchStats=MatchDiagnostics{};}
  MatchDiagnostics matchDiagnostics()const{std::lock_guard<std::mutex> lock(mutex);return matchStats;}
  void push(double x,double y,double p,unsigned contact=1,double tiltX=0,double tiltY=0,bool eraser=false){
@@ -82,23 +134,24 @@ struct PaperPen {
   if(ax.maximum<=ax.minimum||ay.maximum<=ay.minimum||ap.maximum<=ap.minimum){close(fd);return;}
   int x=ax.value,y=ay.value,p=ap.value,touch=0;bool penTool=false,rubberTool=false,dropping=false;unsigned char keys[KEY_MAX/8+1]={0};ioctl(fd,EVIOCGKEY(sizeof keys),keys);
   touch=!!(keys[BTN_TOUCH/8]&(1<<(BTN_TOUCH%8)));penTool=!!(keys[BTN_TOOL_PEN/8]&(1<<(BTN_TOOL_PEN%8)));rubberTool=!!(keys[BTN_TOOL_RUBBER/8]&(1<<(BTN_TOOL_RUBBER%8)));
-  unsigned contact=1;ready=true;pollfd item{fd,POLLIN,0};
+  unsigned contact=1;observeFrame(touch!=0,contact);ready=true;pollfd item{fd,POLLIN,0};
   while(!stop){if(poll(&item,1,50)<=0)continue;input_event events[128];int bytes=read(fd,events,sizeof events);
    for(int i=0;i<bytes/(int)sizeof *events;i++){auto &e=events[i];
-    if(e.type==EV_SYN&&e.code==SYN_DROPPED){dropping=true;continue;}
+    if(e.type==EV_SYN&&e.code==SYN_DROPPED){discontinuity();dropping=true;continue;}
     if(dropping){
      if(e.type!=EV_SYN||e.code!=SYN_REPORT)continue;
      ioctl(fd,EVIOCGABS(ABS_X),&ax);ioctl(fd,EVIOCGABS(ABS_Y),&ay);ioctl(fd,EVIOCGABS(ABS_PRESSURE),&ap);
      x=ax.value;y=ay.value;p=ap.value;ioctl(fd,EVIOCGKEY(sizeof keys),keys);touch=!!(keys[BTN_TOUCH/8]&(1<<(BTN_TOUCH%8)));
      if(hasTiltX){ioctl(fd,EVIOCGABS(ABS_TILT_X),&atx);tiltX=atx.value;}if(hasTiltY){ioctl(fd,EVIOCGABS(ABS_TILT_Y),&aty);tiltY=aty.value;}
      penTool=!!(keys[BTN_TOOL_PEN/8]&(1<<(BTN_TOOL_PEN%8)));rubberTool=!!(keys[BTN_TOOL_RUBBER/8]&(1<<(BTN_TOOL_RUBBER%8)));
-     contact++;dropping=false;
+     contact++;observeFrame(touch!=0,contact);dropping=false;
     }
     if(e.type==EV_ABS){if(e.code==ABS_X)x=e.value;else if(e.code==ABS_Y)y=e.value;else if(e.code==ABS_PRESSURE)p=e.value;else if(e.code==ABS_TILT_X)tiltX=e.value;else if(e.code==ABS_TILT_Y)tiltY=e.value;}
     if(e.type==EV_KEY){if(e.code==BTN_TOUCH){if(!touch&&e.value)contact++;touch=e.value;}else if(e.code==BTN_TOOL_PEN)penTool=e.value;else if(e.code==BTN_TOOL_RUBBER)rubberTool=e.value;}
-    if(e.type==EV_SYN&&e.code==SYN_REPORT&&enabled){
+    if(e.type==EV_SYN&&e.code==SYN_REPORT){
+     if(!enabled){observeFrame(touch!=0,contact);continue;}
      nearby=penTool||rubberTool;eraserNearby=rubberTool;
-     if(touch&&p>ap.minimum)push((y-ay.minimum)*1404.0/(ay.maximum-ay.minimum),(ax.maximum-x)*1872.0/(ax.maximum-ax.minimum),(p-ap.minimum)/double(ap.maximum-ap.minimum),contact,hasTiltY?normalized(tiltY,aty):0,hasTiltX?-normalized(tiltX,atx):0,rubberTool);
+     frame((y-ay.minimum)*1404.0/(ay.maximum-ay.minimum),(ax.maximum-x)*1872.0/(ax.maximum-ax.minimum),std::clamp((p-ap.minimum)/double(ap.maximum-ap.minimum),0.0,1.0),contact,hasTiltY?normalized(tiltY,aty):0,hasTiltX?-normalized(tiltX,atx):0,rubberTool,touch!=0);
     }
    }
   }close(fd);ready=false;

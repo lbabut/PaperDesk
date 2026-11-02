@@ -1,16 +1,16 @@
 {
   "product": "PaperDesk",
   "channel": "stable",
-  "version": "4.2.5",
+  "version": "4.2.6",
   "publishedAt": "2026-11-02",
-  "archiveUrl": "/download/paperdesk-4.2.5.zip",
-  "archiveSha256": "8c37e1bba6a15460ad7bc88ac1f9de57e4006846444858ecc809f4701e6a16f6",
-  "archiveSize": 3809592,
+  "archiveUrl": "/download/paperdesk-4.2.6.zip",
+  "archiveSha256": "42a8781f59aa54bcbc2ff5a99c2be004095e384d2c8ff523fda4c67882442262",
+  "archiveSize": 3819479,
   "releaseNotes": [
-    "Paper Sketch uses the ordinary hard eraser at full contact strength when the rear end of a compatible stylus touches the page.",
-    "Rear erasing is independent of the drawing-nib pressure calibration; light rear contact is no longer attenuated as a lightly pressed drawing nib.",
-    "Hover does not erase. Flipping back restores the selected tool and its normal pressure response. Tool size, strength and kneaded-eraser settings remain preserved.",
-    "Permanent Rapidograph ink remains intact. Existing artwork, the synchronous renderer and the other released apps are preserved.",
-    "Regression checks cover low-pressure rear contact, stationary onset, dragging, hover, calibration independence and normal-nib resumption."
+    "Paper Sketch preserves short pen contacts and fast back-and-forth strokes through an ordered native input queue.",
+    "Drawing uses the captured pen position, pressure and tilt directly, with separate contact and release events. Coalesced UI motion no longer selects samples from another nearby contact or truncates a long path to the latest 64 samples.",
+    "Fine pen movements are no longer discarded by the previous 0.35-pixel motion threshold. Rendering, saved artwork and exports retain full quality.",
+    "Toolbar actions, finger blending, pressure calibration and mouse fallback remain available. Rear-stylus erasing retains its full contact strength and permanent Rapidograph ink remains intact.",
+    "Regression checks cover short contacts during a GUI stall, long curved input, subpixel reversals, rapid shading and input interruption recovery."
   ]
 }

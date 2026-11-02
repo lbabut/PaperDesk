@@ -40,6 +40,7 @@ Rectangle {
     property bool exportOverwrite:false
     property string exportMessage:""
     property bool fullScreen:false
+    onFullScreenChanged:Qt.callLater(syncInputTransform)
     property bool dirty:false
     property string pageDiskMetadata:""
     property bool newUnsavedPage:false
@@ -50,6 +51,41 @@ Rectangle {
     property string notice: ""
     property string confirmation: ""
     readonly property bool bitmapMode:nativeRasterActive && nativeRaster && nativeRaster.materialAvailable===true
+    readonly property bool rawPenMode:bitmapMode && nativeRaster && nativeRaster.rawPenInputAvailable===true
+    readonly property bool rawPenEnabled:rawPenMode && ready && visible && !closing && !replaying && !saveBlocked && !confirmation && !exportDialog && !materialsDialog && !calibrationDialog
+    property bool rawPenDraining:false
+    property int rawPenContact:0
+    property int rawPenStrokes:0
+    onRawPenEnabledChanged:{
+        if(!rawPenEnabled && activeStroke && activeStroke.rawInput)finishStroke();
+        if(nativeRaster && typeof nativeRaster.setRawPenInputEnabled==="function"){
+            if(rawPenEnabled)syncInputTransform();
+            nativeRaster.setRawPenInputEnabled(rawPenEnabled);
+        }
+    }
+    function drainPenInput(){
+        if(!rawPenEnabled || rawPenDraining)return;
+        rawPenDraining=true;syncInputTransform();
+        var events=nativeRaster.takePenInput();
+        for(var i=0;i<events.length;i++){
+            var e=events[i],p=Qt.point(e[1],e[2]);
+            if(e[0]===4){
+                if(activeStroke && activeStroke.rawInput)finishStroke();
+                rawPenContact=0;notice="Pen input was interrupted. Lift the pen and continue.";
+            }else if(e[0]===1){
+                if(activeStroke && activeStroke.rawInput)finishStroke();
+                rawPenContact=0;
+                if(p.x<0 || p.y<0 || p.x>=Ink.WIDTH || p.y>=Ink.HEIGHT)continue;
+                beginStroke(p,"pen",tool,e[3],e[6],e);
+                if(activeStroke && activeStroke.rawInput)rawPenContact=e[7];
+            }else if(rawPenContact===e[7] && activeStroke && activeStroke.rawInput){
+                if(e[0]===3){finishStroke();rawPenContact=0;rawPenStrokes++;}
+                else extendStroke(p,"pen",e[3],e);
+            }
+        }
+        rawPenDraining=false;
+    }
+    Connections{target:root.nativeRaster;ignoreUnknownSignals:true;function onPenInputReady(){root.drainPenInput();}}
     readonly property bool fastDisplay:bitmapMode && nativeRaster.fastDisplay===true
     readonly property bool penNearby:bitmapMode && nativeRaster.penInRange
     onPenNearbyChanged:if(penNearby && activeSource==="finger"){
@@ -84,6 +120,7 @@ Rectangle {
     readonly property var page: notebook.pages[pageIndex]
     readonly property bool busy: replaying || activeStroke!==null
     readonly property real drawingScale: Math.min((workspace.width-24)/Ink.WIDTH,(workspace.height-24)/Ink.HEIGHT)
+    onDrawingScaleChanged:Qt.callLater(syncInputTransform)
 
     // Native preview is optional and gated by the extension's fresh acknowledgement.
     property bool nativeReady: false
@@ -260,7 +297,7 @@ Rectangle {
     Timer { id: paintTimer; interval: 0; onTriggered: root.requestPendingPaint() }
     Timer {
         id:penEndTimer;interval:0
-        onTriggered:if(root.activeSource==="pen" && !penInput.active && !penDot.pressed)root.finishStroke()
+        onTriggered:if(root.activeSource==="pen" && root.activeStroke && !root.activeStroke.rawInput && !penInput.active && !penDot.pressed)root.finishStroke()
     }
 
     function requestPendingPaint() {
@@ -364,13 +401,14 @@ Rectangle {
         var a=inputSurface.mapToItem(win.contentItem,0,0),b=inputSurface.mapToItem(win.contentItem,Ink.WIDTH,Ink.HEIGHT);
         nativeRaster.setInputTransform(a.x,a.y,(b.x-a.x)/Ink.WIDTH,(b.y-a.y)/Ink.HEIGHT);
     }
-    function beginStroke(p,source,selected,pressure,eraserHint) {
+    function beginStroke(p,source,selected,pressure,eraserHint,rawPoint) {
+        var fromRaw=rawPoint!==undefined && rawPoint!==null;
         if(materialsDialog || calibrationDialog)return;
         if(source==="pen" && activeSource==="finger"){if(bitmapMode)nativeRaster.cancel();activeStroke=null;activeSource="";}
         if(!ready || busy || saveBlocked || confirmation) return;
         if(!bitmapMode && totalPoints>=Ink.MAX_POINTS) {notice="Sketchbook full. Export your pages before starting a new book.";return;}
         if(bitmapMode || (source==="pen" && nativeRaster))syncInputTransform();
-        var hardwareEraser=source==="pen" && (eraserHint===true || (nativeRaster && typeof nativeRaster.eraserActive==="function" && nativeRaster.eraserActive(p.x,p.y)));
+        var hardwareEraser=source==="pen" && (fromRaw ? eraserHint===true : (eraserHint===true || (nativeRaster && typeof nativeRaster.eraserActive==="function" && nativeRaster.eraserActive(p.x,p.y))));
         if(hardwareEraser)selected=6;
         paintTimer.stop();clearPreviewTimer.stop();
         if(nativeRasterActive)clearPreview();
@@ -378,31 +416,35 @@ Rectangle {
         nativeStroke=bitmapMode || (source==="pen" && selected!==7 && nativeArmed);
         activeSource=source;
         activeStroke=Ink.stroke(selected,hardwareEraser?Ink.tools[6].size:(selected===7?Math.max(brushSize,source==="finger"?64:32):brushSize),tone,hardwareEraser?1:strength,Date.now());
-        activeStroke.hardwareEraser=hardwareEraser;
+        activeStroke.hardwareEraser=hardwareEraser;activeStroke.rawInput=fromRaw;activeStroke.inputSamples=fromRaw?1:0;
         if(hardwareEraser && materialsAvailable)nativeRaster.setMaterialOptions(paperKind,false);
         if(bitmapMode)activeStroke.renderer=8;
         if(nativeRasterActive)nativeRaster.begin(source==="finger",hardwareEraser);
         var penPressure=pressure===undefined?penInput.centroid.pressure:pressure;
-        if(source==="pen" && nativeRaster){if(bitmapMode)penPressure=nativeRaster.pressureAt(p.x,p.y,penPressure);else penPressure=nativeRaster.penPressure(penPressure);}
+        if(source==="pen" && nativeRaster && !fromRaw){if(bitmapMode)penPressure=nativeRaster.pressureAt(p.x,p.y,penPressure);else penPressure=nativeRaster.penPressure(penPressure);}
         if(source==="finger" && bitmapMode)penPressure=nativeRaster.touchPressureAt(p.x,p.y,penPressure);
-        var initial=Ink.point(p.x,p.y,penPressure);
+        var initial=fromRaw?[p.x,p.y,penPressure]:Ink.point(p.x,p.y,penPressure);
         if(bitmapMode){
             // Legacy vector notebooks use a nonzero minimum; the material nib
             // must receive real zero/light pressure without that substitution.
             if(source!=="finger" && isFinite(penPressure))initial[2]=Ink.clamp(penPressure,0,1);
             activeStroke.points=[initial,[initial[0],initial[1],initial[2]]];activeStroke.samples=1;
             activeStroke.pressureMin=initial[2];activeStroke.pressureMax=initial[2];
-            nativeRaster.advance(selected,activeStroke.size,activeStroke.strength,initial[0],initial[1],initial[2],true);
+            if(fromRaw)nativeRaster.advancePenInput(selected,activeStroke.size,activeStroke.strength,initial[0],initial[1],initial[2],true,rawPoint[4],rawPoint[5]);
+            else nativeRaster.advance(selected,activeStroke.size,activeStroke.strength,initial[0],initial[1],initial[2],true);
         }else{activeStroke.points.push(initial);queueInk(activeStroke,0);}
         notice="";
     }
-    function extendStroke(p,source,pressure) {
+    function extendStroke(p,source,pressure,rawPoint) {
+        var fromRaw=rawPoint!==undefined && rawPoint!==null;
         if(activeStroke===null || activeSource!==source) return;
+        if(fromRaw)activeStroke.inputSamples++;
         if(!bitmapMode && totalPoints+activeStroke.points.length>=Ink.MAX_POINTS) {finishStroke();notice="Sketchbook full";return;}
-        if(source==="pen" && nativeRaster)pressure=bitmapMode?nativeRaster.pressureAt(p.x,p.y,pressure===undefined?1:pressure):nativeRaster.penPressure(pressure===undefined?1:pressure);
+        if(source==="pen" && nativeRaster && !fromRaw)pressure=bitmapMode?nativeRaster.pressureAt(p.x,p.y,pressure===undefined?1:pressure):nativeRaster.penPressure(pressure===undefined?1:pressure);
         if(bitmapMode){
             var pressureValue=source==="finger"?nativeRaster.touchPressureAt(p.x,p.y,pressure):pressure;
-            if(nativeRaster.advance(activeStroke.tool,activeStroke.size,activeStroke.strength,p.x,p.y,pressureValue,false)){
+            var changed=fromRaw?nativeRaster.advancePenInput(activeStroke.tool,activeStroke.size,activeStroke.strength,p.x,p.y,pressureValue,false,rawPoint[4],rawPoint[5]):nativeRaster.advance(activeStroke.tool,activeStroke.size,activeStroke.strength,p.x,p.y,pressureValue,false);
+            if(changed){
                 var last=activeStroke.points[1];last[0]=Math.round(Ink.clamp(p.x,0,Ink.WIDTH)*10)/10;
                 last[1]=Math.round(Ink.clamp(p.y,0,Ink.HEIGHT)*10)/10;last[2]=Math.round(pressureValue*100)/100;
                 activeStroke.samples++;activeStroke.pressureMin=Math.min(activeStroke.pressureMin,last[2]);activeStroke.pressureMax=Math.max(activeStroke.pressureMax,last[2]);
@@ -827,7 +869,7 @@ Rectangle {
                 acceptedDevices:PointerDevice.Stylus | PointerDevice.Airbrush | PointerDevice.Mouse
                 acceptedButtons:Qt.LeftButton
                 dragThreshold:0
-                enabled:!root.replaying && !root.saveBlocked && !root.confirmation && !root.exportDialog && !root.materialsDialog && !root.calibrationDialog
+                enabled:!root.rawPenMode && !root.replaying && !root.saveBlocked && !root.confirmation && !root.exportDialog && !root.materialsDialog && !root.calibrationDialog
                 onActiveChanged:{
                     if(active) {
                         if(root.activeSource!=="pen")root.beginStroke(centroid.pressPosition,"pen",root.tool,centroid.pressure,centroid.device && centroid.device.pointerType===PointerDevice.Eraser);

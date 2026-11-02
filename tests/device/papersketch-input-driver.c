@@ -22,10 +22,11 @@ static void release(int fd,int finger){
 int main(int argc,char **argv){
  if((argc!=6 && argc!=7) || (strcmp(argv[1],"finger") && strcmp(argv[1],"pen")))return 2;
  const char *pattern=argc==7?argv[6]:"";
+ int fidelityDots=!strcmp(pattern,"fidelity-dots"),fidelityShade=!strcmp(pattern,"fidelity-shade");
  int ramp=!strcmp(pattern,"pressure-ramp"),rubber=!strcmp(pattern,"eraser")||!strcmp(pattern,"eraser-hover")||!strcmp(pattern,"eraser-hover-light");
  int shading=!strcmp(pattern,"shade"),tap=!strcmp(pattern,"tap"),tilt=!strcmp(pattern,"tilt"),upright=!strcmp(pattern,"upright"),contact=!strcmp(pattern,"contact");
  int calibration=!strcmp(pattern,"calibration-light")?1:!strcmp(pattern,"calibration-normal")?2:!strcmp(pattern,"calibration-firm")?3:0;
- if(argc==7&&!shading&&!tap&&!tilt&&!upright&&!contact&&!calibration&&!ramp&&!rubber)return 2;
+ if(argc==7&&!fidelityDots&&!fidelityShade&&!shading&&!tap&&!tilt&&!upright&&!contact&&!calibration&&!ramp&&!rubber)return 2;
  if((shading||tilt||upright||calibration||ramp||rubber)&&strcmp(argv[1],"pen"))return 2;
  if(contact&&strcmp(argv[1],"finger"))return 2;
  int finger=!strcmp(argv[1],"finger");const char *path=finger?"/dev/input/event2":"/dev/input/event1";
@@ -44,6 +45,24 @@ int main(int argc,char **argv){
  if(x0<0||x0>maxx||x1<0||x1>maxx||y0<0||y0>maxy||y1<0||y1>maxy){close(fd);return 6;}
  signal(SIGINT,stop_signal);signal(SIGTERM,stop_signal);
  long long started=ms();
+ if(fidelityDots||fidelityShade){
+  if(finger){close(fd);return 2;}
+  int ok=1,total=fidelityDots?40:1200;
+  for(int i=0;i<total&&!stopped;i++){
+   int pass=i/60,step=i%60;
+   int x=fidelityDots?x0+(x1-x0)*i/39:x0+(x1-x0)*(pass%2?59-step:step)/59;
+   int y=fidelityDots?y0+(y1-y0)*i/39:y0+(y1-y0)*pass/19;
+   if(fidelityDots||i==0){event(fd,EV_KEY,BTN_TOOL_RUBBER,0);event(fd,EV_KEY,BTN_TOOL_PEN,1);event(fd,EV_KEY,BTN_TOUCH,1);event(fd,EV_ABS,ABS_PRESSURE,0);}
+   ok&=event(fd,EV_ABS,ABS_X,x);ok&=event(fd,EV_ABS,ABS_Y,y);
+   if(fidelityDots){ok&=event(fd,EV_SYN,SYN_REPORT,0);usleep(2000);ok&=event(fd,EV_ABS,ABS_X,x<maxx?x+1:x-1);}
+   ok&=event(fd,EV_ABS,ABS_PRESSURE,pen_pressure.minimum+(int)((pen_pressure.maximum-pen_pressure.minimum)*.65));
+   ok&=event(fd,EV_SYN,SYN_REPORT,0);usleep(fidelityDots?4000:2000);
+   if(fidelityDots){release(fd,0);usleep(4000);}
+  }
+  release(fd,0);long long released=ms();close(fd);
+  printf("{\"mode\":\"pen\",\"contact_ms\":%lld,\"release_ms\":%lld,\"writes_ok\":%s}\n",started,released,ok&&!stopped?"true":"false");return ok&&!stopped?0:7;
+ }
+
  if(finger){event(fd,EV_ABS,ABS_MT_SLOT,0);event(fd,EV_ABS,ABS_MT_TRACKING_ID,(int)(started%65535));event(fd,EV_KEY,BTN_TOUCH,1);event(fd,EV_KEY,BTN_TOOL_FINGER,1);}
  else{
   if(!strcmp(pattern,"eraser-hover")||!strcmp(pattern,"eraser-hover-light")){

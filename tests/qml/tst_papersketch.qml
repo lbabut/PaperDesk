@@ -39,6 +39,17 @@ Item {
     Component {
         id:realismBackend
         QtObject {
+            property bool rawPenInputAvailable:false
+            property bool rawEnabled:false
+            property var rawEvents:[]
+            property int rawCalls:0
+            property real rawX:0
+            property real rawY:0
+            property int pressureCalls:0
+            signal penInputReady()
+            function setRawPenInputEnabled(value){rawEnabled=value}
+            function takePenInput(){var batch=rawEvents.slice(0,64);rawEvents=rawEvents.slice(64);return batch}
+            function advancePenInput(tool,size,strength,x,y,p,first,tx,ty){rawCalls++;rawX=x;rawY=y;return true}
             property bool materialAvailable:false
             property bool fastDisplay:false
             property bool penInRange:false
@@ -77,7 +88,7 @@ Item {
             function begin(tentative,rearEraser){beginCount++;rearStroke=rearEraser===true}
             function finish(){finishCount++}
             function setInputTransform(x,y,sx,sy){}
-            function pressureAt(x,y,fallback){return fallback}
+            function pressureAt(x,y,fallback){pressureCalls++;return fallback}
             function advance(tool,size,strength,x,y,p,first){samples++;return true}
         }
     }
@@ -111,6 +122,27 @@ Item {
             compare(a.activeStroke.tool,8);compare(a.activeStroke.hardwareEraser,false);compare(backend.rearStroke,false);a.finishStroke();
             a.beginStroke(Qt.point(300,400),"pen",8,.6,true);compare(a.activeStroke.tool,6);a.finishStroke();
             a.nativeRaster=old;backend.destroy();
+        }
+        function test_raw_contacts_keep_every_stroke_and_subpixel_position(){
+            var a=scene.app,old=a.nativeRaster,backend=realismBackend.createObject(scene);
+            backend.materialAvailable=true;backend.rawPenInputAvailable=true;
+            a.nativeRaster=backend;a.nativeRasterActive=true;verify(a.rawPenEnabled);verify(backend.rawEnabled);
+            var before=a.rawPenStrokes,events=[];
+            for(var c=1;c<=100;c++){
+                events.push([1,300.0625,400.125,0,.2,-.1,false,c]);
+                events.push([2,300.1875,400.125,.8,.2,-.1,false,c]);
+                events.push([3,300.1875,400.125,0,.2,-.1,false,c]);
+            }
+            backend.rawEvents=events;
+            while(backend.rawEvents.length)a.drainPenInput();
+            compare(a.rawPenStrokes-before,100);compare(backend.beginCount,100);compare(backend.finishCount,100);
+            compare(backend.rawCalls,200);compare(backend.pressureCalls,0);
+            compare(backend.rawX,300.1875);compare(backend.rawY,400.125);compare(a.activeStroke,null);
+            backend.rawEvents=[[1,300,400,.7,0,0,false,101],[4,0,0,0,0,0,false,0]];
+            a.drainPenInput();compare(a.activeStroke,null);compare(a.rawPenContact,0);
+            compare(a.rawPenStrokes-before,100);compare(backend.finishCount,101);
+            a.materialsDialog=true;verify(!a.rawPenEnabled);compare(backend.rawEnabled,false);
+            a.materialsDialog=false;a.nativeRaster=old;backend.destroy();
         }
         function line(tool,x,y,p) {
             scene.app.tool=tool;scene.app.brushSize=Ink.tools[tool].size;
