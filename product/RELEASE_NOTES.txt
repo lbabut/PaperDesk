@@ -1,5 +1,5 @@
-Paper Sketch adds Rapidograph: permanent black ink with a constant selected width, independent of positive pen pressure and tilt.
-Ink is preserved in saved pages and included in PDF export; finger blending and graphite erasers leave ink untouched.
-The kneaded eraser now responds when you press harder after first contact and lifts pigment while you move. Lift and dab again to remove another layer.
-Existing graphite pages remain readable. Save before updating; ink pages use the new v3 material cache and need this version or newer.
-Host tests and real-tablet input checks verify pressure-responsive erasing, dragging, calibration and save/reload. Other released apps remain unchanged.
+Paper Sketch recognizes the rear end of a compatible stylus as a temporary ordinary hard eraser, for both stationary contact and dragging.
+Flip back to resume the selected drawing tool. Tool choice, size, strength and kneaded-eraser settings are preserved; permanent Rapidograph ink remains intact.
+Pen strokes can begin when pressure rises after an initial zero-pressure contact, without requiring movement.
+Uses the synchronous material renderer without the experimental progressive preview. Existing artwork and the other released apps are preserved.
+Verified with native and QML tests and rear-contact, eraser-drag and normal-nib input checks on reMarkable 2.

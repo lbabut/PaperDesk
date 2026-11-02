@@ -1,9 +1,9 @@
-17f2573d3027dab920efa5bccfc346618c12cfb1cc65b54c3cd4e51ceeb944ea  ./CHANGELOG.md
-5ae6555e89e06695427781de9934fa98f02ff7ec31cc46d245baec38c1bba230  ./MANUAL-INSTALL.md
-bdc654b71cc4255d604e8a82bf3bdc1cd27623155a5e21a59a204c8f4cd5ec4c  ./README.md
-c02f05ad3e0845f6cf90e497c94beef8eb51e626034ed9cd7c1ddf3d9c411e6e  ./RELEASE_NOTES.txt
+b06050d824e8ac09ae9e5a1b3a19ad60af3a4bf0c709f12e735596c089df6a7b  ./CHANGELOG.md
+808a203fc00dc28a57a34f2419a8cc382bc8dc8f69d3e64d65acc09a6063195d  ./MANUAL-INSTALL.md
+aec44718f2817e293b773ea5fa29c3d279a24a0717512050dda90912339126c8  ./README.md
+d43723f903f0f618aba1d5610c1f5f785c9205ac663206d2f301c825fcff0727  ./RELEASE_NOTES.txt
 321a22b92a174faab8929e992aa181182234a58d142051480b5aa8c4667d3ead  ./THIRD-PARTY.md
-eb1d4f74f49b26c3962477ded60a202b83893a2f0389125d0670e0ead7e97032  ./VERSION
+74f517a082180668f5e05dbf4dc168d523e8bd557955754d2d88011d0a0362df  ./VERSION
 051e3ed1012de0157573b1323e95e342ac398eb52f74b1e0d1ee3128043c753a  ./install-from-computer.sh
 3f3ab7b2dfc75c45ff444bbad7150a40baec7c5c5a7dcc126ffe7218ed701af9  ./install.sh
 3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986  ./licenses/AppLoad-GPL-3.0.txt
@@ -53,8 +53,8 @@ dc2fb1ec45c2c876925a7a986bcca7e9163d8ffece5b7e2643bfd5cc859777bb  ./payload/apps
 18bd9d641ab74be119d2ea2df0307fddbb2e8cc6e5159e61e36862fb176d05b1  ./payload/apps/papercare/assets/icon.svg
 7c35824535efb0565a00f45a2b04d1e755a4ce6cf7e01e54a9f827a4d3b1ce0f  ./payload/apps/papercare/icon.png
 0741c03fba719a3eea3a610fa6a2dd13ef6c87c5b27699bad2cea742e73f955b  ./payload/apps/papercare/manifest.json
-8f8b14f7f69abc760a06974ec7b4245b3490a8246f7ed9fe729225484df5c974  ./payload/apps/papercare/resources.rcc
-fa69908611160ad6ee3d81f0dc2015c854bbf740f3b972d3c837bad7fc399713  ./payload/apps/papercare/ui/main.qml
+912f0494a729feb13ba1c238b7dc02327a4c49d7adbd6d42b056e91b8ed6d14e  ./payload/apps/papercare/resources.rcc
+96c8006a9c42b0c843a58efff0208be92a8f8c8494cd46bf26918f77b51731c3  ./payload/apps/papercare/ui/main.qml
 ad585de93a3d49046a71f03643a9c4309e0e58bccb43308bae703d072e4287da  ./payload/apps/paperdesk/application.qrc
 b157df4ec15601380ea0cafcfaa3b41762886491c3e5562d2244d57de0d0c9b0  ./payload/apps/paperdesk/icon.png
 4644cc6adf117535f5a2e1a5da3a403921e9184b5f4f5b5f3a492be10220dfc8  ./payload/apps/paperdesk/icon.svg
@@ -152,7 +152,7 @@ ccf1123c6a5418f606e1b84b2962d4dc8542ab22f31273998f36576403d31d96  ./payload/syst
 e7beb1bdca6d8ac65ef9c0caf96189db5640dbfc3469cdf17e42b5390ff21ea8  ./payload/system/paperdesk-update.service
 cac7f42a8fbdf839c6f997810838d14dd2fb298883bf0c21a4b88a4bda57153a  ./payload/system/profile-hook.sh
 61c36af9ab35f8dea52f878b99cec309a69888ebde7a4f8938deddf813759d41  ./payload/system/rmssh-menu
-828bfdf0af0634a92557dfe0c9c085bd914130f5e3480b3d5dbe1e6c6d2d2ba0  ./release.json
+7c8298964f340990a2ebe1574b9267a56da96646447c73841dc39f5ba8a51b7d  ./release.json
 6e718d7e5d3b79706f9ce5969c0afe387582e98e83a773f535ba2b4a5696a4d3  ./third_party_source/qtfb-shim/CMakeLists.txt
 3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986  ./third_party_source/qtfb-shim/LICENSE
 15a156a971001856348398eeab1a4eec5abb55feecd82adc0080cf4e787b84b0  ./third_party_source/qtfb-shim/README.MD

@@ -1,3 +1,11 @@
+# 4.2.4 — 2026-11-02
+
+- Paper Sketch recognizes the rear end of a compatible stylus as a temporary ordinary hard eraser, for both stationary contact and dragging.
+- Flip back to resume the selected drawing tool. Tool choice, size, strength and kneaded-eraser settings are preserved; permanent Rapidograph ink remains intact.
+- Pen strokes can begin when pressure rises after an initial zero-pressure contact, without requiring movement.
+- Uses the synchronous material renderer without the experimental progressive preview. Existing artwork and the other released apps are preserved.
+- Verified with native and QML tests and rear-contact, eraser-drag and normal-nib input checks on reMarkable 2.
+
 # 4.2.3 — 2026-11-02
 
 - Paper Sketch adds Rapidograph: permanent black ink with a constant selected width, independent of positive pen pressure and tilt.
