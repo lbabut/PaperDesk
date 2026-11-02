@@ -1,4 +1,4 @@
-# PaperDesk 4.2.6
+# PaperDesk 4.2.7
 
 PaperDesk turns a reMarkable 2 into a quiet, monochrome network workspace.
 The bundle adds eight apps directly to the AppLoad list and keeps their

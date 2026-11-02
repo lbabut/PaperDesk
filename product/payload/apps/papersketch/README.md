@@ -71,3 +71,9 @@ A positive rear contact uses the ordinary hard eraser at full contact pressure, 
 ## Fine details and fast strokes (4.2.6)
 
 The tablet canvas consumes ordered native pen contacts with their original position, pressure and tilt, including short contacts and releases. Small pen reversals are preserved. The drawing, saved pages and exports retain full quality; the experimental progressive-preview renderer remains absent.
+
+## Remembered tool settings (4.2.7)
+
+Each tool has its own remembered size. The selected tool and hard/kneaded eraser choice are saved automatically, independently of the sketchbook, and restored on app reopen. The rear eraser uses the remembered eraser width without changing the selected drawing tool. Tool-only changes do not mark artwork unsaved. Save still commits artwork, paper and physical tool wear.
+
+Preferences use a small validated, atomic JSON file in the current app namespace. Changes are debounced and deferred while drawing; normal close flushes pending changes. An older saved single-tool size is migrated on first use.

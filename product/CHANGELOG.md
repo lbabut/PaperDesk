@@ -1,3 +1,11 @@
+# 4.2.7 — 2026-11-02
+
+- Paper Sketch remembers a separate size for each drawing, eraser and blending tool. Switching tools restores the size you last chose for that tool.
+- The selected tool and hard/kneaded eraser choice are restored when the app reopens. The rear stylus eraser uses the remembered eraser width without replacing the selected drawing tool.
+- Tool preferences are saved automatically in a small independent file after drawing stops, and flushed on normal close. Save remains an explicit action for the sketchbook.
+- Tool-only changes do not mark artwork unsaved. Existing saved drawings and pressure calibration remain intact; the full-quality drawing pipeline from 4.2.6 is retained.
+- Validation covers independent atomic preference writes, invalid records, old-settings migration, switching tools, app reopen without Save and preserved artwork.
+
 # 4.2.6 — 2026-11-02
 
 - Paper Sketch preserves short pen contacts and fast back-and-forth strokes through an ordered native input queue.

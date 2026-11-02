@@ -50,6 +50,11 @@ Item {
             function setRawPenInputEnabled(value){rawEnabled=value}
             function takePenInput(){var batch=rawEvents.slice(0,64);rawEvents=rawEvents.slice(64);return batch}
             function advancePenInput(tool,size,strength,x,y,p,first,tx,ty){rawCalls++;rawX=x;rawY=y;return true}
+            property string preferencesDocument:""
+            property int preferencesWrites:0
+            property bool preferencesFail:false
+            function loadToolPreferences(){return preferencesDocument}
+            function saveToolPreferences(raw){preferencesWrites++;if(preferencesFail)return false;preferencesDocument=raw;return true}
             property bool materialAvailable:false
             property bool fastDisplay:false
             property bool penInRange:false
@@ -106,6 +111,7 @@ Item {
         function artifactPath(name){return Qt.resolvedUrl("../../work/papersketch-tests/"+name).toString().replace(/^file:\/\//,"")}
         function init(){
             scene.app.materialsDialog=false;scene.app.calibrationDialog=false;
+            scene.app.toolPreferencesLoading=true;scene.app.toolSizes=Ink.tools.map(function(t){return t.size;});scene.app.tool=1;scene.app.brushSize=Ink.tools[1].size;scene.app.toolPreferencesLoading=false;
             scene.app.fullScreen=false;scene.app.confirmation="book";scene.app.confirmAction();
             tryCompare(scene.app,"replaying",false,10000);
         }
@@ -115,7 +121,7 @@ Item {
             a.tool=8;a.brushSize=3;a.strength=.2;a.kneadedEraser=true;backend.rear=true;
             a.beginStroke(Qt.point(300,400),"pen",8,.6);
             compare(a.activeStroke.tool,6);verify(a.activeStroke.hardwareEraser);verify(backend.rearStroke);
-            compare(a.activeStroke.size,Ink.tools[6].size);compare(a.activeStroke.strength,1);
+            compare(a.activeStroke.size,a.toolSize(6));compare(a.activeStroke.strength,1);
             compare(backend.kneaded,false);compare(a.tool,8);compare(a.brushSize,3);compare(a.strength,.2);
             a.finishStroke();compare(backend.kneaded,true);compare(a.kneadedEraser,true);
             backend.rear=false;a.beginStroke(Qt.point(300,400),"pen",8,.6);
@@ -143,6 +149,32 @@ Item {
             compare(a.rawPenStrokes-before,100);compare(backend.finishCount,101);
             a.materialsDialog=true;verify(!a.rawPenEnabled);compare(backend.rawEnabled,false);
             a.materialsDialog=false;a.nativeRaster=old;backend.destroy();
+        }
+        function test_tool_sizes_switch_and_persist_without_art_save(){
+            var a=scene.app,old=a.nativeRaster,backend=realismBackend.createObject(scene);
+            a.nativeRaster=backend;a.dirty=false;
+            a.selectTool(1);a.brushSize=7;
+            a.selectTool(4);a.brushSize=43;
+            a.selectTool(8);a.brushSize=2;
+            a.selectTool(6);a.brushSize=24;a.kneadedEraser=true;
+            a.selectTool(1);compare(a.brushSize,7);
+            a.selectTool(4);compare(a.brushSize,43);
+            a.selectTool(8);compare(a.brushSize,2);
+            verify(a.flushToolPreferences());compare(backend.preferencesWrites,1);compare(a.dirty,false);
+            var saved=JSON.parse(backend.preferencesDocument);compare(saved.sizes[6],24);compare(saved.selectedTool,8);verify(saved.kneadedEraser);
+            a.selectTool(1);a.brushSize=19;a.kneadedEraser=false;
+            a.loadPersistentToolPreferences();compare(a.tool,8);compare(a.brushSize,2);verify(a.kneadedEraser);
+            a.selectTool(1);compare(a.brushSize,7);a.selectTool(6);compare(a.brushSize,24);
+            a.nativeRaster=old;backend.destroy();
+        }
+        function test_tool_preferences_wait_until_drawing_finishes(){
+            var a=scene.app,old=a.nativeRaster,backend=realismBackend.createObject(scene);
+            backend.materialAvailable=true;a.nativeRaster=backend;a.nativeRasterActive=true;
+            a.selectTool(1);a.brushSize=11;
+            a.beginStroke(Qt.point(300,400),"pen",1,.6);
+            wait(650);compare(backend.preferencesWrites,0);
+            a.finishStroke();wait(650);verify(backend.preferencesWrites>=1);
+            a.nativeRaster=old;backend.destroy();
         }
         function line(tool,x,y,p) {
             scene.app.tool=tool;scene.app.brushSize=Ink.tools[tool].size;
