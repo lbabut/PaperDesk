@@ -1,0 +1,61 @@
+{
+  "version": "4.2.1",
+  "published": true,
+  "date": "2026-11-02",
+  "url": "https://paperdesk.lukaszbabut.info/",
+  "source_of_release": "Verified public 4.2.0 baseline with only the tested Paper Sketch update and release metadata; do not publish the older canonical product metadata wholesale",
+  "assembly": "/home/lukasz/Documents/Codex/PaperDesk/work/papersketch-production-20261102/candidate",
+  "github": {
+    "branch": "main",
+    "source_commit": "59d2b30e434084999347269c849834f79482da3d",
+    "changed_files_verified": 37
+  },
+  "finger_transfer_scale": 0.9,
+  "validation": {
+    "version": "4.2.1",
+    "date": "2026-11-02",
+    "baseline": "Verified released 4.2.0 source archive and current production website",
+    "scope": "Paper Sketch finger transfer and pressure path; Care/launcher version only; unrelated app payloads byte-identical",
+    "finger_transfer_scale": 0.9,
+    "tests": {
+      "python": {
+        "run": 149,
+        "failed": 0,
+        "skipped": 2
+      },
+      "qml": {
+        "passed": 265,
+        "failed": 0,
+        "skipped": 2
+      },
+      "native_groups": 14,
+      "arm_material_cases": 12
+    },
+    "notes": "The final material kernel ran separately on the real tablet without restarting the active app. Earlier production pointer-path tests used the same transport model at scale 1.0. Optical panel latency and physical finger-force calibration are not measured."
+  },
+  "public_verification": {
+    "stable": {
+      "version": "4.2.1",
+      "signature_verified": true
+    },
+    "latest": {
+      "version": "4.2.1",
+      "signature_verified": true
+    },
+    "health": "ok",
+    "public_zip_sha256_verified": true,
+    "prepared_native_module_exact": true,
+    "source_head_size_verified": true,
+    "website_and_guides_current": true,
+    "verification_zip_downloads": 1
+  },
+  "rollback": "/home/azureuser/PaperDesk.backup-20261102T090229Z",
+  "download_counter_before": 188,
+  "download_counter_after_promotion": 188,
+  "artifacts": {
+    "paperdesk-4.2.1.zip": "ae43c9c67cc35c1d26c0c3d2fad9e147a4273ef0664ed38f420827a10042b5b5",
+    "paperdesk-4.2.1.zip.sha256": "46aa3a7e7623ea01fd90f185d510522bbc36a427f6367fd6688a58e9e4a54f7b",
+    "paperdesk-sources-4.2.1.tar.gz": "88851e4ad144160541834679c80086b76eeba2d0dd0fbf097029b58686b131a2",
+    "paperdesk-sources-4.2.1.tar.gz.sha256": "7b19cd84d5a9402a471fa41a189427f6ad524591531ffd88a17a658b6e46964f"
+  }
+}
