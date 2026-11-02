@@ -7,7 +7,7 @@ STAGE=$(mktemp -d)
 trap 'rm -rf -- "$STAGE"' EXIT INT TERM
 NAME="paperdesk-sources-$VERSION"
 mkdir -p "$STAGE/$NAME" "$ROOT/dist"
-for entry in product windows scripts tests docs website README.md LICENSES.md PaperDesk-Installer.sh; do
+for entry in product windows scripts tests docs website README.md LICENSES.md INSTALL-DESKTOP.md INSTALL-WINDOWS.md PaperDesk-Installer.sh; do
     test ! -e "$ROOT/$entry" || rsync -a --exclude=__pycache__/ --exclude=data/ --exclude='*.pyc' --exclude='*.exe' --exclude='*.spec' --exclude=paperdesk.local.conf "$ROOT/$entry" "$STAGE/$NAME/"
 done
 (cd "$STAGE/$NAME" && find . -type f ! -name SOURCE-SHA256SUMS -print0 | LC_ALL=C sort -z | xargs -0 sha256sum > SOURCE-SHA256SUMS)

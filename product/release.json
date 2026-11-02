@@ -1,7 +1,7 @@
 {
   "product": "PaperDesk",
-  "version": "4.2.0",
-  "releaseDate": "2026-11-01",
+  "version": "4.2.1",
+  "releaseDate": "2026-11-02",
   "device": "reMarkable 2",
   "components": [
     {

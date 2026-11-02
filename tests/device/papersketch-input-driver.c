@@ -55,6 +55,7 @@ int main(int argc,char **argv){
   // the kernel suppresses repeated ABS values left by a previous diagnostic run.
   if(finger && i==0){x=x<maxx?x+1:x-1;y=y<maxy?y+1:y-1;}
   if(finger){
+   if(!contact){ok&=event(fd,EV_ABS,ABS_MT_PRESSURE,32+192*i/(samples-1));ok&=event(fd,EV_ABS,ABS_MT_TOUCH_MAJOR,12);ok&=event(fd,EV_ABS,ABS_MT_TOUCH_MINOR,8);}
    if(contact){
     int major=touch_major.maximum>60?60:touch_major.maximum,minor=touch_minor.maximum>30?30:touch_minor.maximum;
     int pressure=touch_pressure.minimum+(touch_pressure.maximum-touch_pressure.minimum)/2;

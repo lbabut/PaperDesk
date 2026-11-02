@@ -1,0 +1,22 @@
+{
+  "version": "4.2.1",
+  "date": "2026-11-02",
+  "baseline": "Verified released 4.2.0 source archive and current production website",
+  "scope": "Paper Sketch finger transfer and pressure path; Care/launcher version only; unrelated app payloads byte-identical",
+  "finger_transfer_scale": 0.9,
+  "tests": {
+    "python": {
+      "run": 149,
+      "failed": 0,
+      "skipped": 2
+    },
+    "qml": {
+      "passed": 265,
+      "failed": 0,
+      "skipped": 2
+    },
+    "native_groups": 14,
+    "arm_material_cases": 12
+  },
+  "notes": "The final material kernel ran separately on the real tablet without restarting the active app. Earlier production pointer-path tests used the same transport model at scale 1.0. Optical panel latency and physical finger-force calibration are not measured."
+}

@@ -1,3 +1,11 @@
+# 4.2.1 — 2026-11-02
+
+- Paper Sketch finger blending now spreads graphite and charcoal more visibly, with a stable fingertip footprint and no extra weakening during fast movements.
+- Touch pressure is matched directly to the contact position instead of using constant Qt touch pressure. Lighter and firmer contact produce different transfer amounts.
+- The final finger transfer response is reduced by 10 percent from the owner-tested stronger blend. Pigment remains conserved between paper and fingertip.
+- Existing saved pages retain their optical image and material state. Changes affect new rubbing; notebooks and PNG exports are preserved.
+- Paper Terminal, RDP and the other released apps remain included. XOVI still starts manually; boot autostart is not enabled.
+
 # 4.2.0 — 2026-11-01
 
 - Paper Terminal replaces PaperDesk SSH with PaperDesk's own PTY, VT parser and e-ink renderer. No LiTerm app or global terminal extension is required.

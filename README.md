@@ -12,7 +12,7 @@ It bundles touch-first tools designed around the limits of e-ink:
 - RSS — RSS/Atom feeds, full-text reading, read state, and offline cache.
 - Care — signed updates, release notes, automatic verification, and rollback backups.
 
-The current release is **4.2.0**, targeting the tested reMarkable OS
+The current release is **4.2.1**, targeting the tested reMarkable OS
 **3.29.0.149** with XOVI 0.3.3, AppLoad 0.6.0. Paper Terminal requires no LiTerm runtime.
 
 The installer accepts only OS 3.29.0.149 or 3.29.0.153 because Sketch loads a native

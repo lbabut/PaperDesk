@@ -1,4 +1,4 @@
-# Paper Sketch 4.1.3
+# Paper Sketch 4.2.1
 
 A grayscale bitmap sketchbook for reMarkable 2 and XOVI AppLoad. Four pencil grades (2H, HB, 2B, 6B), charcoal, soft charcoal, hard and kneaded erasing, and a smudge tool share one compact icon toolbar with the size slider. Finger blending is always enabled; stylus proximity cancels tentative palm marks. Materials settings are the first icon in the middle toolbar, before the 2H pencil. The full-screen mode leaves a small menu button to restore the controls.
 
@@ -7,6 +7,8 @@ A grayscale bitmap sketchbook for reMarkable 2 and XOVI AppLoad. Four pencil gra
 Each paper pixel stores fixed and loose pigment separately. Multiscale grain controls contact and capacity, with plain, smooth and rough paper stocks. Pencil hardness changes deposition and binding; charcoal leaves more loose dust. Stylus pressure has separate width and deposition profiles for each medium. When hardware tilt is available, the tip becomes a directional ellipse and tilted charcoal gains a broader side with firmer shoulders. Without tilt, the tip remains upright.
 
 Firm strokes gradually smooth the local paper surface and compact some loose pigment into the fixed fraction. Modest nib wear accumulates by traveled distance and broadens the tip; Sharpen resets the selected medium's wear. Changing paper stock changes future contact without rewriting drawn pigment. The hard eraser rubs along a stroke; the kneaded eraser gently lifts mainly loose pigment once per contact. Lift and dab again to remove more.
+
+Finger transfer uses position-matched capacitive contact pressure, a pressure response that remains useful at light contact, and a stable minimum fingertip footprint. Fast movement does not apply an additional strength penalty. The final transfer response is 10 percent gentler than the stronger owner-tested blend.
 
 A persistent fingertip map carries pigment from dark areas onto clean paper, including after a lift. The contact can be an oriented ellipse. Transfer and mixing conserve pigment exactly; erasing intentionally removes it. Zero pressure or strength leaves both surfaces unchanged. The spatial sampler retains even very small input distances, including the evolving surface and wear state. See [the 4.1 material audit](../../../../docs/papersketch-v4.1-material-audit.md) for the model, benchmarks and limitations.
 

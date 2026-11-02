@@ -101,7 +101,7 @@ public:
     void setFastDisplay(bool value){if(displayFast==value)return;displayFast=value;emit displayModeChanged();publishDirty(image.rect());}
     PaperPen penSamples;PaperTouch touchSamples;PaperPressure pressureCurve;
     double inputX=0,inputY=0,inputScaleX=1,inputScaleY=1;int pressureMatches=0,pressureFallbacks=0;
-    int tiltSamples=0,touchGeometryMatches=0;bool kitLoaded=false;
+    int tiltSamples=0,touchGeometryMatches=0,touchMatches=0,touchFallbacks=0;bool kitLoaded=false;
     Q_INVOKABLE void setInputTransform(double x,double y,double sx,double sy){inputX=x;inputY=y;inputScaleX=sx;inputScaleY=sy;}
     PaperPen::Sample pendingSample;uint64_t lastRawId=0;unsigned lastContact=0;int rawReplayed=0,rawBatchMax=0;bool collectingDamage=false;QRegion collectedDamage;
     Q_INVOKABLE double pressureAt(double x,double y,double fallback){
@@ -109,6 +109,12 @@ public:
         if(pendingSample.p>=0){pressureMatches++;return std::clamp(pendingSample.p,0.0,1.0);}
         pressureFallbacks++;return penPressure(fallback);
     }
+    Q_INVOKABLE double touchPressureAt(double x,double y,double fallback){
+        auto sample=touchSamples.match(inputX+x*inputScaleX,inputY+y*inputScaleY);
+        if(sample.time && sample.pressure>=0){touchMatches++;return std::clamp(sample.pressure,.04,1.0);}
+        touchFallbacks++;return std::clamp(fallback,.04,1.0);
+    }
+    Q_INVOKABLE QVariantList touchPressureMatchCounts()const{return {touchMatches,touchFallbacks};}
     Q_INVOKABLE QVariantList rawReplayStats()const{return {rawReplayed,rawBatchMax};}
     Q_INVOKABLE QVariantList pressureMatchCounts()const{return {pressureMatches,pressureFallbacks};}
     Q_INVOKABLE QVariantMap contactStats()const{
@@ -299,7 +305,7 @@ public:
     Q_INVOKABLE void release(){dropDisplayDamage();pressureCurve.cancel();penSamples.pause();touchSamples.pause();proximityTimer.stop();image=QImage();material=QImage();finger=QImage();currentFinger=QImage();currentPatches.clear();materialReady=false;}
     Q_INVOKABLE void resetWhite(){dropDisplayDamage();currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(image.size()!=QSize(1200,1600)||image.format()!=QImage::Format_RGB32)image=QImage(1200,1600,QImage::Format_RGB32);image.fill(Qt::white);materialReady=false;ensureMaterial();physics.resetSurface();finger.fill(0);slowest=0;emit timingChanged();publishDirty(image.rect());}
     Q_INVOKABLE void clearPage(){if(!ensureMaterial())return;dropDisplayDamage();image.fill(Qt::white);material.fill(0);finger.fill(0);physics.resetSurface();publishDirty(image.rect());}
-    Q_INVOKABLE void begin(bool tentative=false){flushDisplayDamage();std::atomic_store_explicit(&latency,std::make_shared<SketchLatency>(),std::memory_order_release);livePublication=false;lastRawId=0;lastContact=0;pendingSample=PaperPen::Sample();rawReplayed=0;rawBatchMax=0;collectingDamage=false;collectedDamage=QRegion();pressureMatches=0;pressureFallbacks=0;penSamples.resetMatchDiagnostics();tiltSamples=0;touchGeometryMatches=0;if(!ensureMaterial())return;livePublication=true;tentativeTouch=tentative;currentFinger=tentative?finger:QImage();captured.fill(false);currentPatches.clear();physics.untilNext=0;pendingDirty=QRect();unpublished=false;}
+    Q_INVOKABLE void begin(bool tentative=false){flushDisplayDamage();std::atomic_store_explicit(&latency,std::make_shared<SketchLatency>(),std::memory_order_release);livePublication=false;lastRawId=0;lastContact=0;pendingSample=PaperPen::Sample();rawReplayed=0;rawBatchMax=0;collectingDamage=false;collectedDamage=QRegion();pressureMatches=0;pressureFallbacks=0;penSamples.resetMatchDiagnostics();tiltSamples=0;touchGeometryMatches=0;touchMatches=0;touchFallbacks=0;if(!ensureMaterial())return;livePublication=true;tentativeTouch=tentative;currentFinger=tentative?finger:QImage();captured.fill(false);currentPatches.clear();physics.untilNext=0;pendingDirty=QRect();unpublished=false;}
     Q_INVOKABLE void finish(){currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(unpublished&&!pendingDirty.isEmpty())publishDirty(pendingDirty);livePublication=false;flushDisplayDamage();pendingDirty=QRect();unpublished=false;}
     Q_INVOKABLE void cancel(){
         if(!tentativeTouch)return;dropDisplayDamage();QRect dirty;for(const auto &p:currentPatches)dirty=dirty.united(p.rect);
@@ -418,14 +424,14 @@ public:
             physics.contactAspect=1.35;physics.contactAngle=first?0:std::atan2(dy,dx);
             if(sample.time){
                 if(sample.major>=6 && sample.minor>=4){
-                    size=std::clamp(sample.major/std::max(.01,(inputScaleX+inputScaleY)/2),20.0,80.0);
+                    size=std::clamp(std::max(size,sample.major/std::max(.01,(inputScaleX+inputScaleY)/2)),48.0,80.0);
                     physics.contactAspect=std::clamp(sample.major/sample.minor,1.0,2.0);
                     physics.contactAngle=sample.angle;touchGeometryMatches++;
                 }
-                if(sample.pressure>=0)p=.45+.45*sample.pressure;
+
             }
-            auto now=PaperTouch::now();double speed=first||lastTouchTime==0?0:std::hypot(dx,dy)*1000/std::max(1LL,now-lastTouchTime);
-            strength*=std::clamp(1.15/(1+speed/1500),.35,1.0);lastTouchTime=now;
+            auto now=PaperTouch::now();
+            lastTouchTime=now;
         }else{p=pressureCurve.map(p);physics.contactAspect=1;physics.contactAngle=0;}
         double ax=first?x:lastX,ay=first?y:lastY,ap=first?p:lastP;
         if(!ensureMaterial())return false;

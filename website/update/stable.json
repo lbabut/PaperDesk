@@ -1,17 +1,16 @@
 {
   "product": "PaperDesk",
   "channel": "stable",
-  "version": "4.2.0",
-  "publishedAt": "2026-11-01",
-  "archiveUrl": "/download/paperdesk-4.2.0.zip",
-  "archiveSha256": "38b43d125073b82cd0191a585bff4ad529771bd8a562e17cda7033a9b6946c95",
-  "archiveSize": 3778171,
+  "version": "4.2.1",
+  "publishedAt": "2026-11-02",
+  "archiveUrl": "/download/paperdesk-4.2.1.zip",
+  "archiveSha256": "ae43c9c67cc35c1d26c0c3d2fad9e147a4273ef0664ed38f420827a10042b5b5",
+  "archiveSize": 3778709,
   "releaseNotes": [
-    "Paper Terminal replaces PaperDesk SSH with PaperDesk's own PTY, VT parser and e-ink renderer. No LiTerm app or global terminal extension is required.",
-    "Saved SSH sessions appear as numbered start-screen choices. Double-click opens a session; optional password storage stays in private local files without encryption. Mouse reporting starts enabled, with F1-F12 and one-shot or held Ctrl/Alt shortcuts.",
-    "RDP adds F1-F12 and navigation shortcuts, aspect-preserving desktop fit above the system keyboard in portrait and landscape, and two-finger document scrolling alongside pinch zoom.",
-    "Retry reconnects an interrupted RDP session; a changed server certificate blocks it. Profile Save and Delete wait for a matching result and readback, preserving edits on write, lock or stale-profile errors.",
-    "Automated tests and isolated real-AppLoad sessions ran on reMarkable 2 / OS 3.29.0.153, including key packets, scrolling, disconnect/retry and changed-certificate rejection. These checks do not measure optical e-ink latency or ghosting.",
-    "All eight apps remain included, with the released Paper Sketch 4.1.3 files unchanged. Existing notebooks, sketchbooks, connection data and app settings are preserved; XOVI boot autostart remains disabled."
+    "Paper Sketch finger blending now spreads graphite and charcoal more visibly, with a stable fingertip footprint and no extra weakening during fast movements.",
+    "Touch pressure is matched directly to the contact position instead of using constant Qt touch pressure. Lighter and firmer contact produce different transfer amounts.",
+    "The final finger transfer response is reduced by 10 percent from the owner-tested stronger blend. Pigment remains conserved between paper and fingertip.",
+    "Existing saved pages retain their optical image and material state. Changes affect new rubbing; notebooks and PNG exports are preserved.",
+    "Paper Terminal, RDP and the other released apps remain included. XOVI still starts manually; boot autostart is not enabled."
   ]
 }

@@ -376,7 +376,8 @@ Rectangle {
         if(nativeRasterActive)nativeRaster.begin(source==="finger");
         var penPressure=pressure===undefined?penInput.centroid.pressure:pressure;
         if(source==="pen" && nativeRaster){if(bitmapMode)penPressure=nativeRaster.pressureAt(p.x,p.y,penPressure);else penPressure=nativeRaster.penPressure(penPressure);}
-        var initial=Ink.point(p.x,p.y,source==="finger"?0.7:penPressure);
+        if(source==="finger" && bitmapMode)penPressure=nativeRaster.touchPressureAt(p.x,p.y,penPressure);
+        var initial=Ink.point(p.x,p.y,penPressure);
         if(bitmapMode){
             // Legacy vector notebooks use a nonzero minimum; the material nib
             // must receive real zero/light pressure without that substitution.
@@ -392,7 +393,7 @@ Rectangle {
         if(!bitmapMode && totalPoints+activeStroke.points.length>=Ink.MAX_POINTS) {finishStroke();notice="Sketchbook full";return;}
         if(source==="pen" && nativeRaster)pressure=bitmapMode?nativeRaster.pressureAt(p.x,p.y,pressure===undefined?1:pressure):nativeRaster.penPressure(pressure===undefined?1:pressure);
         if(bitmapMode){
-            var pressureValue=source==="finger"?.7:pressure;
+            var pressureValue=source==="finger"?nativeRaster.touchPressureAt(p.x,p.y,pressure):pressure;
             if(nativeRaster.advance(activeStroke.tool,activeStroke.size,strength,p.x,p.y,pressureValue,false)){
                 var last=activeStroke.points[1];last[0]=Math.round(Ink.clamp(p.x,0,Ink.WIDTH)*10)/10;
                 last[1]=Math.round(Ink.clamp(p.y,0,Ink.HEIGHT)*10)/10;last[2]=Math.round(pressureValue*100)/100;
@@ -774,12 +775,12 @@ Rectangle {
                 enabled:root.fingerSmudge && !root.penNearby && !root.penBlocked && !root.replaying && !root.saveBlocked && !root.confirmation && !root.exportDialog && !root.materialsDialog && !root.calibrationDialog
                 onActiveChanged:{
                     if(active) {
-                        root.beginStroke(centroid.pressPosition,"finger",7);
-                        root.extendStroke(centroid.position,"finger",0.7);
+                        root.beginStroke(centroid.pressPosition,"finger",7,centroid.pressure);
+                        root.extendStroke(centroid.position,"finger",centroid.pressure);
                     }
                     else if(root.activeSource==="finger") root.finishStroke()
                 }
-                onCentroidChanged:if(active) root.extendStroke(centroid.position,"finger",0.7)
+                onCentroidChanged:if(active) root.extendStroke(centroid.position,"finger",centroid.pressure)
             }
         }
         Text {

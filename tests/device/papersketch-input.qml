@@ -57,7 +57,8 @@ Rectangle {
    if(Date.now()-debugAt>2500){debugAt=Date.now();console.log("PAPERSKETCH_INPUT_STATE "+JSON.stringify({phase:phase,strokes:a.page.strokes.length,source:a.activeSource,blocked:a.penBlocked}));}
    if((a.bitmapMode?(!a.lastStroke || a.lastStroke.tool!==7):a.page.strokes.length<2) || a.activeStroke!==null)return;
    var s=a.bitmapMode?a.lastStroke:a.page.strokes[a.page.strokes.length-1];
-   result.touch={tool:s.tool,points:s.samples||s.points.length,first:s.points[0],last:s.points[s.points.length-1],
+   var touchMatches=a.nativeRaster.touchPressureMatchCounts();
+   result.touch={matched_pressure_samples:touchMatches[0],fallback_pressure_samples:touchMatches[1],pressure_min:s.pressureMin,pressure_max:s.pressureMax,tool:s.tool,points:s.samples||s.points.length,first:s.points[0],last:s.points[s.points.length-1],
      core:gray(400,400,false),beside:gray(425,400,false),tile_core:gray(400,400,true),tile_beside:gray(425,400,true)};
    waitAt=Date.now();phase=3;return;
   }
@@ -78,8 +79,8 @@ Rectangle {
    var matched=a.nativeRaster.pressureMatchCounts();
    result.pen={matched_pressure_samples:matched[0],fallback_pressure_samples:matched[1],blank_frames_after_visible:blankFrames,pressure_min:s.pressureMin||Math.min.apply(Math,pressures),pressure_max:s.pressureMax||Math.max.apply(Math,pressures),tool:s.tool,points:s.samples||s.points.length,first:s.points[0],last:s.points[s.points.length-1],raster_seen_ms:firstRasterAt,tile_seen_ms:firstTileAt};
    var t=result.touch;
-   t.passed=t.tool===7 && t.points>=3 && Math.abs(t.first[0]-330)<8 && Math.abs(t.first[1]-400)<8
-    && Math.abs(t.last[0]-470)<8 && Math.abs(t.last[1]-400)<8 && t.core>result.touch_before.core && t.beside<result.touch_before.beside
+   t.passed=t.matched_pressure_samples>t.fallback_pressure_samples*4 && t.pressure_min<0.25 && t.pressure_max>0.75 && t.tool===7 && t.points>=3 && Math.abs(t.first[0]-330)<8 && Math.abs(t.first[1]-400)<8
+    && Math.abs(t.last[0]-470)<8 && Math.abs(t.last[1]-400)<8 && t.core>result.touch_before.core+60 && t.beside<result.touch_before.beside-40
     && t.core===t.tile_core && t.beside===t.tile_beside;
    var p=result.pen;
    p.passed=p.matched_pressure_samples>p.fallback_pressure_samples*4 && blankFrames===0 && p.pressure_min<0.25 && p.pressure_max>0.75 && p.tool===4 && p.points>=10 && Math.abs(p.first[0]-700)<8 && Math.abs(p.first[1]-700)<8 && Math.abs(p.last[0]-900)<8 && Math.abs(p.last[1]-720)<8;

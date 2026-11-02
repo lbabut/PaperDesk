@@ -21,8 +21,8 @@ struct PaperTouch {
     std::array<Sample,256> samples{};unsigned head=0,count=0;
     std::mutex mutex;std::atomic<bool> stopping{false},enabled{false};std::thread thread;
     static long long now(){return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();}
-    PaperTouch(){thread=std::thread([this]{readLoop();});}
-    ~PaperTouch(){stopping=true;thread.join();}
+    explicit PaperTouch(bool start=true){if(start)thread=std::thread([this]{readLoop();});}
+    ~PaperTouch(){stopping=true;if(thread.joinable())thread.join();}
     void activate(){std::lock_guard<std::mutex> lock(mutex);head=count=0;enabled=true;}
     void pause(){enabled=false;std::lock_guard<std::mutex> lock(mutex);head=count=0;}
     void push(Sample value){
@@ -62,7 +62,7 @@ struct PaperTouch {
                     Contact *single=nullptr;int active=0;for(auto &s:contactSlots)if(s.id>=0){single=&s;active++;}
                     if(active!=1)continue;
                     double sx=1404.0/(ax.maximum-ax.minimum),sy=1872.0/(ay.maximum-ay.minimum);
-                    double q=pressure&&single->p>ap.minimum?std::clamp(double(single->p-ap.minimum)/(ap.maximum-ap.minimum),0.0,1.0):-1;
+                    double q=pressure&&single->p>=ap.minimum?std::clamp(double(single->p-ap.minimum)/(ap.maximum-ap.minimum),0.0,1.0):-1;
                     double angle=orientation?std::clamp(double(single->angle)/std::max(1,std::max(std::abs(ao.minimum),std::abs(ao.maximum))),-1.0,1.0)*1.5707963267948966:0;
                     push({(single->x-ax.minimum)*sx,1872-(single->y-ay.minimum)*sy,
                           single->major>0?std::clamp(single->major*std::max(sx,sy),4.0,80.0):0,

@@ -101,7 +101,7 @@ struct PaperMaterial {
         double p = unit(pressure), a, b, angle = 0, tilt = 0, worn = 0;
         if (tool == 7) {
             double aspect = std::isfinite(contactAspect) ? std::clamp(contactAspect, 1.0, 2.0) : 1;
-            double r = std::max(6.0, size * .5 * (.65 + .35 * p));
+            double r = std::max(6.0, size * .5 * (.8 + .2 * std::sqrt(p)));
             a = std::min(40.0, r * std::sqrt(aspect));
             b = std::min(40.0, r / std::sqrt(aspect));
             angle = std::isfinite(contactAngle) ? contactAngle : 0;
@@ -164,7 +164,7 @@ struct PaperMaterial {
         const double quadraticX = shape.c * shape.c * inverseA + shape.s * shape.s * inverseB;
         const double quadraticY = shape.s * shape.s * inverseA + shape.c * shape.c * inverseB;
         const double quadraticXY = 2 * shape.c * shape.s * (inverseA - inverseB);
-        const double contactStrength = p * strength;
+        const double contactStrength = (tool == 7 ? .9 * std::sqrt(p) : p) * strength;
         constexpr double doseExponent[] = {1.2, 1.35, 1.45, 1.50, .90, .80};
         const double dosePressure = tool < 6 ? std::pow(p, doseExponent[tool]) : p;
         const double dose = tool < 6 ? doses[tool] * strength * dosePressure * (1 - tone / 255.0) *
@@ -214,13 +214,13 @@ struct PaperMaterial {
                     }
                     int held = finger[fi], room = 65535 - held;
                     double contact = contactStrength * edge;
-                    int pickLoose = std::min({loose, room, roundMass(loose * .13 * contact)});
+                    int pickLoose = std::min({loose, room, roundMass(loose * .40 * contact)});
                     int pickFixed = std::min({fixed, room - pickLoose,
-                        roundMass(fixed * .012 * p * contact)});
+                        roundMass(fixed * .06 * (.3 + .7 * p) * contact)});
                     loose -= pickLoose;
                     fixed -= pickFixed;
                     held += pickLoose + pickFixed;
-                    int deposit = std::min(65535 - fixed - loose, roundMass(held * .16 * contact));
+                    int deposit = std::min(65535 - fixed - loose, roundMass(held * .36 * contact));
                     loose += deposit;
                     held -= deposit;
                     finger[fi] = held;
