@@ -22,7 +22,7 @@ static void release(int fd,int finger){
 int main(int argc,char **argv){
  if((argc!=6 && argc!=7) || (strcmp(argv[1],"finger") && strcmp(argv[1],"pen")))return 2;
  const char *pattern=argc==7?argv[6]:"";
- int ramp=!strcmp(pattern,"pressure-ramp"),rubber=!strcmp(pattern,"eraser");
+ int ramp=!strcmp(pattern,"pressure-ramp"),rubber=!strcmp(pattern,"eraser")||!strcmp(pattern,"eraser-hover")||!strcmp(pattern,"eraser-hover-light");
  int shading=!strcmp(pattern,"shade"),tap=!strcmp(pattern,"tap"),tilt=!strcmp(pattern,"tilt"),upright=!strcmp(pattern,"upright"),contact=!strcmp(pattern,"contact");
  int calibration=!strcmp(pattern,"calibration-light")?1:!strcmp(pattern,"calibration-normal")?2:!strcmp(pattern,"calibration-firm")?3:0;
  if(argc==7&&!shading&&!tap&&!tilt&&!upright&&!contact&&!calibration&&!ramp&&!rubber)return 2;
@@ -45,7 +45,15 @@ int main(int argc,char **argv){
  signal(SIGINT,stop_signal);signal(SIGTERM,stop_signal);
  long long started=ms();
  if(finger){event(fd,EV_ABS,ABS_MT_SLOT,0);event(fd,EV_ABS,ABS_MT_TRACKING_ID,(int)(started%65535));event(fd,EV_KEY,BTN_TOUCH,1);event(fd,EV_KEY,BTN_TOOL_FINGER,1);}
- else{event(fd,EV_KEY,BTN_TOOL_RUBBER,rubber);event(fd,EV_KEY,BTN_TOOL_PEN,!rubber);event(fd,EV_KEY,BTN_TOUCH,1);event(fd,EV_ABS,ABS_PRESSURE,2048);}
+ else{
+  if(!strcmp(pattern,"eraser-hover")||!strcmp(pattern,"eraser-hover-light")){
+   event(fd,EV_KEY,BTN_TOOL_PEN,0);event(fd,EV_KEY,BTN_TOOL_RUBBER,1);
+   event(fd,EV_KEY,BTN_TOUCH,0);event(fd,EV_ABS,ABS_PRESSURE,0);
+   event(fd,EV_ABS,ABS_X,x0);event(fd,EV_ABS,ABS_Y,y0);
+   event(fd,EV_SYN,SYN_REPORT,0);usleep(250000);
+  }
+  event(fd,EV_KEY,BTN_TOOL_RUBBER,rubber);event(fd,EV_KEY,BTN_TOOL_PEN,!rubber);event(fd,EV_KEY,BTN_TOUCH,1);event(fd,EV_ABS,ABS_PRESSURE,2048);
+ }
  int ok=1;
  int samples=tap?2:shading?1260:61;
  for(int i=0;i<samples && !stopped;i++){
@@ -68,7 +76,7 @@ int main(int argc,char **argv){
   }
   else{
    int pressure=shading?512+3072*step/59:512+3072*i/60;
-   if(calibration||tilt||upright||rubber){double fraction=calibration==1?.12:calibration==2?.45:calibration==3?.85:.55;pressure=pen_pressure.minimum+(int)((pen_pressure.maximum-pen_pressure.minimum)*fraction);}
+   if(calibration||tilt||upright||rubber){double fraction=calibration==1?.12:calibration==2?.45:calibration==3?.85:!strcmp(pattern,"eraser-hover-light")?.015:.55;pressure=pen_pressure.minimum+(int)((pen_pressure.maximum-pen_pressure.minimum)*fraction);}
    if(has_tilt_x)ok&=event(fd,EV_ABS,ABS_TILT_X,tilt?(int)(tilt_x.maximum*.8):0);
    if(has_tilt_y)ok&=event(fd,EV_ABS,ABS_TILT_Y,0);
    ok&=event(fd,EV_ABS,ABS_PRESSURE,pressure);ok&=event(fd,EV_ABS,ABS_X,x);ok&=event(fd,EV_ABS,ABS_Y,y);

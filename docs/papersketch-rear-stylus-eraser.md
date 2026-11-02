@@ -26,3 +26,7 @@ Saved artwork is preserved. Raw device reports are retained locally.
 
 Qt API references: [PointerDevice.pointerType](https://doc.qt.io/qt-6/qml-qtquick-pointerdevice.html)
 and [handlerPoint.device](https://doc.qt.io/qt-6/qml-qtquick-handlerpoint.html).
+
+## Rear eraser contact strength (4.2.5)
+
+A positive rear contact uses the ordinary hard eraser at full contact pressure, independently of the drawing-nib calibration. Zero pressure remains a hover and does not erase; a stationary rise starts the first erasing dab. Flipping back clears this override. A manually selected eraser and all drawing tools retain their pressure response. Permanent Rapidograph ink remains unaffected.

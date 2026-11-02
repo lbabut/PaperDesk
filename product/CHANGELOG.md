@@ -1,3 +1,11 @@
+# 4.2.5 — 2026-11-02
+
+- Paper Sketch uses the ordinary hard eraser at full contact strength when the rear end of a compatible stylus touches the page.
+- Rear erasing is independent of the drawing-nib pressure calibration; light rear contact is no longer attenuated as a lightly pressed drawing nib.
+- Hover does not erase. Flipping back restores the selected tool and its normal pressure response. Tool size, strength and kneaded-eraser settings remain preserved.
+- Permanent Rapidograph ink remains intact. Existing artwork, the synchronous renderer and the other released apps are preserved.
+- Regression checks cover low-pressure rear contact, stationary onset, dragging, hover, calibration independence and normal-nib resumption.
+
 # 4.2.4 — 2026-11-02
 
 - Paper Sketch recognizes the rear end of a compatible stylus as a temporary ordinary hard eraser, for both stationary contact and dragging.

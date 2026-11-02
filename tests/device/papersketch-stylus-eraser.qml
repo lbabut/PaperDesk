@@ -19,11 +19,11 @@ Rectangle {
   if(phase===0){a.confirmation="book";a.confirmAction();a.brushSize=24;a.strength=1;
    for(var y=888;y<=912;y+=3){a.beginStroke(Qt.point(400,y),"pen",4,1);a.extendStroke(Qt.point(800,y),"pen",1);a.finishStroke();}
    a.tool=1;a.brushSize=5;a.strength=.6;a.kneadedEraser=true;a.lastStroke=null;before=gray(600,900);result.before_tap=before;move(1);return;}
-  if(phase===1&&Date.now()-at>1000){inject("eraser","rear-tap",600,900,600,900);move(2);return;}
+  if(phase===1&&Date.now()-at>1000){inject("eraser-hover-light","rear-tap",600,900,600,900);move(2);return;}
   if(phase===2&&a.lastStroke&&a.activeStroke===null){result.tap={tool:a.lastStroke.tool,rear:a.lastStroke.hardwareEraser,before:before,after:gray(600,900),settings_preserved:unchanged()};
-   if(!a.lastStroke.hardwareEraser||a.lastStroke.tool!==6||gray(600,900)<=before+10||!unchanged()){finish(false,"Rear tap did not erase or changed selected tool");return;}
+   if(!a.lastStroke.hardwareEraser||a.lastStroke.tool!==6||gray(600,900)<=before+20||!unchanged()){finish(false,"Rear tap did not erase or changed selected tool");return;}
    a.lastStroke=null;before=gray(730,900);move(3);return;}
-  if(phase===3&&Date.now()-at>500){inject("eraser","rear-drag",420,900,780,900);move(4);return;}
+  if(phase===3&&Date.now()-at>500){inject("eraser-hover-light","rear-drag",420,900,780,900);move(4);return;}
   if(phase===4&&a.lastStroke&&a.activeStroke===null){result.drag={tool:a.lastStroke.tool,rear:a.lastStroke.hardwareEraser,before:before,after:gray(730,900),settings_preserved:unchanged()};
    if(!a.lastStroke.hardwareEraser||a.lastStroke.tool!==6||gray(730,900)<=before+10||!unchanged()){finish(false,"Rear drag did not erase");return;}
    a.lastStroke=null;move(5);return;}

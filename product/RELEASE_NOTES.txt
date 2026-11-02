@@ -1,5 +1,5 @@
-Paper Sketch recognizes the rear end of a compatible stylus as a temporary ordinary hard eraser, for both stationary contact and dragging.
-Flip back to resume the selected drawing tool. Tool choice, size, strength and kneaded-eraser settings are preserved; permanent Rapidograph ink remains intact.
-Pen strokes can begin when pressure rises after an initial zero-pressure contact, without requiring movement.
-Uses the synchronous material renderer without the experimental progressive preview. Existing artwork and the other released apps are preserved.
-Verified with native and QML tests and rear-contact, eraser-drag and normal-nib input checks on reMarkable 2.
+Paper Sketch uses the ordinary hard eraser at full contact strength when the rear end of a compatible stylus touches the page.
+Rear erasing is independent of the drawing-nib pressure calibration; light rear contact is no longer attenuated as a lightly pressed drawing nib.
+Hover does not erase. Flipping back restores the selected tool and its normal pressure response. Tool size, strength and kneaded-eraser settings remain preserved.
+Permanent Rapidograph ink remains intact. Existing artwork, the synchronous renderer and the other released apps are preserved.
+Regression checks cover low-pressure rear contact, stationary onset, dragging, hover, calibration independence and normal-nib resumption.

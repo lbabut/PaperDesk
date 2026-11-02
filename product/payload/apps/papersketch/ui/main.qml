@@ -381,7 +381,7 @@ Rectangle {
         activeStroke.hardwareEraser=hardwareEraser;
         if(hardwareEraser && materialsAvailable)nativeRaster.setMaterialOptions(paperKind,false);
         if(bitmapMode)activeStroke.renderer=8;
-        if(nativeRasterActive)nativeRaster.begin(source==="finger");
+        if(nativeRasterActive)nativeRaster.begin(source==="finger",hardwareEraser);
         var penPressure=pressure===undefined?penInput.centroid.pressure:pressure;
         if(source==="pen" && nativeRaster){if(bitmapMode)penPressure=nativeRaster.pressureAt(p.x,p.y,penPressure);else penPressure=nativeRaster.penPressure(penPressure);}
         if(source==="finger" && bitmapMode)penPressure=nativeRaster.touchPressureAt(p.x,p.y,penPressure);

@@ -48,6 +48,7 @@ Item {
             property int sharpenedTool:-1
             property int cleanCount:0
             property int beginCount:0
+            property bool rearStroke:false
             property bool rear:false
             function eraserActive(){return rear}
             property int finishCount:0
@@ -73,7 +74,7 @@ Item {
             function cancelCalibration(){calibrationActive=false}
             function resetCalibration(){if(resetFails)return false;calibrationSaved=false;return true}
             function calibrationSummary(){return calibrationSaved?"Your pressure response":"Standard pressure response"}
-            function begin(tentative){beginCount++}
+            function begin(tentative,rearEraser){beginCount++;rearStroke=rearEraser===true}
             function finish(){finishCount++}
             function setInputTransform(x,y,sx,sy){}
             function pressureAt(x,y,fallback){return fallback}
@@ -102,12 +103,12 @@ Item {
             backend.materialAvailable=true;a.nativeRaster=backend;a.nativeRasterActive=true;
             a.tool=8;a.brushSize=3;a.strength=.2;a.kneadedEraser=true;backend.rear=true;
             a.beginStroke(Qt.point(300,400),"pen",8,.6);
-            compare(a.activeStroke.tool,6);verify(a.activeStroke.hardwareEraser);
+            compare(a.activeStroke.tool,6);verify(a.activeStroke.hardwareEraser);verify(backend.rearStroke);
             compare(a.activeStroke.size,Ink.tools[6].size);compare(a.activeStroke.strength,1);
             compare(backend.kneaded,false);compare(a.tool,8);compare(a.brushSize,3);compare(a.strength,.2);
             a.finishStroke();compare(backend.kneaded,true);compare(a.kneadedEraser,true);
             backend.rear=false;a.beginStroke(Qt.point(300,400),"pen",8,.6);
-            compare(a.activeStroke.tool,8);compare(a.activeStroke.hardwareEraser,false);a.finishStroke();
+            compare(a.activeStroke.tool,8);compare(a.activeStroke.hardwareEraser,false);compare(backend.rearStroke,false);a.finishStroke();
             a.beginStroke(Qt.point(300,400),"pen",8,.6,true);compare(a.activeStroke.tool,6);a.finishStroke();
             a.nativeRaster=old;backend.destroy();
         }
