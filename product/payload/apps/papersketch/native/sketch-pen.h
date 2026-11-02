@@ -16,7 +16,7 @@
 #include <algorithm>
 #include <limits>
 struct PaperPen {
- struct Sample{double x=0,y=0,p=-1;long long time=0;uint64_t id=0;unsigned contact=0;double tiltX=0,tiltY=0;};
+ struct Sample{double x=0,y=0,p=-1;long long time=0;uint64_t id=0;unsigned contact=0;double tiltX=0,tiltY=0;bool eraser=false;};
  struct MatchDiagnostics {
   uint64_t calls=0,misses=0,stalePositionMisses=0;
   unsigned samplesAtMiss=0;
@@ -24,17 +24,17 @@ struct PaperPen {
   double nearestMissDistance=-1;
  } matchStats;
  std::array<Sample,2048> samples{};unsigned head=0,count=0;uint64_t serial=0;mutable std::mutex mutex;
- std::atomic<bool> stop{false},enabled{true},ready{false},nearby{false};std::thread thread;
+ std::atomic<bool> stop{false},enabled{true},ready{false},nearby{false},eraserNearby{false};std::thread thread;
  static long long now(){return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();}
  PaperPen(){thread=std::thread([this]{readLoop();});}
  ~PaperPen(){stop=true;thread.join();}
- void activate(){std::lock_guard<std::mutex> lock(mutex);head=0;count=0;nearby=false;enabled=true;}
- void pause(){enabled=false;nearby=false;std::lock_guard<std::mutex> lock(mutex);head=0;count=0;}
+ void activate(){std::lock_guard<std::mutex> lock(mutex);head=0;count=0;nearby=false;eraserNearby=false;enabled=true;}
+ void pause(){enabled=false;nearby=false;eraserNearby=false;std::lock_guard<std::mutex> lock(mutex);head=0;count=0;}
  void resetMatchDiagnostics(){std::lock_guard<std::mutex> lock(mutex);matchStats=MatchDiagnostics{};}
  MatchDiagnostics matchDiagnostics()const{std::lock_guard<std::mutex> lock(mutex);return matchStats;}
- void push(double x,double y,double p,unsigned contact=1,double tiltX=0,double tiltY=0){
+ void push(double x,double y,double p,unsigned contact=1,double tiltX=0,double tiltY=0,bool eraser=false){
   if(!std::isfinite(x)||!std::isfinite(y)||!std::isfinite(p)||!std::isfinite(tiltX)||!std::isfinite(tiltY))return;
-  std::lock_guard<std::mutex> lock(mutex);samples[head]={x,y,p,now(),++serial,contact,std::clamp(tiltX,-1.0,1.0),std::clamp(tiltY,-1.0,1.0)};head=(head+1)%samples.size();if(count<samples.size())count++;
+  std::lock_guard<std::mutex> lock(mutex);samples[head]={x,y,p,now(),++serial,contact,std::clamp(tiltX,-1.0,1.0),std::clamp(tiltY,-1.0,1.0),eraser};head=(head+1)%samples.size();if(count<samples.size())count++;
  }
  // Match pressure to the delivered screen position, rather than sampling a
  // newer pressure after Qt has queued the older movement event.
@@ -97,8 +97,8 @@ struct PaperPen {
     if(e.type==EV_ABS){if(e.code==ABS_X)x=e.value;else if(e.code==ABS_Y)y=e.value;else if(e.code==ABS_PRESSURE)p=e.value;else if(e.code==ABS_TILT_X)tiltX=e.value;else if(e.code==ABS_TILT_Y)tiltY=e.value;}
     if(e.type==EV_KEY){if(e.code==BTN_TOUCH){if(!touch&&e.value)contact++;touch=e.value;}else if(e.code==BTN_TOOL_PEN)penTool=e.value;else if(e.code==BTN_TOOL_RUBBER)rubberTool=e.value;}
     if(e.type==EV_SYN&&e.code==SYN_REPORT&&enabled){
-     nearby=penTool||rubberTool;
-     if(touch&&p>ap.minimum)push((y-ay.minimum)*1404.0/(ay.maximum-ay.minimum),(ax.maximum-x)*1872.0/(ax.maximum-ax.minimum),(p-ap.minimum)/double(ap.maximum-ap.minimum),contact,hasTiltY?normalized(tiltY,aty):0,hasTiltX?-normalized(tiltX,atx):0);
+     nearby=penTool||rubberTool;eraserNearby=rubberTool;
+     if(touch&&p>ap.minimum)push((y-ay.minimum)*1404.0/(ay.maximum-ay.minimum),(ax.maximum-x)*1872.0/(ax.maximum-ax.minimum),(p-ap.minimum)/double(ap.maximum-ap.minimum),contact,hasTiltY?normalized(tiltY,aty):0,hasTiltX?-normalized(tiltX,atx):0,rubberTool);
     }
    }
   }close(fd);ready=false;

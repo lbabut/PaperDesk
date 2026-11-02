@@ -167,6 +167,7 @@ public:
     QTimer displayPublicationTimer;
     QRegion displayPending;
     bool livePublication=false;
+    bool awaitingPenContact=false;
     void emitDisplayDamage(const QRegion &damage){if(damage.isEmpty())return;SketchLatency::Scope timing(std::atomic_load_explicit(&latency,std::memory_order_acquire),SketchLatency::Stage::Publish);emit damaged(damage);emit changed(damage.boundingRect());}
     void flushDisplayDamage(){
         displayPublicationTimer.stop();
@@ -297,6 +298,19 @@ public:
         if(pressureAge.isValid()&&pressureAge.elapsed()<100)return pressureLast;
         return fallback;
     }
+    Q_INVOKABLE bool eraserActive(double x,double y){
+        // Query current kernel tool state on contact, including synthesized
+        // mouse events. Do not wait for the background pressure reader.
+        penPressure(0);unsigned char keys[KEY_MAX/8+1]={0};
+        if(pressureFd>=0&&ioctl(pressureFd,EVIOCGKEY(sizeof keys),keys)>=0){
+            if(keys[BTN_TOOL_RUBBER/8]&(1<<(BTN_TOOL_RUBBER%8)))return true;
+            if(keys[BTN_TOOL_PEN/8]&(1<<(BTN_TOOL_PEN%8)))return false;
+        }
+        // A very short contact can end before Qt delivers its press event.
+        // Retain the tool carried by that position-matched raw sample.
+        auto sample=penSamples.match(inputX+x*inputScaleX,inputY+y*inputScaleY);
+        return sample.p>=0?sample.eraser:penSamples.eraserNearby.load();
+    }
     bool available()const{return true;}
     int maxSmudgeMs()const{return slowest;}
     Q_INVOKABLE bool importPixels(QJSValue pixels) {
@@ -309,7 +323,7 @@ public:
     Q_INVOKABLE void release(){dropDisplayDamage();pressureCurve.cancel();penSamples.pause();touchSamples.pause();proximityTimer.stop();image=QImage();material=QImage();finger=QImage();currentFinger=QImage();currentPatches.clear();materialReady=false;}
     Q_INVOKABLE void resetWhite(){dropDisplayDamage();currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(image.size()!=QSize(1200,1600)||image.format()!=QImage::Format_RGB32)image=QImage(1200,1600,QImage::Format_RGB32);image.fill(Qt::white);materialReady=false;ensureMaterial();physics.resetSurface();finger.fill(0);slowest=0;emit timingChanged();publishDirty(image.rect());}
     Q_INVOKABLE void clearPage(){if(!ensureMaterial())return;dropDisplayDamage();image.fill(Qt::white);material.fill(0);finger.fill(0);physics.resetSurface();physics.resetInk();publishDirty(image.rect());}
-    Q_INVOKABLE void begin(bool tentative=false){flushDisplayDamage();std::atomic_store_explicit(&latency,std::make_shared<SketchLatency>(),std::memory_order_release);livePublication=false;lastRawId=0;lastContact=0;pendingSample=PaperPen::Sample();rawReplayed=0;rawBatchMax=0;collectingDamage=false;collectedDamage=QRegion();pressureMatches=0;pressureFallbacks=0;penSamples.resetMatchDiagnostics();tiltSamples=0;touchGeometryMatches=0;touchMatches=0;touchFallbacks=0;if(!ensureMaterial())return;livePublication=true;tentativeTouch=tentative;currentFinger=tentative?finger:QImage();captured.fill(false);currentPatches.clear();physics.untilNext=0;pendingDirty=QRect();unpublished=false;}
+    Q_INVOKABLE void begin(bool tentative=false){flushDisplayDamage();std::atomic_store_explicit(&latency,std::make_shared<SketchLatency>(),std::memory_order_release);livePublication=false;lastRawId=0;lastContact=0;pendingSample=PaperPen::Sample();rawReplayed=0;rawBatchMax=0;collectingDamage=false;collectedDamage=QRegion();pressureMatches=0;pressureFallbacks=0;penSamples.resetMatchDiagnostics();tiltSamples=0;touchGeometryMatches=0;touchMatches=0;touchFallbacks=0;if(!ensureMaterial())return;livePublication=true;awaitingPenContact=!tentative;tentativeTouch=tentative;currentFinger=tentative?finger:QImage();captured.fill(false);currentPatches.clear();physics.untilNext=0;pendingDirty=QRect();unpublished=false;}
     Q_INVOKABLE void finish(){currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(unpublished&&!pendingDirty.isEmpty())publishDirty(pendingDirty);livePublication=false;flushDisplayDamage();pendingDirty=QRect();unpublished=false;}
     Q_INVOKABLE void cancel(){
         if(!tentativeTouch)return;dropDisplayDamage();QRect dirty;for(const auto &p:currentPatches)dirty=dirty.united(p.rect);
@@ -461,7 +475,7 @@ public:
         double dx=x-lastX,dy=y-lastY;
         double threshold=tentativeTouch?std::clamp(size*.08,1.0,3.0):.35;
         bool pendingKneaded=tool==6&&physics.kneaded&&p>0&&(!physics.kneadedContact||pressureCurve.map(p)>lastP+.0001);
-        if(!first && dx*dx+dy*dy<threshold*threshold&&!pendingKneaded)return false;
+        if(!first && dx*dx+dy*dy<threshold*threshold&&!pendingKneaded&&!awaitingPenContact)return false;
         physics.tiltX=tiltX;physics.tiltY=tiltY;
         if(tiltX!=0||tiltY!=0)tiltSamples++;
         if(tentativeTouch){
@@ -478,6 +492,13 @@ public:
             auto now=PaperTouch::now();
             lastTouchTime=now;
         }else{if(tool!=8)p=pressureCurve.map(p);physics.contactAspect=1;physics.contactAngle=0;}
+        // Hover/zero-pressure press must not consume the first visible dab or
+        // arm the publication timer. A stationary pressure rise is a contact,
+        // even when Qt delivers no drag activation or coordinate change.
+        if(awaitingPenContact){
+            if(p<=0){lastX=x;lastY=y;lastP=p;return true;}
+            first=true;awaitingPenContact=false;
+        }
         double ax=first?x:lastX,ay=first?y:lastY,ap=first?p:lastP;
         if(!ensureMaterial())return false;
         double radius=std::max(physics.footprintRadius(tool,size,ap),physics.footprintRadius(tool,size,p))+3;

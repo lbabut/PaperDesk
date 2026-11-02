@@ -27,13 +27,14 @@ p.add_argument("--controls-probe",action="store_true")
 p.add_argument("--workflow-probe",action="store_true")
 p.add_argument("--pdf-probe",action="store_true")
 p.add_argument("--realism-probe",action="store_true")
+p.add_argument("--eraser-probe",action="store_true")
 p.add_argument("--output",default="docs/papersketch-native-2026-10-31.json")
 a=p.parse_args()
 if a.latency_fresh_only and not a.latency_probe:
     p.error("--latency-fresh-only requires --latency-probe")
-if a.latency_probe and any((a.smoke,a.input_probe,a.shading_probe,a.controls_probe,a.workflow_probe,a.realism_probe,a.pdf_probe)):
+if a.latency_probe and any((a.smoke,a.input_probe,a.shading_probe,a.controls_probe,a.workflow_probe,a.realism_probe,a.pdf_probe,a.eraser_probe)):
     p.error("--latency-probe must run separately from other probes")
-uses_input=a.pdf_probe or a.input_probe or a.shading_probe or a.latency_probe or a.controls_probe or a.workflow_probe or a.realism_probe
+uses_input=a.eraser_probe or a.pdf_probe or a.input_probe or a.shading_probe or a.latency_probe or a.controls_probe or a.workflow_probe or a.realism_probe
 root=pathlib.Path(__file__).resolve().parents[1]
 work=root/"work/papersketch-native"
 app=work/"papersketch-native-bench"
@@ -59,7 +60,7 @@ for name,text in [("baseline",baseline),("constant-fast",candidate)]:
     shutil.copy2(source/"engine.js",folder/"engine.js")
     for qml_name in ("native-tile.qml","ToolIcon.qml"):
         shutil.copy2(source/"ui"/qml_name,folder/"ui"/qml_name)
-harness=(root/("tests/device/papersketch-latency.qml" if a.latency_probe else "tests/device/papersketch-realism.qml" if a.realism_probe else "tests/device/papersketch-workflow.qml" if a.workflow_probe else "tests/device/papersketch-controls.qml" if a.controls_probe else "tests/device/papersketch-shading.qml" if a.shading_probe else "tests/device/papersketch-input.qml" if a.input_probe else "tests/device/papersketch-native.qml")).read_text()
+harness=(root/("tests/device/papersketch-stylus-eraser.qml" if a.eraser_probe else "tests/device/papersketch-latency.qml" if a.latency_probe else "tests/device/papersketch-realism.qml" if a.realism_probe else "tests/device/papersketch-workflow.qml" if a.workflow_probe else "tests/device/papersketch-controls.qml" if a.controls_probe else "tests/device/papersketch-shading.qml" if a.shading_probe else "tests/device/papersketch-input.qml" if a.input_probe else "tests/device/papersketch-native.qml")).read_text()
 if a.latency_fresh_only:
     marker="property bool freshOnly:false"
     assert harness.count(marker)==1,"Latency harness fresh-only option is missing"
@@ -276,3 +277,9 @@ if a.latency_probe:
 
 if a.pdf_probe:
     assert report["results"]["pdf_probe"]["passed"] and any(e.get("id")=="pdf-add" and e.get("writes_ok") for e in report.get("evdev_injections",[])),"PDF native library import failed"
+
+if a.eraser_probe:
+    assert report["results"]["eraser_probe"]["passed"],"Rear stylus eraser probe failed"
+    events=report.get("evdev_injections",[])
+    assert {"rear-tap","rear-drag","pen-after-rear"}.issubset({e["id"] for e in events})
+    assert all(e.get("writes_ok") for e in events)

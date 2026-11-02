@@ -364,19 +364,23 @@ Rectangle {
         var a=inputSurface.mapToItem(win.contentItem,0,0),b=inputSurface.mapToItem(win.contentItem,Ink.WIDTH,Ink.HEIGHT);
         nativeRaster.setInputTransform(a.x,a.y,(b.x-a.x)/Ink.WIDTH,(b.y-a.y)/Ink.HEIGHT);
     }
-    function beginStroke(p,source,selected,pressure) {
+    function beginStroke(p,source,selected,pressure,eraserHint) {
         if(materialsDialog || calibrationDialog)return;
         if(source==="pen" && activeSource==="finger"){if(bitmapMode)nativeRaster.cancel();activeStroke=null;activeSource="";}
         if(!ready || busy || saveBlocked || confirmation) return;
         if(!bitmapMode && totalPoints>=Ink.MAX_POINTS) {notice="Sketchbook full. Export your pages before starting a new book.";return;}
+        if(bitmapMode || (source==="pen" && nativeRaster))syncInputTransform();
+        var hardwareEraser=source==="pen" && (eraserHint===true || (nativeRaster && typeof nativeRaster.eraserActive==="function" && nativeRaster.eraserActive(p.x,p.y)));
+        if(hardwareEraser)selected=6;
         paintTimer.stop();clearPreviewTimer.stop();
         if(nativeRasterActive)clearPreview();
         maxPaintMs=0;maxQueueWaitMs=0;
         nativeStroke=bitmapMode || (source==="pen" && selected!==7 && nativeArmed);
         activeSource=source;
-        activeStroke=Ink.stroke(selected,selected===7?Math.max(brushSize,source==="finger"?64:32):brushSize,tone,strength,Date.now());
+        activeStroke=Ink.stroke(selected,hardwareEraser?Ink.tools[6].size:(selected===7?Math.max(brushSize,source==="finger"?64:32):brushSize),tone,hardwareEraser?1:strength,Date.now());
+        activeStroke.hardwareEraser=hardwareEraser;
+        if(hardwareEraser && materialsAvailable)nativeRaster.setMaterialOptions(paperKind,false);
         if(bitmapMode)activeStroke.renderer=8;
-        if(bitmapMode)syncInputTransform();
         if(nativeRasterActive)nativeRaster.begin(source==="finger");
         var penPressure=pressure===undefined?penInput.centroid.pressure:pressure;
         if(source==="pen" && nativeRaster){if(bitmapMode)penPressure=nativeRaster.pressureAt(p.x,p.y,penPressure);else penPressure=nativeRaster.penPressure(penPressure);}
@@ -388,7 +392,7 @@ Rectangle {
             if(source!=="finger" && isFinite(penPressure))initial[2]=Ink.clamp(penPressure,0,1);
             activeStroke.points=[initial,[initial[0],initial[1],initial[2]]];activeStroke.samples=1;
             activeStroke.pressureMin=initial[2];activeStroke.pressureMax=initial[2];
-            nativeRaster.advance(selected,activeStroke.size,strength,initial[0],initial[1],initial[2],true);
+            nativeRaster.advance(selected,activeStroke.size,activeStroke.strength,initial[0],initial[1],initial[2],true);
         }else{activeStroke.points.push(initial);queueInk(activeStroke,0);}
         notice="";
     }
@@ -398,7 +402,7 @@ Rectangle {
         if(source==="pen" && nativeRaster)pressure=bitmapMode?nativeRaster.pressureAt(p.x,p.y,pressure===undefined?1:pressure):nativeRaster.penPressure(pressure===undefined?1:pressure);
         if(bitmapMode){
             var pressureValue=source==="finger"?nativeRaster.touchPressureAt(p.x,p.y,pressure):pressure;
-            if(nativeRaster.advance(activeStroke.tool,activeStroke.size,strength,p.x,p.y,pressureValue,false)){
+            if(nativeRaster.advance(activeStroke.tool,activeStroke.size,activeStroke.strength,p.x,p.y,pressureValue,false)){
                 var last=activeStroke.points[1];last[0]=Math.round(Ink.clamp(p.x,0,Ink.WIDTH)*10)/10;
                 last[1]=Math.round(Ink.clamp(p.y,0,Ink.HEIGHT)*10)/10;last[2]=Math.round(pressureValue*100)/100;
                 activeStroke.samples++;activeStroke.pressureMin=Math.min(activeStroke.pressureMin,last[2]);activeStroke.pressureMax=Math.max(activeStroke.pressureMax,last[2]);
@@ -415,6 +419,7 @@ Rectangle {
     function finishStroke() {
         if(activeStroke===null) return;
         if(nativeRasterActive){nativeRaster.finish();clearPreviewTimer.restart();}
+        if(activeStroke.hardwareEraser && materialsAvailable)nativeRaster.setMaterialOptions(paperKind,kneadedEraser);
         lastStroke=activeStroke;
         if(bitmapMode){page.bitmap=true;page.revision=(page.revision||0)+1;page.strokes=[];totalPoints=0;}
         else {page.strokes.push(activeStroke);totalPoints+=activeStroke.points.length;}
@@ -825,7 +830,7 @@ Rectangle {
                 enabled:!root.replaying && !root.saveBlocked && !root.confirmation && !root.exportDialog && !root.materialsDialog && !root.calibrationDialog
                 onActiveChanged:{
                     if(active) {
-                        if(root.activeSource!=="pen")root.beginStroke(centroid.pressPosition,"pen",root.tool,centroid.pressure);
+                        if(root.activeSource!=="pen")root.beginStroke(centroid.pressPosition,"pen",root.tool,centroid.pressure,centroid.device && centroid.device.pointerType===PointerDevice.Eraser);
                         root.extendStroke(centroid.position,"pen",centroid.pressure);
                     } else if(root.activeSource==="pen") {
                         root.finishStroke();
@@ -842,7 +847,7 @@ Rectangle {
                     // Use this event's coordinates: handlerPoint may still be
                     // stale for tablet-synthesized mouse events on the device.
                     if(transition===PointerDevice.GrabPassive && root.activeSource!=="pen")
-                        root.beginStroke(eventPoint.position,"pen",root.tool,eventPoint.pressure);
+                        root.beginStroke(eventPoint.position,"pen",root.tool,eventPoint.pressure,eventPoint.device && eventPoint.device.pointerType===PointerDevice.Eraser);
                 }
                 onPressedChanged:if(!pressed)penEndTimer.restart()
                 onTapped:function(eventPoint,button) {

@@ -4,6 +4,13 @@ A grayscale bitmap sketchbook for reMarkable 2 and XOVI AppLoad. Four pencil gra
 
 Rapidograph draws a constant-width black ink line. Positive pressure and tilt do not change its width. Its separate ink layer survives smudging and both dry-material erasers; Clear or Delete page removes it. Saved ink pages use material cache v3; older v1/v2 sketches remain readable.
 
+## Rear stylus eraser
+
+Flip a supported stylus to use its rear end as a normal hard eraser. The selected
+drawing tool and its settings stay unchanged; flip back to continue drawing.
+The rear eraser uses the eraser tool's default width and full strength, then
+restores the chosen hard/kneaded mode when lifted. Permanent ink is unaffected.
+
 ## Dry materials
 
 Each paper pixel stores fixed and loose pigment separately. Multiscale grain controls contact and capacity, with plain, smooth and rough paper stocks. Pencil hardness changes deposition and binding; charcoal leaves more loose dust. Stylus pressure has separate width and deposition profiles for each medium. When hardware tilt is available, the tip becomes a directional ellipse and tilted charcoal gains a broader side with firmer shoulders. Without tilt, the tip remains upright.

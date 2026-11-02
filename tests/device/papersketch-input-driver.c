@@ -16,17 +16,17 @@ static long long ms(void){struct timespec t;clock_gettime(CLOCK_REALTIME,&t);ret
 static int event(int fd,int type,int code,int value){struct input_event e={0};e.type=type;e.code=code;e.value=value;return write(fd,&e,sizeof e)==sizeof e;}
 static void release(int fd,int finger){
  if(finger){event(fd,EV_ABS,ABS_MT_SLOT,0);event(fd,EV_ABS,ABS_MT_TRACKING_ID,-1);event(fd,EV_KEY,BTN_TOUCH,0);event(fd,EV_KEY,BTN_TOOL_FINGER,0);}
- else{event(fd,EV_ABS,ABS_PRESSURE,0);event(fd,EV_KEY,BTN_TOUCH,0);event(fd,EV_KEY,BTN_TOOL_PEN,0);}
+ else{event(fd,EV_ABS,ABS_PRESSURE,0);event(fd,EV_KEY,BTN_TOUCH,0);event(fd,EV_KEY,BTN_TOOL_PEN,0);event(fd,EV_KEY,BTN_TOOL_RUBBER,0);}
  event(fd,EV_SYN,SYN_REPORT,0);
 }
 int main(int argc,char **argv){
  if((argc!=6 && argc!=7) || (strcmp(argv[1],"finger") && strcmp(argv[1],"pen")))return 2;
  const char *pattern=argc==7?argv[6]:"";
- int ramp=!strcmp(pattern,"pressure-ramp");
+ int ramp=!strcmp(pattern,"pressure-ramp"),rubber=!strcmp(pattern,"eraser");
  int shading=!strcmp(pattern,"shade"),tap=!strcmp(pattern,"tap"),tilt=!strcmp(pattern,"tilt"),upright=!strcmp(pattern,"upright"),contact=!strcmp(pattern,"contact");
  int calibration=!strcmp(pattern,"calibration-light")?1:!strcmp(pattern,"calibration-normal")?2:!strcmp(pattern,"calibration-firm")?3:0;
- if(argc==7&&!shading&&!tap&&!tilt&&!upright&&!contact&&!calibration&&!ramp)return 2;
- if((shading||tilt||upright||calibration||ramp)&&strcmp(argv[1],"pen"))return 2;
+ if(argc==7&&!shading&&!tap&&!tilt&&!upright&&!contact&&!calibration&&!ramp&&!rubber)return 2;
+ if((shading||tilt||upright||calibration||ramp||rubber)&&strcmp(argv[1],"pen"))return 2;
  if(contact&&strcmp(argv[1],"finger"))return 2;
  int finger=!strcmp(argv[1],"finger");const char *path=finger?"/dev/input/event2":"/dev/input/event1";
  int fd=open(path,O_RDWR|O_NONBLOCK);if(fd<0){perror(path);return 3;}
@@ -45,7 +45,7 @@ int main(int argc,char **argv){
  signal(SIGINT,stop_signal);signal(SIGTERM,stop_signal);
  long long started=ms();
  if(finger){event(fd,EV_ABS,ABS_MT_SLOT,0);event(fd,EV_ABS,ABS_MT_TRACKING_ID,(int)(started%65535));event(fd,EV_KEY,BTN_TOUCH,1);event(fd,EV_KEY,BTN_TOOL_FINGER,1);}
- else{event(fd,EV_KEY,BTN_TOOL_RUBBER,0);event(fd,EV_KEY,BTN_TOOL_PEN,1);event(fd,EV_KEY,BTN_TOUCH,1);event(fd,EV_ABS,ABS_PRESSURE,2048);}
+ else{event(fd,EV_KEY,BTN_TOOL_RUBBER,rubber);event(fd,EV_KEY,BTN_TOOL_PEN,!rubber);event(fd,EV_KEY,BTN_TOUCH,1);event(fd,EV_ABS,ABS_PRESSURE,2048);}
  int ok=1;
  int samples=tap?2:shading?1260:61;
  for(int i=0;i<samples && !stopped;i++){
@@ -68,7 +68,7 @@ int main(int argc,char **argv){
   }
   else{
    int pressure=shading?512+3072*step/59:512+3072*i/60;
-   if(calibration||tilt||upright){double fraction=calibration==1?.12:calibration==2?.45:calibration==3?.85:.55;pressure=pen_pressure.minimum+(int)((pen_pressure.maximum-pen_pressure.minimum)*fraction);}
+   if(calibration||tilt||upright||rubber){double fraction=calibration==1?.12:calibration==2?.45:calibration==3?.85:.55;pressure=pen_pressure.minimum+(int)((pen_pressure.maximum-pen_pressure.minimum)*fraction);}
    if(has_tilt_x)ok&=event(fd,EV_ABS,ABS_TILT_X,tilt?(int)(tilt_x.maximum*.8):0);
    if(has_tilt_y)ok&=event(fd,EV_ABS,ABS_TILT_Y,0);
    ok&=event(fd,EV_ABS,ABS_PRESSURE,pressure);ok&=event(fd,EV_ABS,ABS_X,x);ok&=event(fd,EV_ABS,ABS_Y,y);

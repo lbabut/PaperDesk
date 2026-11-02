@@ -48,6 +48,8 @@ Item {
             property int sharpenedTool:-1
             property int cleanCount:0
             property int beginCount:0
+            property bool rear:false
+            function eraserActive(){return rear}
             property int finishCount:0
             property int samples:0
             property bool calibrationActive:false
@@ -94,6 +96,20 @@ Item {
             scene.app.materialsDialog=false;scene.app.calibrationDialog=false;
             scene.app.fullScreen=false;scene.app.confirmation="book";scene.app.confirmAction();
             tryCompare(scene.app,"replaying",false,10000);
+        }
+        function test_rear_stylus_eraser_preserves_selected_tool(){
+            var a=scene.app,old=a.nativeRaster,backend=realismBackend.createObject(scene);
+            backend.materialAvailable=true;a.nativeRaster=backend;a.nativeRasterActive=true;
+            a.tool=8;a.brushSize=3;a.strength=.2;a.kneadedEraser=true;backend.rear=true;
+            a.beginStroke(Qt.point(300,400),"pen",8,.6);
+            compare(a.activeStroke.tool,6);verify(a.activeStroke.hardwareEraser);
+            compare(a.activeStroke.size,Ink.tools[6].size);compare(a.activeStroke.strength,1);
+            compare(backend.kneaded,false);compare(a.tool,8);compare(a.brushSize,3);compare(a.strength,.2);
+            a.finishStroke();compare(backend.kneaded,true);compare(a.kneadedEraser,true);
+            backend.rear=false;a.beginStroke(Qt.point(300,400),"pen",8,.6);
+            compare(a.activeStroke.tool,8);compare(a.activeStroke.hardwareEraser,false);a.finishStroke();
+            a.beginStroke(Qt.point(300,400),"pen",8,.6,true);compare(a.activeStroke.tool,6);a.finishStroke();
+            a.nativeRaster=old;backend.destroy();
         }
         function line(tool,x,y,p) {
             scene.app.tool=tool;scene.app.brushSize=Ink.tools[tool].size;

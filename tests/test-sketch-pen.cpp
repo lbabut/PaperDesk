@@ -11,6 +11,9 @@ int main(){
  pen.pause();assert(pen.at(100,200)<0);
  pen.push(100,200,.5,8,.6,-.3);auto tilted=pen.match(100,200);
  assert(tilted.tiltX==.6&&tilted.tiltY==-.3);
+ pen.push(145,230,.6,9,0,0,true);auto rubber=pen.match(145,230);assert(rubber.eraser);
+ pen.push(150,240,.7,10);assert(!pen.match(150,240).eraser);
+ pen.eraserNearby=true;pen.pause();assert(!pen.eraserNearby.load());
  pen.pause();pen.resetMatchDiagnostics();assert(pen.matchDiagnostics().calls==0);
  pen.push(123,456,.5,20);
  {std::lock_guard<std::mutex> lock(pen.mutex);pen.samples[(pen.head+pen.samples.size()-1)%pen.samples.size()].time-=1500;}
