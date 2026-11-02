@@ -3,7 +3,7 @@
 PaperDesk turns a reMarkable 2 into a quiet, monochrome network workspace.
 It bundles touch-first tools designed around the limits of e-ink:
 
-- Paper Sketch — graphite and charcoal with stylus tilt, pressure calibration, paper presets and burnishing, virtual tip wear and sharpening, finger blending and cleaning, hard and kneaded erasers, manual saves and grayscale PNG export.
+- Paper Sketch — graphite and charcoal with stylus tilt, pressure calibration, paper presets and burnishing, virtual tip wear and sharpening, finger blending and cleaning, hard and kneaded erasers, manual saves and PDF export to the reMarkable library.
 - Paper Terminal — SSH, system keyboard, gestures, and common shortcuts.
 - PaperDesk Dots — offline Kropki with human or computer players, three board sizes, saved games and undo.
 - PaperDesk Books — six free literature/textbook/research sources, offline text reading and native PDF/EPUB import, with saved language and service preferences.

@@ -22,10 +22,11 @@ static void release(int fd,int finger){
 int main(int argc,char **argv){
  if((argc!=6 && argc!=7) || (strcmp(argv[1],"finger") && strcmp(argv[1],"pen")))return 2;
  const char *pattern=argc==7?argv[6]:"";
+ int ramp=!strcmp(pattern,"pressure-ramp");
  int shading=!strcmp(pattern,"shade"),tap=!strcmp(pattern,"tap"),tilt=!strcmp(pattern,"tilt"),upright=!strcmp(pattern,"upright"),contact=!strcmp(pattern,"contact");
  int calibration=!strcmp(pattern,"calibration-light")?1:!strcmp(pattern,"calibration-normal")?2:!strcmp(pattern,"calibration-firm")?3:0;
- if(argc==7&&!shading&&!tap&&!tilt&&!upright&&!contact&&!calibration)return 2;
- if((shading||tilt||upright||calibration)&&strcmp(argv[1],"pen"))return 2;
+ if(argc==7&&!shading&&!tap&&!tilt&&!upright&&!contact&&!calibration&&!ramp)return 2;
+ if((shading||tilt||upright||calibration||ramp)&&strcmp(argv[1],"pen"))return 2;
  if(contact&&strcmp(argv[1],"finger"))return 2;
  int finger=!strcmp(argv[1],"finger");const char *path=finger?"/dev/input/event2":"/dev/input/event1";
  int fd=open(path,O_RDWR|O_NONBLOCK);if(fd<0){perror(path);return 3;}
@@ -53,7 +54,7 @@ int main(int argc,char **argv){
   int y=shading?y0+(y1-y0)*(pass%2?59-step:step)/59:y0+(y1-y0)*i/60;
   // A fresh Qt reader has empty slot coordinates. Force both axes to change:
   // the kernel suppresses repeated ABS values left by a previous diagnostic run.
-  if(finger && i==0){x=x<maxx?x+1:x-1;y=y<maxy?y+1:y-1;}
+  if(i==0){x=x<maxx?x+1:x-1;y=y<maxy?y+1:y-1;}
   if(finger){
    if(!contact){ok&=event(fd,EV_ABS,ABS_MT_PRESSURE,32+192*i/(samples-1));ok&=event(fd,EV_ABS,ABS_MT_TOUCH_MAJOR,12);ok&=event(fd,EV_ABS,ABS_MT_TOUCH_MINOR,8);}
    if(contact){

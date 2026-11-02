@@ -7,7 +7,8 @@ var tools = [
     {name:"Charcoal", kind:"charcoal", size:24, opacity:0.5, grain:0.65},
     {name:"Soft coal", kind:"charcoal", size:38, opacity:0.35, grain:0.8},
     {name:"Eraser", kind:"eraser", size:30, opacity:1, grain:0},
-    {name:"Smudge", kind:"smudge", size:40, opacity:0.6, grain:0}
+    {name:"Smudge", kind:"smudge", size:40, opacity:0.6, grain:0},
+    {name:"Rapidograph", kind:"ink", size:2, opacity:1, grain:0}
 ];
 function clamp(n,a,b) { return Math.max(a, Math.min(b,n)); }
 function book() { return {version:1, index:0, nextCacheSlot:1, pages:[{strokes:[], paper:"plain",cacheSlot:0}]}; }
@@ -82,7 +83,15 @@ function legacySmudge(c,a,b,size,strength) {
     }
     c.putImageData(image,x,y,0,0,w,h);
 }
+function inkSegment(c,s,index) {
+    var b=s.points[index],a=index?s.points[index-1]:b;
+    c.save();c.strokeStyle="black";c.fillStyle="black";c.lineWidth=s.size;c.lineCap="round";c.lineJoin="round";
+    if(!index || (a[0]===b[0]&&a[1]===b[1])){c.beginPath();c.arc(b[0],b[1],s.size/2,0,Math.PI*2);c.fill();}
+    else{c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke();}
+    c.restore();
+}
 function segment(c,s,index) {
+    if(s.tool===8){inkSegment(c,s,index);return;}
     var b=s.points[index],a=index?s.points[index-1]:b,t=tools[s.tool];
     if(s.renderer>=2) { fastSegment(c,s,index);return; }
     if(t.kind==="smudge") { legacySmudge(c,a,b,s.size,s.strength);return; }
@@ -150,6 +159,7 @@ function smudgeV2(c,a,b,size,strength) {
     c.restore();
 }
 function fastSegment(c,s,index) {
+    if(s.tool===8){inkSegment(c,s,index);return;}
     var b=s.points[index],a=index?s.points[index-1]:b,t=tools[s.tool];
     if(t.kind==="smudge") {
         if(s.renderer===2)smudgeV2(c,a,b,s.size,s.strength);
@@ -210,6 +220,7 @@ function smudgeV3(c,a,b,size,strength) {
 }
 
 function previewSegment(c,s,index) {
+    if(s.tool===8){inkSegment(c,s,index);return;}
     if(s.tool===7)return;
     var b=s.points[index],a=index?s.points[index-1]:b,p=(a[2]+b[2])/2,t=tools[s.tool];
     var w=Math.max(1,s.size*(0.18+0.82*p));

@@ -21,6 +21,9 @@ Rectangle {
  property bool penProximitySeen:false
  property bool fingerSuppressed:false
  property bool fingerSuppressionViolation:false
+ property int kneadedBefore:0
+ property int kneadedFirst:0
+ property bool kneadedLive:false
  property real lastTick:0
  property real uprightMaxTickGap:0
  property real tiltMaxTickGap:0
@@ -111,7 +114,31 @@ Rectangle {
   if(phase===3&&a.nativeRaster.toolWear(1)===0){result.ui_controls.sharpen_tip=result.fixture_tip_worn&&a.notice==="Tip sharpened";if(tap("cleanFingerButton","finger-clean"))move(4);return;}
   if(phase===4&&a.notice==="Finger cleaned"){result.ui_controls.clean_finger=result.fixture_finger_loaded&&a.nativeRaster.materialState().finger_digest===cleanFingerDigest;if(tap("kneadedEraserButton","eraser-kneaded"))move(5);return;}
   if(phase===5&&a.kneadedEraser&&a.tool===6){result.ui_controls.kneaded_eraser=true;if(tap("closeMaterials","materials-done"))move(6);return;}
-  if(phase===6&&!a.materialsDialog){if(tap("saveButton","fixture-save"))move(7);return;}
+  if(phase===6&&!a.materialsDialog){
+   // Only seed this isolated fixture programmatically. Erasing uses real evdev input.
+   for(var row=0;row<7;row++)fixtureLine(a,4,400,890+row*3,800,890+row*3,1);
+   a.tool=6;a.brushSize=40;a.lastStroke=null;
+   kneadedBefore=a.nativeRaster.pixels(600,900,1,1)[0];move(26);return;
+  }
+  if(phase===26&&now-at>500){
+   stroke("pen","pressure-ramp","kneaded-pressure",find(a,"drawingCanvas"),Qt.point(600,900),Qt.point(600,900));move(27);return;
+  }
+  if(phase===27){
+   var gray=a.nativeRaster.pixels(600,900,1,1)[0];
+   if(a.activeStroke!==null&&gray>kneadedBefore){kneadedLive=true;if(!kneadedFirst)kneadedFirst=gray;}
+   if(!a.lastStroke||a.lastStroke.tool!==6||a.activeStroke!==null||now-at<1400)return;
+   result.kneaded_pressure={before:kneadedBefore,first_visible:kneadedFirst,after:gray,live:kneadedLive,samples:a.lastStroke.samples,pressure_min:a.lastStroke.pressureMin,pressure_max:a.lastStroke.pressureMax,matches:a.nativeRaster.pressureMatchCounts()};
+   if(gray<kneadedBefore+12||!kneadedLive||a.lastStroke.pressureMax-a.lastStroke.pressureMin<.3){finish(false,"Kneaded eraser did not visibly lift pigment with increasing real pressure.");return;}
+   a.lastStroke=null;kneadedBefore=a.nativeRaster.pixels(730,900,1,1)[0];move(28);return;
+  }
+  if(phase===28&&now-at>400){stroke("pen","upright","kneaded-drag",find(a,"drawingCanvas"),Qt.point(420,900),Qt.point(780,900));move(29);return;}
+  if(phase===29){
+   if(!a.lastStroke||a.lastStroke.tool!==6||a.activeStroke!==null||now-at<1400)return;
+   var gray=a.nativeRaster.pixels(730,900,1,1)[0];
+   result.kneaded_drag={before:kneadedBefore,after:gray,samples:a.lastStroke.samples};
+   if(gray<kneadedBefore+8){finish(false,"Kneaded eraser did not lift pigment along its path.");return;}
+   if(tap("saveButton","fixture-save"))move(7);return;
+  }
   if(phase===7&&!a.dirty&&a.nativeRaster.loadNotebook()!==""){
    result.fixture_saved=true;beforeCalibrationDigest=a.nativeRaster.opticalDigest();beforeCalibrationBook=JSON.stringify(a.notebook);beforeCalibrationEnvelope=a.nativeRaster.loadNotebook();beforeCalibrationDirty=a.dirty;beforeCalibrationState=snapshot(a.nativeRaster.materialState());
    if(tap("materialsButton","calibration-open-materials"))move(8);return;

@@ -163,7 +163,7 @@ Rectangle {
     }
     function restoreToolPreferences(preferences) {
         materialOptionsLoading=true;
-        tool=Ink.clamp(preferences.selectedTool,0,7);
+        tool=Ink.clamp(preferences.selectedTool,0,Ink.tools.length-1);
         brushSize=Ink.clamp(preferences.selectedSize,1,80);
         strength=1;tone=0;
         paperKind=preferences.paperKind===undefined?saved.paperKind:Ink.clamp(preferences.paperKind,0,2);
@@ -661,9 +661,10 @@ Rectangle {
                 Repeater {
                     model:Ink.tools
                     Action {
-                        width:Math.min(72,Math.max(60,(toolsPanel.width-360)/8));height:60
+                        width:Math.min(72,Math.max(60,(toolsPanel.width-360)/Ink.tools.length));height:60
+                        available:index!==8||root.bitmapMode
                         label:modelData.name+(modelData.kind==="pencil"?" pencil":"")
-                        iconName:["pencil-2h","pencil-hb","pencil-2b","pencil-6b","charcoal","soft-charcoal","eraser","smudge"][index]
+                        iconName:["pencil-2h","pencil-hb","pencil-2b","pencil-6b","charcoal","soft-charcoal","eraser","smudge","rapidograph"][index]
                         selected:root.tool===index
                         objectName:"tool"+index
                         onTriggered:{root.tool=index;root.brushSize=modelData.size}
@@ -673,9 +674,9 @@ Rectangle {
             Rectangle {width:2;height:48;color:"black";anchors.verticalCenter:parent.verticalCenter}
             Row {
                 width:toolControls.width-toolButtons.width-2-toolControls.spacing*2
-                height:60;spacing:toolsPanel.width<1000?8:12;anchors.verticalCenter:parent.verticalCenter
+                height:60;spacing:toolsPanel.width<900?0:(toolsPanel.width<1000?8:12);anchors.verticalCenter:parent.verticalCenter
                 Text {
-                    id:sizeLabel;objectName:"sizeLabel";width:toolsPanel.width<1000?64:82;anchors.verticalCenter:parent.verticalCenter
+                    id:sizeLabel;objectName:"sizeLabel";visible:toolsPanel.width>=900;width:visible?(toolsPanel.width<1000?64:82):0;anchors.verticalCenter:parent.verticalCenter
                     text:"Size "+Math.round(root.brushSize);font.pixelSize:20;font.bold:true
                 }
                 Slider {
@@ -685,6 +686,7 @@ Rectangle {
                     property string accessibleDescription:"Size of the selected pencil, charcoal, eraser or smudge tool"
                     onMoved:root.brushSize=value
                     DisplayMethodArea{anchors.fill:parent;displayMethod:typeof DisplayMethodArea.UFast==="number"?DisplayMethodArea.UFast:DisplayMethodArea.Fast}
+                    Text{visible:toolsPanel.width<900;text:"Size "+Math.round(root.brushSize);font.pixelSize:16;anchors.top:parent.top;anchors.horizontalCenter:parent.horizontalCenter}
                     background:Rectangle {x:14;y:29;width:parent.width-28;height:3;color:"black"}
                     handle:Rectangle {x:sizeSlider.leftPadding+sizeSlider.visualPosition*(sizeSlider.availableWidth-width);y:8;width:32;height:44;radius:4;color:"black"}
                 }
@@ -948,7 +950,7 @@ Rectangle {
                 Action{label:"Hard eraser";width:230;objectName:"hardEraserButton";selected:!root.kneadedEraser;available:root.materialsAvailable;onTriggered:{root.kneadedEraser=false;root.tool=6;root.brushSize=Ink.tools[6].size}}
                 Action{label:"Kneaded eraser";width:250;objectName:"kneadedEraserButton";selected:root.kneadedEraser;available:root.materialsAvailable;onTriggered:{root.kneadedEraser=true;root.tool=6;root.brushSize=Ink.tools[6].size}}
             }
-            Text{width:parent.width;wrapMode:Text.Wrap;text:root.kneadedEraser?"Tap to lift pigment gently. Lift and dab again.":"Rub to remove pigment and bring back highlights.";font.pixelSize:22}
+            Text{width:parent.width;wrapMode:Text.Wrap;text:root.kneadedEraser?"Press to lift pigment gently. Press harder or move to lift more. Lift and dab again.":"Rub to remove pigment and bring back highlights.";font.pixelSize:22}
             Rectangle{width:parent.width;height:2;color:"black"}
             Text{text:"Pen pressure";font.pixelSize:27;font.bold:true}
             Text{objectName:"calibrationSummary";width:parent.width;wrapMode:Text.Wrap;text:root.calibrationStatus;font.pixelSize:22}

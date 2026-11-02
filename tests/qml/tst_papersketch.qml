@@ -375,6 +375,7 @@ Item {
                 verify(button.accessibleName.length>0,"Icon tools must have semantic names on tablet builds without Accessible");
                 compare(button.ToolTip.text,button.accessibleName);
                 verify(button.iconName.length>0);
+                if(i===8 && !scene.app.bitmapMode){compare(button.available,false);continue;}
                 tryCompare(icon,"available",true);
                 mouseClick(button,button.width/2,button.height/2,Qt.LeftButton);
                 compare(scene.app.tool,i);compare(scene.app.brushSize,Ink.tools[i].size);
@@ -389,7 +390,7 @@ Item {
             try {
                 for(var i=0;i<widths.length;i++) {
                     scene.width=widths[i];wait(40);
-                    var materials=findChild(scene.app,"materialsButton"),first=findChild(scene.app,"tool0"),last=findChild(scene.app,"tool7");
+                    var materials=findChild(scene.app,"materialsButton"),first=findChild(scene.app,"tool0"),last=findChild(scene.app,"tool8");
                     var m=materials.mapToItem(panel,0,0);
                     var a=first.mapToItem(panel,0,0),b=last.mapToItem(panel,last.width,last.height),s=slider.mapToItem(panel,0,0);
                     verify(m.x>=0 && m.x+materials.width<a.x,"Materials must be the first icon in the middle bar");
@@ -637,6 +638,18 @@ Item {
                 pdfImporter.imported({},"",pdfImporter.source);pdfLibrary.entryAdded("12345678-1234-1234-1234-123456789abc");
                 compare(a.pendingPdfExport,null);compare(pdfRaster.discarded,1);
             });
+        }
+        function test_rapidograph_tool_roundtrip_and_constant_width(){
+            compare(Ink.tools[8].name,"Rapidograph");compare(Ink.tools[8].kind,"ink");compare(Ink.tools[8].size,2);
+            var b=Ink.book(),stroke=Ink.stroke(8,2,0,1,1);stroke.points=[[10,10,.1],[100,10,.9]];b.pages[0].strokes=[stroke];
+            compare(Ink.decode(JSON.stringify(b)).pages[0].strokes[0].tool,8);
+            var tool=findChild(scene.app,"tool8");verify(tool!==null);compare(tool.iconName,"rapidograph");
+            var canvas=findChild(scene.app,"drawingCanvas"),c=canvas.getContext("2d");
+            c.fillStyle="white";c.fillRect(0,0,1200,1600);
+            var low=Ink.stroke(8,4,0,1,1);low.points=[[100,100,.1],[300,100,.1]];
+            var high=Ink.stroke(8,4,0,1,1);high.points=[[100,200,.9],[300,200,.9]];
+            Ink.segment(c,low,0);Ink.segment(c,low,1);Ink.segment(c,high,0);Ink.segment(c,high,1);
+            for(var y=-6;y<=6;y++)compare(c.getImageData(200,100+y,1,1).data[0],c.getImageData(200,200+y,1,1).data[0]);
         }
         function test_named_export_dialog_and_cancel() {
             scene.app.exportPage();verify(scene.app.exportDialog);

@@ -90,7 +90,7 @@ static void testNoContactAndInvalidInput() {
         assert(unchanged.p.burnish == original.p.burnish && unchanged.p.wear == original.p.wear);
     }
     original.point(-1, 160, 160);
-    original.point(8, 160, 160);
+    original.point(9, 160, 160);
     original.consistent();
 }
 

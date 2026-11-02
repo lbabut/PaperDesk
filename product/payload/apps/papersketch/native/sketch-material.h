@@ -16,10 +16,13 @@ struct PaperMaterial {
     int width = 0, height = 0;
     std::vector<uint8_t> tooth;
     std::vector<uint8_t> burnish;
+    std::vector<uint8_t> ink;
+    bool hasInk = false;
     std::array<double, 6> wear{};
     double tiltX = 0, tiltY = 0;
     double contactAspect = 1, contactAngle = 0;
     bool kneaded = false;
+    std::vector<uint16_t> kneadedLift; // Per-contact removal caps, never saved.
     bool kneadedContact = false; // Transient contact state, reset at stroke start.
     int paperKind = 0; // 0 plain, 1 smooth, 2 rough.
     uint8_t optical[65536]{};
@@ -72,6 +75,7 @@ struct PaperMaterial {
         rebuildTooth();
     }
 
+    void resetInk() { std::fill(ink.begin(), ink.end(), 0); hasInk = false; }
     void resetSurface() { std::fill(burnish.begin(), burnish.end(), 0); }
     void sharpen(int tool) { if (tool >= 0 && tool < 6) wear[tool] = 0; }
 
@@ -81,6 +85,7 @@ struct PaperMaterial {
         height = h;
         tooth.resize(size_t(w) * h);
         burnish.assign(tooth.size(), 0);
+        ink.assign(tooth.size(), 0); hasInk = false;
         rebuildTooth();
         (void)grainResponses(); // Initialize the shared table before drawing.
         for (int i = 0; i < 65536; ++i)
@@ -105,6 +110,10 @@ struct PaperMaterial {
             a = std::min(40.0, r * std::sqrt(aspect));
             b = std::min(40.0, r / std::sqrt(aspect));
             angle = std::isfinite(contactAngle) ? contactAngle : 0;
+        } else if (tool == 8) {
+            a = b = std::max(.5, size * .5) + .5;
+        } else if (tool == 6 && kneaded) {
+            a = b = std::max(.8, size * .5 * (.7 + .3 * std::sqrt(p)));
         } else if (tool < 6 && tool >= 0) {
             constexpr double widthExponent[] = {.90, 1.05, 1.15, 1.20, .80, .70};
             constexpr double minimumWidth[] = {.22, .20, .18, .16, .35, .40};
@@ -128,6 +137,7 @@ struct PaperMaterial {
     }
 
     void import(const uint32_t *image, uint32_t *mass) {
+        resetInk();
         for (int i = 0; i < width * height; ++i) {
             int total = inverse[image[i] & 255], fixed = total * 7 / 10;
             mass[i] = (uint32_t(fixed) << 16) | (total - fixed);
@@ -136,7 +146,7 @@ struct PaperMaterial {
 
     static bool valid(int tool, double size, double tone, double strength,
                       double x, double y, double pressure) {
-        return tool >= 0 && tool <= 7 && std::isfinite(size) && size >= 1 && size <= 80 &&
+        return tool >= 0 && tool <= 8 && std::isfinite(size) && size >= 1 && size <= 80 &&
             std::isfinite(tone) && tone >= 0 && tone <= 255 &&
             std::isfinite(strength) && strength >= 0 && strength <= 1 &&
             std::isfinite(x) && std::isfinite(y) && std::isfinite(pressure);
@@ -148,6 +158,8 @@ struct PaperMaterial {
         if (!valid(tool, size, tone, strength, cx, cy, pressure) ||
             pressure <= 0 || strength == 0 || width <= 0 || height <= 0) return;
         double p = std::min(pressure, 1.0);
+        if (tool == 6 && kneaded && kneadedLift.size() != size_t(width) * height)
+            kneadedLift.assign(size_t(width) * height, 0);
         auto shape = footprint(tool, size, p);
         double radius = std::max(shape.a, shape.b);
         // Reject distant coordinates before converting them to integer bounds.
@@ -177,11 +189,11 @@ struct PaperMaterial {
         const double stock = paperKind == 1 ? 1.2 : paperKind == 2 ? .65 : 1;
         const double burnishScale = 5 * firmScale * stock * (tool < 4 ? 1 : .45);
         const auto *responses = tool < 6 ? grainResponses().data() : nullptr;
-        // A footprint is at most 82 columns wide (80px size plus the two
+        // An antialiased ink footprint is at most 84 columns wide (80px size plus
         // fractional bounds). Reuse its coordinates across all scanlines.
-        double columnSquared[82];
-        double columnX[82], columnCross[82];
-        int fingerColumn[82];
+        double columnSquared[84];
+        double columnX[84], columnCross[84];
+        int fingerColumn[84];
         const bool rotatedFinger = tool == 7 && (std::abs(shape.s) > 1e-10 || shape.c < 0);
         for (int x = x0; x <= x1; ++x) {
             double dx = x + .5 - cx;
@@ -198,6 +210,18 @@ struct PaperMaterial {
             for (int x = x0; x <= x1; ++x) {
                 double edge = 1 - columnSquared[x - x0] - dySquared - columnCross[x - x0] * dy;
                 if (edge <= 0) continue;
+                if (tool == 8) {
+                    int at = y * width + x;
+                    double distance = std::sqrt(std::max(0.0, 1 - edge)) * shape.a;
+                    int coverage = roundMass(255 * std::clamp(shape.a - distance, 0.0, 1.0));
+                    int prior = ink[at];
+                    if (coverage > prior) {
+                        int gray = ((int(image[at] & 255)) * (255 - coverage) + (255 - prior) / 2) / (255 - prior);
+                        ink[at] = uint8_t(coverage); hasInk = true;
+                        image[at] = 0xff000000u | uint32_t(gray) * 0x010101u;
+                    }
+                    continue;
+                }
                 edge *= edge;
                 if (tool == 4 || tool == 5)
                     edge += edge * (1 - edge) * .55 * shape.tilt;
@@ -214,6 +238,7 @@ struct PaperMaterial {
                     }
                     int held = finger[fi], room = 65535 - held;
                     double contact = contactStrength * edge;
+                    if (hasInk) contact *= (255 - ink[at]) * (1.0 / 255.0);
                     int pickLoose = std::min({loose, room, roundMass(loose * .40 * contact)});
                     int pickFixed = std::min({fixed, room - pickLoose,
                         roundMass(fixed * .06 * (.3 + .7 * p) * contact)});
@@ -225,9 +250,24 @@ struct PaperMaterial {
                     held -= deposit;
                     finger[fi] = held;
                 } else if (tool == 6) {
-                    double contact = edge * eraseContact;
-                    loose -= std::min(loose, roundMass(loose * contact * (kneaded ? .42 : .65)));
-                    fixed -= std::min(fixed, roundMass(fixed * contact * (kneaded ? .035 * p : .28)));
+                    if (kneaded) {
+                        // A contact lifts a bounded fraction, independent of event count.
+                        // More pressure or moving onto fresh paper can lift more pigment.
+                        double contact = edge * strength * std::sqrt(p);
+                        int looseTarget = roundMass(255 * .55 * contact);
+                        int fixedTarget = roundMass(255 * .12 * contact * (.35 + .65 * std::sqrt(p)));
+                        unsigned prior = kneadedLift[at];
+                        int priorLoose = prior & 255, priorFixed = prior >> 8;
+                        if (looseTarget > priorLoose)
+                            loose -= std::min(loose, roundMass(loose * double(looseTarget-priorLoose) / (255-priorLoose)));
+                        if (fixedTarget > priorFixed)
+                            fixed -= std::min(fixed, roundMass(fixed * double(fixedTarget-priorFixed) / (255-priorFixed)));
+                        kneadedLift[at] = uint16_t(std::max(priorLoose,looseTarget) | (std::max(priorFixed,fixedTarget)<<8));
+                    } else {
+                        double contact = edge * eraseContact;
+                        loose -= std::min(loose, roundMass(loose * contact * .65));
+                        fixed -= std::min(fixed, roundMass(fixed * contact * .28));
+                    }
                 } else {
                     double polish = burnish[at] * (1.0 / 255.0);
                     const auto &response = responses[unsigned(burnish[at]) * 256 + tooth[at]];
@@ -252,6 +292,7 @@ struct PaperMaterial {
                 }
                 mass[at] = (uint32_t(fixed) << 16) | loose;
                 int gray = optical[fixed + loose];
+                if (hasInk && ink[at]) gray = (gray * (255 - ink[at]) + 127) / 255;
                 image[at] = 0xff000000u | uint32_t(gray) * 0x010101u;
             }
         }
@@ -287,26 +328,22 @@ struct PaperMaterial {
             !valid(tool, size, tone, strength, bx, by, bp)) return;
         if (!index) {
             untilNext = 0;
+            if (tool == 6 && kneaded) kneadedLift.assign(size_t(width) * height, 0);
             kneadedContact = tool == 6 && kneaded && bp > 0 && strength > 0;
             dab(mass, image, finger, tool, size, tone, strength, bx, by, bp);
             return;
         }
-        // Kneaded rubber is a touch-and-lift action. Holding it down and
-        // moving does not turn it into the hard eraser's abrasive rub.
-        if (tool == 6 && kneaded) {
-            // A pointer-down event can precede the first nonzero pressure.
-            // Lift once at that first real contact rather than losing the dab.
-            if (!kneadedContact && bp > 0 && strength > 0) {
-                dab(mass, image, finger, tool, size, tone, strength, bx, by, bp);
-                kneadedContact = true;
-            }
-            return;
-        }
         double dx = bx - ax, dy = by - ay, length = std::hypot(dx, dy);
-        // Even subpixel segments consume distance; dropping short events used
-        // to change density when the same path arrived as many tiny events.
+        if (tool == 6 && kneaded) {
+            if (bp > 0 && strength > 0) kneadedContact = true;
+            if (length == 0) {
+                dab(mass,image,finger,tool,size,tone,strength,bx,by,bp);
+                return;
+            }
+        }
+        // Preserve subpixel travel between input samples.
         if (length == 0 || !std::isfinite(length)) return;
-        double spacing = std::clamp(size * .10, .65, 2.0);
+        double spacing = tool == 8 ? std::clamp(size * .25, .25, 1.0) : std::clamp(size * .10, .65, 2.0);
         double travel = untilNext > 0 ? untilNext : spacing;
         while (travel <= length) {
             double t = travel / length;

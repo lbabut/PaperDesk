@@ -57,6 +57,10 @@ Canvas {
             path(c,"M15 11 L12 28 M24 8 L19 22 M30 16 L26 33 M11 35 L18 39",null,bg);
             path(c,"M40 33 L51 29 M37 40 L51 35 M35 46 L50 41",null,fg,4);
             path(c,"M6 46 H7 M37 8 H38 M45 47 H46",null,fg,2);
+        } else if(iconName==="rapidograph") {
+            path(c,"M18 4 H33 V29 L29 36 H22 L18 29 Z",bg,fg);
+            path(c,"M18 12 H33 M18 17 H33 M22 29 H29 M24 36 V45 M27 36 V45 M23 46 H28",null,fg);
+            path(c,"M38 34 H52 M38 41 H52",null,fg,1.5);
         } else if(iconName==="eraser") {
             path(c,"M6 30 L27 7 Q29 5 32 7 L49 22 Q51 24 49 27 L33 45 H21 Z",bg,fg);
             path(c,"M17 18 L40 37 M6 30 L21 45 H33 L40 37 L17 18 Z",fg,fg);

@@ -89,8 +89,8 @@ adapter. A backup cannot guarantee recovery.
 After opening Sketch, open Materials using the first icon in the middle
 toolbar, before the 2H pencil. Try a tilted mark, the pressure calibration controls,
 each paper preset, Sharpen, Clean finger, and hard/kneaded erasers. Kneaded
-lifting happens once per touch: lift and dab again; the hard eraser rubs along
-the path. Missing tilt data falls back to an upright tip. Calibration changes
+lifting responds to pressure and movement, with a bounded effect per contact:
+lift and dab again for another layer. The hard eraser rubs along the path. Missing tilt data falls back to an upright tip. Calibration changes
 digital stylus response and does not claim a physical-pencil match.
 With a pencil selected, touch and lift without moving to check a dot, then draw
 a continuous line. Strokes start at initial pen contact; the

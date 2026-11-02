@@ -1,5 +1,8 @@
 # Paper Sketch 4.1 material model
 
+The kneaded-contact behavior described in this historical audit is superseded by
+[pending Rapidograph and kneaded eraser changes](papersketch-rapidograph-and-kneaded-eraser.md).
+
 Date: 2026-11-01. Scope: native `sketch-material.h`; its API remains compatible with 4.0. Input acquisition, calibration, surface persistence and controls have separate integration coverage.
 
 ## Contact and media

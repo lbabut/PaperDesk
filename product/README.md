@@ -142,8 +142,9 @@ compatibility patch, and the PaperRDP client are shipped in the package.
 - **Finger contact and cleaning:** blending uses a variable contact shape and
   carries pigment between marks. Clean finger clears the carried pigment.
 - **Hard and kneaded erasers:** hard erasers rub continuously along a path;
-  kneaded erasers lift at initial contact. Lift and dab again across the page
-  to lighten a broader area.
+  kneaded erasers gently lift pigment as pressure increases or the contact moves.
+  Holding still at the same pressure has a bounded effect; lift and dab again
+  to lighten another layer.
 
 These controls remain a dry-media simulation. No real-media human calibration
 or measured optical pen-to-panel latency is claimed.

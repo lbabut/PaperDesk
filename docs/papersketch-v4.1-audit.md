@@ -1,5 +1,8 @@
 # Paper Sketch 4.1 audit
 
+The kneaded-contact behavior described in this historical audit is superseded by
+[pending Rapidograph and kneaded eraser changes](papersketch-rapidograph-and-kneaded-eraser.md).
+
 Date: 2026-11-01. Status: prepublication validation complete. The final source snapshot is ready for release. Publication and production checks are recorded afterward in the separate [deployment report](https://github.com/lbabut/PaperDesk/releases/download/v4.1.0/paperdesk-4.1.0-deployment.json), avoiding a source-archive checksum self-reference.
 
 ## Six changes

@@ -89,10 +89,19 @@ try:
                "cp " + b + "/stage/papersketch/native/" + extension + " /home/root/xovi/extensions.d/" + extension + "; "
                "rm -f /tmp/papersketch-ink /tmp/papersketch-ink-status")
     if args.launch:
-        remote("awk 'BEGIN { skip=0 } /^\\[PaperDeskE2E\\]$/ { skip=1; next } /^\\[/ { skip=0 } !skip { print }' "
-               "/home/root/.config/remarkable/xochitl.conf > " + b + "/launch.conf; "
-               "printf '\\n[PaperDeskE2E]\\nautostart=true\\napplicationId=papersketch\\n' >> " + b + "/launch.conf; "
-               "cp " + b + "/launch.conf /home/root/.config/remarkable/xochitl.conf")
+        rows = []
+        skip = False
+        for line in remote("cat " + b + "/xochitl.conf").decode().splitlines():
+            if line.strip() == "[PaperDeskE2E]":
+                skip = True
+                continue
+            if line.startswith("["):
+                skip = False
+            if not skip:
+                rows.append(line)
+        launch_config = ("\n".join(rows).rstrip() +
+                         "\n\n[PaperDeskE2E]\nautostart=true\napplicationId=papersketch\n")
+        remote("cat > /home/root/.config/remarkable/xochitl.conf", launch_config.encode())
     remote("systemctl reset-failed xochitl; systemctl start xochitl")
     stopped = False
     time.sleep(8)

@@ -126,8 +126,8 @@ static void testKneadedLift() {
     kneaded.segment(6, 60, 80, 60, 80, 0);
     auto afterTouch = kneaded.mass;
     kneaded.segment(6, 60, 80, 140, 80, 1);
-    assert(kneaded.mass == afterTouch && kneaded.total() < coal.total());
-    assert(kneaded.mass[80 * Surface::W + 120] == coal.mass[80 * Surface::W + 120]);
+    assert(kneaded.mass != afterTouch && kneaded.total() < coal.total());
+    assert(kneaded.mass[80 * Surface::W + 120] != coal.mass[80 * Surface::W + 120]);
     hard.segment(6, 60, 80, 60, 80, 0);
     hard.segment(6, 60, 80, 140, 80, 1);
     assert(hard.total() < kneaded.total());
@@ -135,7 +135,7 @@ static void testKneadedLift() {
     auto value = coal.mass[80 * Surface::W + 60], lifted = kneaded.mass[80 * Surface::W + 60];
     double looseRemoved = double((value & 65535) - (lifted & 65535)) / (value & 65535);
     double fixedRemoved = double((value >> 16) - (lifted >> 16)) / (value >> 16);
-    assert(looseRemoved > fixedRemoved * 5);
+    assert(looseRemoved > fixedRemoved * 4);
     Surface delayed = coal;
     delayed.p.kneaded = true;
     delayed.segment(6, 60, 80, 60, 80, 0, 0);
@@ -144,7 +144,21 @@ static void testKneadedLift() {
     assert(delayed.total() < coal.total());
     auto firstContact = delayed.mass;
     delayed.segment(6, 62, 80, 140, 80, 1);
-    assert(delayed.mass == firstContact);
+    assert(delayed.mass != firstContact);
+    // A stationary light touch must respond to later force, without rubbing away
+    // more pigment just because the input device reports more samples.
+    Surface ramp = coal; ramp.p.kneaded = true;
+    ramp.segment(6,60,80,60,80,0,.05);
+    auto light = ramp.mass; int lightGray = ramp.image[80*Surface::W+60] & 255;
+    ramp.segment(6,60,80,60,80,1,1);
+    assert(ramp.mass != light);
+    assert(int(ramp.image[80*Surface::W+60]&255) >= lightGray+10);
+    auto firm = ramp.mass;
+    for(int i=0;i<100;i++) ramp.segment(6,60,80,60,80,1,1);
+    assert(ramp.mass == firm);
+    ramp.segment(6,60,80,60,80,0,1);
+    assert(ramp.mass != firm); // A new dab can lift again.
+    ramp.consistent();
     kneaded.consistent(); hard.consistent();
 }
 

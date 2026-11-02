@@ -257,7 +257,7 @@ if a.workflow_probe:
 if a.realism_probe:
     assert not report["results"]["realism_probe"].get("runtime_errors"),"Realism harness or production UI emitted a runtime error"
     assert report["results"]["realism_probe"]["passed"],"Real-device material controls, calibration, tilt or physical-state persistence failed"
-    required={"materials-open","paper-rough","tip-sharpen","finger-clean","eraser-kneaded","materials-done","fixture-save","calibration-open-materials","calibration-open","calibration-light","calibration-next-light","calibration-normal","calibration-next-normal","calibration-firm","calibration-save","upright","tilt","finger-contact"}
+    required={"materials-open","paper-rough","tip-sharpen","finger-clean","eraser-kneaded","materials-done","kneaded-pressure","kneaded-drag","fixture-save","calibration-open-materials","calibration-open","calibration-light","calibration-next-light","calibration-normal","calibration-next-normal","calibration-firm","calibration-save","upright","tilt","finger-contact"}
     events=report.get("evdev_injections",[])
     assert required.issubset({event["id"] for event in events}),"Realism probe skipped a required physical UI/input action"
     assert all(event.get("writes_ok") for event in events),"Realism input driver reported incomplete event writes"

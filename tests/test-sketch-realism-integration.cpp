@@ -29,7 +29,10 @@ int main(int argc,char **argv){
     assert(kneaded.advance(4,24,1,300,300,1,true));
     assert(kneaded.advance(4,24,1,400,300,1,false));kneaded.finish();kneaded.setMaterialOptions(0,true);
     kneaded.begin();assert(kneaded.advance(6,24,1,350,300,0,true));auto beforeLift=kneaded.material;
-    assert(kneaded.advance(6,24,1,350,300,1,false));assert(kneaded.material!=beforeLift);
+    assert(kneaded.advance(6,24,1,350,300,.05,false));assert(kneaded.material!=beforeLift);
+    auto lightLift=kneaded.material;int lightGray=kneaded.image.pixel(350,300)&255;
+    assert(kneaded.advance(6,24,1,350,300,1,false));assert(kneaded.material!=lightLift);
+    assert(int(kneaded.image.pixel(350,300)&255)>lightGray);
     auto once=kneaded.material;assert(!kneaded.advance(6,24,1,350,300,1,false));
     assert(kneaded.material==once);kneaded.finish();
     SketchRaster board(nullptr,dir.path());board.setNamespace("realism");board.begin();
