@@ -1,16 +1,16 @@
 {
   "product": "PaperDesk",
   "channel": "stable",
-  "version": "4.2.2",
+  "version": "4.2.3",
   "publishedAt": "2026-11-02",
-  "archiveUrl": "/download/paperdesk-4.2.2.zip",
-  "archiveSha256": "e735c7c69cc21b0c26e73ce7a61e1b536fe94279b8ad7fbb133103d3d81c19ed",
-  "archiveSize": 3790065,
+  "archiveUrl": "/download/paperdesk-4.2.3.zip",
+  "archiveSha256": "df7045acacd7909a34f5e28e5fc5d3870d6f100bed82053d4a13496cea992f57",
+  "archiveSize": 3807495,
   "releaseNotes": [
-    "Paper Sketch exports the current page as a lossless grayscale PDF and adds it to My files using the native reMarkable document importer.",
-    "After normal cloud synchronization, the PDF is available for sharing from the reMarkable companion app. Each export creates a separate PDF copy.",
-    "The dialog asks for a document name and confirms success only after both native import completion and the matching new library entry. Duplicate clicks and uncertain imports do not create automatic retries.",
-    "Export leaves the active sketchbook in memory and does not save, flatten or replace its artwork. Existing PNG exports remain untouched.",
-    "Host tests and real-tablet checks verify the embedded PDF image, import error handling and the Add PDF action. Other released apps are preserved."
+    "Paper Sketch adds Rapidograph: permanent black ink with a constant selected width, independent of positive pen pressure and tilt.",
+    "Ink is preserved in saved pages and included in PDF export; finger blending and graphite erasers leave ink untouched.",
+    "The kneaded eraser now responds when you press harder after first contact and lifts pigment while you move. Lift and dab again to remove another layer.",
+    "Existing graphite pages remain readable. Save before updating; ink pages use the new v3 material cache and need this version or newer.",
+    "Host tests and real-tablet input checks verify pressure-responsive erasing, dragging, calibration and save/reload. Other released apps remain unchanged."
   ]
 }

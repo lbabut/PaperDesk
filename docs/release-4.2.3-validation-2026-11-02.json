@@ -1,0 +1,15 @@
+{
+  "version": "4.2.3",
+  "status": "validated for production",
+  "native_groups": 17,
+  "sketch_qml_passed": 53,
+  "sketch_qml_skipped": 2,
+  "care_qml_passed": 7,
+  "release_tests_summary": "Ran 102 tests in 23.072s",
+  "tablet_input_probe_passed": true,
+  "tablet_saved_pages": 6,
+  "sketch_payload_matches_tablet": true,
+  "other_app_payloads_unchanged": true,
+  "care_change": "version label only",
+  "source_parent": "1426a9b21c5da058ca2ccac92fb66f8786d09852"
+}

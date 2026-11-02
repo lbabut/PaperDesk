@@ -1,9 +1,9 @@
-c60af02a7c140431a31cc7115b936065a50774cbc8c5a5eea29f44380ba72606  ./CHANGELOG.md
-208d43ff56b6e6284225a9b8e7db745b486cbc380adbd5a009c0ae6ef431a1a5  ./MANUAL-INSTALL.md
-875a71447d0617f760632f8003a95f18a50dc9fcaf1db6e6fec28b8264ccef85  ./README.md
-5ef37d0d6f65fe82899559f6632a7d5ca80875db77b08d4f6827ee21260963c7  ./RELEASE_NOTES.txt
+17f2573d3027dab920efa5bccfc346618c12cfb1cc65b54c3cd4e51ceeb944ea  ./CHANGELOG.md
+5ae6555e89e06695427781de9934fa98f02ff7ec31cc46d245baec38c1bba230  ./MANUAL-INSTALL.md
+bdc654b71cc4255d604e8a82bf3bdc1cd27623155a5e21a59a204c8f4cd5ec4c  ./README.md
+c02f05ad3e0845f6cf90e497c94beef8eb51e626034ed9cd7c1ddf3d9c411e6e  ./RELEASE_NOTES.txt
 321a22b92a174faab8929e992aa181182234a58d142051480b5aa8c4667d3ead  ./THIRD-PARTY.md
-1467d465785bff74035e6f7cc652495a7a5f0c4e182e0d16c0db514beea967de  ./VERSION
+eb1d4f74f49b26c3962477ded60a202b83893a2f0389125d0670e0ead7e97032  ./VERSION
 051e3ed1012de0157573b1323e95e342ac398eb52f74b1e0d1ee3128043c753a  ./install-from-computer.sh
 3f3ab7b2dfc75c45ff444bbad7150a40baec7c5c5a7dcc126ffe7218ed701af9  ./install.sh
 3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986  ./licenses/AppLoad-GPL-3.0.txt
@@ -53,8 +53,8 @@ dc2fb1ec45c2c876925a7a986bcca7e9163d8ffece5b7e2643bfd5cc859777bb  ./payload/apps
 18bd9d641ab74be119d2ea2df0307fddbb2e8cc6e5159e61e36862fb176d05b1  ./payload/apps/papercare/assets/icon.svg
 7c35824535efb0565a00f45a2b04d1e755a4ce6cf7e01e54a9f827a4d3b1ce0f  ./payload/apps/papercare/icon.png
 0741c03fba719a3eea3a610fa6a2dd13ef6c87c5b27699bad2cea742e73f955b  ./payload/apps/papercare/manifest.json
-b3783e32246cf73e650aba207d40a74bc462753df015ff4e0503595dbde44a8b  ./payload/apps/papercare/resources.rcc
-083c242a04fa1e3fb26607aaed91a3a935f8a0c981091df49fe5f9b33eaa2176  ./payload/apps/papercare/ui/main.qml
+8f8b14f7f69abc760a06974ec7b4245b3490a8246f7ed9fe729225484df5c974  ./payload/apps/papercare/resources.rcc
+fa69908611160ad6ee3d81f0dc2015c854bbf740f3b972d3c837bad7fc399713  ./payload/apps/papercare/ui/main.qml
 ad585de93a3d49046a71f03643a9c4309e0e58bccb43308bae703d072e4287da  ./payload/apps/paperdesk/application.qrc
 b157df4ec15601380ea0cafcfaa3b41762886491c3e5562d2244d57de0d0c9b0  ./payload/apps/paperdesk/icon.png
 4644cc6adf117535f5a2e1a5da3a403921e9184b5f4f5b5f3a492be10220dfc8  ./payload/apps/paperdesk/icon.svg
@@ -93,7 +93,7 @@ be5d2a20274eb40be456bae0a1c99b16937673c3246fa9cedb24f7328f717b7d  ./payload/apps
 23327a2b5acd8c4aaa95ed6356f3ab1018c72d5a3cfd195ce6f8d87aa2067531  ./payload/apps/paperrss/manifest.json
 6a546d58c16750acf351077e999443377dfdb6bb063af3f5098fd89cd371a5d1  ./payload/apps/paperrss/resources.rcc
 179e31c1e2292da8a89b9fac75ae1d8ca0f8a767459b49796c84d8c9aed2c26b  ./payload/apps/paperrss/ui/main.qml
-5b8c52a763d0c43e79922497ad1fa8474ae8317c41f3087ddd6a7a6b80be299c  ./payload/apps/papersketch/README.md
+a5ffddd04fa5c5644a7e78593bfc1c9530f1858ed75a4f18941fdd31e2816bea  ./payload/apps/papersketch/README.md
 7256e923fd959b2c66337a36c0ff676c70fb814578a6c41edf91b11cd7a7184e  ./payload/apps/papersketch/application.qrc
 34c3c14f08ae7a0f52716e77f54aec3ea7533d2668cd76aebacfac931dd3814f  ./payload/apps/papersketch/engine.js
 09833d11911d737e097dccb07d6d716d92b9e19ff9c4a82cc6b606c9cfc515e3  ./payload/apps/papersketch/icon.png
@@ -152,7 +152,7 @@ ccf1123c6a5418f606e1b84b2962d4dc8542ab22f31273998f36576403d31d96  ./payload/syst
 e7beb1bdca6d8ac65ef9c0caf96189db5640dbfc3469cdf17e42b5390ff21ea8  ./payload/system/paperdesk-update.service
 cac7f42a8fbdf839c6f997810838d14dd2fb298883bf0c21a4b88a4bda57153a  ./payload/system/profile-hook.sh
 61c36af9ab35f8dea52f878b99cec309a69888ebde7a4f8938deddf813759d41  ./payload/system/rmssh-menu
-7e546ab5ea0e78f0b54c880f50ee57154ff41c4d3f358f13c54b11faee5e506c  ./release.json
+828bfdf0af0634a92557dfe0c9c085bd914130f5e3480b3d5dbe1e6c6d2d2ba0  ./release.json
 6e718d7e5d3b79706f9ce5969c0afe387582e98e83a773f535ba2b4a5696a4d3  ./third_party_source/qtfb-shim/CMakeLists.txt
 3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986  ./third_party_source/qtfb-shim/LICENSE
 15a156a971001856348398eeab1a4eec5abb55feecd82adc0080cf4e787b84b0  ./third_party_source/qtfb-shim/README.MD

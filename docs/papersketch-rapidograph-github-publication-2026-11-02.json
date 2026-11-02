@@ -1,0 +1,13 @@
+{
+  "repository": "https://github.com/lbabut/PaperDesk",
+  "branch": "main",
+  "commit": "1426a9b21c5da058ca2ccac92fb66f8786d09852",
+  "tree": "dfe2876b207b93927bffc86f0a6bda8d1a7ee2ea",
+  "published": true,
+  "verified_remote_ref": true,
+  "changed_files": 28,
+  "unrelated_github_files_preserved": true,
+  "tablet_renderer_sha256": "418d4ec154bb229d054d823a618886eae9832859c37d4992a7233123ace74fe3",
+  "tablet_resources_sha256": "194f013594ba12f8633c6e0a549bc042a368f240aa9fd6f8d4a21ea19f993ce9",
+  "website_release_published": false
+}
