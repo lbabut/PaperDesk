@@ -27,6 +27,19 @@ public:
 int main(int argc,char **argv){
  QQuickWindow::setGraphicsApi(QSGRendererInterface::Software);
  QGuiApplication application(argc,argv);QTemporaryDir directory;assert(directory.isValid());
+ // Zero-pressure onset must neither publish white pixels nor throttle the
+ // real contact that follows at exactly the same position.
+ for(int tool : {0,1,2,3,4,5,8}){
+  SketchRaster onset(nullptr,directory.path()+QString("/onset-%1").arg(tool));
+  int emitted=0;QObject::connect(&onset,&SketchRaster::damaged,[&](const QRegion&){emitted++;});
+  auto white=onset.image;onset.begin();
+  assert(onset.advance(tool,16,1,220,300,0,true));
+  assert(emitted==0&&!onset.displayPublicationTimer.isActive()&&onset.image==white);
+  assert(onset.advance(tool,16,1,220,300,.7,false));
+  assert(emitted==1&&onset.image!=white);
+  auto dot=onset.image;assert(!onset.advance(tool,16,1,220,300,.7,false));assert(onset.image==dot);
+  onset.finish();
+ }
  SketchRaster batched(nullptr,directory.path()+"/batched"),immediate(nullptr,directory.path()+"/immediate");
  int batchEmissions=0,immediateEmissions=0;QRegion batchDamage,immediateDamage;
  QObject::connect(&batched,&SketchRaster::damaged,[&](const QRegion&r){batchEmissions++;batchDamage+=r;});

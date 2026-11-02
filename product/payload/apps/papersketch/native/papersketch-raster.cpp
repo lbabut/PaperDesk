@@ -80,6 +80,7 @@ struct SketchLatency {
     };
 };
 
+#include "sketch-progressive.h"
 class SketchRaster:public QObject {
     Q_OBJECT
     Q_PROPERTY(bool available READ available CONSTANT)
@@ -98,6 +99,90 @@ public:
             {"publish_calls",load(snapshot->publish.calls)},{"publish_total_us",load(snapshot->publish.totalUs)},{"publish_max_us",load(snapshot->publish.maxUs)},
             {"tile_paint_calls",load(snapshot->tilePaint.calls)},{"tile_paint_total_us",load(snapshot->tilePaint.totalUs)},{"tile_paint_max_us",load(snapshot->tilePaint.maxUs)},
             {"first_advance_ms",load(snapshot->advance.firstMs)},{"first_publish_ms",load(snapshot->publish.firstMs)},{"first_tile_paint_ms",load(snapshot->tilePaint.firstMs)}};
+    }
+    std::unique_ptr<SketchProgressive> progressive;
+    QTimer progressiveTimer;
+    QImage previewLayer,progressiveBacking;
+    std::map<int,QImage> progressiveUndo;
+    QVariantMap lastProgressiveStats;
+    long long firstPreviewMs=0;
+    Q_INVOKABLE QVariantMap progressiveStats()const{
+        if(!progressive)return lastProgressiveStats;
+        return {{"active",true},{"submitted",qulonglong(progressive->submitted)},
+            {"worker_us",progressive->workerUs.load()},{"initialization_us",progressive->initializationUs.load()},
+            {"peak_queue",qulonglong(progressive->peakQueue)},{"first_preview_ms",firstPreviewMs},{"preview_scale",.5}};
+    }
+    struct PreviewPoint {SketchProgressive::Point point;double ax,ay,width;};
+    std::deque<PreviewPoint> previewPoints;
+    double previewX=0,previewY=0;bool previewContact=false;
+    void drawPreview(QPainter &p,const PreviewPoint &v){
+        if(v.point.p<=0)return;
+        // Half-resolution provisional pigment; it is never saved or fed back
+        // into material physics. Exact tiles replace it atomically on the GUI.
+        double alpha=std::clamp((.16+.55*std::sqrt(v.point.p))*v.point.strength,.08,.8);
+        QColor color(0,0,0);color.setAlphaF(alpha);
+        p.setPen(QPen(color,v.width/2,Qt::SolidLine,Qt::RoundCap,Qt::RoundJoin));
+        if(v.ax==v.point.x&&v.ay==v.point.y)p.drawPoint(QPointF(v.point.x/2,v.point.y/2));
+        else p.drawLine(QPointF(v.ax/2,v.ay/2),QPointF(v.point.x/2,v.point.y/2));
+    }
+    void pollProgressive(){
+        if(!progressive)return;auto delivered=progressive->take();if(!delivered.through)return;
+        QRegion dirty;
+        // Save only touched tiles for cancellation. A shared full-page undo
+        // image would force a 7.7 MB GUI-thread detach on the first delivery.
+        for(const auto &v:delivered.tiles)if(!progressiveUndo.count(v.first)){int x=(v.first%10)*128,y=(v.first/10)*128;progressiveUndo[v.first]=image.copy(QRect(x,y,v.second.width(),v.second.height()));}
+        if(!delivered.tiles.empty()){QPainter painter(&image);painter.setCompositionMode(QPainter::CompositionMode_Source);
+         for(const auto &v:delivered.tiles){int x=(v.first%10)*128,y=(v.first/10)*128;painter.drawImage(x,y,v.second);dirty+=QRect(x,y,v.second.width(),v.second.height());}}
+        for(const auto &v:previewPoints)dirty+=QRectF(QPointF(std::min(v.ax,v.point.x)-v.width,std::min(v.ay,v.point.y)-v.width),QPointF(std::max(v.ax,v.point.x)+v.width,std::max(v.ay,v.point.y)+v.width)).toAlignedRect();
+        while(!previewPoints.empty()&&previewPoints.front().point.id<=delivered.through)previewPoints.pop_front();
+        previewLayer.fill(Qt::transparent);QPainter painter(&previewLayer);painter.setRenderHint(QPainter::Antialiasing,true);for(const auto &v:previewPoints)drawPreview(painter,v);painter.end();
+        publishRegion(dirty.intersected(image.rect()));
+    }
+    void ownProgressivePixels(){
+        if(progressiveBacking.isNull())return;
+        if(image.constBits()==progressiveBacking.constBits())image=std::move(progressiveBacking);
+        else progressiveBacking=QImage();
+    }
+    void finishProgressive(){
+        if(!progressive)return;progressiveTimer.stop();progressive->close();pollProgressive();lastProgressiveStats=progressiveStats();lastProgressiveStats["active"]=false;
+        lastX=progressive->endX();lastY=progressive->endY();lastP=progressive->endP();awaitingPenContact=progressive->awaiting();
+        material=std::move(progressive->material);finger=std::move(progressive->finger);physics=std::move(progressive->physics);
+        progressive.reset();ownProgressivePixels();previewPoints.clear();previewLayer=QImage();progressiveUndo.clear();
+    }
+    Q_INVOKABLE void beginProgressive(){
+        begin(false);if(pressureCurve.active)return;
+        previewLayer=QImage(600,800,QImage::Format_ARGB32_Premultiplied);previewLayer.fill(Qt::transparent);
+        previewPoints.clear();previewContact=false;progressiveUndo.clear();firstPreviewMs=0;lastProgressiveStats.clear();
+        // Pixel storage stays at a fixed address until the worker joins. The
+        // worker lazily copies each optical tile before publishing that tile;
+        // GUI writes only tiles already copied, so accesses never overlap.
+        image.detach();progressiveBacking=std::move(image);
+        // A writable, non-owning wrapper has independent Qt sharing metadata.
+        // The owning backing survives until join, even if a reader snapshots
+        // image and a later GUI paint detaches that wrapper.
+        auto pixels=const_cast<uchar*>(progressiveBacking.constBits());int stride=progressiveBacking.bytesPerLine()/4;
+        image=QImage(pixels,1200,1600,progressiveBacking.bytesPerLine(),QImage::Format_RGB32);
+        const auto base=reinterpret_cast<const uint32_t*>(pixels);
+        progressive=std::make_unique<SketchProgressive>(std::move(physics),std::move(material),std::move(finger),base,stride);progressiveTimer.start();
+    }
+    bool dispatchPoint(int tool,double size,double strength,double x,double y,double p,bool first,double tx=0,double ty=0){
+        if(!progressive)return advancePoint(tool,size,strength,x,y,p,first,tx,ty);
+        if(tool>=6){finishProgressive();return advancePoint(tool,size,strength,x,y,p,first,tx,ty);}
+        // Bound provisional geometry as well as worker input/output. If a
+        // caller floods the GUI without yielding, finish this stroke exactly
+        // and continue synchronously rather than dropping input or growing RAM.
+        if(previewPoints.size()>=512){pollProgressive();if(previewPoints.size()>=512){finishProgressive();return advancePoint(tool,size,strength,x,y,p,first,tx,ty);}}
+        if(!std::isfinite(x)||!std::isfinite(y)||!std::isfinite(p))return false;
+        x=std::clamp(x,0.0,1200.0);y=std::clamp(y,0.0,1600.0);p=pressureCurve.map(p);
+        SketchProgressive::Point point{tool,size,strength,x,y,p,tx,ty,first};
+        point.id=progressive->push(point);
+        if(tx!=0||ty!=0)tiltSamples++;
+        double ax=(!previewContact||first)?x:previewX,ay=(!previewContact||first)?y:previewY;
+        previewX=x;previewY=y;if(p<=0)return true;previewContact=true;
+        auto shape=physics.footprint(tool,size,p);double width=std::max(1.5,2*std::sqrt(shape.a*shape.b));
+        PreviewPoint v{point,ax,ay,width};previewPoints.push_back(v);if(!firstPreviewMs)firstPreviewMs=QDateTime::currentMSecsSinceEpoch();
+        QPainter painter(&previewLayer);painter.setRenderHint(QPainter::Antialiasing,true);drawPreview(painter,v);painter.end();
+        auto dirty=QRectF(QPointF(std::min(ax,x)-width,std::min(ay,y)-width),QPointF(std::max(ax,x)+width,std::max(ay,y)+width)).toAlignedRect().intersected(image.rect());publishDirty(dirty);return true;
     }
     bool displayFast=true;
     bool fastDisplay()const{return displayFast;}
@@ -120,7 +205,7 @@ public:
     Q_INVOKABLE QVariantList touchPressureMatchCounts()const{return {touchMatches,touchFallbacks};}
     Q_INVOKABLE QVariantList rawReplayStats()const{return {rawReplayed,rawBatchMax};}
     Q_INVOKABLE QVariantList pressureMatchCounts()const{return {pressureMatches,pressureFallbacks};}
-    Q_INVOKABLE QVariantMap contactStats()const{
+    Q_INVOKABLE QVariantMap contactStats()const{const_cast<SketchRaster*>(this)->finishProgressive();
         auto stats=penSamples.matchDiagnostics();
         return {{"tilt_samples",tiltSamples},{"finger_geometry_matches",touchGeometryMatches},{"tilt_x",physics.tiltX},{"tilt_y",physics.tiltY},{"paper_kind",physics.paperKind},{"calibrated",pressureCurve.calibrated},
             {"pen_match_calls",qulonglong(stats.calls)},{"pen_match_misses",qulonglong(stats.misses)},
@@ -128,7 +213,7 @@ public:
             {"pen_nearest_miss_age_ms",qlonglong(stats.nearestMissAge)},{"pen_youngest_miss_age_ms",qlonglong(stats.youngestMissAge)},
             {"pen_max_stale_age_ms",qlonglong(stats.maxStaleAge)},{"pen_nearest_miss_distance_px",stats.nearestMissDistance}};
     }
-    Q_INVOKABLE QVariantMap materialState()const{
+    Q_INVOKABLE QVariantMap materialState()const{const_cast<SketchRaster*>(this)->finishProgressive();
         QJsonArray wear;for(double value:physics.wear)wear.append(value);
         return {{"surface_digest",QString::fromLatin1(QCryptographicHash::hash(QByteArray::fromRawData(reinterpret_cast<const char*>(physics.burnish.data()),physics.burnish.size()),QCryptographicHash::Sha256).toHex())},
                 {"finger_digest",QString::fromLatin1(QCryptographicHash::hash(QByteArray::fromRawData(reinterpret_cast<const char*>(finger.constBits()),finger.sizeInBytes()),QCryptographicHash::Sha256).toHex())},
@@ -167,6 +252,7 @@ public:
     QTimer displayPublicationTimer;
     QRegion displayPending;
     bool livePublication=false;
+    bool awaitingPenContact=false;
     void emitDisplayDamage(const QRegion &damage){if(damage.isEmpty())return;SketchLatency::Scope timing(std::atomic_load_explicit(&latency,std::memory_order_acquire),SketchLatency::Stage::Publish);emit damaged(damage);emit changed(damage.boundingRect());}
     void flushDisplayDamage(){
         displayPublicationTimer.stop();
@@ -198,7 +284,7 @@ public:
         std::array<double,3> values{{a[0].toDouble(-1),a[1].toDouble(-1),a[2].toDouble(-1)}};
         if(PaperPressure::valid(values)){pressureCurve.anchors=values;pressureCurve.calibrated=true;}
     }
-    Q_INVOKABLE void startCalibration(){pressureCurve.start();emit calibrationChanged();}
+    Q_INVOKABLE void startCalibration(){finishProgressive();pressureCurve.start();emit calibrationChanged();}
     Q_INVOKABLE bool nextCalibration(){bool ok=pressureCurve.next();emit calibrationChanged();return ok;}
     Q_INVOKABLE QVariantMap finishCalibration(){
         std::array<double,3> values;
@@ -209,22 +295,22 @@ public:
         pressureCurve.anchors=values;pressureCurve.calibrated=true;pressureCurve.cancel();emit calibrationChanged();return {{"ok",true}};
     }
     Q_INVOKABLE void cancelCalibration(){pressureCurve.cancel();emit calibrationChanged();}
-    Q_INVOKABLE bool resetCalibration(){
+    Q_INVOKABLE bool resetCalibration(){finishProgressive();
         if(QFile::exists(calibrationPath())&&!QFile::remove(calibrationPath()))return false;
         pressureCurve=PaperPressure{};emit calibrationChanged();return true;
     }
     Q_INVOKABLE QString calibrationSummary()const{return pressureCurve.calibrated?QStringLiteral("Calibrated for your hand"):QStringLiteral("Standard pressure response");}
-    Q_INVOKABLE void setMaterialOptions(int paperKind,bool kneaded){physics.setPaperKind(std::clamp(paperKind,0,2));physics.kneaded=kneaded;}
+    Q_INVOKABLE void setMaterialOptions(int paperKind,bool kneaded){finishProgressive();physics.setPaperKind(std::clamp(paperKind,0,2));physics.kneaded=kneaded;}
     Q_INVOKABLE int materialPaperKind()const{return physics.paperKind;}
-    Q_INVOKABLE void sharpen(int tool){physics.sharpen(tool);kitLoaded=true;}
+    Q_INVOKABLE void sharpen(int tool){finishProgressive();physics.sharpen(tool);kitLoaded=true;}
     Q_INVOKABLE double toolWear(int tool)const{return tool>=0&&tool<6?physics.wear[tool]:0;}
-    Q_INVOKABLE void cleanFinger(){if(ensureMaterial())finger.fill(0);}
+    Q_INVOKABLE void cleanFinger(){finishProgressive();if(ensureMaterial())finger.fill(0);}
     bool restoreKit(const QByteArray &raw){
         auto values=QJsonDocument::fromJson(raw).object().value("physicalTools").toArray();if(values.size()!=6)return false;
         std::array<double,6> next;for(int i=0;i<6;i++){next[i]=values[i].toDouble(-1);if(!std::isfinite(next[i])||next[i]<0||next[i]>1)return false;}
         physics.wear=next;kitLoaded=true;return true;
     }
-    Q_INVOKABLE void restoreSavedTools(){physics.wear.fill(0);kitLoaded=false;QFile file(notebookPath());if(file.open(QIODevice::ReadOnly)&&file.size()<16*1024*1024)restoreKit(file.readAll());}
+    Q_INVOKABLE void restoreSavedTools(){finishProgressive();physics.wear.fill(0);kitLoaded=false;QFile file(notebookPath());if(file.open(QIODevice::ReadOnly)&&file.size()<16*1024*1024)restoreKit(file.readAll());}
     int slowest=0;QRect pendingDirty;bool unpublished=false;
     struct SaveJob {QString cache,file,json;QByteArray document;QImage snapshot,mass,fingertip;QByteArray surface,ink;std::array<double,6> wear;int paperKind=0;};
     std::mutex saveMutex;std::condition_variable saveWake;std::deque<SaveJob> saves;
@@ -282,8 +368,8 @@ public:
          writeError=false;saves.push_back(std::move(job));}
         saveWake.notify_one();
     }
-    SketchRaster(QObject *parent=nullptr,QString directory="/home/root/.local/share/paperdesk/sketch",QString exports=QString()):QObject(parent),cacheDirectory(directory),exportDirectoryOverride(exports){image.fill(Qt::white);displayPublicationTimer.setInterval(16);displayPublicationTimer.setSingleShot(true);displayPublicationTimer.setTimerType(Qt::PreciseTimer);connect(&displayPublicationTimer,&QTimer::timeout,this,[this]{bool hadDamage=!displayPending.isEmpty();flushDisplayDamage();if(hadDamage&&livePublication)displayPublicationTimer.start();});proximityTimer.setInterval(40);connect(&proximityTimer,&QTimer::timeout,this,[this]{bool nearby=penSamples.nearby.load();if(nearby!=penNearby){if(nearby&&tentativeTouch)cancel();penNearby=nearby;emit proximityChanged();}});proximityTimer.start();writer=std::thread([this]{writeLoop();});}
-    ~SketchRaster() override {{std::lock_guard<std::mutex> lock(saveMutex);stopping=true;}saveWake.notify_one();writer.join();if(pressureFd>=0)close(pressureFd);}
+    SketchRaster(QObject *parent=nullptr,QString directory="/home/root/.local/share/paperdesk/sketch",QString exports=QString()):QObject(parent),cacheDirectory(directory),exportDirectoryOverride(exports){image.fill(Qt::white);progressiveTimer.setInterval(16);progressiveTimer.setTimerType(Qt::PreciseTimer);connect(&progressiveTimer,&QTimer::timeout,this,&SketchRaster::pollProgressive);displayPublicationTimer.setInterval(16);displayPublicationTimer.setSingleShot(true);displayPublicationTimer.setTimerType(Qt::PreciseTimer);connect(&displayPublicationTimer,&QTimer::timeout,this,[this]{bool hadDamage=!displayPending.isEmpty();flushDisplayDamage();if(hadDamage&&livePublication)displayPublicationTimer.start();});proximityTimer.setInterval(40);connect(&proximityTimer,&QTimer::timeout,this,[this]{bool nearby=penSamples.nearby.load();if(nearby!=penNearby){if(nearby&&tentativeTouch)cancel();penNearby=nearby;emit proximityChanged();}});proximityTimer.start();writer=std::thread([this]{writeLoop();});}
+    ~SketchRaster() override {finishProgressive();{std::lock_guard<std::mutex> lock(saveMutex);stopping=true;}saveWake.notify_one();writer.join();if(pressureFd>=0)close(pressureFd);}
     mutable int pressureFd=-1;mutable double pressureLast=.5;mutable QElapsedTimer pressureAge;
     Q_INVOKABLE double penPressure(double fallback)const{
         if(pressureFd<0){
@@ -299,19 +385,21 @@ public:
     }
     bool available()const{return true;}
     int maxSmudgeMs()const{return slowest;}
-    Q_INVOKABLE bool importPixels(QJSValue pixels) {
+    Q_INVOKABLE bool importPixels(QJSValue pixels) {finishProgressive();
         if(pixels.property("length").toInt()!=1200*1600*4)return false;
         QImage next(1200,1600,QImage::Format_RGB32);
         for(int y=0;y<1600;y++){auto row=reinterpret_cast<QRgb*>(next.scanLine(y));for(int x=0;x<1200;x++){int v=pixels.property((y*1200+x)*4).toInt();row[x]=qRgb(v,v,v);}}
         dropDisplayDamage();currentPatches.clear();image=next;materialReady=false;ensureMaterial();publishDirty(QRect(0,0,1200,1600));return true;
     }
-    Q_INVOKABLE void setNamespace(QString name){cacheNamespace=name;kitLoaded=false;physics.wear.fill(0);loadCalibration();penSamples.activate();touchSamples.activate();proximityTimer.start();}
-    Q_INVOKABLE void release(){dropDisplayDamage();pressureCurve.cancel();penSamples.pause();touchSamples.pause();proximityTimer.stop();image=QImage();material=QImage();finger=QImage();currentFinger=QImage();currentPatches.clear();materialReady=false;}
-    Q_INVOKABLE void resetWhite(){dropDisplayDamage();currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(image.size()!=QSize(1200,1600)||image.format()!=QImage::Format_RGB32)image=QImage(1200,1600,QImage::Format_RGB32);image.fill(Qt::white);materialReady=false;ensureMaterial();physics.resetSurface();finger.fill(0);slowest=0;emit timingChanged();publishDirty(image.rect());}
-    Q_INVOKABLE void clearPage(){if(!ensureMaterial())return;dropDisplayDamage();image.fill(Qt::white);material.fill(0);finger.fill(0);physics.resetSurface();physics.resetInk();publishDirty(image.rect());}
-    Q_INVOKABLE void begin(bool tentative=false){flushDisplayDamage();std::atomic_store_explicit(&latency,std::make_shared<SketchLatency>(),std::memory_order_release);livePublication=false;lastRawId=0;lastContact=0;pendingSample=PaperPen::Sample();rawReplayed=0;rawBatchMax=0;collectingDamage=false;collectedDamage=QRegion();pressureMatches=0;pressureFallbacks=0;penSamples.resetMatchDiagnostics();tiltSamples=0;touchGeometryMatches=0;touchMatches=0;touchFallbacks=0;if(!ensureMaterial())return;livePublication=true;tentativeTouch=tentative;currentFinger=tentative?finger:QImage();captured.fill(false);currentPatches.clear();physics.untilNext=0;pendingDirty=QRect();unpublished=false;}
-    Q_INVOKABLE void finish(){currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(unpublished&&!pendingDirty.isEmpty())publishDirty(pendingDirty);livePublication=false;flushDisplayDamage();pendingDirty=QRect();unpublished=false;}
+    Q_INVOKABLE void setNamespace(QString name){finishProgressive();cacheNamespace=name;kitLoaded=false;physics.wear.fill(0);loadCalibration();penSamples.activate();touchSamples.activate();proximityTimer.start();}
+    Q_INVOKABLE void release(){finishProgressive();dropDisplayDamage();pressureCurve.cancel();penSamples.pause();touchSamples.pause();proximityTimer.stop();image=QImage();material=QImage();finger=QImage();currentFinger=QImage();currentPatches.clear();materialReady=false;}
+    Q_INVOKABLE void resetWhite(){finishProgressive();dropDisplayDamage();currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(image.size()!=QSize(1200,1600)||image.format()!=QImage::Format_RGB32)image=QImage(1200,1600,QImage::Format_RGB32);image.fill(Qt::white);materialReady=false;ensureMaterial();physics.resetSurface();finger.fill(0);slowest=0;emit timingChanged();publishDirty(image.rect());}
+    Q_INVOKABLE void clearPage(){finishProgressive();if(!ensureMaterial())return;dropDisplayDamage();image.fill(Qt::white);material.fill(0);finger.fill(0);physics.resetSurface();physics.resetInk();publishDirty(image.rect());}
+    Q_INVOKABLE void begin(bool tentative=false){finishProgressive();flushDisplayDamage();std::atomic_store_explicit(&latency,std::make_shared<SketchLatency>(),std::memory_order_release);livePublication=false;lastRawId=0;lastContact=0;pendingSample=PaperPen::Sample();rawReplayed=0;rawBatchMax=0;collectingDamage=false;collectedDamage=QRegion();pressureMatches=0;pressureFallbacks=0;penSamples.resetMatchDiagnostics();tiltSamples=0;touchGeometryMatches=0;touchMatches=0;touchFallbacks=0;if(!ensureMaterial())return;livePublication=true;awaitingPenContact=!tentative;tentativeTouch=tentative;currentFinger=tentative?finger:QImage();captured.fill(false);currentPatches.clear();physics.untilNext=0;pendingDirty=QRect();unpublished=false;}
+    Q_INVOKABLE void finish(){finishProgressive();currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(unpublished&&!pendingDirty.isEmpty())publishDirty(pendingDirty);livePublication=false;flushDisplayDamage();pendingDirty=QRect();unpublished=false;}
     Q_INVOKABLE void cancel(){
+        if(progressive){progressiveTimer.stop();progressive->restore();material=std::move(progressive->material);finger=std::move(progressive->finger);physics=std::move(progressive->physics);progressive.reset();{QPainter restore(&image);restore.setCompositionMode(QPainter::CompositionMode_Source);for(const auto &v:progressiveUndo)restore.drawImage((v.first%10)*128,(v.first/10)*128,v.second);}progressiveUndo.clear();ownProgressivePixels();previewLayer=QImage();previewPoints.clear();dropDisplayDamage();publishDirty(image.rect());return;}
+
         if(!tentativeTouch)return;dropDisplayDamage();QRect dirty;for(const auto &p:currentPatches)dirty=dirty.united(p.rect);
         swapPatches(currentPatches);currentPatches.clear();finger=currentFinger;currentFinger=QImage();tentativeTouch=false;pendingDirty=QRect();if(!dirty.isEmpty())publishDirty(dirty);
     }
@@ -320,13 +408,13 @@ public:
         for(int py=y;py<y+h;py++)for(int px=x;px<x+w;px++){auto c=image.valid(px,py)?image.pixel(px,py):qRgb(255,255,255);out<<qRed(c)<<qGreen(c)<<qBlue(c)<<255;}return out;
     }
     Q_INVOKABLE QString opticalDigest()const{return QString::fromLatin1(QCryptographicHash::hash(QByteArray::fromRawData(reinterpret_cast<const char*>(image.constBits()),image.sizeInBytes()),QCryptographicHash::Sha256).toHex());}
-    Q_INVOKABLE bool save(const QString&path)const{return image.save(path,"PNG");}
+    Q_INVOKABLE bool save(const QString&path)const{const_cast<SketchRaster*>(this)->finishProgressive();return image.save(path,"PNG");}
     Q_INVOKABLE QString documentsDirectory()const{
         if(!exportDirectoryOverride.isEmpty())return exportDirectoryOverride;
         auto directory=QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
         return directory.isEmpty()?QDir::homePath()+"/Documents":directory;
     }
-    Q_INVOKABLE QVariantMap exportPng(QString name,bool overwrite=false)const{
+    Q_INVOKABLE QVariantMap exportPng(QString name,bool overwrite=false)const{const_cast<SketchRaster*>(this)->finishProgressive();
         name=name.trimmed();if(name.endsWith(".png",Qt::CaseInsensitive))name.chop(4);
         bool invalid=name.isEmpty()||name.startsWith('.')||name.contains('/')||name.contains('\\')||name.toUtf8().size()>240;
         for(auto ch:name)if(ch.unicode()<32)invalid=true;
@@ -342,7 +430,7 @@ public:
     }
 
     QSet<QString> pendingPdfPaths;
-    Q_INVOKABLE QVariantMap exportPdf(QString name){
+    Q_INVOKABLE QVariantMap exportPdf(QString name){finishProgressive();
         bool controls=false;for(auto ch:name)if(ch.unicode()<32||ch.unicode()==127)controls=true;
         name=name.trimmed();if(name.endsWith(".pdf",Qt::CaseInsensitive))name.chop(4);
         bool invalid=controls||name.isEmpty()||name.startsWith('.')||name.contains('/')||name.contains(QChar(92))||name.toUtf8().size()>240;
@@ -399,7 +487,7 @@ public:
         }
         return raw;
     }
-    Q_INVOKABLE bool loadCache(int page,const QString&json){
+    Q_INVOKABLE bool loadCache(int page,const QString&json){finishProgressive();
         dropDisplayDamage();loadedMeta.clear();currentPatches.clear();
         QFile mf(cachePath(page)+".material");
         if(mf.open(QIODevice::ReadOnly)&&mf.size()<32*1024*1024){
@@ -435,15 +523,15 @@ public:
         if(next.size()!=QSize(1200,1600))return false;image=next.convertToFormat(QImage::Format_RGB32);materialReady=false;ensureMaterial();publishDirty(image.rect());return true;
     }
     QString notebookPath()const{return cachePath(0)+".material-notebook.json";}
-    Q_INVOKABLE QString loadNotebook(){QFile f(notebookPath());if(!f.exists())f.setFileName(cachePath(0)+".notebook.json");if(!f.open(QIODevice::ReadOnly)||f.size()>16*1024*1024)return QString();auto raw=f.readAll();restoreKit(raw);return QString::fromUtf8(raw);}
-    SaveJob saveJob(int page,const QString &json,const QByteArray &document=QByteArray()){
+    Q_INVOKABLE QString loadNotebook(){finishProgressive();QFile f(notebookPath());if(!f.exists())f.setFileName(cachePath(0)+".notebook.json");if(!f.open(QIODevice::ReadOnly)||f.size()>16*1024*1024)return QString();auto raw=f.readAll();restoreKit(raw);return QString::fromUtf8(raw);}
+    SaveJob saveJob(int page,const QString &json,const QByteArray &document=QByteArray()){finishProgressive();
         if(!ensureMaterial())return {};return {cachePath(page),document.isEmpty()?QString():notebookPath(),json,document,image,material,finger,
             QByteArray(reinterpret_cast<const char*>(physics.burnish.data()),physics.burnish.size()),
             physics.hasInk?QByteArray(reinterpret_cast<const char*>(physics.ink.data()),physics.ink.size()):QByteArray(),physics.wear,physics.paperKind};
     }
     Q_INVOKABLE bool saveCache(int page,const QString&json){auto job=saveJob(page,json);if(job.snapshot.isNull())return false;enqueue(std::move(job));return true;}
     Q_INVOKABLE bool flushSaves(){std::unique_lock<std::mutex> lock(saveMutex);saveWake.wait(lock,[this]{return saves.empty()&&!writing;});return !writeError;}
-    Q_INVOKABLE bool saveNotebook(const QString&document,int page,const QString&json){
+    Q_INVOKABLE bool saveNotebook(const QString&document,int page,const QString&json){finishProgressive();
         if(!ensureMaterial())return false;
         auto object=QJsonDocument::fromJson(document.toUtf8()).object();QJsonArray wear;for(double p:physics.wear)wear.append(p);object.insert("physicalTools",wear);
         // Preserve the exact caller envelope when no physical state has changed;
@@ -461,7 +549,7 @@ public:
         double dx=x-lastX,dy=y-lastY;
         double threshold=tentativeTouch?std::clamp(size*.08,1.0,3.0):.35;
         bool pendingKneaded=tool==6&&physics.kneaded&&p>0&&(!physics.kneadedContact||pressureCurve.map(p)>lastP+.0001);
-        if(!first && dx*dx+dy*dy<threshold*threshold&&!pendingKneaded)return false;
+        if(!first && dx*dx+dy*dy<threshold*threshold&&!pendingKneaded&&!awaitingPenContact)return false;
         physics.tiltX=tiltX;physics.tiltY=tiltY;
         if(tiltX!=0||tiltY!=0)tiltSamples++;
         if(tentativeTouch){
@@ -478,6 +566,13 @@ public:
             auto now=PaperTouch::now();
             lastTouchTime=now;
         }else{if(tool!=8)p=pressureCurve.map(p);physics.contactAspect=1;physics.contactAngle=0;}
+        // Hover/zero-pressure press must not consume the first visible dab or
+        // arm the publication timer. A stationary pressure rise is a contact,
+        // even when Qt delivers no drag activation or coordinate change.
+        if(awaitingPenContact){
+            if(p<=0){lastX=x;lastY=y;lastP=p;return true;}
+            first=true;awaitingPenContact=false;
+        }
         double ax=first?x:lastX,ay=first?y:lastY,ap=first?p:lastP;
         if(!ensureMaterial())return false;
         double radius=std::max(physics.footprintRadius(tool,size,ap),physics.footprintRadius(tool,size,p))+3;
@@ -495,21 +590,21 @@ public:
             if(first||!lastContact||lastContact!=sample.contact){
                 bool restart=first||(lastContact&&lastContact!=sample.contact);
                 lastRawId=sample.id;lastContact=sample.contact;
-                return advancePoint(tool,size,strength,x,y,sample.p,restart,sample.tiltX,sample.tiltY);
+                return dispatchPoint(tool,size,strength,x,y,sample.p,restart,sample.tiltX,sample.tiltY);
             }
             if(sample.id<=lastRawId)return false;
             std::array<PaperPen::Sample,64> path;auto n=penSamples.between(lastRawId,sample,path);
             bool updated=false;collectingDamage=true;collectedDamage=QRegion();
-            for(unsigned i=0;i<n;i++)updated=advancePoint(tool,size,strength,(path[i].x-inputX)/inputScaleX,(path[i].y-inputY)/inputScaleY,path[i].p,false,path[i].tiltX,path[i].tiltY)||updated;
+            for(unsigned i=0;i<n;i++)updated=dispatchPoint(tool,size,strength,(path[i].x-inputX)/inputScaleX,(path[i].y-inputY)/inputScaleY,path[i].p,false,path[i].tiltX,path[i].tiltY)||updated;
             collectingDamage=false;publishRegion(collectedDamage);collectedDamage=QRegion();
             lastRawId=sample.id;lastContact=sample.contact;rawReplayed+=std::max(0,int(n)-1);rawBatchMax=std::max(rawBatchMax,int(n));
             if(n)return updated;
         }
         lastRawId=0;lastContact=0;
-        return advancePoint(tool,size,strength,x,y,p,first);
+        return dispatchPoint(tool,size,strength,x,y,p,first);
     }
     static double noise(double x,double y,quint32 seed){double v=sin(x*12.9898+y*78.233+(seed%65536)*0.017)*43758.5453;return v-floor(v);}
-    Q_INVOKABLE bool segment(QVariantList spec,QVariantList av,QVariantList bv,bool publish) {
+    Q_INVOKABLE bool segment(QVariantList spec,QVariantList av,QVariantList bv,bool publish) {finishProgressive();
         if(spec.size()!=7||av.size()!=3||bv.size()!=3)return false;
         int tool=spec[0].toInt(),index=spec[6].toInt();double size=spec[1].toDouble(),tone=spec[2].toDouble(),strength=spec[3].toDouble();
         quint32 seed=spec[5].toUInt();QPointF a(av[0].toDouble(),av[1].toDouble()),b(bv[0].toDouble(),bv[1].toDouble());
@@ -563,7 +658,7 @@ class SketchTile:public QQuickPaintedItem {
     Q_PROPERTY(QObject* raster READ raster WRITE setRaster)
     Q_PROPERTY(int sourceX MEMBER sx)
     Q_PROPERTY(int sourceY MEMBER sy)
-    SketchRaster *board=nullptr;int sx=0,sy=0;QImage painted,optical;QRegion pendingDamage;bool resetDisplay=true,lastFast=true;int lastSourceX=-1,lastSourceY=-1;
+    SketchRaster *board=nullptr;int sx=0,sy=0;QImage painted,optical,shown;QRegion pendingDamage;bool resetDisplay=true,lastFast=true;int lastSourceX=-1,lastSourceY=-1;
 public:
     SketchTile(QQuickItem *parent=nullptr):QQuickPaintedItem(parent){setRenderTarget(QQuickPaintedItem::Image);setOpaquePainting(true);setSmooth(false);}
     QObject* raster()const{return board;}
@@ -599,10 +694,17 @@ public:
             auto raw=reinterpret_cast<uint32_t*>(optical.bits()),display=reinterpret_cast<uint32_t*>(painted.bits());
             for(const auto rect:dirty)paperDisplayPatch(source,board->image.bytesPerLine()/4,raw,display,optical.bytesPerLine()/4,rect.x(),rect.y(),rect.width(),rect.height(),sx,sy,fast);
         }
-        painter->setRenderHint(QPainter::SmoothPixmapTransform,false);painter->drawImage(0,0,painted);
+        shown=QImage();
+        if(!board->previewLayer.isNull()){
+            shown=painted.copy();
+            QPainter overlay(&shown);overlay.setRenderHint(QPainter::SmoothPixmapTransform,false);
+            overlay.drawImage(QRectF(0,0,size.width(),size.height()),board->previewLayer,QRectF(sx/2.0,sy/2.0,size.width()/2.0,size.height()/2.0));overlay.end();
+            if(fast)for(int y=0;y<shown.height();++y){auto row=reinterpret_cast<uint32_t*>(shown.scanLine(y));for(int x=0;x<shown.width();++x)row[x]=paperDisplayPixel(row[x],sx+x,sy+y);}
+        }
+        painter->setRenderHint(QPainter::SmoothPixmapTransform,false);painter->drawImage(0,0,shown.isNull()?painted:shown);
     }
     Q_INVOKABLE QVariantList opticalPixels(int x,int y,int w,int h)const{QVariantList out;if(w<0||h<0||w*h>4096)return out;for(int py=y;py<y+h;py++)for(int px=x;px<x+w;px++){auto c=optical.valid(px,py)?optical.pixel(px,py):qRgb(255,255,255);out<<qRed(c)<<qGreen(c)<<qBlue(c)<<255;}return out;}
-    Q_INVOKABLE QVariantList pixels(int x,int y,int w,int h)const{QVariantList out;if(w<0||h<0||w*h>4096)return out;for(int py=y;py<y+h;py++)for(int px=x;px<x+w;px++){auto c=painted.valid(px,py)?painted.pixel(px,py):qRgb(255,255,255);out<<qRed(c)<<qGreen(c)<<qBlue(c)<<255;}return out;}
+    Q_INVOKABLE QVariantList pixels(int x,int y,int w,int h)const{QVariantList out;if(w<0||h<0||w*h>4096)return out;for(int py=y;py<y+h;py++)for(int px=x;px<x+w;px++){const auto &display=shown.isNull()?painted:shown;auto c=display.valid(px,py)?display.pixel(px,py):qRgb(255,255,255);out<<qRed(c)<<qGreen(c)<<qBlue(c)<<255;}return out;}
 };
 extern "C" void _xovi_construct(){
     qmlRegisterSingletonType<SketchRaster>("PaperSketch.Native",1,0,"Raster",[](QQmlEngine*,QJSEngine*)->QObject*{return new SketchRaster;});

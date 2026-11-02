@@ -111,6 +111,7 @@ Rectangle {
             pixel_probe_cost:stats(pollCosts),polling_granularity_ms:16,
             native_segment_peak_ms:a.nativePatchMaxMs,
             native_latency_stats:typeof a.nativeRaster.latencyStats==="function"?a.nativeRaster.latencyStats():null,
+            progressive_stats:typeof a.nativeRaster.progressiveStats==="function"?a.nativeRaster.progressiveStats():null,
             native_segment_peak_scope:"maximum internal material segment since page reset; layered cases include fixture work",
             raw_replay:a.nativeRaster.rawReplayStats(),pressure_matches:a.nativeRaster.pressureMatchCounts(),
             delivered_points:s?(s.samples||s.points.length):0,retained_points:s?s.points.length:0,

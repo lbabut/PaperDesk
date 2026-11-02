@@ -4,6 +4,17 @@ A grayscale bitmap sketchbook for reMarkable 2 and XOVI AppLoad. Four pencil gra
 
 Rapidograph draws a constant-width black ink line. Positive pressure and tilt do not change its width. Its separate ink layer survives smudging and both dry-material erasers; Clear or Delete page removes it. Saved ink pages use material cache v3; older v1/v2 sketches remain readable.
 
+## Live preview — tablet trial
+
+Materials → Live preview enables a provisional, half-resolution stroke for pencils
+and charcoal while exact material rendering runs in the background. The switch
+applies to this session and defaults to Off because the tablet comparison did not
+show a latency improvement. Rapidograph, erasers and finger blending keep their
+existing renderer. Save and export use the exact completed image; cache formats
+are unchanged. Preview texture can differ while the detailed result catches up.
+See [the prototype notes](../../../../docs/papersketch-progressive-preview-2026-11-02.md)
+for validation and limitations.
+
 ## Dry materials
 
 Each paper pixel stores fixed and loose pigment separately. Multiscale grain controls contact and capacity, with plain, smooth and rough paper stocks. Pencil hardness changes deposition and binding; charcoal leaves more loose dust. Stylus pressure has separate width and deposition profiles for each medium. When hardware tilt is available, the tip becomes a directional ellipse and tilted charcoal gains a broader side with firmer shoulders. Without tilt, the tip remains upright.

@@ -18,6 +18,8 @@ p.add_argument("--host-key-alias")
 p.add_argument("--key",required=True)
 p.add_argument("--known-hosts",required=True)
 p.add_argument("--baseline-qml")
+p.add_argument("--synchronous-ink",action="store_true",help="Disable provisional ink for same-build A/B diagnostics")
+p.add_argument("--progressive-ink",action="store_true",help="Enable experimental provisional ink for A/B diagnostics")
 p.add_argument("--smoke",action="store_true")
 p.add_argument("--input-probe",action="store_true")
 p.add_argument("--shading-probe",action="store_true")
@@ -40,6 +42,11 @@ app=work/"papersketch-native-bench"
 app.mkdir(parents=True,exist_ok=True)
 source=root/"product/payload/apps/papersketch"
 production=(source/"ui/main.qml").read_text()
+if a.synchronous_ink and a.progressive_ink:p.error("Select only one ink renderer")
+if a.synchronous_ink or a.progressive_ink:
+    marker=r"property bool progressivePreview: (?:true|false)"
+    assert len(re.findall(marker,production))==1
+    production=re.sub(marker,"property bool progressivePreview: "+("true" if a.progressive_ink else "false"),production)
 baseline=(root/a.baseline_qml).read_text() if a.baseline_qml else production
 needle='category: "PaperDeskSketch"'
 assert needle in baseline
@@ -107,7 +114,9 @@ mask=remote("systemctl is-enabled remarkable-fail.service || true").decode().str
 mask_here=mask not in ("masked","masked-runtime")
 original=None
 injected=set()
-report={"candidate_qml_sha256":hashlib.sha256(candidate.encode()).hexdigest(),"source_qml_sha256":hashlib.sha256(baseline.encode()).hexdigest(),"source_engine_sha256":hashlib.sha256((source/"engine.js").read_bytes()).hexdigest(),"source_icon_sha256":hashlib.sha256((source/"ui/ToolIcon.qml").read_bytes()).hexdigest(),"backup":backup,"cache_namespace":"PaperDeskSketchNativeBenchbaseline"+namespace_suffix}
+report={"progressive_enabled":"property bool progressivePreview: true" in production,"candidate_qml_sha256":hashlib.sha256(candidate.encode()).hexdigest(),"source_qml_sha256":hashlib.sha256(baseline.encode()).hexdigest(),"source_engine_sha256":hashlib.sha256((source/"engine.js").read_bytes()).hexdigest(),"source_icon_sha256":hashlib.sha256((source/"ui/ToolIcon.qml").read_bytes()).hexdigest(),"backup":backup,"cache_namespace":"PaperDeskSketchNativeBenchbaseline"+namespace_suffix}
+report["installed_native_sha256"]=remote("sha256sum /home/root/xovi/extensions.d/papersketch-raster.so").decode().split()[0]
+report["source_native_sha256"]=hashlib.sha256((source/"native/papersketch-raster.so").read_bytes()).hexdigest()
 try:
     if uses_input:
         cache=pathlib.Path("/home/lukasz/Documents/Codex/2026-09-25/m-2/work/arm-toolchain/root")

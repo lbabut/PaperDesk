@@ -48,6 +48,7 @@ Item {
             property int sharpenedTool:-1
             property int cleanCount:0
             property int beginCount:0
+            property int progressiveCount:0
             property int finishCount:0
             property int samples:0
             property bool calibrationActive:false
@@ -72,9 +73,11 @@ Item {
             function resetCalibration(){if(resetFails)return false;calibrationSaved=false;return true}
             function calibrationSummary(){return calibrationSaved?"Your pressure response":"Standard pressure response"}
             function begin(tentative){beginCount++}
+            function beginProgressive(){beginCount++;progressiveCount++}
             function finish(){finishCount++}
             function setInputTransform(x,y,sx,sy){}
             function pressureAt(x,y,fallback){return fallback}
+            function touchPressureAt(x,y,fallback){return fallback}
             function advance(tool,size,strength,x,y,p,first){samples++;return true}
         }
     }
@@ -94,6 +97,16 @@ Item {
             scene.app.materialsDialog=false;scene.app.calibrationDialog=false;
             scene.app.fullScreen=false;scene.app.confirmation="book";scene.app.confirmAction();
             tryCompare(scene.app,"replaying",false,10000);
+        }
+        function test_progressive_dispatch_is_limited_to_dry_pen(){
+            var a=scene.app,old=a.nativeRaster,oldPreview=a.progressivePreview,backend=realismBackend.createObject(scene);
+            backend.materialAvailable=true;a.nativeRaster=backend;a.nativeRasterActive=true;
+            a.progressivePreview=true;
+            a.beginStroke(Qt.point(300,400),"pen",1,.5);compare(backend.progressiveCount,1);a.finishStroke();
+            a.beginStroke(Qt.point(300,400),"pen",8,.5);compare(backend.progressiveCount,1);a.finishStroke();
+            a.beginStroke(Qt.point(300,400),"finger",7,.5);compare(backend.progressiveCount,1);a.finishStroke();
+            a.progressivePreview=false;a.beginStroke(Qt.point(300,400),"pen",1,.5);compare(backend.progressiveCount,1);a.finishStroke();
+            a.progressivePreview=oldPreview;a.nativeRaster=old;backend.destroy();
         }
         function line(tool,x,y,p) {
             scene.app.tool=tool;scene.app.brushSize=Ink.tools[tool].size;

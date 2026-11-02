@@ -89,6 +89,7 @@ Rectangle {
     property bool nativeReady: false
     property bool nativeArmed: false
     property bool nativeStroke: false
+    property bool progressivePreview: false
     property var nativeRequest: null
     property string nativeState: ""
     property bool closing: false
@@ -320,6 +321,7 @@ Rectangle {
     function unloading() { if(calibrationDialog && nativeRaster)nativeRaster.cancelCalibration();closing=true;if(nativeReady)nativeWrite("off");if(nativeRaster)nativeRaster.release() }
     function saveBook() {
         if(!ready || saveBlocked || busy) return false;
+        finishStroke();
         var saveStarted=Date.now();
         if(nativeRasterActive){
             if(nativeRaster.saveNotebook(JSON.stringify({document:JSON.stringify(notebook),selectedTool:tool,selectedSize:brushSize,selectedStrength:strength,selectedTone:tone,useFinger:true,paperKind:paperKind,kneadedEraser:kneadedEraser}),pageSlot(pageIndex),cacheMetadata())===false){
@@ -377,7 +379,10 @@ Rectangle {
         activeStroke=Ink.stroke(selected,selected===7?Math.max(brushSize,source==="finger"?64:32):brushSize,tone,strength,Date.now());
         if(bitmapMode)activeStroke.renderer=8;
         if(bitmapMode)syncInputTransform();
-        if(nativeRasterActive)nativeRaster.begin(source==="finger");
+        if(nativeRasterActive){
+            if(progressivePreview && bitmapMode && source==="pen" && selected<6 && typeof nativeRaster.beginProgressive==="function")nativeRaster.beginProgressive();
+            else nativeRaster.begin(source==="finger");
+        }
         var penPressure=pressure===undefined?penInput.centroid.pressure:pressure;
         if(source==="pen" && nativeRaster){if(bitmapMode)penPressure=nativeRaster.pressureAt(p.x,p.y,penPressure);else penPressure=nativeRaster.penPressure(penPressure);}
         if(source==="finger" && bitmapMode)penPressure=nativeRaster.touchPressureAt(p.x,p.y,penPressure);
@@ -935,7 +940,8 @@ Rectangle {
             Row {
                 spacing:20
                 Action{label:"Sharpen tip";width:230;objectName:"sharpenButton";available:root.materialsAvailable && root.tool<6;onTriggered:root.sharpenTool()}
-                Text{width:parent.parent.width-250;wrapMode:Text.Wrap;anchors.verticalCenter:parent.verticalCenter;text:root.tool<6?Ink.tools[root.tool].name+(root.materialsAvailable && root.calibrationRevision>=0 && typeof root.nativeRaster.toolWear==="function"?" · "+Math.round(root.nativeRaster.toolWear(root.tool)*100)+"% worn":" selected"):"Select a pencil or charcoal";font.pixelSize:22}
+                Action{label:root.progressivePreview?"Live preview: On":"Live preview: Off";width:300;objectName:"progressivePreviewButton";available:root.materialsAvailable;onTriggered:{root.finishStroke();root.progressivePreview=!root.progressivePreview}}
+                Text{width:parent.parent.width-570;wrapMode:Text.Wrap;anchors.verticalCenter:parent.verticalCenter;text:root.tool<6?Ink.tools[root.tool].name+(root.materialsAvailable && root.calibrationRevision>=0 && typeof root.nativeRaster.toolWear==="function"?" · "+Math.round(root.nativeRaster.toolWear(root.tool)*100)+"% worn":" selected"):"Select a pencil or charcoal";font.pixelSize:22}
             }
             Text{width:parent.width;wrapMode:Text.Wrap;text:"The tip wears as you draw. Tilt the pen to shade with its side.";font.pixelSize:22}
             Rectangle{width:parent.width;height:2;color:"black"}
