@@ -30,12 +30,20 @@ p.add_argument("--workflow-probe",action="store_true")
 p.add_argument("--pdf-probe",action="store_true")
 p.add_argument("--realism-probe",action="store_true")
 p.add_argument("--eraser-probe",action="store_true")
+p.add_argument("--detail-fullscreen",action="store_true",help="Exercise detail workload in full screen with the overlay control preserved")
+p.add_argument("--detail-check-latency",action="store_true",help="Fail detail probe if mean queue age or release tail exceeds 100ms")
+p.add_argument("--detail-proximity-exits",action="store_true",help="Stress repeated pen proximity exit/entry at each detail contact")
+p.add_argument("--detail-no-preview",action="store_true",help="Disable native preview for the detail-probe comparison")
 p.add_argument("--detail-probe",action="store_true",help="100 tiny circles and 400 hatches per tool at 500 Hz")
 p.add_argument("--fidelity-probe",action="store_true")
 p.add_argument("--preferences-probe",action="store_true")
 p.add_argument("--fidelity-brush-size",type=int,choices=range(1,81),default=32)
 p.add_argument("--output",default="docs/papersketch-native-2026-10-31.json")
 a=p.parse_args()
+if a.detail_fullscreen and not a.detail_probe:p.error("--detail-fullscreen requires --detail-probe")
+if a.detail_check_latency and not a.detail_probe:p.error("--detail-check-latency requires --detail-probe")
+if a.detail_proximity_exits and not a.detail_probe:p.error("--detail-proximity-exits requires --detail-probe")
+if a.detail_no_preview and not a.detail_probe:p.error("--detail-no-preview requires --detail-probe")
 if a.micro_no_preview and not a.micro_probe:p.error("--micro-no-preview requires --micro-probe")
 if a.micro_probe:a.latency_probe=True;a.latency_fresh_only=True
 if a.fidelity_brush_size!=32 and not a.fidelity_probe:p.error("--fidelity-brush-size requires --fidelity-probe")
@@ -72,6 +80,9 @@ for name,text in [("baseline",baseline),("constant-fast",candidate)]:
     for qml_name in ("native-tile.qml","ToolIcon.qml"):
         shutil.copy2(source/"ui"/qml_name,folder/"ui"/qml_name)
 harness=(root/("tests/device/papersketch-detail.qml" if a.detail_probe else "tests/device/papersketch-preferences.qml" if a.preferences_probe else "tests/device/papersketch-input-fidelity.qml" if a.fidelity_probe else "tests/device/papersketch-stylus-eraser.qml" if a.eraser_probe else "tests/device/papersketch-latency.qml" if a.latency_probe else "tests/device/papersketch-realism.qml" if a.realism_probe else "tests/device/papersketch-workflow.qml" if a.workflow_probe else "tests/device/papersketch-controls.qml" if a.controls_probe else "tests/device/papersketch-shading.qml" if a.shading_probe else "tests/device/papersketch-input.qml" if a.input_probe else "tests/device/papersketch-native.qml")).read_text()
+if a.detail_fullscreen:harness=harness.replace("property bool fullScreenCase:false","property bool fullScreenCase:true")
+if a.detail_proximity_exits:harness=harness.replace('pattern:"detail-circles"','pattern:"detail-circles-exit"')
+if a.detail_no_preview:harness=harness.replace('a.confirmation="book";','a.fastPenPreview=false;a.confirmation="book";')
 if a.fidelity_probe:harness=harness.replace("property int shadingSize:32","property int shadingSize:"+str(a.fidelity_brush_size))
 if a.latency_fresh_only:
     marker="property bool freshOnly:false"
@@ -111,6 +122,9 @@ def config_for_launch(raw,app_id):
         if not skip:
             rows.append(line)
     return ("\n".join(rows).rstrip()+"\n\n[PaperDeskE2E]\nautostart=true\napplicationId="+app_id+"\n").encode()
+def saved_art_files():
+    prefix=hashlib.sha256(b"PaperDeskSketch").hexdigest()[:12]
+    return remote('for f in /home/root/.local/share/paperdesk/sketch/cache-'+prefix+'-*; do test -f "$f" || continue; sha256sum "$f"; done')
 def document_hash(raw):
     c=configparser.ConfigParser(interpolation=None,strict=False)
     c.read_string(raw.decode())
@@ -137,6 +151,12 @@ try:
     original=remote("cat /home/root/.config/remarkable/xochitl.conf")
     remote("cp -p /home/root/.config/remarkable/xochitl.conf "+b+"/xochitl.conf")
     report["artwork_before_sha256"]=document_hash(original)
+    saved_files_before=saved_art_files()
+    report["saved_files_before_sha256"]=hashlib.sha256(saved_files_before).hexdigest()
+    report["saved_file_count"]=len(saved_files_before.splitlines())
+    report["native_modules"]=remote("sha256sum /home/root/xovi/extensions.d/papersketch-raster.so /home/root/xovi/extensions.d/papersketch-ink.so").decode().splitlines()
+    report["harness_sha256"]=hashlib.sha256(harness.encode()).hexdigest()
+    if uses_input:report["input_driver_source_sha256"]=hashlib.sha256((root/"tests/device/papersketch-input-driver.c").read_bytes()).hexdigest()
     data=io.BytesIO()
     with tarfile.open(fileobj=data,mode="w") as t:t.add(app,arcname=app.name)
     remote("tar -xf - -C /home/root/xovi/exthome/appload",data.getvalue())
@@ -203,8 +223,8 @@ try:
                 event=next(e for e in report["evdev_injections"] if e["id"]==case["id"])
                 case["tile_visible_before_release"]=case["tile_seen_ms"]<event["release_ms"]
                 case["injected_duration_ms"]=event["release_ms"]-event["contact_ms"]
-    if a.detail_probe or a.realism_probe or a.latency_probe or a.fidelity_probe or a.eraser_probe or a.preferences_probe:
-        probe_name="detail_probe" if a.detail_probe else "preferences_probe" if a.preferences_probe else "latency_probe" if a.latency_probe else "fidelity_probe" if a.fidelity_probe else "eraser_probe" if a.eraser_probe else "realism_probe"
+    if a.controls_probe or a.detail_probe or a.realism_probe or a.latency_probe or a.fidelity_probe or a.eraser_probe or a.preferences_probe:
+        probe_name="controls_probe" if a.controls_probe else "detail_probe" if a.detail_probe else "preferences_probe" if a.preferences_probe else "latency_probe" if a.latency_probe else "fidelity_probe" if a.fidelity_probe else "eraser_probe" if a.eraser_probe else "realism_probe"
         runtime_errors=[line for line in logs.splitlines() if ("bench.qml:" in line or "baseline/ui/main.qml:" in line) and any(error in line for error in ("TypeError:","ReferenceError:","SyntaxError:"))]
         result[probe_name]["runtime_errors"]=runtime_errors
         result[probe_name]["passed"]=result[probe_name]["passed"] and not runtime_errors
@@ -251,6 +271,10 @@ try:
         probe["timing_origin"]="tablet CLOCK_REALTIME contact_ms versus QML Date.now/native epoch timestamps"
         probe["physical_panel_latency_measured"]=False
         result["cases"]=probe["cases"]
+    if a.fidelity_probe:
+        event=next((e for e in report.get("evdev_injections",[]) if e.get("id")=="fast-shading"),None)
+        if event and "shading" in result["fidelity_probe"]:
+            result["fidelity_probe"]["shading"]["release_to_drained_ms"]=result["fidelity_probe"]["shading"]["finished_ms"]-event["release_ms"]
     if a.detail_probe:
         probe=result["detail_probe"]
         events={e["id"]:e for e in report.get("evdev_injections",[])}
@@ -263,7 +287,7 @@ try:
                 case["release_to_drained_ms"]=case["finished_ms"]-event["release_ms"]
             before=case.get("native_preview_before") or {}
             after=case.get("native_preview_after") or {}
-            case["native_preview_checked"]=bool(before.get("ready") and before.get("armed") and before.get("fine_preview"))
+            case["native_preview_checked"]=bool(case.get("preview_requested",before.get("armed")) and before.get("ready") and before.get("fine_preview"))
             if case["native_preview_checked"]:
                 case["native_preview_contacts"]=after.get("fine_strokes",0)-before.get("fine_strokes",0)
                 if case["native_preview_contacts"]!=500 or after.get("active") is not False:
@@ -271,6 +295,16 @@ try:
                 if after.get("first_update_ms") and event.get("last_contact_ms"):
                     case["last_contact_to_native_preview_submit_ms"]=after["first_update_ms"]-event["last_contact_ms"]
 
+        probe["latency_budget_enforced"]=a.detail_check_latency
+        probe["latency_budget_ms"]={"mean_queue":100,"release_tail":100}
+        for case in probe["cases"]:
+            stats=case.get("queue_latency") or {}
+            case["mean_queue_ms"]=stats["total_ms"]/stats["samples"] if stats.get("samples") else None
+            case["latency_budget_passed"]=bool(case["mean_queue_ms"] is not None and case["mean_queue_ms"]<=100 and 0<=case.get("release_to_drained_ms",-1)<=100)
+            if a.detail_check_latency and not case["latency_budget_passed"]:probe["passed"]=False
+            pointer=case.get("pointer_filter")
+            if a.detail_check_latency and case.get("pointer_filter_expected",True) and pointer is not None and not (pointer.get("enabled") and pointer.get("window_bound") and pointer.get("consumed",0)>0):
+                probe["passed"]=False;case["pointer_filter_contract_failed"]=True
         probe["physical_panel_latency_measured"]=False
     report["results"]=result
     report["runtime_seconds"]=round(time.monotonic()-started,2)
@@ -287,10 +321,13 @@ finally:
         after=remote("cat /home/root/.config/remarkable/xochitl.conf")
         report["artwork_after_sha256"]=document_hash(after)
         report["artwork_preserved"]=report["artwork_before_sha256"]==report["artwork_after_sha256"]
+        report["saved_files_after_sha256"]=hashlib.sha256(saved_art_files()).hexdigest()
+        report["saved_files_preserved"]=report["saved_files_before_sha256"]==report["saved_files_after_sha256"]
     out=root/a.output
     out.parent.mkdir(parents=True,exist_ok=True)
     out.write_text(json.dumps(report,indent=2)+"\n")
     print("Report:",out,flush=True)
+assert report["saved_files_preserved"],"Saved material/cache files changed; original configuration backup retained"
 assert report["artwork_preserved"],"Artwork settings changed; original backup retained"
 
 if a.smoke and not a.baseline_qml:

@@ -2,6 +2,7 @@
 #include <QtGui/QGuiApplication>
 #include <QtCore/QTemporaryDir>
 #include <cassert>
+#include <QtCore/QThread>
 int main(int argc,char **argv){
  QGuiApplication app(argc,argv);QTemporaryDir dir;
  SketchRaster batched(nullptr,dir.path()+"/batched"),reference(nullptr,dir.path()+"/reference");
@@ -13,7 +14,7 @@ int main(int argc,char **argv){
   reference.advancePenInput(1,5,1,x,y,p,i==0,.2,-.1);
  }
  batched.penSamples.frame(150+599*.8,500+100*std::sin(599*.045),0,10,.2,-.1,false,false);
- reference.finish();unsigned points=0,ends=0;
+ reference.finish();QThread::msleep(20);unsigned points=0,ends=0;
  while(batched.penSamples.inputPending()){
   const auto batch=batched.takePenInput();assert(batch.size()<=32);
   for(const auto &value:batch){
@@ -24,6 +25,25 @@ int main(int argc,char **argv){
   }
  }
  assert(points==600&&ends==1&&batched.image==reference.image&&batched.material==reference.material);
+ auto queue=batched.penQueueLatencyStats();
+ assert(queue["samples"].toULongLong()==601&&queue["max_ms"].toULongLong()>=20);
+ assert(queue["p95_upper_ms"].toULongLong()<=queue["max_ms"].toULongLong());
+ assert(queue["batches"].toUInt()==19&&queue["empty_batches"].toUInt()==0);
+ batched.takePenInput();assert(batched.penQueueLatencyStats()["empty_batches"].toUInt()==1);
+ SketchRaster::PenQueueTiming tail;tail.record(-10);tail.record(2000);tail.record(4000);
+ assert(tail.percentile(50)==4000&&tail.maxMs==4000&&tail.totalMs==6000);
+ batched.resetPenQueueLatencyStats();assert(batched.penQueueLatencyStats()["samples"].toUInt()==0);
+ // Overlay controls are excluded before GUI queuing, so a layout toggle
+ // cannot reinterpret a delayed control tap as artwork.
+ batched.penSamples.setInputExclusion(100,100,56,56);
+ batched.penSamples.frame(110,110,.8,20,0,0,false,true);
+ batched.penSamples.frame(200,200,.8,20,0,0,false,true);
+ batched.penSamples.frame(200,200,0,20,0,0,false,false);
+ assert(batched.takePenInput().isEmpty());
+ batched.penSamples.frame(156,110,.8,21,0,0,false,true); // half-open edge is artwork
+ batched.penSamples.frame(156,110,0,21,0,0,false,false);
+ assert(batched.takePenInput().size()==2);
+ batched.penSamples.setInputExclusion(0,0,0,0);
  // All short contacts leave a dot, despite a zero-pressure down and subpixel travel.
  batched.resetWhite();
  for(int i=0;i<80;i++){

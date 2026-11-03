@@ -192,3 +192,8 @@ Unicode path all produce real RDP scan-code press/release pairs.
 The dedicated Paper Sketch tablet probe `--detail-probe` exercises 100 tiny circles
 and 400 surrounding hatches per tool at a target 500 Hz, checks input/material
 integrity and records responsiveness. See [the hardware test instructions](../docs/papersketch-detail-test.md).
+
+For latency regression gating add `--detail-check-latency` (100ms mean queue and
+release tail budgets). `--detail-fullscreen` additionally tests the overlaid Exit
+button with a real pen event, requiring no new artwork. Full results and the
+operator incident are documented in [the latency audit](../docs/papersketch-latency-audit-2026-11-03.md).

@@ -1,4 +1,8 @@
 #include <QtCore/QObject>
+#include <QtCore/QPointer>
+#include <QtGui/QMouseEvent>
+#include <QtGui/QTabletEvent>
+#include <QtQuick/QQuickWindow>
 #include <QtCore/QVariantList>
 #include <QtCore/QCryptographicHash>
 #include <QtCore/QDir>
@@ -105,11 +109,94 @@ public:
     Q_PROPERTY(bool rawPenInputAvailable READ rawPenInputAvailable NOTIFY proximityChanged)
     bool penReaderReady=false;
     bool rawPenInputAvailable()const{return penReaderReady;}
-    Q_INVOKABLE void setRawPenInputEnabled(bool value){penSamples.enableInput(value);}
+    struct PointerCapture {bool over=false,captured=false,forwarded=false;};
+    QPointer<QQuickWindow> inputWindow;
+    PointerCapture mouseCapture,tabletCapture;
+    bool rawPointerFiltering=false;
+    quint64 consumedPointerEvents=0,forwardedPointerEvents=0;
+    Q_INVOKABLE QVariantMap pointerFilterStats()const{return {{"enabled",rawPointerFiltering},{"window_bound",!inputWindow.isNull()},{"consumed",consumedPointerEvents},{"forwarded",forwardedPointerEvents}};}
+    Q_INVOKABLE void setInputWindow(QObject *object){
+        auto window=qobject_cast<QQuickWindow*>(object);if(inputWindow==window)return;
+        if(inputWindow)inputWindow->removeEventFilter(this);
+        inputWindow=window;mouseCapture={};tabletCapture={};
+        if(inputWindow)inputWindow->installEventFilter(this);
+    }
+    Q_INVOKABLE void setRawPenInputEnabled(bool value){
+        rawPointerFiltering=value;if(!value){mouseCapture={};tabletCapture={};}
+        penSamples.enableInput(value);
+    }
+    template<class Event> bool filterCanvasPointer(Event *event,PointerCapture &state,bool press,bool release){
+        const auto p=event->position();
+        const bool inside=std::isfinite(inputX)&&std::isfinite(inputY)&&std::isfinite(inputScaleX)&&std::isfinite(inputScaleY)&&inputScaleX>0&&inputScaleY>0&&
+            p.x()>=inputX&&p.y()>=inputY&&p.x()<inputX+1200*inputScaleX&&p.y()<inputY+1600*inputScaleY;
+        if(press){
+            if(event->button()!=Qt::LeftButton)return false;
+            state.captured=false;state.forwarded=false;
+            if(!inside){state.over=false;return false;}
+            // Forward a first contact without preceding hover as a whole gesture.
+            // Later contacts use the raw reader exclusively, including release.
+            if(!state.over){state.over=true;state.forwarded=true;return false;}
+            state.captured=true;event->accept();return true;
+        }
+        if(release){
+            if(event->button()!=Qt::LeftButton)return false;
+            state.over=inside;
+            if(state.forwarded){state.forwarded=false;return false;}
+            if(state.captured){state.captured=false;event->accept();return true;}
+            return false;
+        }
+        if(state.forwarded){if(!(event->buttons()&Qt::LeftButton))state.forwarded=false;state.over=inside;return false;}
+        if(state.captured && !(event->buttons()&Qt::LeftButton))state.captured=false;
+        if(state.captured){event->accept();return true;}
+        const bool wasOver=state.over;state.over=inside;
+        // Preserve entry/exit hover so toolbar hover/tooltip states clear.
+        // A toolbar drag entering the canvas must continue to reach its grabber.
+        if(inside&&wasOver&&event->buttons()==Qt::NoButton){event->accept();return true;}
+        return false;
+    }
+    bool eventFilter(QObject *watched,QEvent *event)override{
+        if(inputWindow&&watched==inputWindow&&(event->type()==QEvent::Hide||event->type()==QEvent::WindowDeactivate)){mouseCapture={};tabletCapture={};}
+        if(!rawPointerFiltering||!inputWindow||watched!=inputWindow||!inputWindow->isVisible())return false;
+        bool consumed=false;
+        switch(event->type()){
+        case QEvent::MouseMove:case QEvent::MouseButtonPress:case QEvent::MouseButtonDblClick:case QEvent::MouseButtonRelease:
+            consumed=filterCanvasPointer(static_cast<QMouseEvent*>(event),mouseCapture,event->type()==QEvent::MouseButtonPress||event->type()==QEvent::MouseButtonDblClick,event->type()==QEvent::MouseButtonRelease);break;
+        case QEvent::TabletMove:case QEvent::TabletPress:case QEvent::TabletRelease:
+            consumed=filterCanvasPointer(static_cast<QTabletEvent*>(event),tabletCapture,event->type()==QEvent::TabletPress,event->type()==QEvent::TabletRelease);break;
+        case QEvent::Leave:mouseCapture.over=false;tabletCapture.over=false;return false;
+        default:return false;
+        }
+        if(consumed)consumedPointerEvents++;else forwardedPointerEvents++;
+        return consumed;
+    }
     void notifyPenInput(){QMetaObject::invokeMethod(this,[this]{emit penInputReady();},Qt::QueuedConnection);}
+    struct PenQueueTiming {
+        quint64 samples=0,totalMs=0,maxMs=0,batches=0,emptyBatches=0;
+        std::array<quint64,1001> histogram{};
+        void record(long long age){
+            const auto ms=quint64(std::max(0LL,age));samples++;totalMs+=ms;maxMs=std::max(maxMs,ms);
+            histogram[std::min<quint64>(ms,histogram.size()-1)]++;
+        }
+        quint64 percentile(unsigned numerator)const{
+            if(!samples)return 0;quint64 target=(samples*numerator+99)/100,seen=0;
+            for(size_t i=0;i<histogram.size();i++){seen+=histogram[i];if(seen>=target)return i==histogram.size()-1?maxMs:i;}
+            return maxMs;
+        }
+    } penQueueTiming;
+    Q_INVOKABLE void resetPenQueueLatencyStats(){penQueueTiming=PenQueueTiming{};consumedPointerEvents=0;forwardedPointerEvents=0;}
+    Q_INVOKABLE QVariantMap penQueueLatencyStats()const{
+        const auto &s=penQueueTiming;
+        return {{"samples",s.samples},{"total_ms",s.totalMs},{"max_ms",s.maxMs},
+            {"p50_upper_ms",s.percentile(50)},{"p95_upper_ms",s.percentile(95)},
+            {"batches",s.batches},{"empty_batches",s.emptyBatches},{"clock_resolution_ms",1}};
+    }
     Q_INVOKABLE QVariantList takePenInput(){
         auto events=penSamples.takeInput(32);QVariantList result;
+        const auto dequeued=PaperPen::now();penQueueTiming.batches++;
+        if(events.empty())penQueueTiming.emptyBatches++;
+        result.reserve(events.size());
         for(const auto &event:events){const auto &p=event.sample;
+            if(event.phase!=4)penQueueTiming.record(dequeued-p.time);
             result.append(QVariant(QVariantList{event.phase,p.x,p.y,p.p,p.tiltX,p.tiltY,p.eraser,p.contact}));
         }
         // A batch limit bounds one GUI turn; remaining events stay queued.
@@ -121,6 +208,12 @@ public:
     PaperPen penSamples;PaperTouch touchSamples;PaperPressure pressureCurve;
     double inputX=0,inputY=0,inputScaleX=1,inputScaleY=1;int pressureMatches=0,pressureFallbacks=0;
     int tiltSamples=0,touchGeometryMatches=0,touchMatches=0,touchFallbacks=0;bool kitLoaded=false;
+    QRectF inputExclusion;
+    Q_INVOKABLE void setInputExclusion(double x,double y,double w,double h){
+        const QRectF next=std::isfinite(x)&&std::isfinite(y)&&std::isfinite(w)&&std::isfinite(h)&&w>0&&h>0?QRectF(x,y,w,h):QRectF();
+        if(next==inputExclusion)return;inputExclusion=next;
+        penSamples.setInputExclusion(next.x(),next.y(),next.width(),next.height());
+    }
     Q_INVOKABLE void setInputTransform(double x,double y,double sx,double sy){inputX=x;inputY=y;inputScaleX=sx;inputScaleY=sy;penSamples.setViewport(x,y,sx,sy);}
     PaperPen::Sample pendingSample;uint64_t lastRawId=0;unsigned lastContact=0;int rawReplayed=0,rawBatchMax=0;bool collectingDamage=false;QRegion collectedDamage;
     Q_INVOKABLE double pressureAt(double x,double y,double fallback){
@@ -366,7 +459,7 @@ public:
         dropDisplayDamage();currentPatches.clear();image=next;materialReady=false;ensureMaterial();publishDirty(QRect(0,0,1200,1600));return true;
     }
     Q_INVOKABLE void setNamespace(QString name){cacheNamespace=name;kitLoaded=false;physics.wear.fill(0);loadCalibration();penSamples.activate();touchSamples.activate();proximityTimer.start();}
-    Q_INVOKABLE void release(){rearEraserStroke=false;dropDisplayDamage();pressureCurve.cancel();penSamples.pause();touchSamples.pause();proximityTimer.stop();image=QImage();material=QImage();finger=QImage();currentFinger=QImage();currentPatches.clear();materialReady=false;}
+    Q_INVOKABLE void release(){setRawPenInputEnabled(false);rearEraserStroke=false;dropDisplayDamage();pressureCurve.cancel();penSamples.pause();touchSamples.pause();proximityTimer.stop();image=QImage();material=QImage();finger=QImage();currentFinger=QImage();currentPatches.clear();materialReady=false;}
     Q_INVOKABLE void resetWhite(){rearEraserStroke=false;dropDisplayDamage();currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(image.size()!=QSize(1200,1600)||image.format()!=QImage::Format_RGB32)image=QImage(1200,1600,QImage::Format_RGB32);image.fill(Qt::white);materialReady=false;ensureMaterial();physics.resetSurface();finger.fill(0);slowest=0;emit timingChanged();publishDirty(image.rect());}
     Q_INVOKABLE void clearPage(){if(!ensureMaterial())return;dropDisplayDamage();image.fill(Qt::white);material.fill(0);finger.fill(0);physics.resetSurface();physics.resetInk();publishDirty(image.rect());}
     Q_INVOKABLE void begin(bool tentative=false,bool rearEraser=false){rearEraserStroke=rearEraser&&!tentative;flushDisplayDamage();std::atomic_store_explicit(&latency,std::make_shared<SketchLatency>(),std::memory_order_release);livePublication=false;lastRawId=0;lastContact=0;pendingSample=PaperPen::Sample();rawReplayed=0;rawBatchMax=0;collectingDamage=false;collectedDamage=QRegion();pressureMatches=0;pressureFallbacks=0;penSamples.resetMatchDiagnostics();tiltSamples=0;touchGeometryMatches=0;touchMatches=0;touchFallbacks=0;if(!ensureMaterial())return;livePublication=true;awaitingPenContact=!tentative;tentativeTouch=tentative;currentFinger=tentative?finger:QImage();captured.fill(false);currentPatches.clear();physics.untilNext=0;pendingDirty=QRect();unpublished=false;}

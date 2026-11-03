@@ -30,6 +30,18 @@ class TabletRunnerSafetyTests(unittest.TestCase):
             self.assertNotIn("systemctl stop", calls[0])
             self.assertNotIn("mknod", calls[0])
 
+    def test_detail_options_reject_before_device_access(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base=Path(directory);tools=base/"bin";tools.mkdir();log=base/"ssh-calls"
+            ssh=tools/"ssh";ssh.write_text('#!/bin/sh\nprintf "called" >> "$AUDIT_SSH_LOG"\n');ssh.chmod(0o700)
+            env=dict(os.environ,PATH=f"{tools}:{os.environ['PATH']}",AUDIT_SSH_LOG=str(log))
+            for options in [["--detail-fullscreen"],["--detail-check-latency"],["--detail-proximity-exits"],["--detail-no-preview"],["--detail-probe","--latency-probe"],["--detail-probe","--eraser-probe"]]:
+                result=subprocess.run([__import__("sys").executable,str(ROOT/"tests/run-sketch-native.py"),
+                    "--host","unused","--key","unused","--known-hosts","unused"]+options,
+                    capture_output=True,text=True,env=env,timeout=5)
+                self.assertEqual(result.returncode,2,result.stderr)
+                self.assertFalse(log.exists(),"Argument rejection must not touch the tablet")
+
     def test_shell_scripts_parse(self):
         scripts = [ROOT / "product/install.sh", ROOT / "product/uninstall.sh",
                    ROOT / "product/payload/system/paperdesk-update-agent",

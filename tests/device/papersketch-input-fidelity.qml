@@ -23,7 +23,7 @@ Rectangle{
    a.tool=4;a.brushSize=shadingSize;before=a.rawPenStrokes;move(3);return;}
   if(phase===3&&Date.now()-at>500){inject("fidelity-shade","fast-shading",200,800,980,1250);move(4);return;}
   if(phase===4&&a.rawPenStrokes>=before+1&&a.activeStroke===null){
-   result.shading={native_preview_status:previewStatus(),size:shadingSize,max_gui_gap_ms:maxShadingGap,native_stats:a.nativeRaster.latencyStats(),strokes:a.rawPenStrokes-before,input_samples:a.lastStroke.inputSamples,raw_stats:a.nativeRaster.penInputStats(),finished_ms:Date.now()};
+   result.shading={contact_stats:a.nativeRaster.contactStats(),optical_digest:a.nativeRaster.opticalDigest(),physical_state:a.nativeRaster.materialState(),queue_latency:typeof a.nativeRaster.penQueueLatencyStats==="function"?a.nativeRaster.penQueueLatencyStats():null,native_preview_status:previewStatus(),size:shadingSize,max_gui_gap_ms:maxShadingGap,native_stats:a.nativeRaster.latencyStats(),strokes:a.rawPenStrokes-before,input_samples:a.lastStroke.inputSamples,raw_stats:a.nativeRaster.penInputStats(),finished_ms:Date.now()};
    finish(result.shading.strokes===1&&result.shading.input_samples>=1200&&result.shading.raw_stats[1]===0,"Fast shading input loss");}
  }
  Connections{target:subject.item;ignoreUnknownSignals:true;function onRawPenContactChanged(){

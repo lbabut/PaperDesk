@@ -19,12 +19,12 @@ subprocess.run([str(sdk / 'lib/qt6/libexec/moc'), '-I' + str(include),
                 str(root / 'product/payload/apps/papersketch/native/papersketch-raster.cpp'),
                 '-o', str(work / 'papersketch-raster.moc')], check=True)
 env = dict(os.environ, QT_QPA_PLATFORM='offscreen')
-for name in ['contact-cache', 'preferences', 'input-fidelity', 'stylus-eraser', 'rapidograph', 'rapidograph-integration', 'pdf', 'finger-transport', 'material', 'material-realism', 'pressure', 'touch', 'pen', 'display', 'material-integration', 'workflow', 'realism-integration', 'kit-state', 'publication', 'latency', 'raster']:
+for name in ['contact-cache', 'preferences', 'input-fidelity', 'pointer-filter', 'stylus-eraser', 'rapidograph', 'rapidograph-integration', 'pdf', 'finger-transport', 'material', 'material-realism', 'pressure', 'touch', 'pen', 'display', 'material-integration', 'workflow', 'realism-integration', 'kit-state', 'publication', 'latency', 'raster']:
     source = root / ('tests/test-sketch-' + name + '.cpp')
     args = ['g++', '-std=c++17', '-O2', '-fPIC', '-pthread', '-I' + str(work), '-I' + str(include)]
     args += ['-I' + str(include / module) for module in ['QtCore', 'QtGui', 'QtQml', 'QtQuick']]
     args += [str(source)]
-    if name in ['preferences', 'input-fidelity', 'stylus-eraser', 'rapidograph', 'rapidograph-integration', 'pdf', 'material-integration', 'workflow', 'realism-integration', 'kit-state', 'publication', 'latency', 'raster']:
+    if name in ['preferences', 'input-fidelity', 'pointer-filter', 'stylus-eraser', 'rapidograph', 'rapidograph-integration', 'pdf', 'material-integration', 'workflow', 'realism-integration', 'kit-state', 'publication', 'latency', 'raster']:
         args += ['-l:libQt6Quick.so.6', '-l:libQt6Qml.so.6', '-l:libQt6Gui.so.6', '-l:libQt6Core.so.6', '-ldl', '-lz']
     target = work / name
     subprocess.run(args + ['-o', str(target)], check=True, cwd=root)

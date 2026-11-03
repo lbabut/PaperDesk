@@ -82,7 +82,7 @@ int main(int argc,char **argv){
   SketchRaster tiled(nullptr,directory.path()+"/two-tiles");QQuickWindow window;
   window.resize(256,128);window.setColor(Qt::white);
   PaintCountTile left(window.contentItem()),right(window.contentItem());
-  left.setWidth(128);left.setHeight(128);left.setRaster(&tiled);
+  left.setWidth(128);left.setHeight(128);left.setEnabled(false);left.setRaster(&tiled);
   right.setX(128);right.setWidth(128);right.setHeight(128);assert(right.setProperty("sourceX",128));right.setRaster(&tiled);
   window.show();renderedFrame(window,[&]{return left.paintCount.load()>0&&right.paintCount.load()>0;});
   const int previousLeft=left.paintCount.load(),previousRight=right.paintCount.load();

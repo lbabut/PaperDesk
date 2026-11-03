@@ -57,6 +57,7 @@ Rectangle {
     readonly property bool bitmapMode:nativeRasterActive && nativeRaster && nativeRaster.materialAvailable===true
     readonly property bool rawPenMode:bitmapMode && nativeRaster && nativeRaster.rawPenInputAvailable===true
     readonly property bool rawPenEnabled:rawPenMode && ready && visible && !closing && !replaying && !saveBlocked && !confirmation && !exportDialog && !materialsDialog && !calibrationDialog
+    readonly property bool rawHoverBlocked:typeof rawPenHover.blocking==="boolean" && rawPenHover.blocking
     property bool rawPenDraining:false
     property int rawPenContact:0
     property int rawPenStrokes:0
@@ -68,6 +69,11 @@ Rectangle {
             if(rawPenEnabled)syncInputTransform();
             nativeRaster.setRawPenInputEnabled(rawPenEnabled);
         }
+    }
+    function rawInputOverControl(p){
+        if(!fullScreen || !exitFullScreenButton.visible)return false;
+        var local=exitFullScreenButton.mapFromItem(inputSurface,p.x,p.y);
+        return local.x>=0 && local.y>=0 && local.x<exitFullScreenButton.width && local.y<exitFullScreenButton.height;
     }
     function drainPenInput(){
         if(!rawPenEnabled || rawPenDraining)return;
@@ -81,7 +87,7 @@ Rectangle {
             }else if(e[0]===1){
                 if(activeStroke && activeStroke.rawInput)finishStroke();
                 rawPenContact=0;
-                if(p.x<0 || p.y<0 || p.x>=Ink.WIDTH || p.y>=Ink.HEIGHT)continue;
+                if(p.x<0 || p.y<0 || p.x>=Ink.WIDTH || p.y>=Ink.HEIGHT || rawInputOverControl(p))continue;
                 beginStroke(p,"pen",tool,e[3],e[6],e);
                 if(activeStroke && activeStroke.rawInput)rawPenContact=e[7];
             }else if(rawPenContact===e[7] && activeStroke && activeStroke.rawInput){
@@ -152,7 +158,7 @@ Rectangle {
             var sizes=toolSizes.slice();sizes[tool]=Ink.clamp(brushSize,1,80);toolSizes=sizes;
             rememberToolPreferences();
         }
-        if(ready)nativeHeartbeat();
+        if(ready && !sizeSlider.pressed)nativeHeartbeat();
     }
     onControlsVisibleChanged:if(ready) {nativeArmed=false;nativeWrite("off");}
     Timer { interval:400;running:root.visible && !root.closing && (!root.bitmapMode||(root.fastPenPreview&&root.finePreviewTool(root.tool,root.brushSize)));repeat:true;triggeredOnStart:true;onTriggered:root.nativeHeartbeat() }
@@ -169,6 +175,7 @@ Rectangle {
         catch(e) {nativeArmed=false;}
     }
     function nativeHeartbeat() {
+        if(sizeSlider.pressed)return;
         if(bitmapMode&&!fastPenPreview){nativeWrite("off");nativeReady=false;nativeArmed=false;return;}
         try {
             var x=new XMLHttpRequest();x.open("GET","file:///tmp/papersketch-ink-status",false);x.send();
@@ -361,7 +368,7 @@ Rectangle {
         property bool kneadedEraser: false
     }
     Settings {id:fallbackToolPreferences;category:saved.category+".ToolPreferences";property string document:""}
-    Timer{id:toolPreferencesTimer;interval:500;onTriggered:root.flushToolPreferences()}
+    Timer{id:toolPreferencesTimer;interval:500;onTriggered:if(sizeSlider.pressed)restart();else root.flushToolPreferences()}
     ListModel { id:liveSegments }
     Timer {
         id:clearPreviewTimer;interval:80
@@ -472,8 +479,15 @@ Rectangle {
     }
     function syncInputTransform(){
         var win=root.Window.window;if(!nativeRaster || !win)return;
+        if(typeof nativeRaster.setInputWindow==="function")nativeRaster.setInputWindow(root.fullScreen?null:win);
         var a=inputSurface.mapToItem(win.contentItem,0,0),b=inputSurface.mapToItem(win.contentItem,Ink.WIDTH,Ink.HEIGHT);
         nativeRaster.setInputTransform(a.x,a.y,(b.x-a.x)/Ink.WIDTH,(b.y-a.y)/Ink.HEIGHT);
+        if(typeof nativeRaster.setInputExclusion==="function"){
+            if(fullScreen && exitFullScreenButton.visible){
+                var c=exitFullScreenButton.mapToItem(win.contentItem,0,0),d=exitFullScreenButton.mapToItem(win.contentItem,exitFullScreenButton.width,exitFullScreenButton.height);
+                nativeRaster.setInputExclusion(c.x,c.y,d.x-c.x,d.y-c.y);
+            }else nativeRaster.setInputExclusion(0,0,0,0);
+        }
     }
     function beginStroke(p,source,selected,pressure,eraserHint,rawPoint) {
         var fromRaw=rawPoint!==undefined && rawPoint!==null;
@@ -807,6 +821,10 @@ Rectangle {
                     property string accessibleName:"Tool size"
                     property string accessibleDescription:"Size of the selected pencil, charcoal, eraser or smudge tool"
                     onMoved:root.brushSize=value
+                    onPressedChanged:if(root.ready){
+                        if(pressed){root.nativeWrite("off");root.nativeArmed=false;}
+                        else root.nativeHeartbeat();
+                    }
                     DisplayMethodArea{anchors.fill:parent;displayMethod:typeof DisplayMethodArea.UFast==="number"?DisplayMethodArea.UFast:DisplayMethodArea.Fast}
                     Text{visible:toolsPanel.width<900;text:"Size "+Math.round(root.brushSize);font.pixelSize:16;anchors.top:parent.top;anchors.horizontalCenter:parent.horizontalCenter}
                     background:Rectangle {x:14;y:29;width:parent.width-28;height:3;color:"black"}
@@ -831,6 +849,10 @@ Rectangle {
                 function getContext(kind) {return root.nativeRasterActive?root.nativeContext():paper.getContext(kind)}
                 function save(path) {return root.nativeRasterActive?root.nativeRaster.save(path):paper.save(path)}
             }
+            // Painted artwork never receives pointer input. Prune this entire
+            // tile subtree from Qt hit testing; drawing handlers stay on sheet.
+            Item {
+                objectName:"passiveArtwork";anchors.fill:parent;enabled:false
             Repeater {
                 id:artTiles
                 model:root.artColumns*Math.ceil(Ink.HEIGHT/root.artTileSize)
@@ -859,8 +881,9 @@ Rectangle {
                     }
                 }
             }
+            }
             Item {
-                width:1;height:1;clip:true
+                width:1;height:1;clip:true;enabled:false
                 Canvas {
                 id:paper;objectName:"rasterCanvas"
                 x:-2000;y:-2000;width:Ink.WIDTH;height:Ink.HEIGHT
@@ -909,11 +932,12 @@ Rectangle {
             }
             }
             Canvas {
-                id:guide;anchors.fill:parent
+                id:guide;anchors.fill:parent;enabled:false
                 onPaint:{var c=getContext("2d");c.clearRect(0,0,width,height);Ink.guides(c,root.page.paper)}
             }
             Item {
                 id:liveInk
+                enabled:false
                 objectName:"liveInk"
                 anchors.fill:parent
                 Repeater {
@@ -935,6 +959,22 @@ Rectangle {
                             consumed=root.previewJobs.length;c.restore();
                         }
                     }
+                }
+            }
+            // Consume the GUI's duplicate stylus stream above the artwork.
+            // Exact samples still come from the native reader. An exclusive
+            // drag avoids repeated scene-wide hit testing while the pen moves.
+            Item {
+                objectName:"rawPenEventSink";anchors.fill:parent;z:5
+                visible:root.rawPenEnabled
+                HoverHandler {
+                    id:rawPenHover;acceptedDevices:PointerDevice.Stylus | PointerDevice.Airbrush | PointerDevice.Mouse
+                    Component.onCompleted:if(typeof rawPenHover.blocking==="boolean")rawPenHover.blocking=true
+                }
+                DragHandler {
+                    objectName:"rawPenGrab";target:null;dragThreshold:0
+                    acceptedDevices:PointerDevice.Stylus | PointerDevice.Airbrush | PointerDevice.Mouse
+                    acceptedButtons:Qt.LeftButton
                 }
             }
             DragHandler {
@@ -1019,7 +1059,7 @@ Rectangle {
         }
     }
     Rectangle{
-        objectName:"exitFullScreen";visible:root.fullScreen && !root.confirmation;z:8
+        id:exitFullScreenButton;objectName:"exitFullScreen";visible:root.fullScreen && !root.confirmation;z:8
         anchors.top:parent.top;anchors.right:parent.right;anchors.margins:16
         width:56;height:56;radius:28;color:"white";border.color:"black";border.width:2
         Repeater{model:3;Rectangle{x:17;y:18+index*8;width:22;height:2;color:"black"}}

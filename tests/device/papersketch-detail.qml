@@ -5,6 +5,7 @@ Rectangle {
  anchors.fill: parent
  color: "white"
  signal close
+ property bool fullScreenCase:false
  property int phase: 0
  property int caseIndex: 0
  property real at: Date.now()
@@ -18,6 +19,8 @@ Rectangle {
  property int malformed: 0
  property int openCircles: 0
  property var cases: []
+ property var exitCheck: null
+ property string exitDigest: ""
  property bool done: false
  function find(item,name) {
   if(item.objectName===name)return item;
@@ -27,7 +30,7 @@ Rectangle {
  function move(n){phase=n;at=Date.now();tickAt=0;}
  function finish(ok,error){
   done=true;ticker.stop();
-  console.log("PAPERSKETCH_NATIVE_RESULT "+JSON.stringify({detail_probe:{passed:ok,error:error||"",cases:cases},cases:[]}));
+  console.log("PAPERSKETCH_NATIVE_RESULT "+JSON.stringify({detail_probe:{passed:ok,error:error||"",exit_control:exitCheck,cases:cases},cases:[]}));
  }
  function previewStatus(){try{var x=new XMLHttpRequest();x.open("GET","file:///tmp/papersketch-ink-status",false);x.send();return JSON.parse(x.responseText);}catch(e){return null;}}
  function marked(a,x,y){
@@ -55,13 +58,14 @@ Rectangle {
   if(now-at>60000){finish(false,"Timeout in phase "+phase);return;}
   if(!a||!a.ready||a.replaying||!a.bitmapMode||!a.rawPenMode)return;
   if(phase===0){
-   a.confirmation="book";a.confirmAction();a.tool=caseIndex===0?1:4;a.brushSize=3;a.strength=1;a.tone=0;
+   a.confirmation="book";a.confirmAction();a.fullScreen=fullScreenCase;a.tool=caseIndex===0?1:4;a.brushSize=3;a.strength=1;a.tone=0;
    before=a.rawPenStrokes;statsBefore=a.nativeRaster.penInputStats();
    contacts=0;samples=0;malformed=0;openCircles=0;maxGap=0;move(1);return;
   }
   if(phase===1&&now-at>700){
    var surface=find(a,"drawingCanvas"),win=bench.Window.window;
    var p=surface.mapToItem(win.contentItem,200,650),q=surface.mapToItem(win.contentItem,400,850);
+   if(typeof a.nativeRaster.resetPenQueueLatencyStats==="function")a.nativeRaster.resetPenQueueLatencyStats();
    previewBefore=previewStatus();move(2);
    console.log("PAPERSKETCH_INPUT_READY "+JSON.stringify({mode:"pen",pattern:"detail-circles",id:caseIndex===0?"detail-hb":"detail-charcoal",start:[p.x,p.y],end:[q.x,q.y]}));return;
   }
@@ -69,13 +73,27 @@ Rectangle {
    var stats=a.nativeRaster.penInputStats();if(stats[2]!==0)return;
    var finished=Date.now(),marks=verifyMarks(a);
    var entry={id:caseIndex===0?"detail-hb":"detail-charcoal",tool:a.tool,size:a.brushSize,
+    fullscreen:a.fullScreen,pointer_filter_expected:!a.fullScreen,pointer_filter:typeof a.nativeRaster.pointerFilterStats==="function"?a.nativeRaster.pointerFilterStats():null,hover_blocker_active:typeof a.rawHoverBlocked==="boolean"?a.rawHoverBlocked:false,preview_requested:a.fastPenPreview && a.finePreviewEligible(),native_chunk_api_available:typeof a.nativeRaster.takePenInputChunks==="function",
     strokes:a.rawPenStrokes-before,input_samples:samples,malformed_strokes:malformed,open_circles:openCircles,
-    visible:marks,raw_stats:stats,received_delta:stats[0]-statsBefore[0],overflow_delta:stats[1]-statsBefore[1],
+    visible:marks,optical_digest:a.nativeRaster.opticalDigest(),physical_state:a.nativeRaster.materialState(),raw_stats:stats,received_delta:stats[0]-statsBefore[0],overflow_delta:stats[1]-statsBefore[1],
     native_preview_before:previewBefore,native_preview_after:previewStatus(),
-    max_gui_gap_ms:maxGap,finished_ms:finished,native_stats:a.nativeRaster.latencyStats()};
+    max_gui_gap_ms:maxGap,finished_ms:finished,native_stats:a.nativeRaster.latencyStats(),queue_latency:typeof a.nativeRaster.penQueueLatencyStats==="function"?a.nativeRaster.penQueueLatencyStats():null};
    cases.push(entry);
    if(entry.strokes!==500||contacts!==500||samples!==3700||malformed||openCircles||entry.received_delta!==4200||entry.overflow_delta!==0||marks.circles!==100||marks.hatches!==400){finish(false,"Lost or malformed circle/hatch input or missing material marks");return;}
-   caseIndex++;if(caseIndex===2){finish(true,"");return;}move(0);
+   caseIndex++;if(caseIndex===2){
+    if(fullScreenCase){before=a.rawPenStrokes;exitDigest=a.nativeRaster.opticalDigest();move(3);}
+    else finish(true,"");
+    return;
+   }move(0);
+  }
+  if(phase===3&&now-at>700){
+   var button=find(a,"exitFullScreen"),window=bench.Window.window;
+   var center=button.mapToItem(window.contentItem,button.width/2,button.height/2);
+   move(4);console.log("PAPERSKETCH_INPUT_READY "+JSON.stringify({mode:"pen",pattern:"tap",id:"fullscreen-exit-pen",start:[center.x,center.y],end:[center.x,center.y]}));return;
+  }
+  if(phase===4&&!a.fullScreen&&now-at>500){
+   exitCheck={pen_tap:true,returned_to_windowed:true,strokes_added:a.rawPenStrokes-before,artwork_unchanged:a.nativeRaster.opticalDigest()===exitDigest};
+   finish(exitCheck.strokes_added===0&&exitCheck.artwork_unchanged,"Fullscreen exit drew into artwork");
   }
  }
  Connections {

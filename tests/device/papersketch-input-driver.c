@@ -23,7 +23,8 @@ static void release(int fd,int finger){
 int main(int argc,char **argv){
  if((argc!=6 && argc!=7) || (strcmp(argv[1],"finger") && strcmp(argv[1],"pen")))return 2;
  const char *pattern=argc==7?argv[6]:"";
- int detail=!strcmp(pattern,"detail-circles");
+ int detailExit=!strcmp(pattern,"detail-circles-exit");
+ int detail=detailExit||!strcmp(pattern,"detail-circles");
  int micro=!strcmp(pattern,"micro-loop");
  int fidelityDots=!strcmp(pattern,"fidelity-dots"),fidelityShade=!strcmp(pattern,"fidelity-shade");
  int ramp=!strcmp(pattern,"pressure-ramp"),rubber=!strcmp(pattern,"eraser")||!strcmp(pattern,"eraser-hover")||!strcmp(pattern,"eraser-hover-light");
@@ -68,19 +69,23 @@ int main(int argc,char **argv){
     ok&=event(fd,EV_ABS,ABS_PRESSURE,pen_pressure.minimum+(int)((pen_pressure.maximum-pen_pressure.minimum)*.65)+(i%2));
     ok&=event(fd,EV_SYN,SYN_REPORT,0);samples++;usleep(2000);
    }
-   release(fd,0);contacts++;usleep(2000);
+   if(detailExit)release(fd,0);
+   else {ok&=event(fd,EV_ABS,ABS_PRESSURE,0);ok&=event(fd,EV_KEY,BTN_TOUCH,0);ok&=event(fd,EV_SYN,SYN_REPORT,0);}
+   contacts++;usleep(2000);
   }
   release(fd,0);
   if(has_tilt_x)ok&=event(fd,EV_ABS,ABS_TILT_X,tilt_x.value);
   if(has_tilt_y)ok&=event(fd,EV_ABS,ABS_TILT_Y,tilt_y.value);
   if(has_tilt_x||has_tilt_y)ok&=event(fd,EV_SYN,SYN_REPORT,0);
   long long released=ms();close(fd);
-  printf("{\"mode\":\"pen\",\"contact_ms\":%lld,\"release_ms\":%lld,\"last_contact_ms\":%lld,\"contacts\":%d,\"samples\":%d,\"sample_interval_us\":2000,\"lift_interval_us\":2000,\"writes_ok\":%s}\n",started,released,last_contact,contacts,samples,ok&&!stopped?"true":"false");
+  printf("{\"mode\":\"pen\",\"contact_ms\":%lld,\"release_ms\":%lld,\"last_contact_ms\":%lld,\"contacts\":%d,\"samples\":%d,\"proximity_exits_per_contact\":%s,\"sample_interval_us\":2000,\"lift_interval_us\":2000,\"writes_ok\":%s}\n",started,released,last_contact,contacts,samples,detailExit?"true":"false",ok&&!stopped?"true":"false");
   return ok&&!stopped?0:7;
  }
  if(fidelityDots||fidelityShade){
   if(finger){close(fd);return 2;}
   int ok=1,total=fidelityDots?40:1200;
+  if(has_tilt_x)ok&=event(fd,EV_ABS,ABS_TILT_X,0);
+  if(has_tilt_y)ok&=event(fd,EV_ABS,ABS_TILT_Y,0);
   for(int i=0;i<total&&!stopped;i++){
    int pass=i/60,step=i%60;
    int x=fidelityDots?x0+(x1-x0)*i/39:x0+(x1-x0)*(pass%2?59-step:step)/59;
@@ -92,8 +97,12 @@ int main(int argc,char **argv){
    ok&=event(fd,EV_SYN,SYN_REPORT,0);usleep(fidelityDots?4000:2000);
    if(fidelityDots){release(fd,0);usleep(4000);}
   }
-  release(fd,0);long long released=ms();close(fd);
-  printf("{\"mode\":\"pen\",\"contact_ms\":%lld,\"release_ms\":%lld,\"writes_ok\":%s}\n",started,released,ok&&!stopped?"true":"false");return ok&&!stopped?0:7;
+  release(fd,0);
+  if(has_tilt_x)ok&=event(fd,EV_ABS,ABS_TILT_X,tilt_x.value);
+  if(has_tilt_y)ok&=event(fd,EV_ABS,ABS_TILT_Y,tilt_y.value);
+  if(has_tilt_x||has_tilt_y)ok&=event(fd,EV_SYN,SYN_REPORT,0);
+  long long released=ms();close(fd);
+  printf("{\"mode\":\"pen\",\"contact_ms\":%lld,\"release_ms\":%lld,\"upright\":true,\"initial_tilt\":[%d,%d],\"writes_ok\":%s}\n",started,released,tilt_x.value,tilt_y.value,ok&&!stopped?"true":"false");return ok&&!stopped?0:7;
  }
 
  if(finger){event(fd,EV_ABS,ABS_MT_SLOT,0);event(fd,EV_ABS,ABS_MT_TRACKING_ID,(int)(started%65535));event(fd,EV_KEY,BTN_TOUCH,1);event(fd,EV_KEY,BTN_TOOL_FINGER,1);}
