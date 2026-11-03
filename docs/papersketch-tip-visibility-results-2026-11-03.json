@@ -1,0 +1,39 @@
+{
+  "baseline_commit": "c51be8d",
+  "candidate_native_source_sha256": "7c16d20e24324072ea674d1ba99f5996bad8813261acd4ba6c805ec09690b44f",
+  "gray": 223,
+  "positions_per_width": 1024,
+  "blank_first_marks_before": {
+    "width_1": 920,
+    "width_2": 632,
+    "width_3": 168
+  },
+  "blank_first_marks_after": {
+    "width_1": 0,
+    "width_2": 0,
+    "width_3": 0
+  },
+  "native_interval_before_ms": 16,
+  "native_interval_after_ms": 8,
+  "host_private_framebuffer_passed": true,
+  "tablet_arm_private_framebuffer_passed": true,
+  "live_application_tested": false,
+  "physical_panel_latency_measured": false,
+  "installed": false,
+  "saved_work_confirmation_pending": true,
+  "candidate_native_ink_sha256": "80154ba2116f799f7a5e588f186adb34b0be428b8db2a32d6383c4c43fc8a2cc",
+  "candidate_resources_sha256": "311dba3cdfadb3b3bcb0cfe803af6d7c9de5e78ebcaaff28de0702bbca7e5f95",
+  "observed_saved_settings": {
+    "tool": 2,
+    "size": 8,
+    "strength": 0.8,
+    "legacy_tone": 51,
+    "running_preview_permit": "off"
+  },
+  "previous_eligibility_rejected_saved_settings": true,
+  "qml_saved_settings_regression_passed": true,
+  "native_host_groups_passed": 23,
+  "qml_passed": 63,
+  "qml_platform_skips": 2,
+  "runner_safety_tests_passed": 3
+}

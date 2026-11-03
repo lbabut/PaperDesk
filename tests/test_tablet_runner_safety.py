@@ -35,7 +35,7 @@ class TabletRunnerSafetyTests(unittest.TestCase):
             base=Path(directory);tools=base/"bin";tools.mkdir();log=base/"ssh-calls"
             ssh=tools/"ssh";ssh.write_text('#!/bin/sh\nprintf "called" >> "$AUDIT_SSH_LOG"\n');ssh.chmod(0o700)
             env=dict(os.environ,PATH=f"{tools}:{os.environ['PATH']}",AUDIT_SSH_LOG=str(log))
-            for options in [["--detail-fullscreen"],["--detail-check-latency"],["--detail-proximity-exits"],["--detail-no-preview"],["--detail-probe","--latency-probe"],["--detail-probe","--eraser-probe"]]:
+            for options in [["--detail-user-settings"],["--detail-fullscreen"],["--detail-check-latency"],["--detail-proximity-exits"],["--detail-no-preview"],["--detail-probe","--latency-probe"],["--detail-probe","--eraser-probe"]]:
                 result=subprocess.run([__import__("sys").executable,str(ROOT/"tests/run-sketch-native.py"),
                     "--host","unused","--key","unused","--known-hosts","unused"]+options,
                     capture_output=True,text=True,env=env,timeout=5)

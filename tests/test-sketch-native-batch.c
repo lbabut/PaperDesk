@@ -7,20 +7,32 @@ int main(void) {
         int box[4]={(int)(t/2)%100,100,(int)(t/2)%100+2,104};
         merge_batch(&batch,box);flush_batch(&batch,t,0);
     }
-    assert(batch.updates==125);
+    assert(batch.updates==250);
     assert(batch.dirty);
     flush_batch(&batch,2000,1);
-    assert(batch.updates==126 && !batch.dirty);
-    flush_batch(&batch,2000,1);assert(batch.updates==126);
+    assert(batch.updates==251 && !batch.dirty);
+    flush_batch(&batch,2000,1);assert(batch.updates==251);
     int a[4]={40,50,60,70},b[4]={10,90,20,100};
     merge_batch(&batch,a);merge_batch(&batch,b);
     assert(batch.box[0]==10 && batch.box[1]==50 && batch.box[2]==60 && batch.box[3]==100);
     flush_batch(&batch,2001,0);assert(batch.dirty);
-    flush_batch(&batch,2001,1);assert(!batch.dirty && batch.updates==127);
+    flush_batch(&batch,2001,1);assert(!batch.dirty && batch.updates==252);
+    batch.last_ms=100;batch.dirty=1;
+    assert(preview_poll_timeout(&batch,102,1)==6);
+    assert(preview_poll_timeout(&batch,108,1)==0);
+    assert(preview_poll_timeout(&batch,120,1)==0);
+    batch.dirty=0;assert(preview_poll_timeout(&batch,120,0)==ARM_CHECK_MS);
     backend_ready=1;
     parse_arm("fine 10 20 200 300 3 1 .15 .5 .95");assert(arm.on&&arm.fine&&arm.tool==1);
     assert(fine_width(1)==3&&fine_width(.1f)<fine_width(.9f));
     parse_arm("fine 10 20 200 300 3 8 .15 .5 .95");assert(arm.on&&fine_width(.1f)==3);
+    parse_arm("fine 10 20 200 300 8 2 .15 .5 .95 .8");assert(arm.on&&fabsf(arm.strength-.8f)<.00001f);
+    parse_arm("fine 10 20 200 300 8 2 .15 .5 .95");assert(arm.on&&arm.strength==1);
+    const char *badStrength[]={"nan","inf","-.1","0",".01","1.1","junk",".8 junk"};
+    for(unsigned i=0;i<sizeof badStrength/sizeof *badStrength;i++){
+        char command[128];snprintf(command,sizeof command,"fine 10 20 200 300 8 2 .15 .5 .95 %s",badStrength[i]);
+        parse_arm(command);assert(!arm.on);
+    }
     const char *invalid[]={"off","fine 10 20 200 300 nan 1 .15 .5 .95","fine 10 20 200 300 3 7 .15 .5 .95","fine 10 20 200 300 3 6 .15 .5 .95","fine 10 20 200 300 3 1 .5 .4 .95","fine 1400 20 200 300 3 1 .15 .5 .95","fine 10 20 200 300 99 1 .15 .5 .95"};
     for(unsigned i=0;i<sizeof invalid/sizeof *invalid;i++){parse_arm(invalid[i]);assert(!arm.on);}
     backend_ready=0;parse_arm("fine 10 20 200 300 3 1 .15 .5 .95");assert(!arm.on);
@@ -51,11 +63,21 @@ int main(void) {
     for(int y=4;y<20;y++)for(int x=4;x<20;x++)assert(pixels[y*32+x]!=0xffffffffu);
     segment(4,12,20,12,32,0xff000000u,box);
     for(int y=4;y<20;y++)for(int x=4;x<20;x++)assert(pixels[y*32+x]==0xff000000u);
+    // Every subpixel phase of a very pale thin tip has a visible latest pixel.
+    for(int width=1;width<=3;width++)for(int y=0;y<32;y++)for(int x=0;x<32;x++){
+        memset(pixels,255,sizeof pixels);memset(mask,0,sizeof mask);
+        float sx=5+x*.25f,sy=5+y*.25f;
+        segment(sx,sy,sx,sy,width,0xffdfdfdfu,box);
+        int tx=(int)sx,ty=(int)sy;
+        assert(pixels[ty*32+tx]==0xff000000u&&mask[ty*32+tx]==255);
+        assert(tx>=box[0]&&tx<=box[2]&&ty>=box[1]&&ty<=box[3]);
+    }
+    puts("PASS: 3072 pale thin-tip phases visible; pending flush uses remaining 8ms deadline");
     parse_arm("on 4 4 16 16 3 1 3");
     segment(4,12,20,12,32,0xffffffffu,box);
     for(int y=4;y<20;y++)for(int x=4;x<20;x++)assert(pixels[y*32+x]==0xffffffffu);
     puts("PASS: pale guide density, stable screen pattern, existing pigment/mask preservation, opaque ink and legacy eraser");
     puts("PASS: fine-preview capability/permit bounds, pressure and ink widths, invalid permits and clipped native pixels");
-    puts("PASS: 1000 reports coalesced to 126 updates; final tail and union bounds preserved");
+    puts("PASS: 1000 reports coalesced to 251 updates; final tail and union bounds preserved");
     return 0;
 }

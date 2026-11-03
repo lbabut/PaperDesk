@@ -6,6 +6,8 @@ Rectangle {
  color: "white"
  signal close
  property bool fullScreenCase:false
+ property bool userSettingsCase:false
+ function caseId(){return userSettingsCase?(caseIndex===0?"detail-2b-settings":"detail-charcoal-settings"):(caseIndex===0?"detail-hb":"detail-charcoal");}
  property int phase: 0
  property int caseIndex: 0
  property real at: Date.now()
@@ -58,7 +60,7 @@ Rectangle {
   if(now-at>60000){finish(false,"Timeout in phase "+phase);return;}
   if(!a||!a.ready||a.replaying||!a.bitmapMode||!a.rawPenMode)return;
   if(phase===0){
-   a.confirmation="book";a.confirmAction();a.fullScreen=fullScreenCase;a.tool=caseIndex===0?1:4;a.brushSize=3;a.strength=1;a.tone=0;
+   a.confirmation="book";a.confirmAction();a.fullScreen=fullScreenCase;a.tool=caseIndex===0?(userSettingsCase?2:1):4;a.brushSize=userSettingsCase?8:3;a.strength=userSettingsCase ? 0.8 : 1;a.tone=userSettingsCase?51:0;
    before=a.rawPenStrokes;statsBefore=a.nativeRaster.penInputStats();
    contacts=0;samples=0;malformed=0;openCircles=0;maxGap=0;move(1);return;
   }
@@ -66,13 +68,17 @@ Rectangle {
    var surface=find(a,"drawingCanvas"),win=bench.Window.window;
    var p=surface.mapToItem(win.contentItem,200,650),q=surface.mapToItem(win.contentItem,400,850);
    if(typeof a.nativeRaster.resetPenQueueLatencyStats==="function")a.nativeRaster.resetPenQueueLatencyStats();
-   previewBefore=previewStatus();move(2);
-   console.log("PAPERSKETCH_INPUT_READY "+JSON.stringify({mode:"pen",pattern:"detail-circles",id:caseIndex===0?"detail-hb":"detail-charcoal",start:[p.x,p.y],end:[q.x,q.y]}));return;
+   previewBefore=previewStatus();
+   if(userSettingsCase && (!a.finePreviewEligible() || !previewBefore || !previewBefore.armed || !previewBefore.shade_strength)){
+    finish(false,"Saved strength/tone settings did not arm native preview");return;
+   }
+   move(2);
+   console.log("PAPERSKETCH_INPUT_READY "+JSON.stringify({mode:"pen",pattern:"detail-circles",id:caseId(),start:[p.x,p.y],end:[q.x,q.y]}));return;
   }
   if(phase===2&&contacts>=500&&a.activeStroke===null){
    var stats=a.nativeRaster.penInputStats();if(stats[2]!==0)return;
    var finished=Date.now(),marks=verifyMarks(a);
-   var entry={id:caseIndex===0?"detail-hb":"detail-charcoal",tool:a.tool,size:a.brushSize,
+   var entry={id:caseId(),tool:a.tool,size:a.brushSize,strength:a.strength,legacy_tone:a.tone,
     fullscreen:a.fullScreen,pointer_filter_expected:!a.fullScreen,pointer_filter:typeof a.nativeRaster.pointerFilterStats==="function"?a.nativeRaster.pointerFilterStats():null,hover_blocker_active:typeof a.rawHoverBlocked==="boolean"?a.rawHoverBlocked:false,preview_requested:a.fastPenPreview && a.finePreviewEligible(),native_chunk_api_available:typeof a.nativeRaster.takePenInputChunks==="function",
     strokes:a.rawPenStrokes-before,input_samples:samples,malformed_strokes:malformed,open_circles:openCircles,
     visible:marks,optical_digest:a.nativeRaster.opticalDigest(),physical_state:a.nativeRaster.materialState(),raw_stats:stats,received_delta:stats[0]-statsBefore[0],overflow_delta:stats[1]-statsBefore[1],

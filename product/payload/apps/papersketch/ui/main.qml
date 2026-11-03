@@ -137,9 +137,10 @@ Rectangle {
     // Native preview is optional and gated by the extension's fresh acknowledgement.
     property bool fastPenPreview:true
     property bool nativeFinePreview:false
+    property bool nativeShadeStrength:false
     onFastPenPreviewChanged:if(ready)nativeHeartbeat()
     function finePreviewTool(selected,size){return isFinite(size) && size>=1 && size<=16 && ((selected>=0 && selected<6 && selected===Math.floor(selected))||selected===8);}
-    function finePreviewEligible(){return bitmapMode && typeof nativeRaster.writePreviewPermit==="function" && typeof nativeRaster.previewPressureAnchors==="function" && typeof nativeRaster.repairPreview==="function" && fastPenPreview && rawPenEnabled && finePreviewTool(tool,brushSize) && tone===0 && strength===1;}
+    function finePreviewEligible(){return bitmapMode && typeof nativeRaster.writePreviewPermit==="function" && typeof nativeRaster.previewPressureAnchors==="function" && typeof nativeRaster.repairPreview==="function" && fastPenPreview && rawPenEnabled && finePreviewTool(tool,brushSize) && isFinite(strength) && strength>=.05 && strength<=1 && (strength===1 || nativeShadeStrength || tool===8);}
     property bool nativeReady: false
     property bool nativeArmed: false
     property bool nativeStroke: false
@@ -181,8 +182,8 @@ Rectangle {
             var x=new XMLHttpRequest();x.open("GET","file:///tmp/papersketch-ink-status",false);x.send();
             var status=JSON.parse(x.responseText);
             nativeReady=status.ready===true && Math.abs(Date.now()-status.time_ms)<1500;
-            nativeArmed=nativeReady && status.armed===true;nativeFinePreview=nativeReady && status.fine_preview===true;
-        } catch(e) {nativeReady=false;nativeArmed=false;}
+            nativeArmed=nativeReady && status.armed===true;nativeFinePreview=nativeReady && status.fine_preview===true;nativeShadeStrength=nativeReady && status.shade_strength===true;
+        } catch(e) {nativeReady=false;nativeArmed=false;nativeShadeStrength=false;}
         if(!nativeReady)return;
         var win=root.Window.window;
         var state=(win?win.width+"x"+win.height:"no window")+" ready="+ready+" replay="+replaying+" armed="+nativeArmed;
@@ -199,7 +200,7 @@ Rectangle {
         var size=Math.max(1,brushSize*drawingScale);
         if(bitmapMode){
             var anchors=nativeRaster.previewPressureAnchors();
-            nativeWrite("fine "+x0+" "+y0+" "+w+" "+h+" "+size+" "+tool+" "+anchors.join(" "));return;
+            nativeWrite("fine "+x0+" "+y0+" "+w+" "+h+" "+size+" "+tool+" "+anchors.join(" ")+" "+strength);return;
         }
         nativeWrite("on "+x0+" "+y0+" "+w+" "+h+" "+size+" "+(tool===6?1:0)+" "+Math.min(80,size/2));
     }

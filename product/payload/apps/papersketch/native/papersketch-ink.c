@@ -8,6 +8,7 @@
 // is never a source for saved artwork. Unknown xochitl builds stay disabled.
 #define _GNU_SOURCE
 #include <dirent.h>
+#include <ctype.h>
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <link.h>
@@ -56,8 +57,10 @@ static RegionDtor rdtor;
 static ImgInt format, width, height, stride;
 static ImgBits bits;
 
-static struct { int on, x, y, w, h, erase, fine, tool; float size, eraseR, anchors[3]; } arm;
+static struct { int on, x, y, w, h, erase, fine, tool; float size, eraseR, anchors[3], strength; } arm;
 static long long first_update_ms, contact_ms;
+static long max_report_to_submit_ms, max_submit_us;
+static int report_clock_monotonic;
 static unsigned fine_strokes;
 static int preview_active,preview_box[4];
 
@@ -98,18 +101,23 @@ static void status_file(void) {
     char tmp[128];snprintf(tmp,sizeof tmp,"/tmp/papersketch-ink-status.%d",getpid());
     int fd=open(tmp,O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW,0600);
     if(fd<0)return;
-    dprintf(fd,"{\"ready\":%s,\"pid\":%d,\"time_ms\":%lld,\"armed\":%s,\"fine_preview\":true,\"contact_ms\":%lld,\"first_update_ms\":%lld,\"fine_strokes\":%u,\"active\":%s,\"box\":[%d,%d,%d,%d]}\n",
-            backend_ready?"true":"false",getpid(),realtime_ms(),arm.on?"true":"false",contact_ms,first_update_ms,fine_strokes,preview_active?"true":"false",preview_box[0],preview_box[1],preview_box[2],preview_box[3]);
+    dprintf(fd,"{\"ready\":%s,\"pid\":%d,\"time_ms\":%lld,\"armed\":%s,\"fine_preview\":true,\"tip_marker\":true,\"shade_strength\":true,\"preview_interval_ms\":8,\"report_clock_monotonic\":%s,\"max_report_to_submit_ms\":%ld,\"max_submit_us\":%ld,\"contact_ms\":%lld,\"first_update_ms\":%lld,\"fine_strokes\":%u,\"active\":%s,\"box\":[%d,%d,%d,%d]}\n",
+            backend_ready?"true":"false",getpid(),realtime_ms(),arm.on?"true":"false",report_clock_monotonic?"true":"false",max_report_to_submit_ms,max_submit_us,contact_ms,first_update_ms,fine_strokes,preview_active?"true":"false",preview_box[0],preview_box[1],preview_box[2],preview_box[3]);
     close(fd);rename(tmp,"/tmp/papersketch-ink-status");
 }
 static void parse_arm(const char *buf) {
-    int n=0;arm.fine=0;
+    int n=0;arm.fine=0;arm.strength=1;
     if(buf){
         if(!strncmp(buf,"fine ",5)){
             arm.fine=1;arm.erase=0;arm.eraseR=0;
-            n=sscanf(buf,"fine %d %d %d %d %f %d %f %f %f",&arm.x,&arm.y,&arm.w,&arm.h,
-                     &arm.size,&arm.tool,&arm.anchors[0],&arm.anchors[1],&arm.anchors[2]);
-            if(n!=9 || !((arm.tool>=0&&arm.tool<6)||arm.tool==8) || arm.size>32 ||
+            int end=0;
+            n=sscanf(buf,"fine %d %d %d %d %f %d %f %f %f%n",&arm.x,&arm.y,&arm.w,&arm.h,
+                     &arm.size,&arm.tool,&arm.anchors[0],&arm.anchors[1],&arm.anchors[2],&end);
+            if(n==9){
+                const char *tail=buf+end;while(isspace((unsigned char)*tail))tail++;
+                if(*tail){char extra;n=sscanf(tail,"%f %c",&arm.strength,&extra)==1?10:0;}
+            }
+            if((n!=9 && n!=10) || !isfinite(arm.strength) || arm.strength<.05f || arm.strength>1 || !((arm.tool>=0&&arm.tool<6)||arm.tool==8) || arm.size>32 ||
                !isfinite(arm.anchors[0])||!isfinite(arm.anchors[1])||!isfinite(arm.anchors[2])||
                arm.anchors[0]<.001f||arm.anchors[2]>1||arm.anchors[1]-arm.anchors[0]<.04f||
                arm.anchors[2]-arm.anchors[1]<.04f||arm.anchors[2]-arm.anchors[0]<.15f)n=0;
@@ -178,6 +186,13 @@ static void segment(float x0, float y0, float x1, float y1, float w, uint32_t in
             surf.px[y * surf.ps + x] = arm.fine && !arm.erase ? 0xff000000u : ink;
             surf.mk[y * surf.ms + x] = 0xFF;
         }
+    // A sparse pale Bayer cell can miss an entire subpixel-sized nib. Keep
+    // exactly one physical pixel at the latest tip visible, independently of
+    // shade. The body remains tool-shaded; release repairs exact material.
+    if(arm.fine && !arm.erase && x1>=arm.x && x1<arm.x+arm.w && y1>=arm.y && y1<arm.y+arm.h){
+        int tx=(int)x1,ty=(int)y1;
+        surf.px[ty*surf.ps+tx]=0xff000000u;surf.mk[ty*surf.ms+tx]=255;
+    }
     box[0] = bx0; box[1] = by0; box[2] = bx1; box[3] = by1;
 }
 
@@ -194,8 +209,13 @@ static void show(const int b[4]) {
 }
 
 
-#define PREVIEW_INTERVAL_MS 16
-struct PreviewBatch {int box[4],dirty,updates;long last_ms,update_us;};
+#define PREVIEW_INTERVAL_MS 8
+#define PERMIT_CHECK_MS 16
+struct PreviewBatch {int box[4],dirty,updates;long last_ms,update_us;long long oldest_report_ms;};
+static int preview_poll_timeout(const struct PreviewBatch *batch,long now,int stroke) {
+    if(batch->dirty)return clampi(PREVIEW_INTERVAL_MS-(int)(now-batch->last_ms),0,PREVIEW_INTERVAL_MS);
+    return stroke?PREVIEW_INTERVAL_MS:ARM_CHECK_MS;
+}
 static void merge_batch(struct PreviewBatch *batch,const int box[4]) {
     if(!batch->dirty) {memcpy(batch->box,box,sizeof batch->box);batch->dirty=1;return;}
     if(box[0]<batch->box[0])batch->box[0]=box[0];
@@ -207,10 +227,16 @@ static void flush_batch(struct PreviewBatch *batch,long now,int force) {
     if(!batch->dirty || (!force && now-batch->last_ms<PREVIEW_INTERVAL_MS))return;
     struct timespec a,z;clock_gettime(CLOCK_MONOTONIC,&a);
     if(!batch->updates)first_update_ms=realtime_ms();
+    if(batch->oldest_report_ms>0){
+        long age=(long)(now_ms()-batch->oldest_report_ms);
+        if(age>max_report_to_submit_ms)max_report_to_submit_ms=age;
+    }
     show(batch->box);
     clock_gettime(CLOCK_MONOTONIC,&z);
     batch->update_us+=(z.tv_sec-a.tv_sec)*1000000L+(z.tv_nsec-a.tv_nsec)/1000;
-    batch->updates++;batch->dirty=0;batch->last_ms=now;
+    long us=(z.tv_sec-a.tv_sec)*1000000L+(z.tv_nsec-a.tv_nsec)/1000;
+    if(us>max_submit_us)max_submit_us=us;
+    batch->updates++;batch->dirty=0;batch->oldest_report_ms=0;batch->last_ms=now;
     if(batch->updates==1)status_file();
 }
 
@@ -252,6 +278,8 @@ static void *pen_loop(void *arg) {
     (void)arg;
     int pen = open_pen();
     if (pen < 0) { fprintf(stderr, "[papersketch-native] pen not found\n"); return NULL; }
+    int event_clock=CLOCK_MONOTONIC;
+    report_clock_monotonic=ioctl(pen,EVIOCSCLOCKID,&event_clock)==0;
     struct input_absinfo ax = {0}, ay = {0}, ap = {0};
     ioctl(pen, EVIOCGABS(ABS_X), &ax);
     ioctl(pen, EVIOCGABS(ABS_Y), &ay);
@@ -268,9 +296,10 @@ static void *pen_loop(void *arg) {
     struct pollfd pfd = { pen, POLLIN, 0 };
     for (;;) {
         if (!backend_ready && open_surface()) {backend_ready=1;fprintf(stderr,"[papersketch-native] framebuffer layout verified\n");}
-        poll(&pfd, 1, (batch.dirty||stroke)?PREVIEW_INTERVAL_MS:ARM_CHECK_MS);
+        int timeout=preview_poll_timeout(&batch,now_ms(),stroke);
+        poll(&pfd, 1, timeout);
         long t = now_ms();
-        if (t - last_arm >= (stroke&&arm.fine?PREVIEW_INTERVAL_MS:ARM_CHECK_MS)) { read_arm(); last_arm = t; }
+        if (t - last_arm >= (stroke&&arm.fine?PERMIT_CHECK_MS:ARM_CHECK_MS)) { read_arm(); last_arm = t; }
         if(stroke && !arm.on) {
             for(int y=sbox[1];y<=sbox[3];y++)memset(surf.mk+y*surf.ms+sbox[0],0,sbox[2]-sbox[0]+1);
             stroke=0;preview_active=0;have_last=0;batch.dirty=0;status_file();
@@ -301,7 +330,7 @@ static void *pen_loop(void *arg) {
                 if (touch && !blocked_contact && arm.on && rp>ap.minimum && (!erasing || (!arm.fine&&arm.eraseR>0))) {
                     if (!stroke) {
                         if (!open_surface()) { arm.on = 0; continue; }
-                        stroke = 1;preview_active=1; samples=0;first_update_ms=0;contact_ms=realtime_ms();if(arm.fine)fine_strokes++; memset(&batch,0,sizeof batch);t_stroke = now_ms();batch.last_ms=t_stroke-PREVIEW_INTERVAL_MS;
+                        stroke = 1;preview_active=1; samples=0;first_update_ms=0;max_report_to_submit_ms=0;max_submit_us=0;contact_ms=realtime_ms();if(arm.fine)fine_strokes++; memset(&batch,0,sizeof batch);t_stroke = now_ms();batch.last_ms=t_stroke-PREVIEW_INTERVAL_MS;
                         sbox[0] = SCREEN_W; sbox[1] = SCREEN_H; sbox[2] = sbox[3] = 0;
                     }
                     // The panel's portrait frame: x along the digitizer's y, y against its x
@@ -312,10 +341,13 @@ static void *pen_loop(void *arg) {
                         if (erasing) segment(have_last ? lx : sx, have_last ? ly : sy, sx, sy, 2 * arm.eraseR*(0.18f+0.82f*fminf(1,fmaxf(0,p))), 0xFFFFFFFFu, b);
                         else if(arm.fine){
                             unsigned gray=sketchPreviewGray(arm.tool,fine_pressure(p));
+                            if(arm.tool!=8)gray=(unsigned)(255-(255-gray)*arm.strength+.5f);
                             segment(have_last?lx:sx,have_last?ly:sy,sx,sy,fine_width(p),
                                     0xff000000u|gray*0x010101u,b);
                         }
                         else segment(have_last ? lx : sx, have_last ? ly : sy, sx, sy, arm.size*(0.18f+0.82f*fminf(1,fmaxf(0,p))), 0xFF000000u, b);
+                        if(!batch.dirty && report_clock_monotonic)
+                            batch.oldest_report_ms=(long long)e->time.tv_sec*1000+e->time.tv_usec/1000;
                         merge_batch(&batch,b);flush_batch(&batch,now_ms(),0);samples++;
                         if (b[0] < sbox[0]) sbox[0] = b[0];
                         if (b[1] < sbox[1]) sbox[1] = b[1];

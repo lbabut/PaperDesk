@@ -4,6 +4,15 @@ Device: authenticated reMarkable 2, IMG_VERSION 3.29.0.153, Qt 6.10.3,
 exact-build native preview backend. Source baseline: `346a58f` (4.2.7 plus
 local latency/preview work). This is a local tablet trial, not a public release.
 
+Follow-up user feedback exposed a coverage gap: the saved 2B/8px/strength-0.8/
+legacy-tone-51 configuration disabled native preview, while the earlier detail
+probes forced strength 1 / tone 0. The shaded preview also had empty first-tip
+pixels at some subpixel phases. Fixes and a settings-specific regression are
+prepared, with installation/live acceptance pending saved-work confirmation.
+See [the preview follow-up](papersketch-fine-preview-2026-11-03.md#saved-settings-could-disable-the-entire-fast-path).
+The earlier queue measurements do not establish optical responsiveness for the
+user's actual settings.
+
 ## Finding and retained change
 
 The small-nib material kernel is inexpensive. A standalone alternating ARM

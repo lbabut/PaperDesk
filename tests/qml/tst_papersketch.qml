@@ -52,6 +52,8 @@ Item {
             function advancePenInput(tool,size,strength,x,y,p,first,tx,ty){rawCalls++;rawX=x;rawY=y;return true}
             property int previewWrites:0
             function writePreviewPermit(value){previewWrites++;return true}
+            function previewPressureAnchors(){return [.15,.5,.95]}
+            function repairPreview(){return true}
             property string preferencesDocument:""
             property int preferencesWrites:0
             property bool preferencesFail:false
@@ -166,6 +168,19 @@ Item {
             var writes=backend.previewWrites;a.brushSize=7;a.brushSize=8;a.brushSize=9;
             wait(650);verify(slider.pressed);compare(a.nativeReady,true);compare(backend.previewWrites,writes);compare(backend.preferencesWrites,0);
             slider.pressed=false;tryCompare(backend,"preferencesWrites",1,1500);
+            a.nativeRaster=old;backend.destroy();
+        }
+        function test_device_detail_harness_compiles(){
+            var component=Qt.createComponent("../device/papersketch-detail.qml");
+            compare(component.status,Component.Ready,component.errorString());
+        }
+        function test_fine_preview_accepts_saved_strength_and_legacy_tone(){
+            var a=scene.app,old=a.nativeRaster,backend=realismBackend.createObject(scene);
+            backend.materialAvailable=true;backend.rawPenInputAvailable=true;a.nativeRaster=backend;a.nativeRasterActive=true;
+            a.fastPenPreview=true;a.tool=2;a.brushSize=8;a.strength=.8;a.tone=51;
+            a.nativeShadeStrength=true;verify(a.rawPenEnabled);verify(a.finePreviewEligible());
+            a.nativeShadeStrength=false;verify(!a.finePreviewEligible());
+            a.strength=1;verify(a.finePreviewEligible()); // Legacy tone is not used by the material renderer.
             a.nativeRaster=old;backend.destroy();
         }
         function test_fullscreen_exit_is_not_raw_artwork(){

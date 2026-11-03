@@ -57,3 +57,5 @@ The separate fidelity/shading driver now fixes upright tilt before injection and
 restores it afterwards. Its earlier uncontrolled runs must not be treated as
 optically equivalent across changing physical stylus states. Hardware validation
 of that driver correction is pending the user finishing current work.
+
+Use `--detail-user-settings` for a separate acceptance run with 2B/charcoal 8px, strength 0.8 and legacy tone 51. It fails before injecting if these settings do not arm a strength-aware native preview; the previous full-strength-only workload could miss this disabling condition. It retains the same 100-circle/400-hatch pattern and all input integrity checks.

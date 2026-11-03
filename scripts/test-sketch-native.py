@@ -15,6 +15,12 @@ pattern_test = work / 'detail-pattern'
 subprocess.run(['gcc', '-std=c11', '-Wall', '-Wextra', '-Werror',
                 str(root / 'tests/test-sketch-detail-pattern.c'), '-o', str(pattern_test)], check=True)
 subprocess.run([str(pattern_test)], check=True)
+# Compile the actual fast-pen path against a private framebuffer: no device I/O.
+preview_test = work / 'preview-batch'
+subprocess.run(['gcc', '-O2', '-Wall', '-Wextra', '-Wno-format-truncation',
+                str(root / 'tests/test-sketch-native-batch.c'), '-o', str(preview_test),
+                '-ldl', '-lpthread', '-lm'], check=True)
+subprocess.run([str(preview_test)], check=True)
 subprocess.run([str(sdk / 'lib/qt6/libexec/moc'), '-I' + str(include),
                 str(root / 'product/payload/apps/papersketch/native/papersketch-raster.cpp'),
                 '-o', str(work / 'papersketch-raster.moc')], check=True)

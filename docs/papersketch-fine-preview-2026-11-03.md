@@ -69,3 +69,61 @@ physical state matched the preceding final acceptance run; all 14 saved files
 were preserved. These are software queue timings, not optical panel latency.
 The physical appearance still needs the user's assessment during ordinary
 hand drawing. Sanitized evidence: [shade results](papersketch-preview-shade-results-2026-11-03.json).
+
+## Thin-tip visibility correction (subsequent user feedback)
+
+The shaded guide could submit an update containing no black pixel at the actual
+nib. At gray 223, a sweep of 1024 subpixel positions produced 920 empty first
+marks at width 1, 632 at width 2 and 168 at width 3. This is a demonstrated
+visibility defect, separate from queue age or physical panel response time.
+
+The preview now pins one black physical pixel at the latest in-canvas tip,
+independently of the body raster. This deliberately prioritizes a visible
+location cue; the one-pixel tip can be darker than its selected material.
+Shading across the rest of the footprint and exact release repair remain.
+The same sweep now has zero empty marks at all three widths. Regression coverage
+also asserts each tip lies within the submitted repair box. The endpoint pixel
+never writes outside the canvas or into saved artwork.
+
+The provisional update interval is reduced from 16 to 8ms. Polling a pending
+update uses the remaining deadline instead of restarting a full wait after the
+last input report. Permit checks retain their 16ms rate. For a deterministic
+500 Hz stream, 1000 reports now generate 250 regular updates plus one tail.
+Status adds a monotonic-input-clock capability, maximum event-to-submit age and
+maximum update-call duration, allowing future device runs to distinguish native
+input backlog from framebuffer submission cost. These measurements do not
+measure physical pixel visibility.
+
+Private-framebuffer regressions passed on host and tablet ARM, including all
+3072 thin-tip positions, clipping, mask preservation, legacy erasure, pending
+flush deadlines and update batching. The standard native suite now includes
+this C test automatically. Installation and live panel regression for this
+follow-up require saved-work confirmation; the previously deployed shade-only
+module is retained until that confirmation arrives.
+
+
+### Saved settings could disable the entire fast path
+
+Read-only inspection found saved tool 2, size 8, strength 0.8 and legacy tone 51;
+the running preview permit was `off`. The old eligibility predicate required
+strength exactly 1 and tone exactly 0. Thus the full-strength diagnostics did
+not exercise the configuration used in this saved session. This is a separate,
+more direct cause than sparse-tip visibility: that configuration never armed
+the native preview at all.
+
+Eligibility now accepts valid material strengths from .05 to 1, with an explicit
+`shade_strength` native capability for fractional strengths. The fine permit
+accepts an optional final strength argument (old nine-field permits default to
+1); invalid and trailing arguments are rejected. The estimated optical density
+scales with strength, and the latest one-pixel position cue remains visible.
+Rapidograph remains opaque, consistent with its exact material path. Legacy
+tone no longer disables preview: the native bitmap renderer already passes
+zero tone to the material engine, so that old vector preference does not change
+its authoritative output. Saved user settings themselves are not rewritten.
+
+The QML regression covers the observed 2B/8px/.8/51 configuration and capability
+fallback. A new `--detail-user-settings` tablet mode uses it and charcoal 8px
+at the same strength/tone, requiring native arming before input injection. Host
+validation passed all 23 native groups plus C preview/workload checks, and
+63 QML checks with 2 platform skips. No live restart or new module installation
+has occurred without the pending saved-work confirmation.
