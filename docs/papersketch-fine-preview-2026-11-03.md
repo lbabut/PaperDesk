@@ -36,3 +36,36 @@ Raw device reports, source/resource hashes, backups and logs stay local in `work
 
 
 Deployment status: superseded by the [follow-up latency audit](papersketch-latency-audit-2026-11-03.md). The final UI disarm guards, passive artwork layer and scoped native pointer filter are installed in the local tablet trial. The first pre-preview backup remains `/home/root/.local/state/papersketch-install.xtsyK1`. See the follow-up audit for the inspection incident, saved-state verification and final acceptance measurements. Public release metadata and website deployment remain unchanged.
+
+## Tool-matched provisional shade (follow-up)
+
+The leading trace now approximates the selected material's gray instead of
+painting every tool solid black. Six 17-entry pressure tables are sampled from
+upright size-3 material lines on fresh plain paper; calibrated pressure selects
+and interpolates the shade. Rapidograph remains opaque black. This is a cheap
+appearance estimate: paper kind, accumulated pigment, wear and tilt still come
+from the authoritative material renderer.
+
+The existing DU/pen waveform remains binary. A stable screen-anchored 8x8 Bayer
+pattern, with the same thresholds as the final fast display conversion,
+represents the provisional gray. Only black dots are written; skipped pixels
+and masks remain untouched, preserving existing artwork under a light stroke.
+Repeated samples do not progressively darken the pattern. Very light pressures
+retain a minimum 1/8-density guide, then the ordinary release repair restores
+the exact pixels. No page buffer, allocation, file write or material calculation
+was added per pen sample.
+
+Host calibration regressions compare all 102 table anchors with actual material
+output and check every Bayer threshold. Native C regressions run on both host
+and tablet ARM, checking density, stable repeated coverage, clipping, unchanged
+pigment/masks at skipped pixels, opaque ink, legacy white erasure and update
+batching. The test framebuffer is private RAM and never touches the real panel.
+
+Deployed SHA-256 was verified against the local ARM module. The on-tablet
+500 Hz detail regression passed 500 contacts / 3700 down samples for each of
+HB and charcoal. Mean queue age was 4.23 / 4.46ms; release tails were 6 / 10ms.
+Each tool recorded all 500 native preview contacts. Full optical digests and
+physical state matched the preceding final acceptance run; all 14 saved files
+were preserved. These are software queue timings, not optical panel latency.
+The physical appearance still needs the user's assessment during ordinary
+hand drawing. Sanitized evidence: [shade results](papersketch-preview-shade-results-2026-11-03.json).

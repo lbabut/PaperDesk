@@ -23,6 +23,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
+#include "sketch-preview-shade.h"
 
 #define ARM_FILE "/tmp/papersketch-ink"
 #define ARM_STALE_S 3       // s without a heartbeat from Paper Sketch: off
@@ -171,7 +172,10 @@ static void segment(float x0, float y0, float x1, float y1, float w, uint32_t in
             t = t < 0 ? 0 : t > 1 ? 1 : t;
             float ex = px - t * dx, ey = py - t * dy;
             if (ex * ex + ey * ey > r * r) continue;
-            surf.px[y * surf.ps + x] = ink;
+            // DU pen mode is binary. Leave skipped pixels and their masks
+            // untouched so pale previews cannot erase existing artwork.
+            if(arm.fine && !arm.erase && !sketchPreviewDot(ink&255,x,y))continue;
+            surf.px[y * surf.ps + x] = arm.fine && !arm.erase ? 0xff000000u : ink;
             surf.mk[y * surf.ms + x] = 0xFF;
         }
     box[0] = bx0; box[1] = by0; box[2] = bx1; box[3] = by1;
@@ -211,10 +215,14 @@ static void flush_batch(struct PreviewBatch *batch,long now,int force) {
 }
 
 // A cheap visible silhouette only. The material engine remains authoritative.
-static float fine_width(float p) {
-    if(arm.tool==8)return arm.size;
+static float fine_pressure(float p) {
     const float x[]={0,arm.anchors[0],arm.anchors[1],arm.anchors[2],1},y[]={0,.15f,.5f,.95f,1};
     for(int i=1;i<5;i++)if(p<=x[i]){p=x[i]>x[i-1]?y[i-1]+(p-x[i-1])*(y[i]-y[i-1])/(x[i]-x[i-1]):y[i];break;}
+    return fminf(1,fmaxf(0,p));
+}
+static float fine_width(float p) {
+    if(arm.tool==8)return arm.size;
+    p=fine_pressure(p);
     const float minimum[]={.22f,.20f,.18f,.16f,.35f,.40f},exponent[]={.90f,1.05f,1.15f,1.20f,.80f,.70f};
     return arm.size*(minimum[arm.tool]+(1-minimum[arm.tool])*powf(fminf(1,fmaxf(0,p)),exponent[arm.tool]));
 }
@@ -302,7 +310,11 @@ static void *pen_loop(void *arg) {
                         float p = (rp - ap.minimum) / (float)(ap.maximum - ap.minimum);
                         int b[4];
                         if (erasing) segment(have_last ? lx : sx, have_last ? ly : sy, sx, sy, 2 * arm.eraseR*(0.18f+0.82f*fminf(1,fmaxf(0,p))), 0xFFFFFFFFu, b);
-                        else if(arm.fine)segment(have_last?lx:sx,have_last?ly:sy,sx,sy,fine_width(p),0xFF000000u,b);
+                        else if(arm.fine){
+                            unsigned gray=sketchPreviewGray(arm.tool,fine_pressure(p));
+                            segment(have_last?lx:sx,have_last?ly:sy,sx,sy,fine_width(p),
+                                    0xff000000u|gray*0x010101u,b);
+                        }
                         else segment(have_last ? lx : sx, have_last ? ly : sy, sx, sy, arm.size*(0.18f+0.82f*fminf(1,fmaxf(0,p))), 0xFF000000u, b);
                         merge_batch(&batch,b);flush_batch(&batch,now_ms(),0);samples++;
                         if (b[0] < sbox[0]) sbox[0] = b[0];

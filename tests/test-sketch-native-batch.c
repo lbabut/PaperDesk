@@ -35,6 +35,26 @@ int main(void) {
         else if(pixels[y*32+x]==0xff000000u){assert(mask[y*32+x]==255);dark++;}
     }
     assert(dark>0);
+    // Pale provisional ink must leave every skipped pixel and mask untouched.
+    for(int i=0;i<32*32;i++){pixels[i]=0xff777777u;mask[i]=17;}
+    segment(4,12,20,12,32,0xffaaaaaau,box);int shadeDots=0;
+    for(int y=4;y<20;y++)for(int x=4;x<20;x++){
+        int at=y*32+x;
+        if(sketchPreviewDot(170,x,y)){assert(pixels[at]==0xff000000u&&mask[at]==255);shadeDots++;}
+        else assert(pixels[at]==0xff777777u&&mask[at]==17);
+    }
+    assert(shadeDots==88); // 22/64 coverage, all four Bayer cells.
+    uint32_t once[32*32];memcpy(once,pixels,sizeof once);
+    segment(4,12,20,12,32,0xffaaaaaau,box);
+    assert(!memcmp(once,pixels,sizeof once)); // No temporal darkening.
+    segment(4,12,20,12,32,0xffffffffu,box); // Almost invisible pressure: faint guide, never white paint.
+    for(int y=4;y<20;y++)for(int x=4;x<20;x++)assert(pixels[y*32+x]!=0xffffffffu);
+    segment(4,12,20,12,32,0xff000000u,box);
+    for(int y=4;y<20;y++)for(int x=4;x<20;x++)assert(pixels[y*32+x]==0xff000000u);
+    parse_arm("on 4 4 16 16 3 1 3");
+    segment(4,12,20,12,32,0xffffffffu,box);
+    for(int y=4;y<20;y++)for(int x=4;x<20;x++)assert(pixels[y*32+x]==0xffffffffu);
+    puts("PASS: pale guide density, stable screen pattern, existing pigment/mask preservation, opaque ink and legacy eraser");
     puts("PASS: fine-preview capability/permit bounds, pressure and ink widths, invalid permits and clipped native pixels");
     puts("PASS: 1000 reports coalesced to 126 updates; final tail and union bounds preserved");
     return 0;

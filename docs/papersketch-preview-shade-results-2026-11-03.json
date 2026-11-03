@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "id": "detail-hb",
+      "mean_queue_ms": 4.230476190476191,
+      "release_to_drained_ms": 6,
+      "native_preview_contacts": 500,
+      "optical_equal": true,
+      "physical_equal": true
+    },
+    {
+      "id": "detail-charcoal",
+      "mean_queue_ms": 4.462142857142857,
+      "release_to_drained_ms": 10,
+      "native_preview_contacts": 500,
+      "optical_equal": true,
+      "physical_equal": true
+    }
+  ],
+  "saved_files_preserved": true,
+  "saved_file_count": 14,
+  "native_ink_sha256": "38eec68ce63c76312a3479f52d6822b5d5db10eaaa5e4e09cb108c8f516c77ac",
+  "physical_panel_latency_measured": false,
+  "visual_user_assessment_pending": true
+}
