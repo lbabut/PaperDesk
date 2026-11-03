@@ -188,3 +188,7 @@ are not included in the release package.
 Backspace and Enter are normalised before dispatch so that Qt key values, X11
 keysyms, plain ASCII control codes, and control codes carried by the encoded
 Unicode path all produce real RDP scan-code press/release pairs.
+
+The dedicated Paper Sketch tablet probe `--detail-probe` exercises 100 tiny circles
+and 400 surrounding hatches per tool at a target 500 Hz, checks input/material
+integrity and records responsiveness. See [the hardware test instructions](../docs/papersketch-detail-test.md).

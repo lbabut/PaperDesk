@@ -10,6 +10,11 @@ sdk = cache / 'papersketch-qt-sdk/root/usr'
 include = sdk / 'include/x86_64-linux-gnu/qt6'
 work = root / 'work/native-tests'
 work.mkdir(parents=True, exist_ok=True)
+# The same deterministic workload is compiled into the real evdev injector.
+pattern_test = work / 'detail-pattern'
+subprocess.run(['gcc', '-std=c11', '-Wall', '-Wextra', '-Werror',
+                str(root / 'tests/test-sketch-detail-pattern.c'), '-o', str(pattern_test)], check=True)
+subprocess.run([str(pattern_test)], check=True)
 subprocess.run([str(sdk / 'lib/qt6/libexec/moc'), '-I' + str(include),
                 str(root / 'product/payload/apps/papersketch/native/papersketch-raster.cpp'),
                 '-o', str(work / 'papersketch-raster.moc')], check=True)

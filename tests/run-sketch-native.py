@@ -30,6 +30,7 @@ p.add_argument("--workflow-probe",action="store_true")
 p.add_argument("--pdf-probe",action="store_true")
 p.add_argument("--realism-probe",action="store_true")
 p.add_argument("--eraser-probe",action="store_true")
+p.add_argument("--detail-probe",action="store_true",help="100 tiny circles and 400 hatches per tool at 500 Hz")
 p.add_argument("--fidelity-probe",action="store_true")
 p.add_argument("--preferences-probe",action="store_true")
 p.add_argument("--fidelity-brush-size",type=int,choices=range(1,81),default=32)
@@ -40,9 +41,11 @@ if a.micro_probe:a.latency_probe=True;a.latency_fresh_only=True
 if a.fidelity_brush_size!=32 and not a.fidelity_probe:p.error("--fidelity-brush-size requires --fidelity-probe")
 if a.latency_fresh_only and not a.latency_probe:
     p.error("--latency-fresh-only requires --latency-probe")
-if a.latency_probe and any((a.smoke,a.input_probe,a.shading_probe,a.controls_probe,a.workflow_probe,a.realism_probe,a.pdf_probe,a.eraser_probe,a.fidelity_probe,a.preferences_probe)):
+if a.latency_probe and any((a.smoke,a.input_probe,a.shading_probe,a.controls_probe,a.workflow_probe,a.realism_probe,a.pdf_probe,a.eraser_probe,a.fidelity_probe,a.preferences_probe,a.detail_probe)):
     p.error("--latency-probe must run separately from other probes")
-uses_input=a.fidelity_probe or a.eraser_probe or a.pdf_probe or a.input_probe or a.shading_probe or a.latency_probe or a.controls_probe or a.workflow_probe or a.realism_probe
+if a.detail_probe and any((a.smoke,a.input_probe,a.shading_probe,a.controls_probe,a.workflow_probe,a.realism_probe,a.pdf_probe,a.eraser_probe,a.fidelity_probe,a.preferences_probe)):
+    p.error("--detail-probe must run separately from other probes")
+uses_input=a.detail_probe or a.fidelity_probe or a.eraser_probe or a.pdf_probe or a.input_probe or a.shading_probe or a.latency_probe or a.controls_probe or a.workflow_probe or a.realism_probe
 root=pathlib.Path(__file__).resolve().parents[1]
 work=root/"work/papersketch-native"
 app=work/"papersketch-native-bench"
@@ -68,7 +71,7 @@ for name,text in [("baseline",baseline),("constant-fast",candidate)]:
     shutil.copy2(source/"engine.js",folder/"engine.js")
     for qml_name in ("native-tile.qml","ToolIcon.qml"):
         shutil.copy2(source/"ui"/qml_name,folder/"ui"/qml_name)
-harness=(root/("tests/device/papersketch-preferences.qml" if a.preferences_probe else "tests/device/papersketch-input-fidelity.qml" if a.fidelity_probe else "tests/device/papersketch-stylus-eraser.qml" if a.eraser_probe else "tests/device/papersketch-latency.qml" if a.latency_probe else "tests/device/papersketch-realism.qml" if a.realism_probe else "tests/device/papersketch-workflow.qml" if a.workflow_probe else "tests/device/papersketch-controls.qml" if a.controls_probe else "tests/device/papersketch-shading.qml" if a.shading_probe else "tests/device/papersketch-input.qml" if a.input_probe else "tests/device/papersketch-native.qml")).read_text()
+harness=(root/("tests/device/papersketch-detail.qml" if a.detail_probe else "tests/device/papersketch-preferences.qml" if a.preferences_probe else "tests/device/papersketch-input-fidelity.qml" if a.fidelity_probe else "tests/device/papersketch-stylus-eraser.qml" if a.eraser_probe else "tests/device/papersketch-latency.qml" if a.latency_probe else "tests/device/papersketch-realism.qml" if a.realism_probe else "tests/device/papersketch-workflow.qml" if a.workflow_probe else "tests/device/papersketch-controls.qml" if a.controls_probe else "tests/device/papersketch-shading.qml" if a.shading_probe else "tests/device/papersketch-input.qml" if a.input_probe else "tests/device/papersketch-native.qml")).read_text()
 if a.fidelity_probe:harness=harness.replace("property int shadingSize:32","property int shadingSize:"+str(a.fidelity_brush_size))
 if a.latency_fresh_only:
     marker="property bool freshOnly:false"
@@ -200,8 +203,8 @@ try:
                 event=next(e for e in report["evdev_injections"] if e["id"]==case["id"])
                 case["tile_visible_before_release"]=case["tile_seen_ms"]<event["release_ms"]
                 case["injected_duration_ms"]=event["release_ms"]-event["contact_ms"]
-    if a.realism_probe or a.latency_probe or a.fidelity_probe or a.eraser_probe or a.preferences_probe:
-        probe_name="preferences_probe" if a.preferences_probe else "latency_probe" if a.latency_probe else "fidelity_probe" if a.fidelity_probe else "eraser_probe" if a.eraser_probe else "realism_probe"
+    if a.detail_probe or a.realism_probe or a.latency_probe or a.fidelity_probe or a.eraser_probe or a.preferences_probe:
+        probe_name="detail_probe" if a.detail_probe else "preferences_probe" if a.preferences_probe else "latency_probe" if a.latency_probe else "fidelity_probe" if a.fidelity_probe else "eraser_probe" if a.eraser_probe else "realism_probe"
         runtime_errors=[line for line in logs.splitlines() if ("bench.qml:" in line or "baseline/ui/main.qml:" in line) and any(error in line for error in ("TypeError:","ReferenceError:","SyntaxError:"))]
         result[probe_name]["runtime_errors"]=runtime_errors
         result[probe_name]["passed"]=result[probe_name]["passed"] and not runtime_errors
@@ -248,6 +251,27 @@ try:
         probe["timing_origin"]="tablet CLOCK_REALTIME contact_ms versus QML Date.now/native epoch timestamps"
         probe["physical_panel_latency_measured"]=False
         result["cases"]=probe["cases"]
+    if a.detail_probe:
+        probe=result["detail_probe"]
+        events={e["id"]:e for e in report.get("evdev_injections",[])}
+        for case in probe["cases"]:
+            event=events.get(case["id"],{})
+            case["injection"]=event
+            if not (event.get("writes_ok") and event.get("contacts")==500 and event.get("samples")==3700):
+                probe["passed"]=False
+            if event.get("release_ms"):
+                case["release_to_drained_ms"]=case["finished_ms"]-event["release_ms"]
+            before=case.get("native_preview_before") or {}
+            after=case.get("native_preview_after") or {}
+            case["native_preview_checked"]=bool(before.get("ready") and before.get("armed") and before.get("fine_preview"))
+            if case["native_preview_checked"]:
+                case["native_preview_contacts"]=after.get("fine_strokes",0)-before.get("fine_strokes",0)
+                if case["native_preview_contacts"]!=500 or after.get("active") is not False:
+                    probe["passed"]=False
+                if after.get("first_update_ms") and event.get("last_contact_ms"):
+                    case["last_contact_to_native_preview_submit_ms"]=after["first_update_ms"]-event["last_contact_ms"]
+
+        probe["physical_panel_latency_measured"]=False
     report["results"]=result
     report["runtime_seconds"]=round(time.monotonic()-started,2)
     print(json.dumps(result,indent=2),flush=True)
@@ -320,3 +344,7 @@ if a.fidelity_probe:
 
 if a.preferences_probe:
     assert report["results"]["preferences_probe"]["passed"],"Independent tool preferences probe failed"
+
+if a.detail_probe:
+    assert report["results"]["detail_probe"]["passed"],"Tiny circles and surrounding hatching probe failed"
+    assert len(report["results"]["detail_probe"]["cases"])==2

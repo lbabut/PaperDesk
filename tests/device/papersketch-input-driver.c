@@ -1,4 +1,5 @@
 #define _DEFAULT_SOURCE
+#include "papersketch-detail-pattern.h"
 #include <linux/input.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
@@ -22,13 +23,14 @@ static void release(int fd,int finger){
 int main(int argc,char **argv){
  if((argc!=6 && argc!=7) || (strcmp(argv[1],"finger") && strcmp(argv[1],"pen")))return 2;
  const char *pattern=argc==7?argv[6]:"";
+ int detail=!strcmp(pattern,"detail-circles");
  int micro=!strcmp(pattern,"micro-loop");
  int fidelityDots=!strcmp(pattern,"fidelity-dots"),fidelityShade=!strcmp(pattern,"fidelity-shade");
  int ramp=!strcmp(pattern,"pressure-ramp"),rubber=!strcmp(pattern,"eraser")||!strcmp(pattern,"eraser-hover")||!strcmp(pattern,"eraser-hover-light");
  int shading=!strcmp(pattern,"shade"),tap=!strcmp(pattern,"tap"),tilt=!strcmp(pattern,"tilt"),upright=!strcmp(pattern,"upright"),contact=!strcmp(pattern,"contact");
  int calibration=!strcmp(pattern,"calibration-light")?1:!strcmp(pattern,"calibration-normal")?2:!strcmp(pattern,"calibration-firm")?3:0;
- if(argc==7&&!micro&&!fidelityDots&&!fidelityShade&&!shading&&!tap&&!tilt&&!upright&&!contact&&!calibration&&!ramp&&!rubber)return 2;
- if((micro||shading||tilt||upright||calibration||ramp||rubber)&&strcmp(argv[1],"pen"))return 2;
+ if(argc==7&&!detail&&!micro&&!fidelityDots&&!fidelityShade&&!shading&&!tap&&!tilt&&!upright&&!contact&&!calibration&&!ramp&&!rubber)return 2;
+ if((detail||micro||shading||tilt||upright||calibration||ramp||rubber)&&strcmp(argv[1],"pen"))return 2;
  if(contact&&strcmp(argv[1],"finger"))return 2;
  int finger=!strcmp(argv[1],"finger");const char *path=finger?"/dev/input/event2":"/dev/input/event1";
  int fd=open(path,O_RDWR|O_NONBLOCK);if(fd<0){perror(path);return 3;}
@@ -46,6 +48,36 @@ int main(int argc,char **argv){
  if(x0<0||x0>maxx||x1<0||x1>maxx||y0<0||y0>maxy||y1<0||y1>maxy){close(fd);return 6;}
  signal(SIGINT,stop_signal);signal(SIGTERM,stop_signal);
  long long started=ms();
+ if(detail){
+  int ok=1,contacts=0,samples=0;long long last_contact=0;
+  if(has_tilt_x)ok&=event(fd,EV_ABS,ABS_TILT_X,0);
+  if(has_tilt_y)ok&=event(fd,EV_ABS,ABS_TILT_Y,0);
+  int firstx,firsty;detail_point(0,0,&firstx,&firsty);
+  ok&=event(fd,EV_KEY,BTN_TOUCH,0);ok&=event(fd,EV_ABS,ABS_PRESSURE,0);
+  ok&=event(fd,EV_ABS,ABS_X,x0+(x1-x0)*firstx/10000+1);
+  ok&=event(fd,EV_ABS,ABS_Y,y0+(y1-y0)*firsty/10000+1);
+  ok&=event(fd,EV_SYN,SYN_REPORT,0);usleep(2000);
+  for(int stroke=0;stroke<DETAIL_CONTACTS&&!stopped&&ok;stroke++){
+   last_contact=ms();
+   ok&=event(fd,EV_KEY,BTN_TOOL_RUBBER,0);ok&=event(fd,EV_KEY,BTN_TOOL_PEN,1);ok&=event(fd,EV_KEY,BTN_TOUCH,1);
+   for(int i=0;i<detail_length(stroke)&&!stopped&&ok;i++){
+    int u,v;detail_point(stroke,i,&u,&v);
+    ok&=event(fd,EV_ABS,ABS_X,x0+(x1-x0)*u/10000);
+    ok&=event(fd,EV_ABS,ABS_Y,y0+(y1-y0)*v/10000);
+    // A 1-unit pressure alternation prevents kernel suppression of a report.
+    ok&=event(fd,EV_ABS,ABS_PRESSURE,pen_pressure.minimum+(int)((pen_pressure.maximum-pen_pressure.minimum)*.65)+(i%2));
+    ok&=event(fd,EV_SYN,SYN_REPORT,0);samples++;usleep(2000);
+   }
+   release(fd,0);contacts++;usleep(2000);
+  }
+  release(fd,0);
+  if(has_tilt_x)ok&=event(fd,EV_ABS,ABS_TILT_X,tilt_x.value);
+  if(has_tilt_y)ok&=event(fd,EV_ABS,ABS_TILT_Y,tilt_y.value);
+  if(has_tilt_x||has_tilt_y)ok&=event(fd,EV_SYN,SYN_REPORT,0);
+  long long released=ms();close(fd);
+  printf("{\"mode\":\"pen\",\"contact_ms\":%lld,\"release_ms\":%lld,\"last_contact_ms\":%lld,\"contacts\":%d,\"samples\":%d,\"sample_interval_us\":2000,\"lift_interval_us\":2000,\"writes_ok\":%s}\n",started,released,last_contact,contacts,samples,ok&&!stopped?"true":"false");
+  return ok&&!stopped?0:7;
+ }
  if(fidelityDots||fidelityShade){
   if(finger){close(fd);return 2;}
   int ok=1,total=fidelityDots?40:1200;
