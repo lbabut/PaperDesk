@@ -43,8 +43,8 @@ class WebsiteDesignTests(unittest.TestCase):
         page = Page(text)
         image = next(a['content'] for t, a in page.tags
                      if t == 'meta' and a.get('property') == 'og:image')
-        self.assertEqual(image, 'https://paperdesk.lukaszbabut.info/assets/press/paperdesk-social-v4-1.png')
-        self.assertTrue((ROOT / 'website/assets/press/paperdesk-social-v4-1.png').is_file())
+        self.assertEqual(image, 'https://paperdesk.lukaszbabut.info/assets/press/paperdesk-social-crayon.png')
+        self.assertTrue((ROOT / 'website/assets/press/paperdesk-social-crayon.png').is_file())
         hero = text[text.index('id="top"'):text.index('class="edition-strip"')]
         self.assertIn('Requires XOVI + AppLoad', hero)
         self.assertIn('href="#compatibility"', hero)

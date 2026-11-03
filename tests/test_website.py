@@ -88,24 +88,24 @@ class WebsiteTests(unittest.TestCase):
         with self.request("/") as response:
             body = response.read().decode()
             self.assertEqual(response.status, 200)
-            self.assertIn("Your quiet<br>network desk", body)
-            self.assertIn("Open source, for real", body)
-            self.assertIn("Keep it open.", body)
+            self.assertIn("A little more<br>", body)
+            self.assertIn("A small independent project", body)
+            self.assertIn("Made with curiosity.", body)
             self.assertIn(
-                'href="https://ko-fi.com/lbabut?ref=onboarding_email_founderwelcome"',
+                'href="https://ko-fi.com/lbabut"',
                 body,
             )
             self.assertIn("Support PaperDesk on Ko-fi", body)
-            self.assertIn("Eight thoughtful apps", body)
+            self.assertIn("Eight free apps", body)
             self.assertIn('id="tour"', body)
             self.assertNotIn("Founding Edition", body)
             self.assertNotIn("€29", body)
             self.assertNotIn("<form", body)
             for screenshot in (
-                "ssh-301.png",
-                "books-301.png",
-                "dots-301.png",
-                "web-301.png",
+                "terminal-shortcuts.png",
+                "paperbooks-20261103.png",
+                "paperdots-20261103.png",
+                "paperweb-20261103.png",
             ):
                 self.assertIn(f"/assets/screens/{screenshot}", body)
             self.assertNotIn("web-illustration", body)

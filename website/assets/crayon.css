@@ -1,0 +1,104 @@
+:root{--paper:#f9f4e8;--white:#fffdf6;--ink:#293c38;--muted:#53645e;--line:#c9c8b6;--blue:#356b89;--max:1180px;--display-font:"Palatino Linotype","Book Antiqua",Palatino,Georgia,serif}
+.crayon-home{background:var(--paper);background-image:url("/assets/paper-grain.svg");overflow-wrap:break-word}
+.crayon-home::before{content:"";display:block;height:8px;background:repeating-linear-gradient(94deg,#bc4e59 0 18%,#d6ad48 18% 39%,#638e79 39% 62%,#5384a0 62% 83%,#8b7799 83%);opacity:.8;mask-image:linear-gradient(#000 50%,transparent)}
+.crayon-home h1,.crayon-home h2{font-family:var(--display-font);font-weight:500;letter-spacing:-.055em}
+.crayon-home .nav{border-bottom:1px dashed #a5aea0;min-height:88px}
+.crayon-home .brand{font-family:var(--display-font);letter-spacing:.015em;font-size:26px;font-weight:bold}
+.brand-edition{border:0;background:#e7ead9;transform:rotate(-7deg);border-radius:3px 6px 2px 7px;color:#426b50}
+.navlinks{gap:25px}
+.crayon-home .nav .button{background:transparent;color:var(--ink);border:1.5px solid #63816f;box-shadow:2px 3px 0 #dce3cf}
+.top-notes{display:flex;justify-content:space-between;align-items:center;padding-block:22px;gap:24px}
+.download-stamp{display:flex;align-items:center;gap:17px}
+.crayon-home .download-count{font:700 16px/1.4 var(--body-font);border:1.5px solid #6c8475;color:#304d40;background:#e6eddb;min-height:48px;border-radius:48% 3% 46% 4%/8% 65% 7% 62%;padding:12px 20px;cursor:pointer;box-shadow:2px 2px 0 #d9dfc8}
+.download-stamp>span{font-size:12px;max-width:145px;line-height:1.5;color:var(--muted)}
+.kofi-top{display:flex;align-items:center;gap:13px;background:#b94052;color:#fffaf0;box-shadow:3px 4px 0 #e5b2aa;border:1px solid #9b3040;border-radius:5px 15px 5px 12px;padding:13px 22px;text-decoration:none;transform:rotate(-1deg);font-weight:750;font-size:16px}
+.kofi-top small{display:block;font-size:11px;font-weight:500;margin-top:2px;color:#fff5e4}
+.kofi-top:hover,.kofi-button:hover{background:#9b3040;transform:translateY(-2px)}
+.crayon-home .hero{position:relative;grid-template-columns:1.15fr .85fr;gap:80px;padding-block:60px 75px;align-items:center}
+.crayon-home .hero .kicker{color:#456a59;letter-spacing:.12em}
+.crayon-home .hero h1{font-size:clamp(60px,6.5vw,88px);line-height:1.02;margin-block:20px 30px}
+.pencil-word{position:relative;display:inline-block;color:#356b89;z-index:0}
+.pencil-word::after{content:"";position:absolute;left:-2%;right:-3%;bottom:-11px;height:18px;background:url("/assets/pencil-underline.svg") center/100% 100% no-repeat;z-index:-1}
+.crayon-home .hero .lede{font-size:20px;line-height:1.7;max-width:535px}
+.crayon-home .hero-actions{gap:13px;margin-top:28px;flex-wrap:wrap}
+.crayon-home .button{border:1.5px solid #3d5e54;border-radius:5px 10px 4px 8px;box-shadow:2px 3px 0 #d6d8c4;font-size:14px;font-weight:700}
+.crayon-home .button.blue{background:#356b89;border-color:#31586d;box-shadow:3px 4px 0 #c2d2d0;color:white}
+.crayon-home .button.light{background:transparent}
+.crayon-home .hero-note{margin-top:22px;font-size:13px;font-weight:600}
+.crayon-home .install-note{font-size:12px;line-height:1.8;max-width:440px}
+.crayon-home .hero-figure{position:relative;margin:0;max-width:370px;padding:30px 22px 12px;background:#ecebdc;border-radius:46% 54% 55% 45%/43% 42% 58% 57%;background-image:repeating-linear-gradient(24deg,transparent 0 7px,#b9c3a42a 7px 9px)}
+.hand-note{display:block;text-align:center;font:italic 17px/1.4 var(--display-font);color:#57755e;transform:rotate(-5deg);margin-bottom:22px}
+.crayon-home .device{position:relative;max-width:300px;margin:auto;transform:rotate(5deg);border:0;padding:16px 15px 28px 36px;border-radius:10px;background:linear-gradient(90deg,#a7aaa5 0,#c8cbc5 8%,#dadbd5 10%,#eaeae3 11%,#e0e1da 95%,#b9bcb5 100%);box-shadow:1px 2px 1px #fff inset,-1px -2px 1px #9c9d94 inset,10px 20px 25px #34463a40,2px 3px 4px #34463a4a}
+.crayon-home .device::after{content:"reMarkable";position:absolute;bottom:9px;left:45%;font:7px/1 sans-serif;letter-spacing:1px;color:#6c7067}
+.crayon-home .device img{display:block;width:100%;height:auto;filter:contrast(.94);border:1px solid #aeb0a7;box-shadow:0 1px 4px #60645a55 inset}
+.crayon-home .hero-figure figcaption{font-size:11px;line-height:1.6;text-align:center;margin:25px -25px 0}
+.crayon-home .edition-strip{background:transparent;border-block:1px dashed #a8b09e}
+.crayon-home .edition-strip .shell{font-size:12px;letter-spacing:.07em}
+.crayon-home .section{padding-block:76px}
+.crayon-home .section h2{font-size:clamp(36px,4.3vw,55px);line-height:1.1}
+.crayon-home .section-head{gap:70px;margin-bottom:40px;align-items:center}
+.crayon-home .section-intro{font-size:16px;line-height:1.8;max-width:470px}
+.crayon-home .kicker,.crayon-home .feature-no,.crayon-home .platform-mark{font-size:11px;letter-spacing:.1em;color:#476658}
+.crayon-home .features{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.crayon-home .feature{position:relative;padding:25px 21px 20px;background:#fffdf666;border:1px solid #aeb6a6;border-radius:4px 13px 5px 9px;box-shadow:2px 3px 0 #dce1cf;min-width:0}
+.crayon-home .feature::before{content:"";height:5px;position:absolute;top:-3px;left:20px;right:28%;background:var(--accent,#6c9c81);transform:rotate(-1deg);opacity:.6;border-radius:40%}
+.crayon-home .feature:nth-child(4n+2){--accent:#6591b1}
+.crayon-home .feature:nth-child(4n+3){--accent:#b687a0}
+.crayon-home .feature:nth-child(4n){--accent:#c99b46}
+.crayon-home .feature>img{margin-bottom:18px;width:40px;height:40px}
+.crayon-home .feature h3{font-size:25px;line-height:1.15;margin-block:13px}
+.crayon-home .feature p{font-size:14px;line-height:1.7;margin-bottom:10px}
+.crayon-home .feature>a{font-size:13px;color:#355e4b}
+.crayon-home .tour-section{background:#ecefdc77;border-block:1px dashed #b9c0aa}
+.crayon-home .product-tour{grid-template-columns:repeat(3,minmax(0,1fr));gap:45px 30px}
+.crayon-home .tour-card{min-width:0}
+.crayon-home .tour-shot{position:relative;display:block;width:90%;margin:10px auto 30px;padding:13px 12px 24px 27px;background:linear-gradient(90deg,#afb3ac,#d0d2ca 8%,#e4e5dd 10%,#e2e3db 96%,#bfc1b9);border:0;border-radius:8px;box-shadow:6px 10px 15px #293c382b,0 1px 2px #6a706b;aspect-ratio:auto;overflow:visible;transform:rotate(-2deg)}
+.crayon-home .tour-card:nth-child(even) .tour-shot{transform:rotate(2deg)}
+.crayon-home .tour-shot::after{content:"reMarkable";position:absolute;bottom:8px;left:46%;font:6px sans-serif;letter-spacing:.8px;color:#71776c}
+.crayon-home .tour-shot img{display:block;width:100%;height:auto;object-fit:contain;filter:contrast(.95);border:1px solid #999e93}
+.crayon-home .tour-card figcaption{padding-top:0}
+.crayon-home .tour-card figcaption>span{font-size:10px;color:#526f59}
+.crayon-home .tour-card h3{font-size:25px;margin:8px 0}
+.crayon-home .tour-card p{font-size:14px;line-height:1.7}
+.capture-source{display:block;margin-top:8px;font-size:11px;color:#617369}
+.crayon-home .release-section{padding-bottom:65px}
+.crayon-home .release-list{margin-top:0}
+.crayon-home .release-list li{border-color:#c1c7b8;font-size:14px}
+.crayon-home .release-list strong{font-size:16px}
+.crayon-home .download{background:#eef0df;padding:40px;border:1.5px solid #a6b49f;border-radius:9px 22px 7px 19px;box-shadow:5px 6px 0 #dce3cb}
+.crayon-home .download-card{background:#fffdf6;border:1px solid #bfc4b4;border-radius:6px 13px 5px 9px}
+.crayon-home .download-card h3{font-size:29px}
+.crayon-home .compatibility{background:#fff5cf;border:1px solid #c7b56e}
+.crayon-home .download-heading h2{font-size:46px}
+.crayon-home .download-heading p{font-size:14px}
+.crayon-home .download-help{margin-bottom:0}
+.crayon-home .download-help p{max-width:none;font-size:13px}
+.crayon-home .advanced-downloads{border-color:#adb8a5}
+.maker-grid{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:25px}
+.maker{display:flex;gap:23px;align-items:center;text-decoration:none;border-top:1px dashed #b1baa9;padding-block:25px}
+.maker-avatar{width:88px;height:88px;flex:none;border-radius:48% 51% 47% 53%;border:1px solid #9bad9a}
+.human-avatar{display:grid;place-items:center;background:repeating-linear-gradient(30deg,#f0e2c8 0 3px,#ecddbe 3px 4px);color:#756043;font:italic 36px var(--display-font)}
+.maker strong{display:block;font:500 26px/1.3 var(--display-font)}
+.maker span span{display:block;font-size:13px;margin-top:5px}
+.maker .maker-link{color:#356b89;text-decoration:underline;text-underline-offset:4px}
+.maker-detail{color:#617369}
+.community-bottom{display:flex;justify-content:space-between;align-items:center;gap:24px;border:1px dashed #b4bba8;padding:22px 24px;margin-top:15px;background:#fffcf388;border-radius:6px}
+.reddit-link{display:flex;align-items:center;gap:14px;text-decoration:none;font:500 23px var(--display-font)}
+.reddit-link small{display:block;font:13px/1.5 var(--body-font);margin-top:5px;text-decoration:underline;text-underline-offset:4px}
+.reddit-icon{flex:none}
+.crayon-home .kofi-button{background:#b94052;border-color:#9b3040;color:#fff;box-shadow:3px 4px 0 #e1b2aa}
+.support-detail{font-size:12px;margin:15px 0 0;color:var(--muted)}
+.crayon-home .faq{padding-top:0;gap:75px}
+.crayon-home .faq details{border-color:#bdc5b5;font-size:14px}
+.crayon-home .faq h2{font-size:40px}
+.crayon-home .footer{border-top:1px dashed #a8b09e}
+.crayon-home #download-map{border-radius:6px 15px 5px 12px;border-color:#758d79;background:#faf6e9}
+@media(min-width:1500px){.crayon-home .hero{padding-block:80px}}
+@media(max-width:1000px){.crayon-home .features{grid-template-columns:repeat(2,minmax(0,1fr))}.crayon-home .hero{gap:40px}.crayon-home .hero h1{font-size:65px}.navlinks{gap:16px}.download-stamp>span{display:none}.crayon-home .product-tour{grid-template-columns:repeat(2,minmax(0,1fr))}.maker-grid{gap:20px}.maker{gap:15px}.maker-avatar{width:70px;height:70px}}
+@media(max-width:640px){.crayon-home .nav{padding-block:15px;gap:13px}.crayon-home .brand{font-size:24px}.crayon-home .navlinks{gap:12px;justify-content:flex-start;flex-wrap:wrap}.crayon-home .navlinks>a{font-size:12px}.crayon-home .nav .button{margin-left:auto}.top-notes{gap:12px;align-items:stretch;padding-block:20px;flex-direction:column}.download-stamp{justify-content:space-between}.download-stamp>span{display:block;max-width:125px}.crayon-home .download-count{padding:11px 14px;font-size:14px}.kofi-top{padding:12px 17px;font-size:15px;transform:rotate(-.6deg);justify-content:center}.kofi-top small{font-size:11px}.crayon-home .hero{grid-template-columns:1fr;padding-block:35px 44px;gap:32px}.crayon-home .hero h1{font-size:clamp(45px,12vw,66px);margin-block:17px 27px}.crayon-home .hero .lede{font-size:18px}.crayon-home .hero-actions{gap:12px}.crayon-home .hero-actions .button{padding:12px 14px;font-size:13px;gap:10px}.crayon-home .hero-figure{max-width:285px;margin:0 auto}.crayon-home .device{max-width:225px;padding:12px 12px 25px 28px}.crayon-home .hero-figure figcaption{margin-inline:0}.hand-note{font-size:16px}.crayon-home .section{padding-block:48px}.crayon-home .section h2{font-size:39px}.crayon-home .section-head{gap:14px;margin-bottom:27px}.crayon-home .section-intro{font-size:15px}.crayon-home .features{gap:17px}.crayon-home .feature{padding:22px}.crayon-home .feature h3{font-size:26px}.crayon-home .feature p{font-size:15px}.crayon-home .product-tour{gap:35px}.crayon-home .tour-card h3{font-size:27px}.crayon-home .tour-card p{font-size:15px}.crayon-home .download{padding:24px 20px}.crayon-home .download .download-card{padding:23px 18px}.maker-grid{grid-template-columns:1fr;gap:0}.maker{padding-block:23px}.maker-avatar{width:74px;height:74px}.maker strong{font-size:25px}.community-bottom{flex-direction:column;align-items:stretch;padding:20px;gap:25px}.reddit-link{font-size:23px}.reddit-link small{font-size:12px}.crayon-home .faq{gap:20px}.crayon-home .faq h2{font-size:36px}.crayon-home .edition-strip .shell{font-size:10px}}
+@media(max-width:440px){.crayon-home .features,.crayon-home .product-tour{grid-template-columns:1fr}.crayon-home .tour-shot{max-width:245px}.crayon-home .navlinks{gap:13px}.crayon-home .nav .button{padding-inline:11px}}
+@media(prefers-reduced-motion:reduce){.crayon-home *{transition:none!important}}
+
+.crayon-home .hero-figure::after{content:"";position:absolute;right:-45px;top:75px;width:75px;height:300px;background:url("/assets/pencil.svg") center/contain no-repeat;pointer-events:none;transform:rotate(-7deg)}
+.crayon-home .hero h1{text-shadow:.4px .4px #52736922}
+@media(max-width:640px){.crayon-home .hero-figure::after{right:-30px;width:55px;height:230px;top:65px}}

@@ -1,39 +1,38 @@
-"""The optional support CTA must be visible before the hero, without embeds."""
+"""Support stays easy to find without embeds or obscuring installation context."""
 from html.parser import HTMLParser
 from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 
+class Links(HTMLParser):
+    def __init__(self, text):
+        super().__init__()
+        self.links = []
+        self.feed(text)
+    def handle_starttag(self, tag, attrs):
+        if tag == 'a':
+            self.links.append(dict(attrs))
 
 class SupportBannerTests(unittest.TestCase):
-    def test_support_is_below_reddit_and_above_main(self):
+    def test_support_and_counter_are_above_main_without_embeds(self):
         page = (ROOT / 'website/index.html').read_text()
-        start = page.index('<aside class="support-banner shell"')
-        end = page.index('</aside>', start)
+        start = page.index('<div class="shell top-notes">')
+        end = page.index('<main id="main">')
         banner = page[start:end]
-        self.assertLess(page.index('Join the PaperDesk discussion on Reddit'), start)
-        self.assertLess(end, page.index('<main id="main">'))
-        self.assertIn('Support the project', banner)
-        self.assertIn('Optional support', banner)
-        self.assertIn('Free and open source', banner)
-        self.assertIn('aria-label="Support PaperDesk"', banner)
+        self.assertIn('data-download-count', banner)
+        self.assertIn('Buy PaperDesk a coffee', banner)
         self.assertNotIn('<script', banner)
-        self.assertNotIn('<iframe', banner)
-
-        class Links(HTMLParser):
-            def handle_starttag(self, tag, attrs):
-                if tag == 'a':
-                    self.links.append(dict(attrs))
-        parser = Links()
-        parser.links = []
-        parser.feed(banner)
-        self.assertEqual(len(parser.links), 1)
-        self.assertEqual(parser.links[0]['href'], 'https://ko-fi.com/lbabut?ref=onboarding_email_founderwelcome')
-        self.assertEqual(parser.links[0]['target'], '_blank')
-        self.assertIn('noopener', parser.links[0]['rel'])
-        self.assertIn('noreferrer', parser.links[0]['rel'])
-
+        self.assertNotIn('<iframe', page)
+        links = Links(banner).links
+        self.assertEqual(len(links), 1)
+        self.assertEqual(links[0]['href'], 'https://ko-fi.com/lbabut')
+        self.assertEqual(links[0]['target'], '_blank')
+        self.assertIn('noopener', links[0]['rel'])
+        self.assertIn('noreferrer', links[0]['rel'])
+        self.assertEqual(page.count('data-download-count'), 1)
+        self.assertIn('Requires XOVI + AppLoad', page)
+        self.assertIn('contributions', page)
 
 if __name__ == '__main__':
     unittest.main()
