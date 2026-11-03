@@ -32,6 +32,12 @@ struct PaperPen {
  double viewX=0,viewY=0,viewSX=1,viewSY=1,contactX=0,contactY=0,contactSX=1,contactSY=1;
  void setViewport(double x,double y,double sx,double sy){if(!std::isfinite(x)||!std::isfinite(y)||!std::isfinite(sx)||!std::isfinite(sy)||sx<=0||sy<=0)return;std::lock_guard<std::mutex> lock(mutex);viewX=x;viewY=y;viewSX=sx;viewSY=sy;}
  uint64_t inputReceived=0,inputOverflows=0;static constexpr size_t inputCapacity=8192;
+ double excludeX=0,excludeY=0,excludeW=0,excludeH=0;
+ void setInputExclusion(double x,double y,double w,double h){
+  std::lock_guard<std::mutex> lock(mutex);
+  if(!std::isfinite(x)||!std::isfinite(y)||!std::isfinite(w)||!std::isfinite(h)||w<=0||h<=0){excludeW=excludeH=0;return;}
+  excludeX=x;excludeY=y;excludeW=w;excludeH=h;
+ }
  void setInputWake(std::function<void()> wake){std::lock_guard<std::mutex> lock(mutex);inputWake=std::move(wake);}
  void enableInput(bool value){std::lock_guard<std::mutex> lock(mutex);if(inputEnabled==value)return;inputEnabled=value;input.clear();inputContact=0;}
  std::vector<InputEvent> takeInput(size_t limit=64){
@@ -52,6 +58,7 @@ struct PaperPen {
    if(inputEnabled){
     if(first){
      bool inside=x>=viewX&&y>=viewY&&x<viewX+1200*viewSX&&y<viewY+1600*viewSY;
+     if(excludeW>0&&excludeH>0&&x>=excludeX&&y>=excludeY&&x<excludeX+excludeW&&y<excludeY+excludeH)inside=false;
      inputContact=inside?contact:0;phase=inside?1:0;
      contactX=viewX;contactY=viewY;contactSX=viewSX;contactSY=viewSY;
     }

@@ -71,6 +71,11 @@ if [ ! -f "$PAYLOAD/apps/papersketch/native/papersketch-raster.so" ]; then
     exit 1
 fi
 
+if [ ! -s "$PAYLOAD/apps/papersketch/native/papersketch-ink.so" ]; then
+    echo "Incomplete package: missing Paper Sketch fast pen preview." >&2
+    exit 1
+fi
+
 # Manual installs deserve the same payload-integrity check as Care. Verify
 # before touching services, backups or installed files.
 (cd "$SCRIPT_DIR" && sha256sum -c SHA256SUMS >/dev/null) || {
@@ -85,6 +90,9 @@ flock -n 8 || { echo "Another PaperDesk installation is running." >&2; exit 1; }
 STAGING=$(mktemp -d "$TARGET/.paperdesk-install.XXXXXX")
 REPLACING_APP=""
 NATIVE_STAGE=""
+INK_STAGE=""
+INK_REPLACING=0
+INK_WAS_PRESENT=0
 NATIVE_REPLACING=0
 NATIVE_WAS_PRESENT=0
 LEGACY_TERMINAL_RETIRED=0
@@ -95,6 +103,19 @@ cleanup_staging() {
         # A signal between the two renames must put the previous app back.
         mv "$STAGING/previous-$REPLACING_APP" "$TARGET/$REPLACING_APP" || return 1
     fi
+    if [ -n "$INK_STAGE" ]; then rm -f "$INK_STAGE"; INK_STAGE=""; fi
+    if [ "$INK_REPLACING" = 1 ] && [ "$INSTALL_COMPLETE" != 1 ]; then
+        if [ "$INK_WAS_PRESENT" = 1 ]; then
+            INK_STAGE=$(mktemp "$EXTENSIONS/.papersketch-ink-restore.XXXXXX")
+            if ! { cp -p "$BACKUP/system/papersketch-ink.so" "$INK_STAGE" &&
+                   mv "$INK_STAGE" "$EXTENSIONS/papersketch-ink.so"; }; then
+                echo "Could not restore the previous pen preview; keep backup $BACKUP." >&2
+            fi
+        else
+            rm -f "$EXTENSIONS/papersketch-ink.so"
+        fi
+    fi
+    if [ -n "$INK_STAGE" ]; then rm -f "$INK_STAGE"; INK_STAGE=""; fi
     if [ -n "$NATIVE_STAGE" ]; then rm -f "$NATIVE_STAGE"; NATIVE_STAGE=""; fi
     if [ "$NATIVE_REPLACING" = 1 ] && [ "$INSTALL_COMPLETE" != 1 ]; then
         if [ "$NATIVE_WAS_PRESENT" = 1 ]; then
@@ -121,6 +142,9 @@ cp -R "$PAYLOAD/apps/." "$STAGING/"
 NATIVE_STAGE=$(mktemp "$EXTENSIONS/.papersketch-raster.XXXXXX")
 cp "$PAYLOAD/apps/papersketch/native/papersketch-raster.so" "$NATIVE_STAGE"
 chmod 644 "$NATIVE_STAGE"
+INK_STAGE=$(mktemp "$EXTENSIONS/.papersketch-ink.XXXXXX")
+cp "$PAYLOAD/apps/papersketch/native/papersketch-ink.so" "$INK_STAGE"
+chmod 644 "$INK_STAGE"
 
 # Capture the original installation once. Later upgrades must not replace this baseline.
 ORIGINAL="$STATE/original"
@@ -161,6 +185,16 @@ if [ ! -f "$STATE/sketch-original-recorded" ]; then
         cp -p "$EXTENSIONS/papersketch-raster.so" "$ORIGINAL/system/papersketch-raster.so"
     fi
     touch "$STATE/sketch-original-recorded"
+fi
+
+# Capture a pre-existing development preview independently on its first managed
+# upgrade. Older releases already recorded the material renderer baseline.
+if [ ! -f "$STATE/sketch-ink-original-recorded" ]; then
+    mkdir -p "$ORIGINAL/system"
+    if [ -f "$EXTENSIONS/papersketch-ink.so" ]; then
+        cp -p "$EXTENSIONS/papersketch-ink.so" "$ORIGINAL/system/papersketch-ink.so"
+    fi
+    touch "$STATE/sketch-ink-original-recorded"
 fi
 
 cp "$PAYLOAD/system/paperdesk-update.service" /etc/systemd/system/paperdesk-update.service
@@ -208,6 +242,11 @@ echo "Previous-version backup: $BACKUP"
 if [ -f "$EXTENSIONS/papersketch-raster.so" ]; then
     cp -p "$EXTENSIONS/papersketch-raster.so" "$BACKUP/system/papersketch-raster.so"
     NATIVE_WAS_PRESENT=1
+fi
+
+if [ -f "$EXTENSIONS/papersketch-ink.so" ]; then
+    cp -p "$EXTENSIONS/papersketch-ink.so" "$BACKUP/system/papersketch-ink.so"
+    INK_WAS_PRESENT=1
 fi
 
 # Retire the experimental PaperPet app, retaining its previous installation
@@ -282,6 +321,9 @@ fi
 NATIVE_REPLACING=1
 mv "$NATIVE_STAGE" "$EXTENSIONS/papersketch-raster.so"
 NATIVE_STAGE=""
+INK_REPLACING=1
+mv "$INK_STAGE" "$EXTENSIONS/papersketch-ink.so"
+INK_STAGE=""
 mkdir -p "$STATE/sketch"
 chmod 700 "$STATE/sketch"
 

@@ -94,9 +94,13 @@ Rectangle {
         var c=Math.floor(116/a.artTileSize),r=Math.floor(356/a.artTileSize);
         probeTile=find(a,"artTile"+(r*a.artColumns+c));
         baselineRaster=rasterProbe();baselineTile=tileProbe();
+        if(typeof a.nativeRaster.resetPenQueueLatencyStats==="function")a.nativeRaster.resetPenQueueLatencyStats();
         firstInputAt=0;firstPublishedAt=0;firstRasterAt=0;firstTileAt=0;firstFrameAt=0;strokeDoneAt=0;
         gaps=[];pollCosts=[];handlerCosts=[];lastTick=Date.now();measureAt=lastTick;activeCase=d.id;phase=4;
         console.log("PAPERSKETCH_INPUT_READY "+JSON.stringify({mode:"pen",id:d.id,pattern:"upright",start:[p.x,p.y],end:[q.x,q.y]}));
+    }
+    function previewStatus(){
+        try{var x=new XMLHttpRequest();x.open("GET","file:///tmp/papersketch-ink-status",false);x.send();return JSON.parse(x.responseText);}catch(e){return null;}
     }
     function captureCase() {
         var a=subject.item,d=definitions[caseIndex],s=a.lastStroke;
@@ -110,6 +114,10 @@ Rectangle {
             event_loop_gaps:stats(gaps),gaps_over_50ms:gaps.filter(function(v){return v>=50;}),
             pixel_probe_cost:stats(pollCosts),polling_granularity_ms:16,
             native_segment_peak_ms:a.nativePatchMaxMs,
+            native_preview_status:previewStatus(),optical_digest:a.nativeRaster.opticalDigest(),physical_state:a.nativeRaster.materialState(),
+            input_samples:s?s.inputSamples:0,pen_input_stats:a.nativeRaster.penInputStats(),
+            pointer_filter:typeof a.nativeRaster.pointerFilterStats==="function"?a.nativeRaster.pointerFilterStats():null,
+            queue_latency:typeof a.nativeRaster.penQueueLatencyStats==="function"?a.nativeRaster.penQueueLatencyStats():null,
             native_latency_stats:typeof a.nativeRaster.latencyStats==="function"?a.nativeRaster.latencyStats():null,
             native_segment_peak_scope:"maximum internal material segment since page reset; layered cases include fixture work",
             raw_replay:a.nativeRaster.rawReplayStats(),pressure_matches:a.nativeRaster.pressureMatchCounts(),

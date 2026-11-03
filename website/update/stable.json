@@ -1,16 +1,17 @@
 {
   "product": "PaperDesk",
   "channel": "stable",
-  "version": "4.2.7",
-  "publishedAt": "2026-11-02",
-  "archiveUrl": "/download/paperdesk-4.2.7.zip",
-  "archiveSha256": "34d1800d82125637ac03f82477f75ac8fa2ec0fec106c9c8a5a35474ff2a1790",
-  "archiveSize": 3823034,
+  "version": "4.2.8",
+  "publishedAt": "2026-11-03",
+  "archiveUrl": "/download/paperdesk-4.2.8.zip",
+  "archiveSha256": "d0ecf85b676cd8e21c16826cfc09dc7c1bef673d21a003416bac43c1243fc30a",
+  "archiveSize": 3842200,
   "releaseNotes": [
-    "Paper Sketch remembers a separate size for each drawing, eraser and blending tool. Switching tools restores the size you last chose for that tool.",
-    "The selected tool and hard/kneaded eraser choice are restored when the app reopens. The rear stylus eraser uses the remembered eraser width without replacing the selected drawing tool.",
-    "Tool preferences are saved automatically in a small independent file after drawing stops, and flushed on normal close. Save remains an explicit action for the sketchbook.",
-    "Tool-only changes do not mark artwork unsaved. Existing saved drawings and pressure calibration remain intact; the full-quality drawing pipeline from 4.2.6 is retained.",
-    "Validation covers independent atomic preference writes, invalid records, old-settings migration, switching tools, app reopen without Save and preserved artwork."
+    "Paper Sketch responds more promptly to rapid pen movements, tiny circles and hatching while retaining full-quality material rendering.",
+    "A lightweight leading trace approximates the selected pencil or charcoal shade. Very thin tips retain a visible position cue; lifting the pen restores the exact material appearance.",
+    "Native preview updates are grouped at 8ms. Passive artwork no longer participates in duplicate pointer hit testing, reducing input backlog.",
+    "The fast pen preview is included in normal installation and updates, with previous-module backups, failure rollback and uninstall restoration. Its exact-build gate enables it on tested reMarkable 2 OS 3.29.0.153; other supported builds keep the ordinary path.",
+    "Per-tool sizes, manual artwork saves, pressure and tilt, finger blending, rear-stylus erasing and full-resolution exports remain available.",
+    "Tablet regressions cover 1000 rapid circle/hatch contacts, continuous fast strokes and controlled wide-shading image equivalence. Software timing results are not optical panel latency measurements."
   ]
 }

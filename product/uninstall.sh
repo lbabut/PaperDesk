@@ -22,8 +22,7 @@ for app in paperdesk paperterminal paperweb paperweb-download paperrdp-login pap
     fi
 done
 
-# Restore only the module managed by v4. Keep legacy pen-preview modules and
-# every user sketchbook/export untouched.
+# Restore the material renderer managed by v4. Preserve user sketchbooks and exports.
 if [ -f "$STATE/sketch-original-recorded" ]; then
     if [ -f "$STATE/original/system/papersketch-raster.so" ]; then
         NATIVE_RESTORE_STAGE=$(mktemp /home/root/xovi/extensions.d/.papersketch-uninstall.XXXXXX)
@@ -32,6 +31,19 @@ if [ -f "$STATE/sketch-original-recorded" ]; then
         NATIVE_RESTORE_STAGE=""
     else
         rm -f /home/root/xovi/extensions.d/papersketch-raster.so
+    fi
+fi
+
+# Only v4.2.8+ manages the fast-preview extension. Restore a development
+# module captured at the first managed upgrade, or remove our installed copy.
+if [ -f "$STATE/sketch-ink-original-recorded" ]; then
+    if [ -f "$STATE/original/system/papersketch-ink.so" ]; then
+        NATIVE_RESTORE_STAGE=$(mktemp /home/root/xovi/extensions.d/.papersketch-ink-uninstall.XXXXXX)
+        cp -p "$STATE/original/system/papersketch-ink.so" "$NATIVE_RESTORE_STAGE"
+        mv "$NATIVE_RESTORE_STAGE" /home/root/xovi/extensions.d/papersketch-ink.so
+        NATIVE_RESTORE_STAGE=""
+    else
+        rm -f /home/root/xovi/extensions.d/papersketch-ink.so
     fi
 fi
 

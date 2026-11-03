@@ -63,6 +63,11 @@ class InstallerSafetyTests(unittest.TestCase):
                   'if [ "${AUDIT_FAIL_RETIRE:-0}" = 1 ]; then\n'
                   'case "$2" in */legacy-literm) exit 44;; esac\nfi\n'
                   'exec ' + shlex.quote(shutil.which('mv')) + ' "$@"\n')
+        self.tool('mv', 'case "$1" in */.papersketch-ink.*)\n'
+                  'if [ "${AUDIT_FAIL_INK_RENAME:-0}" = 1 ]; then exit 45; fi\n'
+                  'if [ "${AUDIT_SIGNAL_INK_RENAME:-0}" = 1 ]; then ' + shlex.quote(shutil.which('mv')) +
+                  ' "$@"; kill -TERM "$PPID"; exit 0; fi;; esac\n'
+                  + (self.bin / 'mv').read_text().removeprefix('#!/bin/sh\n'))
         script = (ROOT / 'product/install.sh').read_text()
         script = script.replace('SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)',
                                 'SCRIPT_DIR=' + shlex.quote(str(self.product)))
@@ -92,6 +97,61 @@ class InstallerSafetyTests(unittest.TestCase):
     def assert_previous_apps_untouched(self):
         for name in APPS:
             self.assertEqual((self.target / name / 'old.txt').read_text(), 'previous ' + name)
+
+    def test_preview_payload_required_before_installation(self):
+        (self.product / 'payload/apps/papersketch/native/papersketch-ink.so').unlink()
+        self.refresh_checksums()
+        result = self.run_installer()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('missing Paper Sketch fast pen preview', result.stderr)
+        self.assert_previous_apps_untouched()
+        self.assertFalse(self.log.exists())
+
+    def previous_modules(self):
+        extensions = self.home / 'xovi/extensions.d'
+        for name in ['papersketch-raster.so', 'papersketch-ink.so']:
+            (extensions / name).write_bytes(('previous ' + name).encode())
+        return extensions
+
+    def assert_modules_restored(self, extensions):
+        for name in ['papersketch-raster.so', 'papersketch-ink.so']:
+            self.assertEqual((extensions / name).read_bytes(), ('previous ' + name).encode())
+        self.assertEqual((self.state / 'current-version').read_text(), '0.9.0\n')
+        self.assertEqual(list(extensions.glob('.papersketch*')), [])
+
+    def test_preview_install_failure_restores_both_previous_modules(self):
+        extensions = self.previous_modules()
+        result = self.run_installer(AUDIT_FAIL_INK_RENAME='1')
+        self.assertNotEqual(result.returncode, 0)
+        self.assert_modules_restored(extensions)
+
+    def test_signal_after_preview_replacement_restores_both_modules(self):
+        extensions = self.previous_modules()
+        result = self.run_installer(AUDIT_SIGNAL_INK_RENAME='1')
+        self.assertNotEqual(result.returncode, 0)
+        self.assert_modules_restored(extensions)
+
+    def test_preview_install_failure_removes_new_modules_when_none_existed(self):
+        result = self.run_installer(AUDIT_FAIL_INK_RENAME='1')
+        self.assertNotEqual(result.returncode, 0)
+        extensions = self.home / 'xovi/extensions.d'
+        self.assertFalse((extensions / 'papersketch-ink.so').exists())
+        self.assertFalse((extensions / 'papersketch-raster.so').exists())
+
+    def test_managed_preview_installs_and_uninstalls_to_original_after_upgrades(self):
+        extensions = self.previous_modules()
+        for _ in range(2):
+            result = self.run_installer()
+            self.assertEqual(result.returncode, 0, result.stderr)
+            for name in ['papersketch-raster.so', 'papersketch-ink.so']:
+                self.assertEqual((extensions / name).read_bytes(),
+                    (self.product / 'payload/apps/papersketch/native' / name).read_bytes())
+        script = (ROOT / 'product/uninstall.sh').read_text().replace('/home/root', str(self.home)).replace(
+            '/etc/systemd/system', str(self.base / 'etc/systemd/system'))
+        result = subprocess.run(['sh', '-c', script], env=self.env, text=True, capture_output=True, timeout=20)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for name in ['papersketch-raster.so', 'papersketch-ink.so']:
+            self.assertEqual((extensions / name).read_bytes(), ('previous ' + name).encode())
 
     def test_bad_checksum_is_rejected_before_any_service_or_app_write(self):
         (self.product / 'payload/apps/paperweb/ui/main.qml').write_text('corrupt')

@@ -50,6 +50,10 @@ Item {
             function setRawPenInputEnabled(value){rawEnabled=value}
             function takePenInput(){var batch=rawEvents.slice(0,64);rawEvents=rawEvents.slice(64);return batch}
             function advancePenInput(tool,size,strength,x,y,p,first,tx,ty){rawCalls++;rawX=x;rawY=y;return true}
+            property int previewWrites:0
+            function writePreviewPermit(value){previewWrites++;return true}
+            function previewPressureAnchors(){return [.15,.5,.95]}
+            function repairPreview(){return true}
             property string preferencesDocument:""
             property int preferencesWrites:0
             property bool preferencesFail:false
@@ -129,10 +133,17 @@ Item {
             a.beginStroke(Qt.point(300,400),"pen",8,.6,true);compare(a.activeStroke.tool,6);a.finishStroke();
             a.nativeRaster=old;backend.destroy();
         }
+        function test_passive_artwork_keeps_input_handlers_separate(){
+            var layer=findChild(scene.app,"passiveArtwork"),sink=findChild(scene.app,"rawPenEventSink");
+            verify(layer!==null);compare(layer.enabled,false);
+            verify(sink!==null);verify(findChild(scene.app,"rawPenGrab").acceptedDevices & PointerDevice.Mouse);
+            verify(findChild(scene.app,"drawingCanvas").enabled);
+            verify(findChild(scene.app,"fingerInput").parent!==layer);
+        }
         function test_raw_contacts_keep_every_stroke_and_subpixel_position(){
             var a=scene.app,old=a.nativeRaster,backend=realismBackend.createObject(scene);
             backend.materialAvailable=true;backend.rawPenInputAvailable=true;
-            a.nativeRaster=backend;a.nativeRasterActive=true;verify(a.rawPenEnabled);verify(backend.rawEnabled);
+            a.nativeRaster=backend;a.nativeRasterActive=true;verify(a.rawPenEnabled);verify(backend.rawEnabled);verify(a.rawHoverBlocked);
             var before=a.rawPenStrokes,events=[];
             for(var c=1;c<=100;c++){
                 events.push([1,300.0625,400.125,0,.2,-.1,false,c]);
@@ -149,6 +160,43 @@ Item {
             compare(a.rawPenStrokes-before,100);compare(backend.finishCount,101);
             a.materialsDialog=true;verify(!a.rawPenEnabled);compare(backend.rawEnabled,false);
             a.materialsDialog=false;a.nativeRaster=old;backend.destroy();
+        }
+        function test_size_drag_defers_preview_polling_and_preferences_io(){
+            var a=scene.app,old=a.nativeRaster,backend=realismBackend.createObject(scene);
+            backend.materialAvailable=true;a.nativeRaster=backend;a.nativeRasterActive=true;
+            var slider=findChild(a,"sizeSlider");slider.pressed=true;a.nativeReady=true;
+            var writes=backend.previewWrites;a.brushSize=7;a.brushSize=8;a.brushSize=9;
+            wait(650);verify(slider.pressed);compare(a.nativeReady,true);compare(backend.previewWrites,writes);compare(backend.preferencesWrites,0);
+            slider.pressed=false;tryCompare(backend,"preferencesWrites",1,1500);
+            a.nativeRaster=old;backend.destroy();
+        }
+        function test_device_detail_harness_compiles(){
+            var component=Qt.createComponent("../device/papersketch-detail.qml");
+            compare(component.status,Component.Ready,component.errorString());
+        }
+        function test_restored_material_settings_ignore_legacy_strength_and_tone(){
+            scene.app.restoreToolPreferences({selectedTool:2,selectedSize:8,selectedStrength:.8,selectedTone:51});
+            compare(scene.app.strength,1);compare(scene.app.tone,0);
+        }
+        function test_fine_preview_accepts_fractional_strength_and_legacy_tone(){
+            var a=scene.app,old=a.nativeRaster,backend=realismBackend.createObject(scene);
+            backend.materialAvailable=true;backend.rawPenInputAvailable=true;a.nativeRaster=backend;a.nativeRasterActive=true;
+            a.fastPenPreview=true;a.tool=2;a.brushSize=8;a.strength=.8;a.tone=51;
+            a.nativeShadeStrength=true;verify(a.rawPenEnabled);verify(a.finePreviewEligible());
+            a.nativeShadeStrength=false;verify(!a.finePreviewEligible());
+            a.strength=1;verify(a.finePreviewEligible()); // Legacy tone is not used by the material renderer.
+            a.nativeRaster=old;backend.destroy();
+        }
+        function test_fullscreen_exit_is_not_raw_artwork(){
+            var a=scene.app,old=a.nativeRaster,backend=realismBackend.createObject(scene);
+            backend.materialAvailable=true;backend.rawPenInputAvailable=true;a.nativeRaster=backend;a.nativeRasterActive=true;
+            a.fullScreen=true;tryVerify(function(){return a.drawingScale>1;});
+            var canvas=findChild(a,"drawingCanvas"),button=findChild(a,"exitFullScreen");
+            var p=button.mapToItem(canvas,28,28),before=a.rawPenStrokes;
+            verify(p.x>=0&&p.x<1200&&p.y>=0&&p.y<1600);verify(a.rawInputOverControl(p));
+            backend.rawEvents=[[1,p.x,p.y,.8,0,0,false,1],[2,p.x+1,p.y,.8,0,0,false,1],[3,p.x,p.y,0,0,0,false,1]];
+            a.drainPenInput();compare(a.rawPenStrokes,before);compare(backend.beginCount,0);compare(a.activeStroke,null);
+            a.fullScreen=false;a.nativeRaster=old;backend.destroy();
         }
         function test_tool_sizes_switch_and_persist_without_art_save(){
             var a=scene.app,old=a.nativeRaster,backend=realismBackend.createObject(scene);
@@ -440,6 +488,12 @@ Item {
                 compare(tile.getContext("2d").getImageData(97,16,1,1).data[0],255);
             } finally {scene.app.finishStroke();scene.app.nativeArmed=false;}
             tryVerify(function(){return findChild(scene.app,"artTile31").getContext("2d").getImageData(97,16,1,1).data[0]<240;},5000);
+        }
+        function test_fine_preview_tool_bounds() {
+            verify(scene.app.finePreviewTool(1,3));verify(scene.app.finePreviewTool(8,16));
+            verify(!scene.app.finePreviewTool(6,3));verify(!scene.app.finePreviewTool(7,3));
+            verify(!scene.app.finePreviewTool(-1,3));verify(!scene.app.finePreviewTool(1.5,3));
+            verify(!scene.app.finePreviewTool(1,0));verify(!scene.app.finePreviewTool(1,17));verify(!scene.app.finePreviewTool(1,NaN));
         }
         function test_simple_tools_without_history_or_opacity_controls() {
             verify(findChild(scene.app,"undoButton")===null);

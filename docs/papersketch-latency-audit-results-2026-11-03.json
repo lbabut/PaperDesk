@@ -1,0 +1,733 @@
+{
+  "device": {
+    "model": "reMarkable 2",
+    "firmware": "3.29.0.153",
+    "qt": "6.10.3"
+  },
+  "physical_panel_latency_measured": false,
+  "host_validation": {
+    "native_groups": 22,
+    "pattern_geometry": true,
+    "qml_passed": 61,
+    "qml_platform_skips": 2,
+    "runner_safety_passed": 3
+  },
+  "workload": {
+    "contacts_per_tool": 500,
+    "circles_per_tool": 100,
+    "hatches_per_tool": 400,
+    "down_samples_per_tool": 3700,
+    "sample_interval_us": 2000,
+    "lift_interval_us": 2000,
+    "retains_proximity": true
+  },
+  "detail_runs": [
+    {
+      "run": "filter-baseline",
+      "source_qml_sha256": "5abff9620a22dd8217700ef246e662106d86e00e171b323d52ef2cebf429ca0c",
+      "native_modules": [
+        "15032479c1e7992a1398c7102536d3ff5ffc0c8b7d93aac5f1f04fe00bb7c828  /home/root/xovi/extensions.d/papersketch-raster.so",
+        "357db8bd89e30ee06ccaa5f252ae1c816c4112d60644106d4d457c5bc2ef8890  /home/root/xovi/extensions.d/papersketch-ink.so"
+      ],
+      "saved_files_preserved": true,
+      "cases": [
+        {
+          "id": "detail-hb",
+          "fullscreen": null,
+          "strokes": 500,
+          "input_samples": 3700,
+          "mean_queue_ms": 2570.7842857142855,
+          "release_to_drained_ms": 1465,
+          "max_gui_gap_ms": 357,
+          "queue_latency": {
+            "batches": 133,
+            "clock_resolution_ms": 1,
+            "empty_batches": 0,
+            "max_ms": 4155,
+            "p50_upper_ms": 4155,
+            "p95_upper_ms": 4155,
+            "samples": 4200,
+            "total_ms": 10797294
+          },
+          "pointer_filter": {
+            "consumed": 0,
+            "enabled": true,
+            "forwarded": 0,
+            "window_bound": false
+          },
+          "native_preview_contacts": 500,
+          "last_contact_to_native_preview_submit_ms": 1,
+          "optical_digest": "b2f97c353506ad40375409294ab8159413f36cfc4d5e78e28722275e466a4473",
+          "physical_state": {
+            "finger_digest": "6c751580bca9bf12c0246ce9b3fa0c5fa3f2893d477b6894ae4637825740440f",
+            "paper_kind": 0,
+            "surface_digest": "fd862624df7227913fba0bcd2835aeb6968835ba9b7337c82ddfb8fee21eeddd",
+            "wear": [
+              0,
+              0.008827805167869726,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "id": "detail-charcoal",
+          "fullscreen": null,
+          "strokes": 500,
+          "input_samples": 3700,
+          "mean_queue_ms": 2394.6452380952383,
+          "release_to_drained_ms": 1410,
+          "max_gui_gap_ms": 646,
+          "queue_latency": {
+            "batches": 137,
+            "clock_resolution_ms": 1,
+            "empty_batches": 0,
+            "max_ms": 3959,
+            "p50_upper_ms": 3959,
+            "p95_upper_ms": 3959,
+            "samples": 4200,
+            "total_ms": 10057510
+          },
+          "pointer_filter": {
+            "consumed": 0,
+            "enabled": true,
+            "forwarded": 0,
+            "window_bound": false
+          },
+          "native_preview_contacts": 500,
+          "last_contact_to_native_preview_submit_ms": 1,
+          "optical_digest": "97b6db9f516a54e02bd6f239826f6dedc8410cb367bd05a4ae1976b2298dfa47",
+          "physical_state": {
+            "finger_digest": "6c751580bca9bf12c0246ce9b3fa0c5fa3f2893d477b6894ae4637825740440f",
+            "paper_kind": 0,
+            "surface_digest": "124617c1f65e92d3bc895fbd869e4bb16a30754b198f59e6e973949b9aaa1b01",
+            "wear": [
+              0,
+              0.008827805167869726,
+              0,
+              0,
+              0.039725123255413775,
+              0
+            ]
+          }
+        }
+      ],
+      "exit_control": null
+    },
+    {
+      "run": "detail-filter",
+      "source_qml_sha256": "44437ec2aa272a084d99106319d74e639a37507946ee775458a6953db5a55f90",
+      "native_modules": [
+        "15032479c1e7992a1398c7102536d3ff5ffc0c8b7d93aac5f1f04fe00bb7c828  /home/root/xovi/extensions.d/papersketch-raster.so",
+        "357db8bd89e30ee06ccaa5f252ae1c816c4112d60644106d4d457c5bc2ef8890  /home/root/xovi/extensions.d/papersketch-ink.so"
+      ],
+      "saved_files_preserved": true,
+      "cases": [
+        {
+          "id": "detail-hb",
+          "fullscreen": null,
+          "strokes": 500,
+          "input_samples": 3700,
+          "mean_queue_ms": 7.368571428571428,
+          "release_to_drained_ms": 11,
+          "max_gui_gap_ms": 226,
+          "queue_latency": {
+            "batches": 1350,
+            "clock_resolution_ms": 1,
+            "empty_batches": 18,
+            "max_ms": 150,
+            "p50_upper_ms": 4,
+            "p95_upper_ms": 21,
+            "samples": 4200,
+            "total_ms": 30948
+          },
+          "pointer_filter": {
+            "consumed": 2099,
+            "enabled": true,
+            "forwarded": 1,
+            "window_bound": true
+          },
+          "native_preview_contacts": 500,
+          "last_contact_to_native_preview_submit_ms": 1,
+          "optical_digest": "b2f97c353506ad40375409294ab8159413f36cfc4d5e78e28722275e466a4473",
+          "physical_state": {
+            "finger_digest": "6c751580bca9bf12c0246ce9b3fa0c5fa3f2893d477b6894ae4637825740440f",
+            "paper_kind": 0,
+            "surface_digest": "fd862624df7227913fba0bcd2835aeb6968835ba9b7337c82ddfb8fee21eeddd",
+            "wear": [
+              0,
+              0.008827805167869726,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "id": "detail-charcoal",
+          "fullscreen": null,
+          "strokes": 500,
+          "input_samples": 3700,
+          "mean_queue_ms": 4.253571428571429,
+          "release_to_drained_ms": 4,
+          "max_gui_gap_ms": 57,
+          "queue_latency": {
+            "batches": 1642,
+            "clock_resolution_ms": 1,
+            "empty_batches": 19,
+            "max_ms": 26,
+            "p50_upper_ms": 3,
+            "p95_upper_ms": 12,
+            "samples": 4200,
+            "total_ms": 17865
+          },
+          "pointer_filter": {
+            "consumed": 2099,
+            "enabled": true,
+            "forwarded": 1,
+            "window_bound": true
+          },
+          "native_preview_contacts": 500,
+          "last_contact_to_native_preview_submit_ms": 0,
+          "optical_digest": "97b6db9f516a54e02bd6f239826f6dedc8410cb367bd05a4ae1976b2298dfa47",
+          "physical_state": {
+            "finger_digest": "6c751580bca9bf12c0246ce9b3fa0c5fa3f2893d477b6894ae4637825740440f",
+            "paper_kind": 0,
+            "surface_digest": "124617c1f65e92d3bc895fbd869e4bb16a30754b198f59e6e973949b9aaa1b01",
+            "wear": [
+              0,
+              0.008827805167869726,
+              0,
+              0,
+              0.039725123255413775,
+              0
+            ]
+          }
+        }
+      ],
+      "exit_control": null
+    },
+    {
+      "run": "filter-repeat",
+      "source_qml_sha256": "44437ec2aa272a084d99106319d74e639a37507946ee775458a6953db5a55f90",
+      "native_modules": [
+        "15032479c1e7992a1398c7102536d3ff5ffc0c8b7d93aac5f1f04fe00bb7c828  /home/root/xovi/extensions.d/papersketch-raster.so",
+        "357db8bd89e30ee06ccaa5f252ae1c816c4112d60644106d4d457c5bc2ef8890  /home/root/xovi/extensions.d/papersketch-ink.so"
+      ],
+      "saved_files_preserved": true,
+      "cases": [
+        {
+          "id": "detail-hb",
+          "fullscreen": null,
+          "strokes": 500,
+          "input_samples": 3700,
+          "mean_queue_ms": 7.6433333333333335,
+          "release_to_drained_ms": 9,
+          "max_gui_gap_ms": 169,
+          "queue_latency": {
+            "batches": 1365,
+            "clock_resolution_ms": 1,
+            "empty_batches": 18,
+            "max_ms": 151,
+            "p50_upper_ms": 4,
+            "p95_upper_ms": 22,
+            "samples": 4200,
+            "total_ms": 32102
+          },
+          "pointer_filter": {
+            "consumed": 2099,
+            "enabled": true,
+            "forwarded": 1,
+            "window_bound": true
+          },
+          "native_preview_contacts": 500,
+          "last_contact_to_native_preview_submit_ms": 1,
+          "optical_digest": "b2f97c353506ad40375409294ab8159413f36cfc4d5e78e28722275e466a4473",
+          "physical_state": {
+            "finger_digest": "6c751580bca9bf12c0246ce9b3fa0c5fa3f2893d477b6894ae4637825740440f",
+            "paper_kind": 0,
+            "surface_digest": "fd862624df7227913fba0bcd2835aeb6968835ba9b7337c82ddfb8fee21eeddd",
+            "wear": [
+              0,
+              0.008827805167869726,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "id": "detail-charcoal",
+          "fullscreen": null,
+          "strokes": 500,
+          "input_samples": 3700,
+          "mean_queue_ms": 4.138571428571429,
+          "release_to_drained_ms": 11,
+          "max_gui_gap_ms": 65,
+          "queue_latency": {
+            "batches": 1656,
+            "clock_resolution_ms": 1,
+            "empty_batches": 13,
+            "max_ms": 29,
+            "p50_upper_ms": 3,
+            "p95_upper_ms": 12,
+            "samples": 4200,
+            "total_ms": 17382
+          },
+          "pointer_filter": {
+            "consumed": 2099,
+            "enabled": true,
+            "forwarded": 1,
+            "window_bound": true
+          },
+          "native_preview_contacts": 500,
+          "last_contact_to_native_preview_submit_ms": 0,
+          "optical_digest": "97b6db9f516a54e02bd6f239826f6dedc8410cb367bd05a4ae1976b2298dfa47",
+          "physical_state": {
+            "finger_digest": "6c751580bca9bf12c0246ce9b3fa0c5fa3f2893d477b6894ae4637825740440f",
+            "paper_kind": 0,
+            "surface_digest": "124617c1f65e92d3bc895fbd869e4bb16a30754b198f59e6e973949b9aaa1b01",
+            "wear": [
+              0,
+              0.008827805167869726,
+              0,
+              0,
+              0.039725123255413775,
+              0
+            ]
+          }
+        }
+      ],
+      "exit_control": null
+    },
+    {
+      "run": "accept-detail",
+      "source_qml_sha256": "c3953b8b3908f61f9d05298b887d571b59ee22e08f39bf1b0e471fd5d2061673",
+      "native_modules": [
+        "bb8e9164c3abc525f6726b91119c98d5fe12762677559c9518a006aaab8c987d  /home/root/xovi/extensions.d/papersketch-raster.so",
+        "357db8bd89e30ee06ccaa5f252ae1c816c4112d60644106d4d457c5bc2ef8890  /home/root/xovi/extensions.d/papersketch-ink.so"
+      ],
+      "saved_files_preserved": true,
+      "cases": [
+        {
+          "id": "detail-hb",
+          "fullscreen": false,
+          "strokes": 500,
+          "input_samples": 3700,
+          "mean_queue_ms": 10.22,
+          "release_to_drained_ms": 7,
+          "max_gui_gap_ms": 198,
+          "queue_latency": {
+            "batches": 1207,
+            "clock_resolution_ms": 1,
+            "empty_batches": 11,
+            "max_ms": 177,
+            "p50_upper_ms": 5,
+            "p95_upper_ms": 27,
+            "samples": 4200,
+            "total_ms": 42924
+          },
+          "pointer_filter": {
+            "consumed": 2099,
+            "enabled": true,
+            "forwarded": 1,
+            "window_bound": true
+          },
+          "native_preview_contacts": 500,
+          "last_contact_to_native_preview_submit_ms": 0,
+          "optical_digest": "b2f97c353506ad40375409294ab8159413f36cfc4d5e78e28722275e466a4473",
+          "physical_state": {
+            "finger_digest": "6c751580bca9bf12c0246ce9b3fa0c5fa3f2893d477b6894ae4637825740440f",
+            "paper_kind": 0,
+            "surface_digest": "fd862624df7227913fba0bcd2835aeb6968835ba9b7337c82ddfb8fee21eeddd",
+            "wear": [
+              0,
+              0.008827805167869726,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "id": "detail-charcoal",
+          "fullscreen": false,
+          "strokes": 500,
+          "input_samples": 3700,
+          "mean_queue_ms": 4.4626190476190475,
+          "release_to_drained_ms": 8,
+          "max_gui_gap_ms": 77,
+          "queue_latency": {
+            "batches": 1605,
+            "clock_resolution_ms": 1,
+            "empty_batches": 14,
+            "max_ms": 42,
+            "p50_upper_ms": 3,
+            "p95_upper_ms": 12,
+            "samples": 4200,
+            "total_ms": 18743
+          },
+          "pointer_filter": {
+            "consumed": 2099,
+            "enabled": true,
+            "forwarded": 1,
+            "window_bound": true
+          },
+          "native_preview_contacts": 500,
+          "last_contact_to_native_preview_submit_ms": 1,
+          "optical_digest": "97b6db9f516a54e02bd6f239826f6dedc8410cb367bd05a4ae1976b2298dfa47",
+          "physical_state": {
+            "finger_digest": "6c751580bca9bf12c0246ce9b3fa0c5fa3f2893d477b6894ae4637825740440f",
+            "paper_kind": 0,
+            "surface_digest": "124617c1f65e92d3bc895fbd869e4bb16a30754b198f59e6e973949b9aaa1b01",
+            "wear": [
+              0,
+              0.008827805167869726,
+              0,
+              0,
+              0.039725123255413775,
+              0
+            ]
+          }
+        }
+      ],
+      "exit_control": null
+    },
+    {
+      "run": "accept-fullscreen",
+      "source_qml_sha256": "c3953b8b3908f61f9d05298b887d571b59ee22e08f39bf1b0e471fd5d2061673",
+      "native_modules": [
+        "bb8e9164c3abc525f6726b91119c98d5fe12762677559c9518a006aaab8c987d  /home/root/xovi/extensions.d/papersketch-raster.so",
+        "357db8bd89e30ee06ccaa5f252ae1c816c4112d60644106d4d457c5bc2ef8890  /home/root/xovi/extensions.d/papersketch-ink.so"
+      ],
+      "saved_files_preserved": true,
+      "cases": [
+        {
+          "id": "detail-hb",
+          "fullscreen": true,
+          "strokes": 500,
+          "input_samples": 3700,
+          "mean_queue_ms": 24.56452380952381,
+          "release_to_drained_ms": 14,
+          "max_gui_gap_ms": 401,
+          "queue_latency": {
+            "batches": 382,
+            "clock_resolution_ms": 1,
+            "empty_batches": 8,
+            "max_ms": 261,
+            "p50_upper_ms": 17,
+            "p95_upper_ms": 58,
+            "samples": 4200,
+            "total_ms": 103171
+          },
+          "pointer_filter": {
+            "consumed": 0,
+            "enabled": true,
+            "forwarded": 0,
+            "window_bound": false
+          },
+          "native_preview_contacts": 500,
+          "last_contact_to_native_preview_submit_ms": 0,
+          "optical_digest": "074bcc59945c56482700f96e2000a284e5a1f2465545628eb0d6257f2510f410",
+          "physical_state": {
+            "finger_digest": "6c751580bca9bf12c0246ce9b3fa0c5fa3f2893d477b6894ae4637825740440f",
+            "paper_kind": 0,
+            "surface_digest": "9e15af7d4800782c092da9eb0eb1cc61df30ea5f919eec9fd1339129638d29d2",
+            "wear": [
+              0,
+              0.00881766934085935,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "id": "detail-charcoal",
+          "fullscreen": true,
+          "strokes": 500,
+          "input_samples": 3700,
+          "mean_queue_ms": 12.651666666666667,
+          "release_to_drained_ms": 22,
+          "max_gui_gap_ms": 240,
+          "queue_latency": {
+            "batches": 632,
+            "clock_resolution_ms": 1,
+            "empty_batches": 20,
+            "max_ms": 93,
+            "p50_upper_ms": 10,
+            "p95_upper_ms": 31,
+            "samples": 4200,
+            "total_ms": 53137
+          },
+          "pointer_filter": {
+            "consumed": 0,
+            "enabled": true,
+            "forwarded": 0,
+            "window_bound": false
+          },
+          "native_preview_contacts": 500,
+          "last_contact_to_native_preview_submit_ms": 1,
+          "optical_digest": "de24c1b415d97bd35ff36560b5e0d34f16229d84321bb0a5ffa0039de5db1259",
+          "physical_state": {
+            "finger_digest": "6c751580bca9bf12c0246ce9b3fa0c5fa3f2893d477b6894ae4637825740440f",
+            "paper_kind": 0,
+            "surface_digest": "124617c1f65e92d3bc895fbd869e4bb16a30754b198f59e6e973949b9aaa1b01",
+            "wear": [
+              0,
+              0.00881766934085935,
+              0,
+              0,
+              0.03967951203386707,
+              0
+            ]
+          }
+        }
+      ],
+      "exit_control": {
+        "pen_tap": true,
+        "returned_to_windowed": true,
+        "strokes_added": 0,
+        "artwork_unchanged": true
+      }
+    }
+  ],
+  "acceptance": {
+    "accept-controls": {
+      "passed": true,
+      "saved_files_preserved": true,
+      "result": {
+        "value_updates": 88,
+        "painted_frames": 95,
+        "max_input_tick_gap_ms": 35,
+        "max_probe_tick_gap_ms": 37,
+        "gaps_over_70ms": [],
+        "final_size": 79,
+        "first_value_to_frame_ms": 11,
+        "real_device": true,
+        "optical_panel_latency_measured": false,
+        "passed": true,
+        "runtime_errors": []
+      }
+    },
+    "accept-realism": {
+      "passed": true,
+      "saved_files_preserved": true,
+      "result": {
+        "passed": true,
+        "runtime_errors": []
+      }
+    },
+    "accept-eraser": {
+      "passed": true,
+      "saved_files_preserved": true,
+      "result": {
+        "passed": true,
+        "runtime_errors": []
+      }
+    },
+    "accept-wide": {
+      "passed": true,
+      "saved_files_preserved": true,
+      "result": {
+        "tiny": {
+          "strokes": 40,
+          "visible": 40,
+          "gui_stall": true,
+          "native_preview_at_gui_resume": {
+            "ready": true,
+            "pid": 9437,
+            "time_ms": 1793704592654,
+            "armed": true,
+            "fine_preview": true,
+            "contact_ms": 1793704592654,
+            "first_update_ms": 1793704592654,
+            "fine_strokes": 16,
+            "active": true,
+            "box": [
+              585,
+              807,
+              588,
+              810
+            ]
+          },
+          "native_preview_status": {
+            "ready": true,
+            "pid": 9437,
+            "time_ms": 1793704592924,
+            "armed": true,
+            "fine_preview": true,
+            "contact_ms": 1793704592920,
+            "first_update_ms": 1793704592920,
+            "fine_strokes": 40,
+            "active": false,
+            "box": [
+              1066,
+              807,
+              1069,
+              810
+            ]
+          }
+        },
+        "shading": {
+          "optical_digest": "1e6edb96f5f2100489d05fb8d649c9f7065164b2016e9c2a894cdaf389f83c3e",
+          "physical_state": {
+            "finger_digest": "6c751580bca9bf12c0246ce9b3fa0c5fa3f2893d477b6894ae4637825740440f",
+            "paper_kind": 0,
+            "surface_digest": "124617c1f65e92d3bc895fbd869e4bb16a30754b198f59e6e973949b9aaa1b01",
+            "wear": [
+              0,
+              0,
+              0,
+              0,
+              0.11439375824176529,
+              0
+            ]
+          },
+          "queue_latency": {
+            "batches": 46,
+            "clock_resolution_ms": 1,
+            "empty_batches": 0,
+            "max_ms": 1701,
+            "p50_upper_ms": 726,
+            "p95_upper_ms": 1701,
+            "samples": 1321,
+            "total_ms": 997622
+          },
+          "native_preview_status": {
+            "ready": true,
+            "pid": 9437,
+            "time_ms": 1793704600469,
+            "armed": false,
+            "fine_preview": true,
+            "contact_ms": 1793704592920,
+            "first_update_ms": 1793704592920,
+            "fine_strokes": 40,
+            "active": false,
+            "box": [
+              1066,
+              807,
+              1069,
+              810
+            ]
+          },
+          "size": 80,
+          "max_gui_gap_ms": 242,
+          "native_stats": {
+            "advance_calls": 1200,
+            "advance_max_us": 17296,
+            "advance_total_us": 3792495,
+            "first_advance_ms": 1793704595681,
+            "first_publish_ms": 1793704595682,
+            "first_tile_paint_ms": 1793704595690,
+            "publish_calls": 23,
+            "publish_max_us": 464,
+            "publish_total_us": 7734,
+            "tile_paint_calls": 159,
+            "tile_paint_max_us": 1241,
+            "tile_paint_total_us": 47208
+          },
+          "strokes": 1,
+          "input_samples": 1200,
+          "raw_stats": [
+            1321,
+            0,
+            0
+          ],
+          "finished_ms": 1793704600559,
+          "release_to_drained_ms": 2296
+        },
+        "passed": true,
+        "error": "",
+        "runtime_errors": []
+      }
+    }
+  },
+  "micro_software_timings": [
+    {
+      "id": "latency-fresh-hb",
+      "evdev_contact_to_native_preview_submit_ms": 1,
+      "evdev_contact_to_submitted_frame_upper_ms": 33,
+      "queue_latency": {
+        "batches": 67,
+        "clock_resolution_ms": 1,
+        "empty_batches": 1,
+        "max_ms": 150,
+        "p50_upper_ms": 8,
+        "p95_upper_ms": 22,
+        "samples": 226,
+        "total_ms": 2862
+      },
+      "pointer_filter": {
+        "consumed": 220,
+        "enabled": true,
+        "forwarded": 1,
+        "window_bound": true
+      },
+      "input_samples": 225
+    },
+    {
+      "id": "latency-fresh-charcoal",
+      "evdev_contact_to_native_preview_submit_ms": 0,
+      "evdev_contact_to_submitted_frame_upper_ms": 16,
+      "queue_latency": {
+        "batches": 174,
+        "clock_resolution_ms": 1,
+        "empty_batches": 0,
+        "max_ms": 9,
+        "p50_upper_ms": 1,
+        "p95_upper_ms": 7,
+        "samples": 226,
+        "total_ms": 552
+      },
+      "pointer_filter": {
+        "consumed": 220,
+        "enabled": true,
+        "forwarded": 1,
+        "window_bound": true
+      },
+      "input_samples": 225
+    }
+  ],
+  "latest_wide_equivalence": {
+    "optical_equal": true,
+    "physical_equal": true,
+    "controlled_upright_rerun_pending": false,
+    "upright_both": true,
+    "baseline": {
+      "release_tail_ms": 2299,
+      "max_gui_gap_ms": 227
+    },
+    "candidate": {
+      "release_tail_ms": 2324,
+      "max_gui_gap_ms": 229
+    },
+    "samples_each": 1200,
+    "saved_files_preserved": true,
+    "passed_both": true
+  },
+  "comparison_notes": [
+    "Each run records its own native module and UI fingerprints. The matched filter-baseline/detail-filter/filter-repeat cohort used identical installed modules. Final acceptance includes additional gesture-release, fullscreen-overlay and slider-I/O safety fixes.",
+    "All controlled windowed cases produced identical optical and physical-state digests. Fullscreen uses different physical coordinate quantization and is compared to itself across the Exit pen tap.",
+    "Software timings are not optical panel latency.",
+    "The earlier optional 100ms budget failed for a preliminary UI-only variant. It was retained and the native filter added."
+  ],
+  "final_source_sha256": {
+    "product/payload/apps/papersketch/ui/main.qml": "c3953b8b3908f61f9d05298b887d571b59ee22e08f39bf1b0e471fd5d2061673",
+    "product/payload/apps/papersketch/native/papersketch-raster.cpp": "c25f7fd87c23152e3e8623494bd7a91e24b614aa3cd144f03ab488c4df223565",
+    "product/payload/apps/papersketch/native/sketch-pen.h": "b29d2f88f4b2b8c43f0386f1871cf8913665507d893f61b00b464db8559e5c4b"
+  },
+  "previous_uncontrolled_wide_equivalence": {
+    "optical_equal": false,
+    "physical_equal": true,
+    "controlled_upright_rerun_pending": true,
+    "reason": "The earlier fidelity driver did not force upright tilt. New user pen activity and saves occurred between runs. The corrected driver is host-compiled; hardware rerun awaits saved-work confirmation."
+  },
+  "preview_followup_results": "papersketch-tip-visibility-results-2026-11-03.json"
+}

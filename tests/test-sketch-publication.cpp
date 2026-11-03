@@ -82,7 +82,7 @@ int main(int argc,char **argv){
   SketchRaster tiled(nullptr,directory.path()+"/two-tiles");QQuickWindow window;
   window.resize(256,128);window.setColor(Qt::white);
   PaintCountTile left(window.contentItem()),right(window.contentItem());
-  left.setWidth(128);left.setHeight(128);left.setRaster(&tiled);
+  left.setWidth(128);left.setHeight(128);left.setEnabled(false);left.setRaster(&tiled);
   right.setX(128);right.setWidth(128);right.setHeight(128);assert(right.setProperty("sourceX",128));right.setRaster(&tiled);
   window.show();renderedFrame(window,[&]{return left.paintCount.load()>0&&right.paintCount.load()>0;});
   const int previousLeft=left.paintCount.load(),previousRight=right.paintCount.load();
@@ -91,6 +91,27 @@ int main(int argc,char **argv){
   assert(emissions==1&&!tiled.displayPending.isEmpty()&&tiled.displayPublicationTimer.interval()==16);
   renderedFrame(window,[&]{return emissions==2&&left.paintCount.load()>previousLeft&&left.opticalPixels(76,76,8,8)==tiled.pixels(76,76,8,8);});
   assert(right.paintCount.load()==previousRight);tiled.finish();assert(emissions==2);
+ }
+ {
+  const auto path=directory.path()+"/preview-permit";
+  SketchRaster permit(nullptr,directory.path()+"/permit",QString(),path);
+  const QString command="fine 10 20 200 300 3 1 .15 .5 .95";
+  assert(permit.writePreviewPermit(command));std::atomic<bool> stop{false};
+  std::thread reader([&]{while(!stop){QFile file(path);assert(file.open(QIODevice::ReadOnly));auto bytes=file.readAll();assert(bytes=="off"||bytes==command.toUtf8());}});
+  for(int i=0;i<100;i++)assert(permit.writePreviewPermit(i%2?command:QString("off")));
+  stop=true;reader.join();assert(!permit.writePreviewPermit("fine bad\nsecond line"));
+ }
+ {
+  SketchRaster repair(nullptr,directory.path()+"/preview-repair");
+  repair.begin();repair.advance(1,3,1,20,20,.7,true);repair.finish(true);
+  assert(!repair.previewRepair.isEmpty());
+  repair.begin();repair.advance(1,3,1,200,200,.7,true);repair.finish(true);
+  QRegion repaired;QObject::connect(&repair,&SketchRaster::damaged,[&](const QRegion&r){repaired+=r;});
+  auto exact=repair.image,mass=repair.material;repair.repairPreview();
+  assert(repaired.contains(QPoint(20,20))&&repaired.contains(QPoint(200,200)));
+  assert(repair.previewRepair.isEmpty()&&repair.image==exact&&repair.material==mass);
+  repair.begin();repair.advance(1,3,1,40,40,.7,true);repair.finish(true);repair.resetWhite();
+  assert(repair.previewRepair.isEmpty());
  }
  puts("PASS first-dab immediacy, 16ms timer publication, untouched tile not repainted, full-shading physical equality, exact damage union, finish/cancel/reset/release/load lifecycle");
 }

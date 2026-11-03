@@ -26,6 +26,7 @@ fi
 
 # The material engine is loaded globally by XOVI; never ship stale native code
 # beside updated UI/source. This requires the documented SDK/tool cache.
+bash "$ROOT/scripts/build-sketch-native.sh"
 python3 "$ROOT/scripts/build-sketch-raster.py"
 
 for resource_file in "$ROOT"/product/payload/apps/*/application.qrc; do

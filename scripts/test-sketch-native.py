@@ -10,16 +10,27 @@ sdk = cache / 'papersketch-qt-sdk/root/usr'
 include = sdk / 'include/x86_64-linux-gnu/qt6'
 work = root / 'work/native-tests'
 work.mkdir(parents=True, exist_ok=True)
+# The same deterministic workload is compiled into the real evdev injector.
+pattern_test = work / 'detail-pattern'
+subprocess.run(['gcc', '-std=c11', '-Wall', '-Wextra', '-Werror',
+                str(root / 'tests/test-sketch-detail-pattern.c'), '-o', str(pattern_test)], check=True)
+subprocess.run([str(pattern_test)], check=True)
+# Compile the actual fast-pen path against a private framebuffer: no device I/O.
+preview_test = work / 'preview-batch'
+subprocess.run(['gcc', '-O2', '-Wall', '-Wextra', '-Wno-format-truncation',
+                str(root / 'tests/test-sketch-native-batch.c'), '-o', str(preview_test),
+                '-ldl', '-lpthread', '-lm'], check=True)
+subprocess.run([str(preview_test)], check=True)
 subprocess.run([str(sdk / 'lib/qt6/libexec/moc'), '-I' + str(include),
                 str(root / 'product/payload/apps/papersketch/native/papersketch-raster.cpp'),
                 '-o', str(work / 'papersketch-raster.moc')], check=True)
 env = dict(os.environ, QT_QPA_PLATFORM='offscreen')
-for name in ['preferences', 'input-fidelity', 'stylus-eraser', 'rapidograph', 'rapidograph-integration', 'pdf', 'finger-transport', 'material', 'material-realism', 'pressure', 'touch', 'pen', 'display', 'material-integration', 'workflow', 'realism-integration', 'kit-state', 'publication', 'latency', 'raster']:
+for name in ['release-resource', 'preview-shade', 'contact-cache', 'preferences', 'input-fidelity', 'pointer-filter', 'stylus-eraser', 'rapidograph', 'rapidograph-integration', 'pdf', 'finger-transport', 'material', 'material-realism', 'pressure', 'touch', 'pen', 'display', 'material-integration', 'workflow', 'realism-integration', 'kit-state', 'publication', 'latency', 'raster']:
     source = root / ('tests/test-sketch-' + name + '.cpp')
     args = ['g++', '-std=c++17', '-O2', '-fPIC', '-pthread', '-I' + str(work), '-I' + str(include)]
     args += ['-I' + str(include / module) for module in ['QtCore', 'QtGui', 'QtQml', 'QtQuick']]
     args += [str(source)]
-    if name in ['preferences', 'input-fidelity', 'stylus-eraser', 'rapidograph', 'rapidograph-integration', 'pdf', 'material-integration', 'workflow', 'realism-integration', 'kit-state', 'publication', 'latency', 'raster']:
+    if name in ['release-resource', 'preferences', 'input-fidelity', 'pointer-filter', 'stylus-eraser', 'rapidograph', 'rapidograph-integration', 'pdf', 'material-integration', 'workflow', 'realism-integration', 'kit-state', 'publication', 'latency', 'raster']:
         args += ['-l:libQt6Quick.so.6', '-l:libQt6Qml.so.6', '-l:libQt6Gui.so.6', '-l:libQt6Core.so.6', '-ldl', '-lz']
     target = work / name
     subprocess.run(args + ['-o', str(target)], check=True, cwd=root)
