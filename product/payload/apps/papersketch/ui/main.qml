@@ -186,7 +186,7 @@ Rectangle {
         } catch(e) {nativeReady=false;nativeArmed=false;nativeShadeStrength=false;}
         if(!nativeReady)return;
         var win=root.Window.window;
-        var state=(win?win.width+"x"+win.height:"no window")+" ready="+ready+" replay="+replaying+" armed="+nativeArmed;
+        var state=(win?win.width+"x"+win.height:"no window")+" ready="+ready+" replay="+replaying+" armed="+nativeArmed+" tool="+tool+" size="+brushSize+" strength="+strength+" tone="+tone+" raw="+rawPenEnabled+" bitmap="+bitmapMode+" fine="+finePreviewEligible();
         if(nativeState!==state) {nativeState=state;console.log("PaperSketch native",state);}
 
         if((bitmapMode && (!finePreviewEligible() || !nativeFinePreview)) || !win || win.width!==1404 || win.height!==1872 || !visible || closing || !ready || replaying || (painting && activeStroke===null) || saveBlocked || confirmation || materialsDialog || calibrationDialog || tool===7 || activeSource==="finger") {

@@ -696,10 +696,21 @@
     }
   ],
   "latest_wide_equivalence": {
-    "optical_equal": false,
+    "optical_equal": true,
     "physical_equal": true,
-    "controlled_upright_rerun_pending": true,
-    "reason": "The earlier fidelity driver did not force upright tilt. New user pen activity and saves occurred between runs. The corrected driver is host-compiled; hardware rerun awaits saved-work confirmation."
+    "controlled_upright_rerun_pending": false,
+    "upright_both": true,
+    "baseline": {
+      "release_tail_ms": 2299,
+      "max_gui_gap_ms": 227
+    },
+    "candidate": {
+      "release_tail_ms": 2324,
+      "max_gui_gap_ms": 229
+    },
+    "samples_each": 1200,
+    "saved_files_preserved": true,
+    "passed_both": true
   },
   "comparison_notes": [
     "Each run records its own native module and UI fingerprints. The matched filter-baseline/detail-filter/filter-repeat cohort used identical installed modules. Final acceptance includes additional gesture-release, fullscreen-overlay and slider-I/O safety fixes.",
@@ -711,5 +722,12 @@
     "product/payload/apps/papersketch/ui/main.qml": "c3953b8b3908f61f9d05298b887d571b59ee22e08f39bf1b0e471fd5d2061673",
     "product/payload/apps/papersketch/native/papersketch-raster.cpp": "c25f7fd87c23152e3e8623494bd7a91e24b614aa3cd144f03ab488c4df223565",
     "product/payload/apps/papersketch/native/sketch-pen.h": "b29d2f88f4b2b8c43f0386f1871cf8913665507d893f61b00b464db8559e5c4b"
-  }
+  },
+  "previous_uncontrolled_wide_equivalence": {
+    "optical_equal": false,
+    "physical_equal": true,
+    "controlled_upright_rerun_pending": true,
+    "reason": "The earlier fidelity driver did not force upright tilt. New user pen activity and saves occurred between runs. The corrected driver is host-compiled; hardware rerun awaits saved-work confirmation."
+  },
+  "preview_followup_results": "papersketch-tip-visibility-results-2026-11-03.json"
 }

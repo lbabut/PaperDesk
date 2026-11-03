@@ -56,6 +56,8 @@ hashes and records installed native module hashes.
 The separate fidelity/shading driver now fixes upright tilt before injection and
 restores it afterwards. Its earlier uncontrolled runs must not be treated as
 optically equivalent across changing physical stylus states. Hardware validation
-of that driver correction is pending the user finishing current work.
+of that correction passed: baseline/current complete optical and physical-state
+digests match with all 1200 wide samples retained. Wide release tails remain
+about 2.3 seconds.
 
-Use `--detail-user-settings` for a separate acceptance run with 2B/charcoal 8px, strength 0.8 and legacy tone 51. It fails before injecting if these settings do not arm a strength-aware native preview; the previous full-strength-only workload could miss this disabling condition. It retains the same 100-circle/400-hatch pattern and all input integrity checks.
+Use `--detail-user-settings` for a separate acceptance run with synthetic 2B/charcoal 8px, strength 0.8 and legacy tone 51. It fails before injecting if these settings do not arm a strength-aware native preview; the previous full-strength-only workload could miss this disabling condition. The flag name is historical: these stale legacy fields are reset by material restore and are not the observed live user settings. It retains the same 100-circle/400-hatch pattern and all input integrity checks.

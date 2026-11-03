@@ -97,33 +97,43 @@ measure physical pixel visibility.
 Private-framebuffer regressions passed on host and tablet ARM, including all
 3072 thin-tip positions, clipping, mask preservation, legacy erasure, pending
 flush deadlines and update batching. The standard native suite now includes
-this C test automatically. Installation and live panel regression for this
-follow-up require saved-work confirmation; the previously deployed shade-only
-module is retained until that confirmation arrives.
+this C test automatically. The user subsequently authorized repeated restarts. The follow-up module is
+installed and application-level hardware regressions passed; no optical camera
+measurement has been performed.
 
 
-### Saved settings could disable the entire fast path
+### Fractional-strength coverage and corrected settings inference
 
-Read-only inspection found saved tool 2, size 8, strength 0.8 and legacy tone 51;
-the running preview permit was `off`. The old eligibility predicate required
-strength exactly 1 and tone exactly 0. Thus the full-strength diagnostics did
-not exercise the configuration used in this saved session. This is a separate,
-more direct cause than sparse-tip visibility: that configuration never armed
-the native preview at all.
+An initial read-only inspection found legacy QSettings fields naming tool 2,
+size 8, strength 0.8 and tone 51, plus an `off` preview permit. These were
+incorrectly treated as live settings and used to attribute the reported delay
+to the strength/tone eligibility predicate. That causal inference is retracted.
+`restoreToolPreferences()` explicitly sets material strength to 1 and tone to 0;
+`loadPersistentToolPreferences()` then chooses the authoritative tool and size.
+The authoritative preference file selected smudge (tool 7, size 14), for which
+the native pen preview should be off. Its 2B preset was size 6. A new regression
+checks that legacy strength/tone fields do not become active on restore. Runtime
+state logs now include tool, size, strength, tone, raw mode and eligibility, so
+future audits can inspect live values rather than infer them from stale fields.
 
-Eligibility now accepts valid material strengths from .05 to 1, with an explicit
-`shade_strength` native capability for fractional strengths. The fine permit
-accepts an optional final strength argument (old nine-field permits default to
-1); invalid and trailing arguments are rejected. The estimated optical density
-scales with strength, and the latest one-pixel position cue remains visible.
-Rapidograph remains opaque, consistent with its exact material path. Legacy
-tone no longer disables preview: the native bitmap renderer already passes
-zero tone to the material engine, so that old vector preference does not change
-its authoritative output. Saved user settings themselves are not rewritten.
+Fractional-strength support remains a tested compatibility extension, not a
+proven cause or fix for the user's observed lag. Eligibility accepts .05 to 1
+with an explicit `shade_strength` capability. The optional final permit argument
+scales approximate optical density; old permits default to strength 1. Invalid
+or trailing arguments are rejected. Rapidograph remains opaque. Legacy tone
+is ignored by the material renderer and no longer disables the preview.
 
-The QML regression covers the observed 2B/8px/.8/51 configuration and capability
-fallback. A new `--detail-user-settings` tablet mode uses it and charcoal 8px
-at the same strength/tone, requiring native arming before input injection. Host
-validation passed all 23 native groups plus C preview/workload checks, and
-63 QML checks with 2 platform skips. No live restart or new module installation
-has occurred without the pending saved-work confirmation.
+The synthetic 2B/charcoal 8px, strength-.8/tone-51 workload passed both tools with
+500/500 native contacts and 3700/3700 input samples each. Mean queue ages were
+4.07/4.87ms and release tails 9/11ms. The last contact in each case submitted in
+the same millisecond as contact, with at most 6ms pending report age. Continuous
+250 Hz full-strength micro tests passed with 1ms first submission and at most
+9ms event-to-submit age. These are software timings, not pixel visibility.
+Saved file manifests remained unchanged during the diagnostic runs. The known
+sparse-tip defect and shorter batching interval remain the confirmed changes
+relevant to the user's report; perceptual acceptance still needs hand drawing.
+See [the follow-up measurements](papersketch-tip-visibility-results-2026-11-03.json).
+
+Final host verification passed 64 QML tests with 2 platform skips. The existing 2B preset (size 6) was selected for the final live check; the previous selected tool was smudge. Only this tool selection was changed, with its previous preference file backed up.
+
+The final production-app startup log confirms tool 2, size 6, strength 1, tone 0, raw input enabled and fine eligibility true. The native worker acknowledges `ready=true`, `armed=true`, the visible-tip capability and 8ms batching. Installed native/resource hashes match the local payload. This confirms activation in the restored app, not measured hand-to-screen optical latency.

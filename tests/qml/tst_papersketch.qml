@@ -174,7 +174,11 @@ Item {
             var component=Qt.createComponent("../device/papersketch-detail.qml");
             compare(component.status,Component.Ready,component.errorString());
         }
-        function test_fine_preview_accepts_saved_strength_and_legacy_tone(){
+        function test_restored_material_settings_ignore_legacy_strength_and_tone(){
+            scene.app.restoreToolPreferences({selectedTool:2,selectedSize:8,selectedStrength:.8,selectedTone:51});
+            compare(scene.app.strength,1);compare(scene.app.tone,0);
+        }
+        function test_fine_preview_accepts_fractional_strength_and_legacy_tone(){
             var a=scene.app,old=a.nativeRaster,backend=realismBackend.createObject(scene);
             backend.materialAvailable=true;backend.rawPenInputAvailable=true;a.nativeRaster=backend;a.nativeRasterActive=true;
             a.fastPenPreview=true;a.tool=2;a.brushSize=8;a.strength=.8;a.tone=51;

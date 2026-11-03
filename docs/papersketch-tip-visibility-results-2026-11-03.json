@@ -17,23 +17,148 @@
   "native_interval_after_ms": 8,
   "host_private_framebuffer_passed": true,
   "tablet_arm_private_framebuffer_passed": true,
-  "live_application_tested": false,
+  "live_application_tested": true,
   "physical_panel_latency_measured": false,
-  "installed": false,
-  "saved_work_confirmation_pending": true,
+  "installed": true,
+  "saved_work_confirmation_pending": false,
   "candidate_native_ink_sha256": "80154ba2116f799f7a5e588f186adb34b0be428b8db2a32d6383c4c43fc8a2cc",
   "candidate_resources_sha256": "311dba3cdfadb3b3bcb0cfe803af6d7c9de5e78ebcaaff28de0702bbca7e5f95",
-  "observed_saved_settings": {
+  "native_host_groups_passed": 23,
+  "qml_passed": 64,
+  "qml_platform_skips": 2,
+  "runner_safety_tests_passed": 3,
+  "user_authorized_restarts": true,
+  "settings_workload": {
+    "passed": true,
+    "saved_files_preserved": true,
+    "cases": [
+      {
+        "id": "detail-2b-settings",
+        "tool": 2,
+        "size": 8,
+        "strength": 0.8,
+        "legacy_tone": 51,
+        "strokes": 500,
+        "input_samples": 3700,
+        "mean_queue_ms": 4.073333333333333,
+        "release_to_drained_ms": 9,
+        "native_preview_contacts": 500,
+        "native_first_submit_delay_ms": 1,
+        "native_last_contact_max_report_to_submit_ms": 6,
+        "native_last_contact_max_submit_us": 478,
+        "monotonic_input_clock": true
+      },
+      {
+        "id": "detail-charcoal-settings",
+        "tool": 4,
+        "size": 8,
+        "strength": 0.8,
+        "legacy_tone": 51,
+        "strokes": 500,
+        "input_samples": 3700,
+        "mean_queue_ms": 4.868333333333333,
+        "release_to_drained_ms": 11,
+        "native_preview_contacts": 500,
+        "native_first_submit_delay_ms": 1,
+        "native_last_contact_max_report_to_submit_ms": 6,
+        "native_last_contact_max_submit_us": 569,
+        "monotonic_input_clock": true
+      }
+    ],
+    "scope": "synthetic fractional-strength stress; not live restored user settings"
+  },
+  "continuous_micro_workload": {
+    "passed": true,
+    "saved_files_preserved": true,
+    "cases": [
+      {
+        "id": "latency-fresh-hb",
+        "first_native_submit_ms": 1,
+        "max_report_to_submit_ms": 9,
+        "max_submit_us": 2363,
+        "contiguous": true,
+        "input_samples": 225,
+        "input_stats": [
+          226,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "latency-fresh-charcoal",
+        "first_native_submit_ms": 1,
+        "max_report_to_submit_ms": 9,
+        "max_submit_us": 1044,
+        "contiguous": true,
+        "input_samples": 225,
+        "input_stats": [
+          452,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "controlled_wide_rerun": {
+    "optical_equal": true,
+    "physical_equal": true,
+    "controlled_upright_rerun_pending": false,
+    "upright_both": true,
+    "baseline": {
+      "release_tail_ms": 2299,
+      "max_gui_gap_ms": 227
+    },
+    "candidate": {
+      "release_tail_ms": 2324,
+      "max_gui_gap_ms": 229
+    },
+    "samples_each": 1200,
+    "saved_files_preserved": true,
+    "passed_both": true
+  },
+  "legacy_saved_fields": {
     "tool": 2,
     "size": 8,
     "strength": 0.8,
     "legacy_tone": 51,
     "running_preview_permit": "off"
   },
-  "previous_eligibility_rejected_saved_settings": true,
-  "qml_saved_settings_regression_passed": true,
-  "native_host_groups_passed": 23,
-  "qml_passed": 63,
-  "qml_platform_skips": 2,
-  "runner_safety_tests_passed": 3
+  "previous_eligibility_rejects_synthetic_fractional_case": true,
+  "legacy_saved_fields_applied_at_material_restore": false,
+  "earlier_legacy_fields_causal_inference_retracted": true,
+  "material_restore_strength": 1,
+  "material_restore_tone": 0,
+  "authoritative_tool_preferences_before_final_pen_check": {
+    "selected_tool": 7,
+    "selected_size": 14,
+    "2b_size": 6
+  },
+  "qml_fractional_settings_regression_passed": true,
+  "qml_legacy_restore_regression_passed": true,
+  "deployed_resources_sha256": "98a45c15953113549f4f2eb70eee980ba1b137d769da752d9fda5ada445c91cd",
+  "final_runtime_check_setup": {
+    "selected_existing_preset": 2,
+    "size_retained": 6,
+    "previous_selected_tool": 7,
+    "purpose": "verify actual restored pen configuration and native arming; runtime logging added to avoid inference from stale legacy fields"
+  },
+  "final_runtime_verification": {
+    "service_active": true,
+    "preview_ready": true,
+    "preview_armed": true,
+    "tip_marker": true,
+    "preview_interval_ms": 8,
+    "actual_ui": {
+      "tool": 2,
+      "size": 6,
+      "strength": 1,
+      "tone": 0,
+      "raw_enabled": true,
+      "bitmap": true,
+      "fine_eligible": true
+    },
+    "measured_workloads_ui_sha256": "fbfcd396b53d85e83cec9fe1a17cb0a451b596537e537d8329e424cfca4484bd",
+    "deployed_ui_sha256": "5d153ca322f920c604d07bdb1790629ce072bb3322af19f41a48a3929e48c0e4",
+    "post_measurement_ui_change": "Runtime state logging includes actual tool/size/strength/tone/raw/eligibility; no drawing or batching changes."
+  }
 }

@@ -4,14 +4,14 @@ Device: authenticated reMarkable 2, IMG_VERSION 3.29.0.153, Qt 6.10.3,
 exact-build native preview backend. Source baseline: `346a58f` (4.2.7 plus
 local latency/preview work). This is a local tablet trial, not a public release.
 
-Follow-up user feedback exposed a coverage gap: the saved 2B/8px/strength-0.8/
-legacy-tone-51 configuration disabled native preview, while the earlier detail
-probes forced strength 1 / tone 0. The shaded preview also had empty first-tip
-pixels at some subpixel phases. Fixes and a settings-specific regression are
-prepared, with installation/live acceptance pending saved-work confirmation.
-See [the preview follow-up](papersketch-fine-preview-2026-11-03.md#saved-settings-could-disable-the-entire-fast-path).
-The earlier queue measurements do not establish optical responsiveness for the
-user's actual settings.
+Follow-up feedback exposed a confirmed sparse-tip visibility defect: pale
+subpixel tips could submit no black pixel. The visible-tip fix and 8ms native
+batching are installed. Continuous micro tests recorded 1ms first submission
+and at most 9ms event-to-submit age. This is not an optical latency measurement.
+An early claim that saved strength/tone fields explained the user's delay was
+incorrect: material restore resets those legacy fields. The later fractional-
+strength stress test extends coverage but does not establish that causal claim.
+See [the corrected preview follow-up](papersketch-fine-preview-2026-11-03.md#fractional-strength-coverage-and-corrected-settings-inference).
 
 ## Finding and retained change
 
@@ -126,9 +126,12 @@ a 2296ms release tail and a 242ms maximum GUI gap. The corresponding baseline ru
 establish a broad-brush speedup; large material contacts remain expensive. The
 earlier wide baseline/final pair did match optically. The fidelity driver had
 not fixed pen tilt, and fresh user pen activity occurred between sessions. The
-driver now forces upright tilt and restores the original values, but a controlled
-hardware rerun is pending saved-work confirmation. The differing latest optical
-hash is not presented as verified equivalence or attributed conclusively to tilt.
+driver now forces upright tilt and restores the original values. After restart
+authorization, its controlled hardware rerun produced identical complete optical
+and physical-state digests for baseline and current UI, preserving all 1200
+samples. Release tails were 2299/2324ms and GUI gaps 227/229ms. This resolves
+equivalence for the controlled workload; it does not establish a wide-brush
+speedup or conclusively explain the earlier uncontrolled mismatch.
 The matched filter-cohort micro probe recorded 0–1ms native submission starts
 and 16–33ms first submitted Qt frames. Those initial-frame timings are variable;
 this audit's large, repeatable win is the queued-input reduction.
