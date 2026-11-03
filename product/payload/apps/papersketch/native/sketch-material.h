@@ -49,6 +49,26 @@ struct PaperMaterial {
         return responses;
     }
 
+    // Wide dabs revisit the same 256 tooth values thousands of times. Cache
+    // only the unburnished contact/capacity pair; pressure and tool completely
+    // determine it. Keep the scalar model for polished pixels and small tips.
+    // This is transient derived state, never saved with a page.
+    struct ContactResponse { double contact; int capacity; };
+    std::array<ContactResponse, 256> freshContact{};
+    double freshPressure = -1;
+    int freshTool = -1;
+    void prepareFreshContact(int tool, double p, double capacityAtPressure) {
+        if (freshPressure == p && freshTool == tool) return;
+        const auto *responses = grainResponses().data();
+        const double toothContact = tool < 4 ? .7 : .5;
+        for (int t = 0; t < 256; ++t) {
+            freshContact[t] = {
+                std::clamp((1.05 * p + .15 - responses[t].grain * toothContact) * 2.0, 0.0, 1.0),
+                std::max(1, int(capacityAtPressure * responses[t].capacity))};
+        }
+        freshPressure = p; freshTool = tool;
+    }
+
     static uint32_t hash(uint32_t x, uint32_t y) {
         uint32_t n = x * 374761393u + y * 668265263u + 0x9e3779b9u;
         n = (n ^ (n >> 13)) * 1274126177u;
@@ -182,6 +202,10 @@ struct PaperMaterial {
         const double dose = tool < 6 ? doses[tool] * strength * dosePressure * (1 - tone / 255.0) *
             (1 - .15 * shape.worn) : 0;
         const double capacityAtPressure = tool < 6 ? capacities[tool] * (.12 + .88 * p) : 0;
+        // Gate by covered area, so a narrow tilted tip does not build a
+        // 256-entry table for only a handful of covered pixels.
+        const bool cacheFresh = tool < 6 && shape.a * shape.b >= 144;
+        if (cacheFresh) prepareFreshContact(tool, p, capacityAtPressure);
         const double bondedFraction = tool < 6 ? fixedFraction[tool] : 0;
         const double toothContact = tool < 4 ? .7 : .5;
         const double eraseContact = strength * (.15 + .85 * p);
@@ -271,8 +295,15 @@ struct PaperMaterial {
                 } else {
                     double polish = burnish[at] * (1.0 / 255.0);
                     const auto &response = responses[unsigned(burnish[at]) * 256 + tooth[at]];
-                    double contact = std::clamp((1.05 * p + .15 - response.grain * toothContact) * 2.0, 0.0, 1.0);
-                    int capacity = std::max(1, int(capacityAtPressure * response.capacity * (1 - .22 * polish)));
+                    double contact;
+                    int capacity;
+                    if (cacheFresh && burnish[at] == 0) {
+                        const auto &fresh = freshContact[tooth[at]];
+                        contact = fresh.contact; capacity = fresh.capacity;
+                    } else {
+                        contact = std::clamp((1.05 * p + .15 - response.grain * toothContact) * 2.0, 0.0, 1.0);
+                        capacity = std::max(1, int(capacityAtPressure * response.capacity * (1 - .22 * polish)));
+                    }
                     int room = std::max(0, capacity - fixed - loose);
                     if (room > 0) {
                         double amount = dose * edge * contact * (1 - .35 * polish) * (room / double(capacity));

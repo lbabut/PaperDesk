@@ -108,7 +108,7 @@ public:
     Q_INVOKABLE void setRawPenInputEnabled(bool value){penSamples.enableInput(value);}
     void notifyPenInput(){QMetaObject::invokeMethod(this,[this]{emit penInputReady();},Qt::QueuedConnection);}
     Q_INVOKABLE QVariantList takePenInput(){
-        auto events=penSamples.takeInput();QVariantList result;
+        auto events=penSamples.takeInput(32);QVariantList result;
         for(const auto &event:events){const auto &p=event.sample;
             result.append(QVariant(QVariantList{event.phase,p.x,p.y,p.p,p.tiltX,p.tiltY,p.eraser,p.contact}));
         }

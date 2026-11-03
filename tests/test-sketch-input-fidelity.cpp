@@ -15,7 +15,8 @@ int main(int argc,char **argv){
  batched.penSamples.frame(150+599*.8,500+100*std::sin(599*.045),0,10,.2,-.1,false,false);
  reference.finish();unsigned points=0,ends=0;
  while(batched.penSamples.inputPending()){
-  for(const auto &value:batched.takePenInput()){
+  const auto batch=batched.takePenInput();assert(batch.size()<=32);
+  for(const auto &value:batch){
    auto e=value.toList();int phase=e[0].toInt();
    if(phase==1)batched.begin();
    if(phase==3){batched.finish();ends++;continue;}
