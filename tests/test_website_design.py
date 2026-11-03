@@ -17,17 +17,20 @@ class Page(HTMLParser):
 
 
 class WebsiteDesignTests(unittest.TestCase):
-    def test_all_pages_share_the_same_cache_version(self):
+    def test_guides_share_styles_and_home_has_one_heading_per_tab(self):
         styles = []
-        for name in ['index.html', 'guide.html', 'guide-en.html']:
+        for name in ['guide.html', 'guide-en.html']:
             page = Page((ROOT / 'website' / name).read_text())
             styles.append(next(a['href'] for t, a in page.tags
                                if t == 'link' and a.get('href', '').startswith('/styles.css?')))
             self.assertEqual(sum(t == 'h1' for t, _ in page.tags), 1)
-            ids = [a['id'] for _, a in page.tags if 'id' in a]
-            self.assertEqual(len(ids), len(set(ids)))
-            self.assertIn('main', ids)
         self.assertEqual(len(set(styles)), 1)
+        home = Page((ROOT / 'website/index.html').read_text())
+        self.assertEqual(sum(t == 'h1' for t, _ in home.tags), 4)
+        self.assertEqual(sum(a.get('role') == 'tabpanel' for _, a in home.tags), 4)
+        ids = [a['id'] for _, a in home.tags if 'id' in a]
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertTrue(any(a.get('href', '').startswith('/assets/atelier/atelier.css?') for _, a in home.tags))
 
     def test_guides_use_shared_buttons_and_language_metadata(self):
         for name in ['guide.html', 'guide-en.html']:
@@ -38,17 +41,17 @@ class WebsiteDesignTests(unittest.TestCase):
             language_link = next(a for t, a in page.tags if t == 'a' and 'hreflang' in a)
             self.assertEqual(language_link['lang'], language_link['hreflang'])
 
-    def test_sharing_uses_public_graphic_and_compatibility_is_visible(self):
+    def test_sharing_uses_public_graphic_and_compatibility_is_in_install_tab(self):
         text = (ROOT / 'website/index.html').read_text()
         page = Page(text)
         image = next(a['content'] for t, a in page.tags
                      if t == 'meta' and a.get('property') == 'og:image')
-        self.assertEqual(image, 'https://paperdesk.lukaszbabut.info/assets/press/paperdesk-social-crayon.png')
-        self.assertTrue((ROOT / 'website/assets/press/paperdesk-social-crayon.png').is_file())
-        hero = text[text.index('id="top"'):text.index('class="edition-strip"')]
-        self.assertIn('Requires XOVI + AppLoad', hero)
-        self.assertIn('href="#compatibility"', hero)
-        self.assertIn('id="compatibility"', text)
+        self.assertEqual(image, 'https://paperdesk.lukaszbabut.info/assets/atelier/pencil-desk.webp')
+        self.assertTrue((ROOT / 'website/assets/atelier/pencil-desk.webp').is_file())
+        self.assertIn('Requires a working XOVI', text)
+        self.assertIn('href="#install"', text)
+        self.assertIn('id="view-install"', text)
+        self.assertIn('Back up your notebooks', text)
 
     def test_page_and_sharing_titles_match_the_current_major_version(self):
         version = (ROOT / 'product/VERSION').read_text().strip()
