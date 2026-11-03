@@ -1,3 +1,12 @@
+# 4.2.8 — 2026-11-03
+
+- Paper Sketch responds more promptly to rapid pen movements, tiny circles and hatching while retaining full-quality material rendering.
+- A lightweight leading trace approximates the selected pencil or charcoal shade. Very thin tips retain a visible position cue; lifting the pen restores the exact material appearance.
+- Native preview updates are grouped at 8ms. Passive artwork no longer participates in duplicate pointer hit testing, reducing input backlog.
+- The fast pen preview is included in normal installation and updates, with previous-module backups, failure rollback and uninstall restoration. Its exact-build gate enables it on tested reMarkable 2 OS 3.29.0.153; other supported builds keep the ordinary path.
+- Per-tool sizes, manual artwork saves, pressure and tilt, finger blending, rear-stylus erasing and full-resolution exports remain available.
+- Tablet regressions cover 1000 rapid circle/hatch contacts, continuous fast strokes and controlled wide-shading image equivalence. Software timing results are not optical panel latency measurements.
+
 # 4.2.7 — 2026-11-02
 
 - Paper Sketch remembers a separate size for each drawing, eraser and blending tool. Switching tools restores the size you last chose for that tool.

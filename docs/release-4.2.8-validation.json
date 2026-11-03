@@ -1,0 +1,52 @@
+{
+  "version": "4.2.8",
+  "validation_date": "2026-11-03",
+  "python": {
+    "run": 155,
+    "skipped": 2,
+    "passed": true
+  },
+  "qml": {
+    "passed": 281,
+    "skipped": 2
+  },
+  "native_host_groups": 24,
+  "native_preview_c_test": true,
+  "prepared_rcc_matches_tested_sources": true,
+  "installer_failure_tests_passed": 15,
+  "normal_tablet_installation": {
+    "version": "4.2.8",
+    "normal_installer_passed": true,
+    "installed_native_and_rcc_hashes_match_release": true,
+    "service_active": true
+  },
+  "post_install_tablet_detail": {
+    "passed": true,
+    "cases": [
+      {
+        "id": "detail-hb",
+        "strokes": 500,
+        "input_samples": 3700,
+        "mean_queue_ms": 8.225714285714286,
+        "release_to_drained_ms": 7,
+        "native_preview_contacts": 500
+      },
+      {
+        "id": "detail-charcoal",
+        "strokes": 500,
+        "input_samples": 3700,
+        "mean_queue_ms": 4.250238095238095,
+        "release_to_drained_ms": 6,
+        "native_preview_contacts": 500
+      }
+    ],
+    "saved_files_preserved": true
+  },
+  "manual_feedback": "User confirmed substantially improved drawing responsiveness before requesting publication.",
+  "physical_panel_latency_measured": false,
+  "limitations": [
+    "Native fast preview is exact-build-gated to tested reMarkable OS 3.29.0.153; other supported builds use ordinary rendering.",
+    "Wide 80px material shading remains expensive: approximately 2.3s drain tail in the stress workload."
+  ],
+  "update_archive_sha256": "d0ecf85b676cd8e21c16826cfc09dc7c1bef673d21a003416bac43c1243fc30a"
+}

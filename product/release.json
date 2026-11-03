@@ -1,7 +1,7 @@
 {
   "product": "PaperDesk",
-  "version": "4.2.7",
-  "releaseDate": "2026-11-02",
+  "version": "4.2.8",
+  "releaseDate": "2026-11-03",
   "device": "reMarkable 2",
   "components": [
     {
@@ -62,6 +62,11 @@
       "id": "paperterminal-native",
       "name": "Paper Terminal native backend",
       "role": "app-local PTY, VT parser, renderer and optional SSH askpass helper"
+    },
+    {
+      "id": "papersketch-ink.so",
+      "name": "Paper Sketch fast pen preview",
+      "role": "XOVI exact-build preview on reMarkable OS 3.29.0.153; unsupported builds keep the ordinary rendering path"
     }
   ],
   "testedWith": {
