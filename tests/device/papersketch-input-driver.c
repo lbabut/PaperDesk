@@ -22,12 +22,13 @@ static void release(int fd,int finger){
 int main(int argc,char **argv){
  if((argc!=6 && argc!=7) || (strcmp(argv[1],"finger") && strcmp(argv[1],"pen")))return 2;
  const char *pattern=argc==7?argv[6]:"";
+ int micro=!strcmp(pattern,"micro-loop");
  int fidelityDots=!strcmp(pattern,"fidelity-dots"),fidelityShade=!strcmp(pattern,"fidelity-shade");
  int ramp=!strcmp(pattern,"pressure-ramp"),rubber=!strcmp(pattern,"eraser")||!strcmp(pattern,"eraser-hover")||!strcmp(pattern,"eraser-hover-light");
  int shading=!strcmp(pattern,"shade"),tap=!strcmp(pattern,"tap"),tilt=!strcmp(pattern,"tilt"),upright=!strcmp(pattern,"upright"),contact=!strcmp(pattern,"contact");
  int calibration=!strcmp(pattern,"calibration-light")?1:!strcmp(pattern,"calibration-normal")?2:!strcmp(pattern,"calibration-firm")?3:0;
- if(argc==7&&!fidelityDots&&!fidelityShade&&!shading&&!tap&&!tilt&&!upright&&!contact&&!calibration&&!ramp&&!rubber)return 2;
- if((shading||tilt||upright||calibration||ramp||rubber)&&strcmp(argv[1],"pen"))return 2;
+ if(argc==7&&!micro&&!fidelityDots&&!fidelityShade&&!shading&&!tap&&!tilt&&!upright&&!contact&&!calibration&&!ramp&&!rubber)return 2;
+ if((micro||shading||tilt||upright||calibration||ramp||rubber)&&strcmp(argv[1],"pen"))return 2;
  if(contact&&strcmp(argv[1],"finger"))return 2;
  int finger=!strcmp(argv[1],"finger");const char *path=finger?"/dev/input/event2":"/dev/input/event1";
  int fd=open(path,O_RDWR|O_NONBLOCK);if(fd<0){perror(path);return 3;}
@@ -74,11 +75,19 @@ int main(int argc,char **argv){
   event(fd,EV_KEY,BTN_TOOL_RUBBER,rubber);event(fd,EV_KEY,BTN_TOOL_PEN,!rubber);event(fd,EV_KEY,BTN_TOUCH,1);event(fd,EV_ABS,ABS_PRESSURE,2048);
  }
  int ok=1;
- int samples=tap?2:shading?1260:61;
+ int samples=micro?257:tap?2:shading?1260:61;
  for(int i=0;i<samples && !stopped;i++){
   int pass=i/60,step=i%60;
   int x=shading?x0+(x1-x0)*pass/20:x0+(x1-x0)*i/60;
   int y=shading?y0+(y1-y0)*(pass%2?59-step:step)/59:y0+(y1-y0)*i/60;
+  if(micro){
+   // Eight tiny 32-sample loops, at 250 Hz, inside a 24x24 drawing-pixel box.
+   static const int ux[]={0,0,512,1024,1024,1024,512,0,0};
+   static const int uy[]={0,512,1024,1024,512,0,0,0,0};
+   int at=(i%32)/4,f=i%4;
+   x=x0+(x1-x0)*(ux[at]*(4-f)+ux[at+1]*f)/4096;
+   y=y0+(y1-y0)*(uy[at]*(4-f)+uy[at+1]*f)/4096;
+  }
   // A fresh Qt reader has empty slot coordinates. Force both axes to change:
   // the kernel suppresses repeated ABS values left by a previous diagnostic run.
   if(i==0){x=x<maxx?x+1:x-1;y=y<maxy?y+1:y-1;}
@@ -95,12 +104,12 @@ int main(int argc,char **argv){
   }
   else{
    int pressure=shading?512+3072*step/59:512+3072*i/60;
-   if(calibration||tilt||upright||rubber){double fraction=calibration==1?.12:calibration==2?.45:calibration==3?.85:!strcmp(pattern,"eraser-hover-light")?.015:.55;pressure=pen_pressure.minimum+(int)((pen_pressure.maximum-pen_pressure.minimum)*fraction);}
+   if(micro||calibration||tilt||upright||rubber){double fraction=calibration==1?.12:calibration==2?.45:calibration==3?.85:!strcmp(pattern,"eraser-hover-light")?.015:.55;pressure=pen_pressure.minimum+(int)((pen_pressure.maximum-pen_pressure.minimum)*fraction);}
    if(has_tilt_x)ok&=event(fd,EV_ABS,ABS_TILT_X,tilt?(int)(tilt_x.maximum*.8):0);
    if(has_tilt_y)ok&=event(fd,EV_ABS,ABS_TILT_Y,0);
    ok&=event(fd,EV_ABS,ABS_PRESSURE,pressure);ok&=event(fd,EV_ABS,ABS_X,x);ok&=event(fd,EV_ABS,ABS_Y,y);
   }
-  ok&=event(fd,EV_SYN,SYN_REPORT,0);if(!ok)break;usleep(tap?40000:shading?4000:16000);
+  ok&=event(fd,EV_SYN,SYN_REPORT,0);if(!ok)break;usleep(micro?4000:tap?40000:shading?4000:16000);
  }
  release(fd,finger);
  if(has_tilt_x)event(fd,EV_ABS,ABS_TILT_X,tilt_x.value);

@@ -441,6 +441,12 @@ Item {
             } finally {scene.app.finishStroke();scene.app.nativeArmed=false;}
             tryVerify(function(){return findChild(scene.app,"artTile31").getContext("2d").getImageData(97,16,1,1).data[0]<240;},5000);
         }
+        function test_fine_preview_tool_bounds() {
+            verify(scene.app.finePreviewTool(1,3));verify(scene.app.finePreviewTool(8,16));
+            verify(!scene.app.finePreviewTool(6,3));verify(!scene.app.finePreviewTool(7,3));
+            verify(!scene.app.finePreviewTool(-1,3));verify(!scene.app.finePreviewTool(1.5,3));
+            verify(!scene.app.finePreviewTool(1,0));verify(!scene.app.finePreviewTool(1,17));verify(!scene.app.finePreviewTool(1,NaN));
+        }
         function test_simple_tools_without_history_or_opacity_controls() {
             verify(findChild(scene.app,"undoButton")===null);
             verify(findChild(scene.app,"redoButton")===null);

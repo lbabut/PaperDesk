@@ -21,6 +21,8 @@ p.add_argument("--baseline-qml")
 p.add_argument("--smoke",action="store_true")
 p.add_argument("--input-probe",action="store_true")
 p.add_argument("--shading-probe",action="store_true")
+p.add_argument("--micro-no-preview",action="store_true",help="Disable native preview in a micro-probe comparison")
+p.add_argument("--micro-probe",action="store_true",help="Measure 250 Hz tiny pen loops with 3px HB and 8px charcoal")
 p.add_argument("--latency-probe",action="store_true")
 p.add_argument("--latency-fresh-only",action="store_true",help="limit the latency probe to fresh-page HB and charcoal")
 p.add_argument("--controls-probe",action="store_true")
@@ -33,6 +35,8 @@ p.add_argument("--preferences-probe",action="store_true")
 p.add_argument("--fidelity-brush-size",type=int,choices=range(1,81),default=32)
 p.add_argument("--output",default="docs/papersketch-native-2026-10-31.json")
 a=p.parse_args()
+if a.micro_no_preview and not a.micro_probe:p.error("--micro-no-preview requires --micro-probe")
+if a.micro_probe:a.latency_probe=True;a.latency_fresh_only=True
 if a.fidelity_brush_size!=32 and not a.fidelity_probe:p.error("--fidelity-brush-size requires --fidelity-probe")
 if a.latency_fresh_only and not a.latency_probe:
     p.error("--latency-fresh-only requires --latency-probe")
@@ -70,6 +74,10 @@ if a.latency_fresh_only:
     marker="property bool freshOnly:false"
     assert harness.count(marker)==1,"Latency harness fresh-only option is missing"
     harness=harness.replace(marker,"property bool freshOnly:true")
+if a.micro_probe:
+    harness=harness.replace('tool:1,size:12', 'tool:1,size:3').replace('tool:4,size:38','tool:4,size:8')
+    if a.micro_no_preview:harness=harness.replace('a.tool=d.tool;', 'a.fastPenPreview=false;a.tool=d.tool;')
+    harness=harness.replace('1080,620','144,384').replace('pattern:"upright"','pattern:"micro-loop"')
 if a.pdf_probe:harness=(root/"tests/device/papersketch-pdf.qml").read_text()
 if a.smoke:harness=harness.replace("property bool smokeOnly:false","property bool smokeOnly:true")
 if a.baseline_qml:harness=harness.replace('"constant-fast"','"tiled-fast"')
@@ -218,10 +226,25 @@ try:
                 ("evdev_contact_to_submitted_frame_upper_ms","first_frame_after_tile_ms"),
             ):
                 case[output]=case[timestamp]-contact if case.get(timestamp) else None
+            preview=case.get("native_preview_status")
+            if preview and preview.get("first_update_ms",0)>=contact:
+                case["evdev_contact_to_native_preview_submit_ms"]=preview["first_update_ms"]-contact
+                case["native_preview_submitted_before_release"]=preview["first_update_ms"]<event["release_ms"]
             stats=case.get("native_latency_stats")
             if stats:
                 for key in ("first_advance_ms","first_publish_ms","first_tile_paint_ms"):
                     case["evdev_contact_to_native_"+key.removesuffix("_ms")+"_ms"]=stats[key]-contact if stats.get(key) else None
+        if a.micro_probe:
+            for index,case in enumerate(probe["cases"]):
+                stats=case.get("pen_input_stats",[])
+                if len(stats)!=3 or stats[1]!=0 or stats[2]!=0 or case.get("input_samples",0)<200:
+                    probe["passed"]=False;case["micro_input_contract_failed"]=True
+                if not a.micro_no_preview:
+                    preview=case.get("native_preview_status") or {}
+                    case["native_preview_contiguous"]=preview.get("fine_strokes")==index+1
+                    delay=case.get("evdev_contact_to_native_preview_submit_ms")
+                    if not (case["native_preview_contiguous"] and delay is not None and 0<=delay<=20 and preview.get("active") is False):
+                        probe["passed"]=False;case["micro_preview_contract_failed"]=True
         probe["timing_origin"]="tablet CLOCK_REALTIME contact_ms versus QML Date.now/native epoch timestamps"
         probe["physical_panel_latency_measured"]=False
         result["cases"]=probe["cases"]

@@ -180,6 +180,18 @@ public:
         if(finger.isNull()){finger=QImage(82,81,QImage::Format_Grayscale16);finger.fill(0);}
         return true;
     }
+    // Atomic replacement prevents the pen thread from seeing a half-written
+    // heartbeat and disarming in the middle of a fine stroke.
+    Q_INVOKABLE bool writePreviewPermit(const QString &value){
+        const auto bytes=value.toUtf8();
+        if(bytes.size()>240||bytes.contains('\n')||bytes.contains('\r')||!(bytes=="off"||bytes.startsWith("fine ")||bytes.startsWith("on ")))return false;
+        QSaveFile file(previewPermitPath);if(!file.open(QIODevice::WriteOnly))return false;
+        file.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner);
+        return file.write(bytes)==bytes.size()&&file.commit();
+    }
+    QRegion previewRepair;
+    Q_INVOKABLE QVariantList previewPressureAnchors()const{return {pressureCurve.calibrated?pressureCurve.anchors[0]:.15,pressureCurve.calibrated?pressureCurve.anchors[1]:.5,pressureCurve.calibrated?pressureCurve.anchors[2]:.95};}
+    Q_INVOKABLE void repairPreview(){auto region=std::move(previewRepair);previewRepair=QRegion();emitDisplayDamage(region);}
     QTimer displayPublicationTimer;
     QRegion displayPending;
     bool livePublication=false;
@@ -191,7 +203,7 @@ public:
         auto damage=std::move(displayPending);displayPending=QRegion();
         emitDisplayDamage(damage);
     }
-    void dropDisplayDamage(){displayPublicationTimer.stop();displayPending=QRegion();livePublication=false;}
+    void dropDisplayDamage(){displayPublicationTimer.stop();displayPending=QRegion();previewRepair=QRegion();livePublication=false;}
     void publishRegion(const QRegion &damage){
         if(damage.isEmpty())return;
         if(!livePublication){emitDisplayDamage(damage);return;}
@@ -204,7 +216,7 @@ public:
     }
     void publishDirty(QRect dirty){if(collectingDamage)collectedDamage+=dirty;else publishRegion(QRegion(dirty));}
     Q_INVOKABLE QString pageMetadata()const{return loadedMeta;}
-    QString cacheNamespace="PaperDeskSketch";QString cacheDirectory,exportDirectoryOverride;
+    QString cacheNamespace="PaperDeskSketch";QString cacheDirectory,exportDirectoryOverride,previewPermitPath;
     bool calibrationActive()const{return pressureCurve.active;}
     int calibrationStage()const{return pressureCurve.stage;}
     QString calibrationPath()const{return cachePath(0)+".pressure.json";}
@@ -317,7 +329,7 @@ public:
          writeError=false;saves.push_back(std::move(job));}
         saveWake.notify_one();
     }
-    SketchRaster(QObject *parent=nullptr,QString directory="/home/root/.local/share/paperdesk/sketch",QString exports=QString()):QObject(parent),cacheDirectory(directory),exportDirectoryOverride(exports){image.fill(Qt::white);displayPublicationTimer.setInterval(16);displayPublicationTimer.setSingleShot(true);displayPublicationTimer.setTimerType(Qt::PreciseTimer);connect(&displayPublicationTimer,&QTimer::timeout,this,[this]{bool hadDamage=!displayPending.isEmpty();flushDisplayDamage();if(hadDamage&&livePublication)displayPublicationTimer.start();});proximityTimer.setInterval(40);connect(&proximityTimer,&QTimer::timeout,this,[this]{bool nearby=penSamples.nearby.load(),reader=penSamples.ready.load();if(nearby!=penNearby||reader!=penReaderReady){if(nearby&&tentativeTouch)cancel();penNearby=nearby;penReaderReady=reader;emit proximityChanged();}});proximityTimer.start();penSamples.setInputWake([this]{notifyPenInput();});writer=std::thread([this]{writeLoop();});}
+    SketchRaster(QObject *parent=nullptr,QString directory="/home/root/.local/share/paperdesk/sketch",QString exports=QString(),QString permit=QString("/tmp/papersketch-ink")):QObject(parent),cacheDirectory(directory),exportDirectoryOverride(exports),previewPermitPath(permit){image.fill(Qt::white);displayPublicationTimer.setInterval(16);displayPublicationTimer.setSingleShot(true);displayPublicationTimer.setTimerType(Qt::PreciseTimer);connect(&displayPublicationTimer,&QTimer::timeout,this,[this]{bool hadDamage=!displayPending.isEmpty();flushDisplayDamage();if(hadDamage&&livePublication)displayPublicationTimer.start();});proximityTimer.setInterval(40);connect(&proximityTimer,&QTimer::timeout,this,[this]{bool nearby=penSamples.nearby.load(),reader=penSamples.ready.load();if(nearby!=penNearby||reader!=penReaderReady){if(nearby&&tentativeTouch)cancel();penNearby=nearby;penReaderReady=reader;emit proximityChanged();}});proximityTimer.start();penSamples.setInputWake([this]{notifyPenInput();});writer=std::thread([this]{writeLoop();});}
     ~SketchRaster() override {penSamples.shutdown();{std::lock_guard<std::mutex> lock(saveMutex);stopping=true;}saveWake.notify_one();writer.join();if(pressureFd>=0)close(pressureFd);}
     mutable int pressureFd=-1;mutable double pressureLast=.5;mutable QElapsedTimer pressureAge;
     Q_INVOKABLE double penPressure(double fallback)const{
@@ -358,7 +370,7 @@ public:
     Q_INVOKABLE void resetWhite(){rearEraserStroke=false;dropDisplayDamage();currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(image.size()!=QSize(1200,1600)||image.format()!=QImage::Format_RGB32)image=QImage(1200,1600,QImage::Format_RGB32);image.fill(Qt::white);materialReady=false;ensureMaterial();physics.resetSurface();finger.fill(0);slowest=0;emit timingChanged();publishDirty(image.rect());}
     Q_INVOKABLE void clearPage(){if(!ensureMaterial())return;dropDisplayDamage();image.fill(Qt::white);material.fill(0);finger.fill(0);physics.resetSurface();physics.resetInk();publishDirty(image.rect());}
     Q_INVOKABLE void begin(bool tentative=false,bool rearEraser=false){rearEraserStroke=rearEraser&&!tentative;flushDisplayDamage();std::atomic_store_explicit(&latency,std::make_shared<SketchLatency>(),std::memory_order_release);livePublication=false;lastRawId=0;lastContact=0;pendingSample=PaperPen::Sample();rawReplayed=0;rawBatchMax=0;collectingDamage=false;collectedDamage=QRegion();pressureMatches=0;pressureFallbacks=0;penSamples.resetMatchDiagnostics();tiltSamples=0;touchGeometryMatches=0;touchMatches=0;touchFallbacks=0;if(!ensureMaterial())return;livePublication=true;awaitingPenContact=!tentative;tentativeTouch=tentative;currentFinger=tentative?finger:QImage();captured.fill(false);currentPatches.clear();physics.untilNext=0;pendingDirty=QRect();unpublished=false;}
-    Q_INVOKABLE void finish(){rearEraserStroke=false;currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(unpublished&&!pendingDirty.isEmpty())publishDirty(pendingDirty);livePublication=false;flushDisplayDamage();pendingDirty=QRect();unpublished=false;}
+    Q_INVOKABLE void finish(bool preview=false){if(preview&&!pendingDirty.isEmpty()){int margin=int(std::ceil(16/std::max(.1,std::min(inputScaleX,inputScaleY))))+4;auto repair=pendingDirty.adjusted(-margin,-margin,margin,margin).intersected(image.rect());previewRepair+=repair;publishDirty(repair);}rearEraserStroke=false;currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(unpublished&&!pendingDirty.isEmpty())publishDirty(pendingDirty);livePublication=false;flushDisplayDamage();pendingDirty=QRect();unpublished=false;}
     Q_INVOKABLE void cancel(){
         if(!tentativeTouch)return;dropDisplayDamage();QRect dirty;for(const auto &p:currentPatches)dirty=dirty.united(p.rect);
         swapPatches(currentPatches);currentPatches.clear();finger=currentFinger;currentFinger=QImage();tentativeTouch=false;pendingDirty=QRect();if(!dirty.isEmpty())publishDirty(dirty);

@@ -44,7 +44,7 @@ Rectangle {
     property bool exportOverwrite:false
     property string exportMessage:""
     property bool fullScreen:false
-    onFullScreenChanged:Qt.callLater(syncInputTransform)
+    onFullScreenChanged:{if(ready)nativeWrite("off");Qt.callLater(syncInputTransform)}
     property bool dirty:false
     property string pageDiskMetadata:""
     property bool newUnsavedPage:false
@@ -61,7 +61,9 @@ Rectangle {
     property int rawPenContact:0
     property int rawPenStrokes:0
     onRawPenEnabledChanged:{
+        if(ready && !rawPenEnabled)nativeWrite("off");
         if(!rawPenEnabled && activeStroke && activeStroke.rawInput)finishStroke();
+        if(ready)Qt.callLater(nativeHeartbeat);
         if(nativeRaster && typeof nativeRaster.setRawPenInputEnabled==="function"){
             if(rawPenEnabled)syncInputTransform();
             nativeRaster.setRawPenInputEnabled(rawPenEnabled);
@@ -124,9 +126,14 @@ Rectangle {
     readonly property var page: notebook.pages[pageIndex]
     readonly property bool busy: replaying || activeStroke!==null
     readonly property real drawingScale: Math.min((workspace.width-24)/Ink.WIDTH,(workspace.height-24)/Ink.HEIGHT)
-    onDrawingScaleChanged:Qt.callLater(syncInputTransform)
+    onDrawingScaleChanged:{if(ready)nativeWrite("off");Qt.callLater(syncInputTransform)}
 
     // Native preview is optional and gated by the extension's fresh acknowledgement.
+    property bool fastPenPreview:true
+    property bool nativeFinePreview:false
+    onFastPenPreviewChanged:if(ready)nativeHeartbeat()
+    function finePreviewTool(selected,size){return isFinite(size) && size>=1 && size<=16 && ((selected>=0 && selected<6 && selected===Math.floor(selected))||selected===8);}
+    function finePreviewEligible(){return bitmapMode && typeof nativeRaster.writePreviewPermit==="function" && typeof nativeRaster.previewPressureAnchors==="function" && typeof nativeRaster.repairPreview==="function" && fastPenPreview && rawPenEnabled && finePreviewTool(tool,brushSize) && tone===0 && strength===1;}
     property bool nativeReady: false
     property bool nativeArmed: false
     property bool nativeStroke: false
@@ -138,18 +145,22 @@ Rectangle {
             toolPreferencesLoading=true;brushSize=toolSize(tool);toolPreferencesLoading=false;
             rememberToolPreferences();
         }
-        if(ready && !bitmapMode)nativeHeartbeat();
+        if(ready)nativeHeartbeat();
     }
     onBrushSizeChanged:{
         if(toolPreferencesReady && !toolPreferencesLoading){
             var sizes=toolSizes.slice();sizes[tool]=Ink.clamp(brushSize,1,80);toolSizes=sizes;
             rememberToolPreferences();
         }
-        if(ready && !bitmapMode)nativeHeartbeat();
+        if(ready)nativeHeartbeat();
     }
-    onControlsVisibleChanged:if(ready && !bitmapMode) {nativeArmed=false;if(nativeReady)nativeWrite("off");}
-    Timer { interval:400;running:root.visible && !root.closing && !root.bitmapMode;repeat:true;triggeredOnStart:true;onTriggered:root.nativeHeartbeat() }
+    onControlsVisibleChanged:if(ready) {nativeArmed=false;nativeWrite("off");}
+    Timer { interval:400;running:root.visible && !root.closing && (!root.bitmapMode||(root.fastPenPreview&&root.finePreviewTool(root.tool,root.brushSize)));repeat:true;triggeredOnStart:true;onTriggered:root.nativeHeartbeat() }
     function nativeWrite(value) {
+        if(nativeRaster && typeof nativeRaster.writePreviewPermit==="function"){
+            if(!nativeRaster.writePreviewPermit(value))nativeArmed=false;
+            return;
+        }
         try {
             var x=new XMLHttpRequest();nativeRequest=x;
             x.onreadystatechange=function(){if(x.readyState===XMLHttpRequest.DONE && nativeRequest===x)nativeRequest=null;};
@@ -158,19 +169,19 @@ Rectangle {
         catch(e) {nativeArmed=false;}
     }
     function nativeHeartbeat() {
-        if(nativeRaster && nativeRaster.materialAvailable){nativeReady=false;nativeArmed=false;return;}
+        if(bitmapMode&&!fastPenPreview){nativeWrite("off");nativeReady=false;nativeArmed=false;return;}
         try {
             var x=new XMLHttpRequest();x.open("GET","file:///tmp/papersketch-ink-status",false);x.send();
             var status=JSON.parse(x.responseText);
             nativeReady=status.ready===true && Math.abs(Date.now()-status.time_ms)<1500;
-            nativeArmed=nativeReady && status.armed===true;
+            nativeArmed=nativeReady && status.armed===true;nativeFinePreview=nativeReady && status.fine_preview===true;
         } catch(e) {nativeReady=false;nativeArmed=false;}
         if(!nativeReady)return;
         var win=root.Window.window;
         var state=(win?win.width+"x"+win.height:"no window")+" ready="+ready+" replay="+replaying+" armed="+nativeArmed;
         if(nativeState!==state) {nativeState=state;console.log("PaperSketch native",state);}
 
-        if(bitmapMode || !win || win.width!==1404 || win.height!==1872 || !visible || closing || !ready || replaying || (painting && activeStroke===null) || saveBlocked || confirmation || materialsDialog || calibrationDialog || tool===7 || activeSource==="finger") {
+        if((bitmapMode && (!finePreviewEligible() || !nativeFinePreview)) || !win || win.width!==1404 || win.height!==1872 || !visible || closing || !ready || replaying || (painting && activeStroke===null) || saveBlocked || confirmation || materialsDialog || calibrationDialog || tool===7 || activeSource==="finger") {
             nativeWrite("off");nativeArmed=false;return;
         }
         var origin=inputSurface.mapToItem(win.contentItem,0,0);
@@ -179,6 +190,10 @@ Rectangle {
         var w=Math.floor(corner.x)-x0,h=Math.floor(corner.y)-y0;
         if(x0<0 || y0<0 || w<=0 || h<=0 || x0+w>1404 || y0+h>1872) {nativeWrite("off");nativeArmed=false;return;}
         var size=Math.max(1,brushSize*drawingScale);
+        if(bitmapMode){
+            var anchors=nativeRaster.previewPressureAnchors();
+            nativeWrite("fine "+x0+" "+y0+" "+w+" "+h+" "+size+" "+tool+" "+anchors.join(" "));return;
+        }
         nativeWrite("on "+x0+" "+y0+" "+w+" "+h+" "+size+" "+(tool===6?1:0)+" "+Math.min(80,size/2));
     }
 
@@ -352,6 +367,7 @@ Rectangle {
         id:clearPreviewTimer;interval:80
         onTriggered:if(!root.busy && !root.painting)root.clearPreview()
     }
+    Timer { id:previewRepairTimer;interval:40;onTriggered:if(root.nativeRaster)root.nativeRaster.repairPreview() }
     Timer { id: paintTimer; interval: 0; onTriggered: root.requestPendingPaint() }
     Timer {
         id:penEndTimer;interval:0
@@ -412,7 +428,7 @@ Rectangle {
         if(activeStroke!==null && activeStroke.tool!==7)return;
         paper.requestPaint();
     }
-    function unloading() { flushToolPreferences();if(calibrationDialog && nativeRaster)nativeRaster.cancelCalibration();closing=true;if(nativeReady)nativeWrite("off");if(nativeRaster)nativeRaster.release() }
+    function unloading() { flushToolPreferences();if(calibrationDialog && nativeRaster)nativeRaster.cancelCalibration();closing=true;nativeWrite("off");if(nativeRaster)nativeRaster.release() }
     function saveBook() {
         if(!ready || saveBlocked || busy) return false;
         var saveStarted=Date.now();
@@ -474,6 +490,7 @@ Rectangle {
         nativeStroke=bitmapMode || (source==="pen" && selected!==7 && nativeArmed);
         activeSource=source;
         activeStroke=Ink.stroke(selected,hardwareEraser?toolSize(6):(selected===7?Math.max(brushSize,source==="finger"?64:32):brushSize),tone,hardwareEraser?1:strength,Date.now());
+        activeStroke.fastPreview=bitmapMode && !hardwareEraser && finePreviewEligible() && nativeFinePreview;
         activeStroke.hardwareEraser=hardwareEraser;activeStroke.rawInput=fromRaw;activeStroke.inputSamples=fromRaw?1:0;
         if(hardwareEraser && materialsAvailable)nativeRaster.setMaterialOptions(paperKind,false);
         if(bitmapMode)activeStroke.renderer=8;
@@ -518,7 +535,7 @@ Rectangle {
     }
     function finishStroke() {
         if(activeStroke===null) return;
-        if(nativeRasterActive){nativeRaster.finish();clearPreviewTimer.restart();}
+        if(nativeRasterActive){if(activeStroke.fastPreview)nativeRaster.finish(true);else nativeRaster.finish();clearPreviewTimer.restart();if(activeStroke.fastPreview)previewRepairTimer.restart();}
         if(activeStroke.hardwareEraser && materialsAvailable)nativeRaster.setMaterialOptions(paperKind,kneadedEraser);
         lastStroke=activeStroke;
         if(bitmapMode){page.bitmap=true;page.revision=(page.revision||0)+1;page.strokes=[];totalPoints=0;}
