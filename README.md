@@ -12,7 +12,7 @@ It bundles touch-first tools designed around the limits of e-ink:
 - RSS — RSS/Atom feeds, full-text reading, read state, and offline cache.
 - Care — signed updates, release notes, automatic verification, and rollback backups.
 
-The current release is **4.2.8**, targeting the tested reMarkable OS
+The current release is **4.2.9**, targeting the tested reMarkable OS
 **3.29.0.149** with XOVI 0.3.3, AppLoad 0.6.0. Paper Terminal requires no LiTerm runtime.
 
 The installer accepts only OS 3.29.0.149 or 3.29.0.153 because Sketch loads a native
@@ -24,7 +24,7 @@ eraser behaviors. These are digital approximations. Calibration adjusts stylus
 input; no physical-pencil matching or optical panel latency is claimed.
 Open the Materials settings icon first in the middle toolbar, before the 2H
 pencil, for these controls.
-Pen strokes start at initial contact. Version 4.2.8 adds a faster, tool-shaded
+Pen strokes start at initial contact. Version 4.2.8 introduced a faster, tool-shaded
 leading trace on the tested OS 3.29.0.153 build, keeps thin tips visible and
 reduces duplicate GUI input work. Final material rendering and exports retain
 full resolution. See the [latency audit](docs/papersketch-latency-audit-2026-11-03.md)

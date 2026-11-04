@@ -1,3 +1,12 @@
+# 4.2.9 — 2026-11-04
+
+- Paper Sketch charcoal now builds darker layers with repeated strokes, with distinct normal and soft charcoal responses.
+- New and cleared pages start with zero pigment. Historical blank-pigment state is repaired in memory while saved marks remain intact.
+- The kneaded eraser lifts graphite and charcoal more visibly, with pressure control and bounded removal per contact. Lift and dab again to remove another layer.
+- Wide charcoal uses both CPU cores without changing the rendered pigment or texture. The tested full-app shading workload used about 12% less computation time; its release tail fell from 2.68 to 2.23 seconds.
+- Sketch stops accepting raw drawing input and native preview updates while another AppLoad window covers it, then resumes on return.
+- Expanded on-tablet regressions cover exact rendering, charcoal layering, kneaded pressure and repeated dabs, Clear, foreground ownership and shared-library performance. XOVI boot startup remains manual.
+
 # 4.2.8 — 2026-11-03
 
 - Paper Sketch responds more promptly to rapid pen movements, tiny circles and hatching while retaining full-quality material rendering.

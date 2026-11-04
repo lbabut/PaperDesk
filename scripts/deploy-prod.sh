@@ -21,9 +21,21 @@ if [ -n "${PAPERDESK_EXPECTED_PRODUCTION_BASELINE:-}" ] && [ "$BASELINE" != "$PA
 fi
 NEXT=$($SSH "$HOST" "set -e; umask 022; next=\$(mktemp -d '$DEST.next.XXXXXX'); cp -a '$DEST/.' \"\$next/\"; printf '%s\n' \"\$next\"")
 case "$NEXT" in /home/azureuser/PaperDesk.next.??????) ;; *) echo 'Unsafe staging path' >&2; exit 1;; esac
+if [ "$(printenv PAPERDESK_RELEASE_ONLY || true)" = 1 ]; then
+    for feed in latest.json latest.json.sig stable.json stable.json.sig; do
+        scp -q -i "$KEY" -o StrictHostKeyChecking=yes "$ROOT/website/update/$feed" "$HOST:$NEXT/website/update/$feed"
+    done
+    for file in "paperdesk-$VERSION.zip" "paperdesk-$VERSION.zip.sha256" "paperdesk-sources-$VERSION.tar.gz" "paperdesk-sources-$VERSION.tar.gz.sha256"; do
+        scp -q -i "$KEY" -o StrictHostKeyChecking=yes "$ROOT/dist/$file" "$HOST:$NEXT/dist/$file"
+    done
+    scp -q -i "$KEY" -o StrictHostKeyChecking=yes "$ROOT/scripts/prepare-release-stage.py" "$HOST:$NEXT/.release-stage.py"
+    $SSH "$HOST" python3 "$NEXT/.release-stage.py" "$NEXT" "$DEST" "$VERSION"
+    $SSH "$HOST" rm -- "$NEXT/.release-stage.py"
+else
 # Do not --delete: retain production-only assets and older download URLs.
 rsync -ac --exclude=data/ --exclude=__pycache__/ -e "ssh -i $KEY -o StrictHostKeyChecking=yes -o BatchMode=yes" "$ROOT/website/" "$HOST:$NEXT/website/"
 rsync -ac --exclude=windows/ -e "ssh -i $KEY -o StrictHostKeyChecking=yes -o BatchMode=yes" "$ROOT/dist/" "$HOST:$NEXT/dist/"
+fi
 scp -q -i "$KEY" -o StrictHostKeyChecking=yes "$ROOT/product/payload/system/paperdesk-release-public.pem" "$HOST:$NEXT/.release-public.pem"
 $SSH "$HOST" sh -s -- "$NEXT" "$DEST" "$BACKUP" "$BASELINE" "$STAMP" "$VERSION" <<'REMOTE'
 set -eu
