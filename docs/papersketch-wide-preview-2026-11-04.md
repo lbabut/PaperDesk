@@ -20,13 +20,18 @@ Validation:
   including publication repair, latency, raster, physical material, save/load,
   rapidograph, palm cancellation, and PDF export.
 
-Not installed in the running tablet application yet: Sketch is open and the
-journal shows drawing after its last explicit save. Save and close Sketch
-before installing or running the isolated device fidelity probe. Do not restart
-xochitl or substitute in-memory artwork with a test fixture before that.
+Installed on the user's tablet after explicit save/close confirmation.
+The installed native modules and RCC hashes match this branch's payload.
+The isolated real-input fidelity probe at size 80 passed:
+- 40/40 short contacts visible.
+- Wide stroke: all 1200 samples retained, zero reader loss/overflow.
+- First native preview submission: 1ms after the injected contact.
+- Largest report-to-preview-submit delay: 14ms.
+- Full-material release-to-drained tail: 2178ms under the 500Hz stress input.
+- No QML runtime errors; original artwork settings and saved files preserved.
 
-After save/close, use scripts/install-sketch-dev.py with --native-raster and
---native-ink, then the existing isolated fidelity probe at size 80. Its backup
-and artwork restoration checks must pass. Measure preview submission delay and
-release tail separately: software submission timing is not optical panel latency.
-This branch does not publish a public release or update version metadata.
+These are software pipeline timings, not optical panel measurements. The fast
+preview removes the wait for first visible ink, but does not accelerate the
+physical pigment model. Very rapid wide shading can still build a material
+queue. Device report: papersketch-wide-device-2026-11-04.json.
+No public release or version metadata was changed.

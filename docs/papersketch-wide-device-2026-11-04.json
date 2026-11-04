@@ -1,0 +1,200 @@
+{
+  "candidate_qml_sha256": "0af84cc3dbefbb164d3d23765c1b5efa4acdd60949635b7514435dc183b6e3a3",
+  "source_qml_sha256": "0af84cc3dbefbb164d3d23765c1b5efa4acdd60949635b7514435dc183b6e3a3",
+  "source_engine_sha256": "34c3c14f08ae7a0f52716e77f54aec3ea7533d2668cd76aebacfac931dd3814f",
+  "source_icon_sha256": "894c8600c49d5c04cc5bfb8050118e7c2b6fa9603f92b22281a19b2caf44798a",
+  "backup": "/home/root/.local/state/papersketch-native.q1wcpq",
+  "cache_namespace": "PaperDeskSketchNativeBenchbaseline1793781007506477848",
+  "artwork_before_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "saved_files_before_sha256": "a68d6b0f0733b470d7b0536ca35916ad43adaf3d57be36514da3d9a0d51effb6",
+  "saved_file_count": 15,
+  "native_modules": [
+    "17f31599a3003f7677be6febff6b30f8a0cec1d4b5773805b2ec7ba080effa48  /home/root/xovi/extensions.d/papersketch-raster.so",
+    "bbf45bfc154d02ca2e750f038b377d6ce75ae7abe01dcae4166e8a4f5bed1b5d  /home/root/xovi/extensions.d/papersketch-ink.so"
+  ],
+  "harness_sha256": "ee5ac1b1b9749c51dbc7a35bdf34ba338f1abe5a7dc8446ad3f14d243f1dfd1a",
+  "input_driver_source_sha256": "501112ed3dc53825ce4a5a4296f922a95e7cc4fb534fbb98554960456531e743",
+  "evdev_injections": [
+    {
+      "mode": "pen",
+      "contact_ms": 1793781055670,
+      "release_ms": 1793781056088,
+      "upright": true,
+      "initial_tilt": [
+        300,
+        -2200
+      ],
+      "writes_ok": true,
+      "id": "tiny-contacts"
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793781058868,
+      "release_ms": 1793781061774,
+      "upright": true,
+      "initial_tilt": [
+        300,
+        -2200
+      ],
+      "writes_ok": true,
+      "id": "fast-shading"
+    }
+  ],
+  "results": {
+    "fidelity_probe": {
+      "tiny": {
+        "strokes": 40,
+        "visible": 40,
+        "gui_stall": true,
+        "native_preview_at_gui_resume": {
+          "ready": true,
+          "pid": 6513,
+          "time_ms": 1793781055828,
+          "armed": true,
+          "fine_preview": true,
+          "wide_preview": true,
+          "tip_marker": true,
+          "shade_strength": true,
+          "preview_interval_ms": 8,
+          "report_clock_monotonic": true,
+          "max_report_to_submit_ms": 0,
+          "max_submit_us": 39,
+          "contact_ms": 1793781055827,
+          "first_update_ms": 1793781055827,
+          "fine_strokes": 16,
+          "active": true,
+          "box": [
+            585,
+            807,
+            588,
+            810
+          ]
+        },
+        "native_preview_status": {
+          "ready": true,
+          "pid": 6513,
+          "time_ms": 1793781056085,
+          "armed": true,
+          "fine_preview": true,
+          "wide_preview": true,
+          "tip_marker": true,
+          "shade_strength": true,
+          "preview_interval_ms": 8,
+          "report_clock_monotonic": true,
+          "max_report_to_submit_ms": 0,
+          "max_submit_us": 194,
+          "contact_ms": 1793781056080,
+          "first_update_ms": 1793781056080,
+          "fine_strokes": 40,
+          "active": false,
+          "box": [
+            1066,
+            807,
+            1069,
+            810
+          ]
+        }
+      },
+      "shading": {
+        "contact_stats": {
+          "calibrated": false,
+          "finger_geometry_matches": 0,
+          "paper_kind": 0,
+          "pen_match_calls": 0,
+          "pen_match_misses": 0,
+          "pen_max_stale_age_ms": -1,
+          "pen_nearest_miss_age_ms": -1,
+          "pen_nearest_miss_distance_px": -1,
+          "pen_samples_at_miss": 0,
+          "pen_stale_position_misses": 0,
+          "pen_youngest_miss_age_ms": -1,
+          "tilt_samples": 0,
+          "tilt_x": 0,
+          "tilt_y": 0
+        },
+        "optical_digest": "ba96a01c3a978cf33bb9d7046a84b93d357b7a6b02448930afad58e8877f9fd8",
+        "physical_state": {
+          "finger_digest": "6c751580bca9bf12c0246ce9b3fa0c5fa3f2893d477b6894ae4637825740440f",
+          "paper_kind": 0,
+          "surface_digest": "124617c1f65e92d3bc895fbd869e4bb16a30754b198f59e6e973949b9aaa1b01",
+          "wear": [
+            0,
+            0,
+            0,
+            0,
+            0.11439375824176529,
+            0
+          ]
+        },
+        "queue_latency": {
+          "batches": 49,
+          "clock_resolution_ms": 1,
+          "empty_batches": 1,
+          "max_ms": 1604,
+          "p50_upper_ms": 795,
+          "p95_upper_ms": 1604,
+          "samples": 1321,
+          "total_ms": 1020375
+        },
+        "native_preview_status": {
+          "ready": true,
+          "pid": 6513,
+          "time_ms": 1793781063785,
+          "armed": true,
+          "fine_preview": true,
+          "wide_preview": true,
+          "tip_marker": true,
+          "shade_strength": true,
+          "preview_interval_ms": 8,
+          "report_clock_monotonic": true,
+          "max_report_to_submit_ms": 14,
+          "max_submit_us": 7078,
+          "contact_ms": 1793781058868,
+          "first_update_ms": 1793781058869,
+          "fine_strokes": 41,
+          "active": false,
+          "box": [
+            286,
+            921,
+            1099,
+            1417
+          ]
+        },
+        "size": 80,
+        "max_gui_gap_ms": 260,
+        "native_stats": {
+          "advance_calls": 1200,
+          "advance_max_us": 16807,
+          "advance_total_us": 3847883,
+          "first_advance_ms": 1793781058872,
+          "first_publish_ms": 1793781058873,
+          "first_tile_paint_ms": 1793781058890,
+          "publish_calls": 23,
+          "publish_max_us": 2322,
+          "publish_total_us": 10624,
+          "tile_paint_calls": 158,
+          "tile_paint_max_us": 5688,
+          "tile_paint_total_us": 54001
+        },
+        "strokes": 1,
+        "input_samples": 1200,
+        "raw_stats": [
+          1321,
+          0,
+          0
+        ],
+        "finished_ms": 1793781063952,
+        "release_to_drained_ms": 2178
+      },
+      "passed": true,
+      "error": "",
+      "runtime_errors": []
+    },
+    "cases": []
+  },
+  "runtime_seconds": 46.3,
+  "artwork_after_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "artwork_preserved": true,
+  "saved_files_after_sha256": "a68d6b0f0733b470d7b0536ca35916ad43adaf3d57be36514da3d9a0d51effb6",
+  "saved_files_preserved": true
+}
