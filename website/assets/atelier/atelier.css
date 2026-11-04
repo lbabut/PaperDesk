@@ -15,3 +15,9 @@ body{background-image:linear-gradient(#faf1de9e,#faf1de9e),url("/assets/atelier/
 @media(max-width:680px){.header-kofi{padding:6px 10px}}
 
 .download-count{font-family:var(--body);font-size:11px}
+
+/* Shared notebook finishing touches. */
+.main-tabs a{transition:color .15s ease}.main-tabs a:hover{color:#315477}.main-tabs a:hover::before{content:"";position:absolute;left:4px;right:4px;bottom:3px;height:5px;background:url("/assets/pencil-underline.svg") center/100% 100%;opacity:.45;z-index:-1}
+.cover-copy .small-note{color:#505a50}.app-picker{background-color:#fff9e9b3;box-shadow:1px 2px 0 #a18d6d12}.app-picker[aria-pressed=true]{border-bottom:3px solid #80956e;box-shadow:2px 3px 0 #aab99b30}
+.site-footer nav a{min-height:36px;display:inline-flex;align-items:center}.site-footer small{color:#626657}.image-disclosure{font-size:11px;line-height:1.7;color:#656856}
+@media(max-width:680px){.site-footer nav{column-gap:17px;row-gap:2px}.image-disclosure{font-size:10px}.app-pickers{gap:8px}}

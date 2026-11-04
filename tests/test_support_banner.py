@@ -2,6 +2,7 @@
 from html.parser import HTMLParser
 from pathlib import Path
 import unittest
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -32,7 +33,7 @@ class SupportBannerTests(unittest.TestCase):
         self.assertIn('noopener', links[0]['rel'])
         self.assertIn('noreferrer', links[0]['rel'])
         self.assertEqual(page.count('data-download-count'), 1)
-        self.assertIn('Requires a working XOVI', page)
+        self.assertIn('Requires a working XOVI', re.sub(r'<[^>]+>', '', page))
         self.assertIn('Optional support', page)
 
 if __name__ == '__main__':

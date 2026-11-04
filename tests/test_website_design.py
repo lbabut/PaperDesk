@@ -2,6 +2,7 @@
 from html.parser import HTMLParser
 from pathlib import Path
 import unittest
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -48,7 +49,7 @@ class WebsiteDesignTests(unittest.TestCase):
                      if t == 'meta' and a.get('property') == 'og:image')
         self.assertEqual(image, 'https://paperdesk.lukaszbabut.info/assets/atelier/pencil-desk.webp')
         self.assertTrue((ROOT / 'website/assets/atelier/pencil-desk.webp').is_file())
-        self.assertIn('Requires a working XOVI', text)
+        self.assertIn('Requires a working XOVI', re.sub(r'<[^>]+>', '', text))
         self.assertIn('href="#install"', text)
         self.assertIn('id="view-install"', text)
         self.assertIn('Back up your notebooks', text)
