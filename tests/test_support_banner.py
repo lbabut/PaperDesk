@@ -26,9 +26,9 @@ class SupportBannerTests(unittest.TestCase):
         self.assertNotIn('<script', banner)
         self.assertNotIn('<iframe', page)
         links = Links(banner).links
-        links = [link for link in links if link.get("href") == "https://ko-fi.com/lbabut"]
+        links = [link for link in links if link.get("href") == "https://ko-fi.com/lbabut/5"]
         self.assertEqual(len(links), 1)
-        self.assertEqual(links[0]['href'], 'https://ko-fi.com/lbabut')
+        self.assertEqual(links[0]['href'], 'https://ko-fi.com/lbabut/5')
         self.assertEqual(links[0]['target'], '_blank')
         self.assertIn('noopener', links[0]['rel'])
         self.assertIn('noreferrer', links[0]['rel'])
