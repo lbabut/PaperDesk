@@ -109,6 +109,7 @@ int main(int argc,char **argv){
   QRegion repaired;QObject::connect(&repair,&SketchRaster::damaged,[&](const QRegion&r){repaired+=r;});
   auto exact=repair.image,mass=repair.material;repair.repairPreview();
   assert(repaired.contains(QPoint(20,20))&&repaired.contains(QPoint(200,200)));
+  assert(repaired.contains(QPoint(240,200))&&repaired.contains(QPoint(200,240)));
   assert(repair.previewRepair.isEmpty()&&repair.image==exact&&repair.material==mass);
   repair.begin();repair.advance(1,3,1,40,40,.7,true);repair.finish(true);repair.resetWhite();
   assert(repair.previewRepair.isEmpty());

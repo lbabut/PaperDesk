@@ -185,6 +185,9 @@ Item {
             a.nativeShadeStrength=true;verify(a.rawPenEnabled);verify(a.finePreviewEligible());
             a.nativeShadeStrength=false;verify(!a.finePreviewEligible());
             a.strength=1;verify(a.finePreviewEligible()); // Legacy tone is not used by the material renderer.
+            a.brushSize=80;a.nativeWidePreview=false;verify(!a.finePreviewEligible());
+            a.nativeWidePreview=true;verify(a.finePreviewEligible());
+            a.nativeWidePreview=false;a.brushSize=8;
             a.nativeRaster=old;backend.destroy();
         }
         function test_fullscreen_exit_is_not_raw_artwork(){
@@ -493,7 +496,7 @@ Item {
             verify(scene.app.finePreviewTool(1,3));verify(scene.app.finePreviewTool(8,16));
             verify(!scene.app.finePreviewTool(6,3));verify(!scene.app.finePreviewTool(7,3));
             verify(!scene.app.finePreviewTool(-1,3));verify(!scene.app.finePreviewTool(1.5,3));
-            verify(!scene.app.finePreviewTool(1,0));verify(!scene.app.finePreviewTool(1,17));verify(!scene.app.finePreviewTool(1,NaN));
+            verify(!scene.app.finePreviewTool(1,0));verify(scene.app.finePreviewTool(1,80));verify(!scene.app.finePreviewTool(1,81));verify(!scene.app.finePreviewTool(1,NaN));
         }
         function test_simple_tools_without_history_or_opacity_controls() {
             verify(findChild(scene.app,"undoButton")===null);

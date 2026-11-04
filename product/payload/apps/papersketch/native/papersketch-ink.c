@@ -101,7 +101,7 @@ static void status_file(void) {
     char tmp[128];snprintf(tmp,sizeof tmp,"/tmp/papersketch-ink-status.%d",getpid());
     int fd=open(tmp,O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW,0600);
     if(fd<0)return;
-    dprintf(fd,"{\"ready\":%s,\"pid\":%d,\"time_ms\":%lld,\"armed\":%s,\"fine_preview\":true,\"tip_marker\":true,\"shade_strength\":true,\"preview_interval_ms\":8,\"report_clock_monotonic\":%s,\"max_report_to_submit_ms\":%ld,\"max_submit_us\":%ld,\"contact_ms\":%lld,\"first_update_ms\":%lld,\"fine_strokes\":%u,\"active\":%s,\"box\":[%d,%d,%d,%d]}\n",
+    dprintf(fd,"{\"ready\":%s,\"pid\":%d,\"time_ms\":%lld,\"armed\":%s,\"fine_preview\":true,\"wide_preview\":true,\"tip_marker\":true,\"shade_strength\":true,\"preview_interval_ms\":8,\"report_clock_monotonic\":%s,\"max_report_to_submit_ms\":%ld,\"max_submit_us\":%ld,\"contact_ms\":%lld,\"first_update_ms\":%lld,\"fine_strokes\":%u,\"active\":%s,\"box\":[%d,%d,%d,%d]}\n",
             backend_ready?"true":"false",getpid(),realtime_ms(),arm.on?"true":"false",report_clock_monotonic?"true":"false",max_report_to_submit_ms,max_submit_us,contact_ms,first_update_ms,fine_strokes,preview_active?"true":"false",preview_box[0],preview_box[1],preview_box[2],preview_box[3]);
     close(fd);rename(tmp,"/tmp/papersketch-ink-status");
 }
@@ -117,7 +117,7 @@ static void parse_arm(const char *buf) {
                 const char *tail=buf+end;while(isspace((unsigned char)*tail))tail++;
                 if(*tail){char extra;n=sscanf(tail,"%f %c",&arm.strength,&extra)==1?10:0;}
             }
-            if((n!=9 && n!=10) || !isfinite(arm.strength) || arm.strength<.05f || arm.strength>1 || !((arm.tool>=0&&arm.tool<6)||arm.tool==8) || arm.size>32 ||
+            if((n!=9 && n!=10) || !isfinite(arm.strength) || arm.strength<.05f || arm.strength>1 || !((arm.tool>=0&&arm.tool<6)||arm.tool==8) || arm.size>96 ||
                !isfinite(arm.anchors[0])||!isfinite(arm.anchors[1])||!isfinite(arm.anchors[2])||
                arm.anchors[0]<.001f||arm.anchors[2]>1||arm.anchors[1]-arm.anchors[0]<.04f||
                arm.anchors[2]-arm.anchors[1]<.04f||arm.anchors[2]-arm.anchors[0]<.15f)n=0;

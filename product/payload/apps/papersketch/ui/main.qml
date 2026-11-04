@@ -138,9 +138,10 @@ Rectangle {
     property bool fastPenPreview:true
     property bool nativeFinePreview:false
     property bool nativeShadeStrength:false
+    property bool nativeWidePreview:false
     onFastPenPreviewChanged:if(ready)nativeHeartbeat()
-    function finePreviewTool(selected,size){return isFinite(size) && size>=1 && size<=16 && ((selected>=0 && selected<6 && selected===Math.floor(selected))||selected===8);}
-    function finePreviewEligible(){return bitmapMode && typeof nativeRaster.writePreviewPermit==="function" && typeof nativeRaster.previewPressureAnchors==="function" && typeof nativeRaster.repairPreview==="function" && fastPenPreview && rawPenEnabled && finePreviewTool(tool,brushSize) && isFinite(strength) && strength>=.05 && strength<=1 && (strength===1 || nativeShadeStrength || tool===8);}
+    function finePreviewTool(selected,size){return isFinite(size) && size>=1 && size<=80 && ((selected>=0 && selected<6 && selected===Math.floor(selected))||selected===8);}
+    function finePreviewEligible(){return bitmapMode && typeof nativeRaster.writePreviewPermit==="function" && typeof nativeRaster.previewPressureAnchors==="function" && typeof nativeRaster.repairPreview==="function" && fastPenPreview && rawPenEnabled && (brushSize<=16 || nativeWidePreview) && finePreviewTool(tool,brushSize) && isFinite(strength) && strength>=.05 && strength<=1 && (strength===1 || nativeShadeStrength || tool===8);}
     property bool nativeReady: false
     property bool nativeArmed: false
     property bool nativeStroke: false
@@ -182,8 +183,8 @@ Rectangle {
             var x=new XMLHttpRequest();x.open("GET","file:///tmp/papersketch-ink-status",false);x.send();
             var status=JSON.parse(x.responseText);
             nativeReady=status.ready===true && Math.abs(Date.now()-status.time_ms)<1500;
-            nativeArmed=nativeReady && status.armed===true;nativeFinePreview=nativeReady && status.fine_preview===true;nativeShadeStrength=nativeReady && status.shade_strength===true;
-        } catch(e) {nativeReady=false;nativeArmed=false;nativeShadeStrength=false;}
+            nativeArmed=nativeReady && status.armed===true;nativeFinePreview=nativeReady && status.fine_preview===true;nativeShadeStrength=nativeReady && status.shade_strength===true;nativeWidePreview=nativeReady && status.wide_preview===true;
+        } catch(e) {nativeReady=false;nativeArmed=false;nativeShadeStrength=false;nativeWidePreview=false;}
         if(!nativeReady)return;
         var win=root.Window.window;
         var state=(win?win.width+"x"+win.height:"no window")+" ready="+ready+" replay="+replaying+" armed="+nativeArmed+" tool="+tool+" size="+brushSize+" strength="+strength+" tone="+tone+" raw="+rawPenEnabled+" bitmap="+bitmapMode+" fine="+finePreviewEligible();

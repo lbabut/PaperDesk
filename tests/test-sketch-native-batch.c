@@ -33,6 +33,7 @@ int main(void) {
         char command[128];snprintf(command,sizeof command,"fine 10 20 200 300 8 2 .15 .5 .95 %s",badStrength[i]);
         parse_arm(command);assert(!arm.on);
     }
+    parse_arm("fine 10 20 200 300 96 4 .15 .5 .95 .8");assert(arm.on&&arm.fine&&fine_width(1)==96);
     const char *invalid[]={"off","fine 10 20 200 300 nan 1 .15 .5 .95","fine 10 20 200 300 3 7 .15 .5 .95","fine 10 20 200 300 3 6 .15 .5 .95","fine 10 20 200 300 3 1 .5 .4 .95","fine 1400 20 200 300 3 1 .15 .5 .95","fine 10 20 200 300 99 1 .15 .5 .95"};
     for(unsigned i=0;i<sizeof invalid/sizeof *invalid;i++){parse_arm(invalid[i]);assert(!arm.on);}
     backend_ready=0;parse_arm("fine 10 20 200 300 3 1 .15 .5 .95");assert(!arm.on);
@@ -77,6 +78,18 @@ int main(void) {
     segment(4,12,20,12,32,0xffffffffu,box);
     for(int y=4;y<20;y++)for(int x=4;x<20;x++)assert(pixels[y*32+x]==0xffffffffu);
     puts("PASS: pale guide density, stable screen pattern, existing pigment/mask preservation, opaque ink and legacy eraser");
+    uint32_t widePixels[128*128];unsigned char wideMask[128*128];
+    memset(widePixels,255,sizeof widePixels);memset(wideMask,0,sizeof wideMask);
+    surf.px=widePixels;surf.mk=wideMask;surf.ps=surf.ms=128;
+    parse_arm("fine 16 16 96 96 96 4 .15 .5 .95");
+    segment(0,0,127,127,96,0xff000000u,box);int wideDark=0;
+    for(int y=0;y<128;y++)for(int x=0;x<128;x++){
+        int at=y*128+x;
+        if(x<16||x>=112||y<16||y>=112)assert(widePixels[at]==0xffffffffu&&wideMask[at]==0);
+        else if(widePixels[at]==0xff000000u){assert(wideMask[at]==255);wideDark++;}
+    }
+    assert(wideDark>7000&&box[0]==16&&box[1]==16&&box[2]==111&&box[3]==111);
+    puts("PASS: maximum wide preview clips pixels and mask to canvas");
     puts("PASS: fine-preview capability/permit bounds, pressure and ink widths, invalid permits and clipped native pixels");
     puts("PASS: 1000 reports coalesced to 251 updates; final tail and union bounds preserved");
     return 0;
