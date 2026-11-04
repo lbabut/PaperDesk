@@ -14,16 +14,20 @@ Rectangle{
  function finish(ok,error){result.passed=ok;result.error=ok?"":error;console.log("PAPERSKETCH_NATIVE_RESULT "+JSON.stringify({fidelity_probe:result,cases:[]}));ticker.stop();}
  function step(){var now=Date.now();if(phase===4&&tickAt)maxShadingGap=Math.max(maxShadingGap,now-tickAt);tickAt=now;var a=subject.item;if(!a||!a.ready||a.replaying||!a.bitmapMode)return;
   if(Date.now()-at>60000){finish(false,"Timeout phase "+phase);return;}
-  if(phase===0){if(!a.rawPenMode)return;a.confirmation="book";a.confirmAction();a.tool=1;a.brushSize=3;a.strength=1;before=a.rawPenStrokes;move(1);return;}
+  if(phase===0){if(!a.rawPenMode)return;a.confirmation="book";a.confirmAction();result.blank_new_book=a.nativeRaster.pigmentDiagnostics();if(!a.saveBook()){finish(false,"Fresh book save failed");return;}a.newPage();if(a.pageCount!==2){finish(false,"New page action failed");return;}result.blank_new=a.nativeRaster.pigmentDiagnostics();if(result.blank_new.mass_sum!==0 || result.blank_new.optical_mismatches!==0){finish(false,"New page pigment is not empty");return;}a.tool=1;a.brushSize=3;a.strength=1;before=a.rawPenStrokes;move(1);return;}
   if(phase===1&&Date.now()-at>500){inject("fidelity-dots","tiny-contacts",200,650,980,650);move(2);return;}
   if(phase===2&&a.rawPenStrokes>=before+40&&a.activeStroke===null){
    var visible=0;for(var i=0;i<40;i++){var x=Math.round(200+780*i/39);var pixels=a.nativeRaster.pixels(x-1,648,3,5);for(var k=0;k<pixels.length;k+=4)if(pixels[k]<250){visible++;break;}}
    result.tiny={strokes:a.rawPenStrokes-before,visible:visible,gui_stall:stalled,native_preview_at_gui_resume:stalledPreview,native_preview_status:previewStatus()};
    if(result.tiny.strokes!==40||visible!==40){finish(false,"Short contacts lost");return;}
+   a.confirmation="clear";a.confirmAction();result.blank_clear=a.nativeRaster.pigmentDiagnostics();
+   if(result.blank_clear.mass_sum!==0 || result.blank_clear.optical_mismatches!==0){finish(false,"Cleared page pigment is not empty");return;}
    a.tool=4;a.brushSize=shadingSize;before=a.rawPenStrokes;move(3);return;}
   if(phase===3&&Date.now()-at>500){inject("fidelity-shade","fast-shading",200,800,980,1250);move(4);return;}
   if(phase===4&&a.rawPenStrokes>=before+1&&a.activeStroke===null){
-   result.shading={contact_stats:a.nativeRaster.contactStats(),optical_digest:a.nativeRaster.opticalDigest(),physical_state:a.nativeRaster.materialState(),queue_latency:typeof a.nativeRaster.penQueueLatencyStats==="function"?a.nativeRaster.penQueueLatencyStats():null,native_preview_status:previewStatus(),size:shadingSize,max_gui_gap_ms:maxShadingGap,native_stats:a.nativeRaster.latencyStats(),strokes:a.rawPenStrokes-before,input_samples:a.lastStroke.inputSamples,raw_stats:a.nativeRaster.penInputStats(),finished_ms:Date.now()};
+   result.shading={pigment_diagnostics:a.nativeRaster.pigmentDiagnostics(),contact_stats:a.nativeRaster.contactStats(),optical_digest:a.nativeRaster.opticalDigest(),physical_state:a.nativeRaster.materialState(),queue_latency:typeof a.nativeRaster.penQueueLatencyStats==="function"?a.nativeRaster.penQueueLatencyStats():null,native_preview_status:previewStatus(),size:shadingSize,max_gui_gap_ms:maxShadingGap,native_stats:a.nativeRaster.latencyStats(),strokes:a.rawPenStrokes-before,input_samples:a.lastStroke.inputSamples,raw_stats:a.nativeRaster.penInputStats(),finished_ms:Date.now()};
+   var patch=a.nativeRaster.pixels(560,1000,32,32),low=255,high=0;for(var k=0;k<patch.length;k+=4){low=Math.min(low,patch[k]);high=Math.max(high,patch[k]);}
+   result.shading.texture={low:low,high:high};if(result.shading.pigment_diagnostics.optical_mismatches!==0 || high-low<30){finish(false,"Charcoal pigment or tonal range mismatch");return;}
    finish(result.shading.strokes===1&&result.shading.input_samples>=1200&&result.shading.raw_stats[1]===0,"Fast shading input loss");}
  }
  Connections{target:subject.item;ignoreUnknownSignals:true;function onRawPenContactChanged(){

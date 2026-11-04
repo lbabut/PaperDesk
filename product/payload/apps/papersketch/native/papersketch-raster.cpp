@@ -245,6 +245,28 @@ public:
     }
     QImage image{1200,1600,QImage::Format_RGB32};
     QImage material, finger, currentFinger;bool tentativeTouch=false;
+    int legacyBlankRepairs=0;
+    void repairLegacyBlankPigment(){
+        legacyBlankRepairs=0;
+        auto mass=reinterpret_cast<uint32_t*>(material.bits());
+        const auto pixels=reinterpret_cast<const uint32_t*>(image.constBits());
+        for(int i=0;i<1200*1600;i++)if(mass[i]==0xff000000u&&pixels[i]==0xffffffffu){mass[i]=0;legacyBlankRepairs++;}
+    }
+    Q_INVOKABLE QVariantMap pigmentDiagnostics()const{
+        if(!materialReady||material.isNull()||image.isNull())return {{"available",false}};
+        const auto mass=reinterpret_cast<const uint32_t*>(material.constBits());
+        const auto pixels=reinterpret_cast<const uint32_t*>(image.constBits());
+        qulonglong total=0,nonzero=0,mismatch=0;
+        for(int i=0;i<1200*1600;i++){
+            unsigned sum=(mass[i]>>16)+(mass[i]&65535);total+=sum;nonzero+=sum>0;
+            if(sum>65535){mismatch++;continue;}
+            unsigned gray=physics.optical[sum];
+            if(physics.hasInk&&physics.ink[i])gray=(gray*(255-physics.ink[i])+127)/255;
+            mismatch+=unsigned(pixels[i]&255)!=gray;
+        }
+        return {{"available",true},{"mass_sum",total},{"nonzero_pixels",nonzero},{"optical_mismatches",mismatch},{"repaired_blank_pixels",legacyBlankRepairs}};
+    }
+
     struct Patch{QRect rect;QImage optical,mass;};
     QList<Patch> currentPatches;std::array<bool,130> captured{};
     void capture(QRect dirty){
@@ -269,7 +291,7 @@ public:
         // white image here would let maintenance or Save replace missing art.
         if(image.size()!=QSize(1200,1600)||image.format()!=QImage::Format_RGB32)return false;
         physics.init(1200,1600);
-        if(!materialReady){material=QImage(1200,1600,QImage::Format_RGB32);physics.import(reinterpret_cast<const uint32_t*>(image.constBits()),reinterpret_cast<uint32_t*>(material.bits()));physics.resetSurface();materialReady=true;}
+        if(!materialReady){material=QImage(1200,1600,QImage::Format_ARGB32);physics.import(reinterpret_cast<const uint32_t*>(image.constBits()),reinterpret_cast<uint32_t*>(material.bits()));physics.resetSurface();materialReady=true;}
         if(finger.isNull()){finger=QImage(82,81,QImage::Format_Grayscale16);finger.fill(0);}
         return true;
     }
@@ -460,8 +482,8 @@ public:
     }
     Q_INVOKABLE void setNamespace(QString name){cacheNamespace=name;kitLoaded=false;physics.wear.fill(0);loadCalibration();penSamples.activate();touchSamples.activate();proximityTimer.start();}
     Q_INVOKABLE void release(){setRawPenInputEnabled(false);rearEraserStroke=false;dropDisplayDamage();pressureCurve.cancel();penSamples.pause();touchSamples.pause();proximityTimer.stop();image=QImage();material=QImage();finger=QImage();currentFinger=QImage();currentPatches.clear();materialReady=false;}
-    Q_INVOKABLE void resetWhite(){rearEraserStroke=false;dropDisplayDamage();currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(image.size()!=QSize(1200,1600)||image.format()!=QImage::Format_RGB32)image=QImage(1200,1600,QImage::Format_RGB32);image.fill(Qt::white);materialReady=false;ensureMaterial();physics.resetSurface();finger.fill(0);slowest=0;emit timingChanged();publishDirty(image.rect());}
-    Q_INVOKABLE void clearPage(){if(!ensureMaterial())return;dropDisplayDamage();image.fill(Qt::white);material.fill(0);finger.fill(0);physics.resetSurface();physics.resetInk();publishDirty(image.rect());}
+    Q_INVOKABLE void resetWhite(){legacyBlankRepairs=0;rearEraserStroke=false;dropDisplayDamage();currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(image.size()!=QSize(1200,1600)||image.format()!=QImage::Format_RGB32)image=QImage(1200,1600,QImage::Format_RGB32);image.fill(Qt::white);materialReady=false;ensureMaterial();physics.resetSurface();finger.fill(0);slowest=0;emit timingChanged();publishDirty(image.rect());}
+    Q_INVOKABLE void clearPage(){if(!ensureMaterial())return;dropDisplayDamage();image.fill(Qt::white);material.fill(0);legacyBlankRepairs=0;finger.fill(0);physics.resetSurface();physics.resetInk();publishDirty(image.rect());}
     Q_INVOKABLE void begin(bool tentative=false,bool rearEraser=false){rearEraserStroke=rearEraser&&!tentative;flushDisplayDamage();std::atomic_store_explicit(&latency,std::make_shared<SketchLatency>(),std::memory_order_release);livePublication=false;lastRawId=0;lastContact=0;pendingSample=PaperPen::Sample();rawReplayed=0;rawBatchMax=0;collectingDamage=false;collectedDamage=QRegion();pressureMatches=0;pressureFallbacks=0;penSamples.resetMatchDiagnostics();tiltSamples=0;touchGeometryMatches=0;touchMatches=0;touchFallbacks=0;if(!ensureMaterial())return;livePublication=true;awaitingPenContact=!tentative;tentativeTouch=tentative;currentFinger=tentative?finger:QImage();captured.fill(false);currentPatches.clear();physics.untilNext=0;pendingDirty=QRect();unpublished=false;}
     Q_INVOKABLE void finish(bool preview=false){if(preview&&!pendingDirty.isEmpty()){int margin=int(std::ceil(48/std::max(.1,std::min(inputScaleX,inputScaleY))))+4;auto repair=pendingDirty.adjusted(-margin,-margin,margin,margin).intersected(image.rect());previewRepair+=repair;publishDirty(repair);}rearEraserStroke=false;currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(unpublished&&!pendingDirty.isEmpty())publishDirty(pendingDirty);livePublication=false;flushDisplayDamage();pendingDirty=QRect();unpublished=false;}
     Q_INVOKABLE void cancel(){
@@ -567,10 +589,10 @@ public:
                         if(valid)for(int i=0;i<6;i++){wear[i]=array[i].toDouble(-1);valid=valid&&std::isfinite(wear[i])&&wear[i]>=0&&wear[i]<=1;}}
                     auto raw=valid?materialPayload(mf.readAll(),v2,v3):QByteArray();
                     if(!raw.isEmpty()){
-                        image=QImage(1200,1600,QImage::Format_RGB32);material=QImage(1200,1600,QImage::Format_RGB32);finger=QImage(82,81,QImage::Format_Grayscale16);
+                        image=QImage(1200,1600,QImage::Format_RGB32);material=QImage(1200,1600,QImage::Format_ARGB32);finger=QImage(82,81,QImage::Format_Grayscale16);
                         memcpy(material.bits(),raw.constData(),1200*1600*4);memcpy(image.bits(),raw.constData()+1200*1600*4,1200*1600*4);
                         for(int y=0;y<81;y++)memcpy(finger.scanLine(y),raw.constData()+1200*1600*8+y*82*2,82*2);
-                        materialReady=true;physics.init(1200,1600);physics.setPaperKind(kind);physics.resetSurface();
+                        repairLegacyBlankPigment();materialReady=true;physics.init(1200,1600);physics.setPaperKind(kind);physics.resetSurface();
                         if(v2)memcpy(physics.burnish.data(),raw.constData()+1200*1600*8+82*81*2,1200*1600);
                         physics.resetInk();
                         if(v3){memcpy(physics.ink.data(),raw.constData()+1200*1600*9+82*81*2,1200*1600);physics.hasInk=true;}

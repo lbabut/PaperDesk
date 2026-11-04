@@ -1,0 +1,232 @@
+{
+  "candidate_qml_sha256": "177450e5011f07153b22f39d2f89bf3c0ffeada7b562b35707f9f98014a0f5a4",
+  "source_qml_sha256": "177450e5011f07153b22f39d2f89bf3c0ffeada7b562b35707f9f98014a0f5a4",
+  "source_engine_sha256": "34c3c14f08ae7a0f52716e77f54aec3ea7533d2668cd76aebacfac931dd3814f",
+  "source_icon_sha256": "894c8600c49d5c04cc5bfb8050118e7c2b6fa9603f92b22281a19b2caf44798a",
+  "backup": "/home/root/.local/state/papersketch-native.iNzBGF",
+  "cache_namespace": "PaperDeskSketchNativeBenchbaseline1793784801148270296",
+  "artwork_before_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "saved_files_before_sha256": "dd1285a8742ffc4b037744737fd79735290eaf0007e5688b16ffdaf3a21917c9",
+  "saved_file_count": 15,
+  "native_modules": [
+    "d195c826c54ace4874f63f623c2fa9c6d8119253487ba8083313fcf85a696d6b  /home/root/xovi/extensions.d/papersketch-raster.so",
+    "0a4ad626a40600cef69fa780ea11d4ee889d4ae260d951607f2a94e05be40b03  /home/root/xovi/extensions.d/papersketch-ink.so"
+  ],
+  "harness_sha256": "d180a9373e1aa43107bac38ffc6c289abde769f2c7b4a97b0c8132fbf359751e",
+  "input_driver_source_sha256": "501112ed3dc53825ce4a5a4296f922a95e7cc4fb534fbb98554960456531e743",
+  "evdev_injections": [
+    {
+      "mode": "pen",
+      "contact_ms": 1793784850789,
+      "release_ms": 1793784851234,
+      "upright": true,
+      "initial_tilt": [
+        600,
+        -2600
+      ],
+      "writes_ok": true,
+      "id": "tiny-contacts"
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793784854084,
+      "release_ms": 1793784857241,
+      "upright": true,
+      "initial_tilt": [
+        600,
+        -2600
+      ],
+      "writes_ok": true,
+      "id": "fast-shading"
+    }
+  ],
+  "results": {
+    "fidelity_probe": {
+      "blank_new_book": {
+        "available": true,
+        "mass_sum": 0,
+        "nonzero_pixels": 0,
+        "optical_mismatches": 0,
+        "repaired_blank_pixels": 0
+      },
+      "blank_new": {
+        "available": true,
+        "mass_sum": 0,
+        "nonzero_pixels": 0,
+        "optical_mismatches": 0,
+        "repaired_blank_pixels": 0
+      },
+      "tiny": {
+        "strokes": 40,
+        "visible": 40,
+        "gui_stall": true,
+        "native_preview_at_gui_resume": {
+          "ready": true,
+          "pid": 8331,
+          "time_ms": 1793784850953,
+          "armed": true,
+          "fine_preview": true,
+          "wide_preview": true,
+          "tip_marker": true,
+          "shade_strength": true,
+          "preview_interval_ms": 8,
+          "report_clock_monotonic": true,
+          "max_report_to_submit_ms": 0,
+          "max_submit_us": 44,
+          "contact_ms": 1793784850953,
+          "first_update_ms": 1793784850953,
+          "fine_strokes": 16,
+          "active": true,
+          "box": [
+            585,
+            807,
+            588,
+            810
+          ]
+        },
+        "native_preview_status": {
+          "ready": true,
+          "pid": 8331,
+          "time_ms": 1793784851230,
+          "armed": true,
+          "fine_preview": true,
+          "wide_preview": true,
+          "tip_marker": true,
+          "shade_strength": true,
+          "preview_interval_ms": 8,
+          "report_clock_monotonic": true,
+          "max_report_to_submit_ms": 0,
+          "max_submit_us": 67,
+          "contact_ms": 1793784851225,
+          "first_update_ms": 1793784851225,
+          "fine_strokes": 40,
+          "active": false,
+          "box": [
+            1066,
+            807,
+            1069,
+            810
+          ]
+        }
+      },
+      "blank_clear": {
+        "available": true,
+        "mass_sum": 0,
+        "nonzero_pixels": 0,
+        "optical_mismatches": 0,
+        "repaired_blank_pixels": 0
+      },
+      "shading": {
+        "pigment_diagnostics": {
+          "available": true,
+          "mass_sum": 2836454990,
+          "nonzero_pixels": 432024,
+          "optical_mismatches": 0,
+          "repaired_blank_pixels": 0
+        },
+        "contact_stats": {
+          "calibrated": false,
+          "finger_geometry_matches": 0,
+          "paper_kind": 0,
+          "pen_match_calls": 0,
+          "pen_match_misses": 0,
+          "pen_max_stale_age_ms": -1,
+          "pen_nearest_miss_age_ms": -1,
+          "pen_nearest_miss_distance_px": -1,
+          "pen_samples_at_miss": 0,
+          "pen_stale_position_misses": 0,
+          "pen_youngest_miss_age_ms": -1,
+          "tilt_samples": 0,
+          "tilt_x": 0,
+          "tilt_y": 0
+        },
+        "optical_digest": "5bcdc9ce983e90e5f9299430d4c7cc8b8401ad76118fafbd7bed1bb02cd660d2",
+        "physical_state": {
+          "finger_digest": "6c751580bca9bf12c0246ce9b3fa0c5fa3f2893d477b6894ae4637825740440f",
+          "paper_kind": 0,
+          "surface_digest": "124617c1f65e92d3bc895fbd869e4bb16a30754b198f59e6e973949b9aaa1b01",
+          "wear": [
+            0,
+            0,
+            0,
+            0,
+            0.11439375824176529,
+            0
+          ]
+        },
+        "queue_latency": {
+          "batches": 47,
+          "clock_resolution_ms": 1,
+          "empty_batches": 0,
+          "max_ms": 1963,
+          "p50_upper_ms": 782,
+          "p95_upper_ms": 1963,
+          "samples": 1321,
+          "total_ms": 1110326
+        },
+        "native_preview_status": {
+          "ready": true,
+          "pid": 8331,
+          "time_ms": 1793784859853,
+          "armed": true,
+          "fine_preview": true,
+          "wide_preview": true,
+          "tip_marker": true,
+          "shade_strength": true,
+          "preview_interval_ms": 8,
+          "report_clock_monotonic": true,
+          "max_report_to_submit_ms": 17,
+          "max_submit_us": 8003,
+          "contact_ms": 1793784854085,
+          "first_update_ms": 1793784854086,
+          "fine_strokes": 41,
+          "active": false,
+          "box": [
+            286,
+            921,
+            1099,
+            1417
+          ]
+        },
+        "size": 80,
+        "max_gui_gap_ms": 258,
+        "native_stats": {
+          "advance_calls": 1200,
+          "advance_max_us": 29290,
+          "advance_total_us": 4375941,
+          "first_advance_ms": 1793784854096,
+          "first_publish_ms": 1793784854098,
+          "first_tile_paint_ms": 1793784854106,
+          "publish_calls": 41,
+          "publish_max_us": 506,
+          "publish_total_us": 13084,
+          "tile_paint_calls": 213,
+          "tile_paint_max_us": 1208,
+          "tile_paint_total_us": 71858
+        },
+        "strokes": 1,
+        "input_samples": 1200,
+        "raw_stats": [
+          1321,
+          0,
+          0
+        ],
+        "finished_ms": 1793784859903,
+        "texture": {
+          "low": 75,
+          "high": 228
+        },
+        "release_to_drained_ms": 2662
+      },
+      "passed": true,
+      "error": "",
+      "runtime_errors": []
+    },
+    "cases": []
+  },
+  "runtime_seconds": 50.43,
+  "artwork_after_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "artwork_preserved": true,
+  "saved_files_after_sha256": "dd1285a8742ffc4b037744737fd79735290eaf0007e5688b16ffdaf3a21917c9",
+  "saved_files_preserved": true
+}
