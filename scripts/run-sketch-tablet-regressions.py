@@ -6,7 +6,7 @@ p.add_argument('--output',default='docs/papersketch-tablet-regressions.json')
 a=p.parse_args();root=pathlib.Path(__file__).resolve().parents[1]
 cache=pathlib.Path(os.environ.get('PAPERDESK_TOOLCACHE','/home/lukasz/Documents/Codex/2026-09-25/m-2/work'))/'arm-toolchain/root'
 work=root/'work/tablet-regressions';work.mkdir(parents=True,exist_ok=True)
-names=['charcoal-layers','material','material-realism','pressure','touch','pen','display'];targets=[]
+names=['charcoal-layers','kneaded-strength','material','material-realism','pressure','touch','pen','display'];targets=[]
 env=dict(os.environ,LD_LIBRARY_PATH=str(cache/'usr/lib/x86_64-linux-gnu'))
 for name in names:
  source=root/('tests/test-sketch-'+name+'.cpp');target=work/name

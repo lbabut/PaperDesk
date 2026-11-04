@@ -135,7 +135,7 @@ static void testKneadedLift() {
     auto value = coal.mass[80 * Surface::W + 60], lifted = kneaded.mass[80 * Surface::W + 60];
     double looseRemoved = double((value & 65535) - (lifted & 65535)) / (value & 65535);
     double fixedRemoved = double((value >> 16) - (lifted >> 16)) / (value >> 16);
-    assert(looseRemoved > fixedRemoved * 4);
+    assert(looseRemoved > fixedRemoved * 1.5);
     Surface delayed = coal;
     delayed.p.kneaded = true;
     delayed.segment(6, 60, 80, 60, 80, 0, 0);

@@ -195,6 +195,10 @@ Item {
                 backend.rawEvents=[];holder.enabled=true;verify(a.rawPenEnabled);compare(backend.rawEnabled,true);
             }finally{a.parent=oldParent;holder.destroy();a.nativeRaster=old;backend.destroy();}
         }
+        function test_device_fidelity_harness_compiles(){
+            var component=Qt.createComponent("../device/papersketch-input-fidelity.qml");
+            compare(component.status,Component.Ready,component.errorString());
+        }
         function test_device_detail_harness_compiles(){
             var component=Qt.createComponent("../device/papersketch-detail.qml");
             compare(component.status,Component.Ready,component.errorString());

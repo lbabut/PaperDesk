@@ -203,12 +203,16 @@ The `preview-shade` native group checks the six leading-trace shade tables again
 
 ## Paper Sketch tablet regressions
 
-The native ARM runner executes seven suites directly on the tablet without
+The native ARM runner executes eight suites directly on the tablet without
 restarting its UI. The extended UI probe additionally exercises five charcoal
-layers on three paper stocks, both charcoal types, actual Clear/confirmation
+layers on three paper stocks, both charcoal types, kneaded pressure/dab response
+for graphite and both charcoals, actual Clear/confirmation
 taps, and real Care foreground/background transitions with injected pen input.
 Both produce JSON reports and check saved artwork preservation.
 
 See [the tablet regression guide](../docs/papersketch-foreground-layers-and-tablet-tests-2026-11-04.md)
 for commands, required device state and the distinction between CPU-only and
 UI-changing runs. The extended UI flag is --extended-fidelity-probe.
+
+Kneaded eraser strength, its contact cap, and device pressure ramp are covered in
+[the kneaded regression report](../docs/papersketch-kneaded-strength-2026-11-04.md).

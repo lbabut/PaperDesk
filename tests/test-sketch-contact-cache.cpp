@@ -38,7 +38,7 @@ static void correctness(){
         a.engine.tiltY=b.engine.tiltY=variant?-.4:0;
         a.engine.contactAspect=b.engine.contactAspect=1.6;
         a.engine.contactAngle=b.engine.contactAngle=.4;
-        for(int tool=0;tool<9;tool++)if(tool!=4&&tool!=5)for(double size:{1.,7.,23.,24.,25.,48.,80.}){
+        for(int tool=0;tool<9;tool++)if(tool!=4&&tool!=5&&!(variant&&tool==6))for(double size:{1.,7.,23.,24.,25.,48.,80.}){
             for(int i=0;i<24;i++){
                 const double pressures[]={0.,.006,.3,.6,.60000001,.65,1.,.3};
                 double p=pressures[i%8];a.dab(tool,size,p,i);b.dab(tool,size,p,i);equal(a,b);

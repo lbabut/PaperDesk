@@ -42,6 +42,31 @@ Rectangle{
   }
   return "";
  }
+ function eraserMean(a){var values=a.nativeRaster.pixels(596,596,8,8),sum=0;for(var i=0;i<values.length;i+=4)sum+=values[i];return sum/(values.length/4);}
+ function eraserSeed(a,tool,paper){
+  a.confirmation="clear";a.confirmAction();a.paperKind=paper;a.kneadedEraser=false;a.nativeRaster.setMaterialOptions(paper,false);a.selectTool(tool);a.brushSize=48;a.strength=1;a.nativeRaster.sharpen(tool);
+  for(var pass=0;pass<5;pass++){
+   a.beginStroke(Qt.point(250,600),"pen",tool,.65,false,[1,250,600,.65,0,0,false,300+pass]);
+   for(var k=1;k<=70;k++)a.extendStroke(Qt.point(250+k*10,600),"pen",.65,[2,250+k*10,600,.65,0,0,false,300+pass]);
+   a.finishStroke();
+  }
+  a.kneadedEraser=true;a.selectTool(6);a.brushSize=48;a.nativeRaster.setMaterialOptions(paper,true);
+ }
+ function kneadedCases(a){
+  result.kneaded=[];a.fastPenPreview=false;
+  for(var paper=0;paper<3;paper++)for(var medium=0;medium<3;medium++){
+   var tool=[2,4,5][medium];eraserSeed(a,tool,paper);var before=eraserMean(a);
+   a.beginStroke(Qt.point(600,600),"pen",6,.05,false,[1,600,600,.05,0,0,false,500]);
+   var light=eraserMean(a);a.extendStroke(Qt.point(600,600),"pen",.4,[2,600,600,.4,0,0,false,500]);var normal=eraserMean(a);
+   a.extendStroke(Qt.point(600,600),"pen",1,[2,600,600,1,0,0,false,500]);var firm=eraserMean(a),held=a.nativeRaster.opticalDigest();
+   for(var i=0;i<50;i++)a.extendStroke(Qt.point(600,600),"pen",1,[2,600,600,1,0,0,false,500]);
+   if(a.nativeRaster.opticalDigest()!==held)return "Held kneaded contact kept erasing";
+   a.finishStroke();a.beginStroke(Qt.point(600,600),"pen",6,1,false,[1,600,600,1,0,0,false,501]);a.finishStroke();var repeated=eraserMean(a);
+   result.kneaded.push({paper:paper,tool:tool,before:before,light:light,normal:normal,firm:firm,second_dab:repeated});
+   if(!(light>before&&normal>light&&firm>normal&&firm>before+20&&repeated>firm+1))return "Kneaded lift did not visibly follow pressure and repeated dabs";
+  }
+  return "";
+ }
  function finish(ok,error){result.passed=ok;result.error=ok?"":error;console.log("PAPERSKETCH_NATIVE_RESULT "+JSON.stringify({fidelity_probe:result,cases:[]}));ticker.stop();}
  function step(){var now=Date.now();if(phase===4&&tickAt)maxShadingGap=Math.max(maxShadingGap,now-tickAt);tickAt=now;var a=subject.item;if(!a||!a.ready||a.replaying||!a.bitmapMode)return;
   if(Date.now()-at>60000){finish(false,"Timeout phase "+phase);return;}
@@ -63,7 +88,15 @@ Rectangle{
    if(!extendedCases){finish(true,"");return;}move(5);return;
   }
   if(phase===5){
-   var error=layerCases(a);if(error){finish(false,error);return;}
+   var error=layerCases(a);if(error){finish(false,error);return;}error=kneadedCases(a);if(error){finish(false,error);return;}
+   eraserSeed(a,5,0);result.kneaded_real={before:eraserMean(a)};a.nativeHeartbeat();resumeBefore=a.rawPenStrokes;move(53);return;
+  }
+  if(phase===53&&Date.now()-at>400){
+   inject("pressure-ramp","kneaded-real-pressure",600,600,600,600);move(54);return;
+  }
+  if(phase===54&&a.rawPenStrokes>resumeBefore&&a.activeStroke===null){
+   result.kneaded_real.after=eraserMean(a);result.kneaded_real.pressure_min=a.lastStroke.pressureMin;result.kneaded_real.pressure_max=a.lastStroke.pressureMax;
+   if(result.kneaded_real.after<result.kneaded_real.before+20||result.kneaded_real.pressure_max-result.kneaded_real.pressure_min<.3){finish(false,"Real kneaded pressure ramp failed");return;}
    a.fastPenPreview=true;a.selectTool(1);a.brushSize=3;
    if(tapAction(findAction(a,"Clear page"),"clear-ui-open"))move(51);return;
   }

@@ -280,8 +280,8 @@ struct PaperMaterial {
                         // A contact lifts a bounded fraction, independent of event count.
                         // More pressure or moving onto fresh paper can lift more pigment.
                         double contact = edge * strength * std::sqrt(p);
-                        int looseTarget = roundMass(255 * .55 * contact);
-                        int fixedTarget = roundMass(255 * .12 * contact * (.35 + .65 * std::sqrt(p)));
+                        int looseTarget = roundMass(255 * .90 * contact);
+                        int fixedTarget = roundMass(255 * .50 * contact * (.60 + .40 * std::sqrt(p)));
                         unsigned prior = kneadedLift[at];
                         int priorLoose = prior & 255, priorFixed = prior >> 8;
                         if (looseTarget > priorLoose)

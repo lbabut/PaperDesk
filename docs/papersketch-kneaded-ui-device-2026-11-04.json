@@ -1,0 +1,498 @@
+{
+  "candidate_qml_sha256": "dda3e31c9113bb914afec256926c75858240dd3e5611c36448714f2bb8362819",
+  "source_qml_sha256": "dda3e31c9113bb914afec256926c75858240dd3e5611c36448714f2bb8362819",
+  "source_engine_sha256": "34c3c14f08ae7a0f52716e77f54aec3ea7533d2668cd76aebacfac931dd3814f",
+  "source_icon_sha256": "894c8600c49d5c04cc5bfb8050118e7c2b6fa9603f92b22281a19b2caf44798a",
+  "backup": "/home/root/.local/state/papersketch-native.RPQMDY",
+  "cache_namespace": "PaperDeskSketchNativeBenchbaseline1793789973489347029",
+  "artwork_before_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "saved_files_before_sha256": "098c0fd8cbc6160a2016a8c1ff3fb5ec0c2f3461b563fdffba764b26d18764cd",
+  "saved_file_count": 15,
+  "native_modules": [
+    "d998d7ccb2f4c928e387e1dc29e58d61195c4dd0fc5fce38936f1d3313d076a8  /home/root/xovi/extensions.d/papersketch-raster.so",
+    "2643b947f47a4b3cb27b241fe0da6f4f5b8f89db6da70374cc902a2c17e14bc5  /home/root/xovi/extensions.d/papersketch-ink.so"
+  ],
+  "harness_sha256": "535b630fc777bc8051b1d9a70d38ae42e9ef679a806f978a4950a7d1c5a485a2",
+  "input_driver_source_sha256": "501112ed3dc53825ce4a5a4296f922a95e7cc4fb534fbb98554960456531e743",
+  "evdev_injections": [
+    {
+      "mode": "pen",
+      "contact_ms": 1793790023277,
+      "release_ms": 1793790023706,
+      "upright": true,
+      "initial_tilt": [
+        500,
+        -1600
+      ],
+      "writes_ok": true,
+      "id": "tiny-contacts"
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793790026513,
+      "release_ms": 1793790029583,
+      "upright": true,
+      "initial_tilt": [
+        500,
+        -1600
+      ],
+      "writes_ok": true,
+      "id": "fast-shading"
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793790053932,
+      "release_ms": 1793790054920,
+      "writes_ok": true,
+      "id": "kneaded-real-pressure"
+    },
+    {
+      "mode": "finger",
+      "contact_ms": 1793790057744,
+      "release_ms": 1793790057829,
+      "writes_ok": true,
+      "id": "clear-ui-open"
+    },
+    {
+      "mode": "finger",
+      "contact_ms": 1793790060621,
+      "release_ms": 1793790060707,
+      "writes_ok": true,
+      "id": "clear-ui-confirm"
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793790063616,
+      "release_ms": 1793790064037,
+      "upright": true,
+      "initial_tilt": [
+        500,
+        -1600
+      ],
+      "writes_ok": true,
+      "id": "background-no-ink"
+    },
+    {
+      "mode": "pen",
+      "contact_ms": 1793790066872,
+      "release_ms": 1793790067301,
+      "upright": true,
+      "initial_tilt": [
+        500,
+        -1600
+      ],
+      "writes_ok": true,
+      "id": "foreground-resume"
+    }
+  ],
+  "results": {
+    "fidelity_probe": {
+      "blank_new_book": {
+        "available": true,
+        "mass_sum": 0,
+        "nonzero_pixels": 0,
+        "optical_mismatches": 0,
+        "repaired_blank_pixels": 0
+      },
+      "blank_new": {
+        "available": true,
+        "mass_sum": 0,
+        "nonzero_pixels": 0,
+        "optical_mismatches": 0,
+        "repaired_blank_pixels": 0
+      },
+      "tiny": {
+        "strokes": 40,
+        "visible": 40,
+        "gui_stall": true,
+        "native_preview_at_gui_resume": {
+          "ready": true,
+          "pid": 11204,
+          "time_ms": 1793790023434,
+          "armed": true,
+          "fine_preview": true,
+          "wide_preview": true,
+          "tip_marker": true,
+          "shade_strength": true,
+          "preview_interval_ms": 8,
+          "report_clock_monotonic": true,
+          "max_report_to_submit_ms": 0,
+          "max_submit_us": 180,
+          "contact_ms": 1793790023434,
+          "first_update_ms": 1793790023434,
+          "fine_strokes": 15,
+          "active": true,
+          "box": [
+            566,
+            807,
+            569,
+            810
+          ]
+        },
+        "native_preview_status": {
+          "ready": true,
+          "pid": 11204,
+          "time_ms": 1793790023702,
+          "armed": true,
+          "fine_preview": true,
+          "wide_preview": true,
+          "tip_marker": true,
+          "shade_strength": true,
+          "preview_interval_ms": 8,
+          "report_clock_monotonic": true,
+          "max_report_to_submit_ms": 1,
+          "max_submit_us": 256,
+          "contact_ms": 1793790023697,
+          "first_update_ms": 1793790023697,
+          "fine_strokes": 40,
+          "active": false,
+          "box": [
+            1066,
+            807,
+            1069,
+            810
+          ]
+        }
+      },
+      "blank_clear": {
+        "available": true,
+        "mass_sum": 0,
+        "nonzero_pixels": 0,
+        "optical_mismatches": 0,
+        "repaired_blank_pixels": 0
+      },
+      "shading": {
+        "pigment_diagnostics": {
+          "available": true,
+          "mass_sum": 860655420,
+          "nonzero_pixels": 425778,
+          "optical_mismatches": 0,
+          "repaired_blank_pixels": 0
+        },
+        "contact_stats": {
+          "calibrated": false,
+          "finger_geometry_matches": 0,
+          "paper_kind": 0,
+          "pen_match_calls": 0,
+          "pen_match_misses": 0,
+          "pen_max_stale_age_ms": -1,
+          "pen_nearest_miss_age_ms": -1,
+          "pen_nearest_miss_distance_px": -1,
+          "pen_samples_at_miss": 0,
+          "pen_stale_position_misses": 0,
+          "pen_youngest_miss_age_ms": -1,
+          "tilt_samples": 0,
+          "tilt_x": 0,
+          "tilt_y": 0
+        },
+        "optical_digest": "588388d321b2a8aed1a7af8d263ff491a23b6b918213fc551eb8c61f100d7c6e",
+        "physical_state": {
+          "finger_digest": "6c751580bca9bf12c0246ce9b3fa0c5fa3f2893d477b6894ae4637825740440f",
+          "paper_kind": 0,
+          "surface_digest": "124617c1f65e92d3bc895fbd869e4bb16a30754b198f59e6e973949b9aaa1b01",
+          "wear": [
+            0,
+            0,
+            0,
+            0,
+            0.11439375824176529,
+            0
+          ]
+        },
+        "queue_latency": {
+          "batches": 49,
+          "clock_resolution_ms": 1,
+          "empty_batches": 0,
+          "max_ms": 2000,
+          "p50_upper_ms": 2000,
+          "p95_upper_ms": 2000,
+          "samples": 1321,
+          "total_ms": 1318312
+        },
+        "native_preview_status": {
+          "ready": true,
+          "pid": 11204,
+          "time_ms": 1793790032196,
+          "armed": true,
+          "fine_preview": true,
+          "wide_preview": true,
+          "tip_marker": true,
+          "shade_strength": true,
+          "preview_interval_ms": 8,
+          "report_clock_monotonic": true,
+          "max_report_to_submit_ms": 14,
+          "max_submit_us": 6940,
+          "contact_ms": 1793790026514,
+          "first_update_ms": 1793790026514,
+          "fine_strokes": 41,
+          "active": false,
+          "box": [
+            287,
+            923,
+            1097,
+            1416
+          ]
+        },
+        "size": 80,
+        "max_gui_gap_ms": 244,
+        "native_stats": {
+          "advance_calls": 1200,
+          "advance_max_us": 23777,
+          "advance_total_us": 4264521,
+          "first_advance_ms": 1793790026518,
+          "first_publish_ms": 1793790026519,
+          "first_tile_paint_ms": 1793790026536,
+          "publish_calls": 41,
+          "publish_max_us": 1004,
+          "publish_total_us": 15059,
+          "tile_paint_calls": 213,
+          "tile_paint_max_us": 2691,
+          "tile_paint_total_us": 72839
+        },
+        "strokes": 1,
+        "input_samples": 1200,
+        "raw_stats": [
+          1321,
+          0,
+          0
+        ],
+        "finished_ms": 1793790032263,
+        "texture": {
+          "low": 139,
+          "high": 250
+        },
+        "release_to_drained_ms": 2680
+      },
+      "layers": [
+        {
+          "paper": 0,
+          "tool": 4,
+          "mean_grays": [
+            227.666015625,
+            207.76953125,
+            192.4453125,
+            180.232421875,
+            170.091796875
+          ],
+          "pigment": {
+            "available": true,
+            "mass_sum": 95358885,
+            "nonzero_pixels": 22705,
+            "optical_mismatches": 0,
+            "repaired_blank_pixels": 0
+          }
+        },
+        {
+          "paper": 0,
+          "tool": 5,
+          "mean_grays": [
+            136.771484375,
+            95.431640625,
+            76.03125,
+            65.5234375,
+            59.302734375
+          ],
+          "pigment": {
+            "available": true,
+            "mass_sum": 402158502,
+            "nonzero_pixels": 27754,
+            "optical_mismatches": 0,
+            "repaired_blank_pixels": 0
+          }
+        },
+        {
+          "paper": 1,
+          "tool": 4,
+          "mean_grays": [
+            189.787109375,
+            149.095703125,
+            122.146484375,
+            103.54296875,
+            90.072265625
+          ],
+          "pigment": {
+            "available": true,
+            "mass_sum": 201870312,
+            "nonzero_pixels": 23192,
+            "optical_mismatches": 0,
+            "repaired_blank_pixels": 0
+          }
+        },
+        {
+          "paper": 1,
+          "tool": 5,
+          "mean_grays": [
+            86.892578125,
+            49.44921875,
+            36.625,
+            31.205078125,
+            28.650390625
+          ],
+          "pigment": {
+            "available": true,
+            "mass_sum": 573653765,
+            "nonzero_pixels": 27762,
+            "optical_mismatches": 0,
+            "repaired_blank_pixels": 0
+          }
+        },
+        {
+          "paper": 2,
+          "tool": 4,
+          "mean_grays": [
+            223.14453125,
+            202.185546875,
+            187.15234375,
+            175.69921875,
+            166.619140625
+          ],
+          "pigment": {
+            "available": true,
+            "mass_sum": 113392969,
+            "nonzero_pixels": 22619,
+            "optical_mismatches": 0,
+            "repaired_blank_pixels": 0
+          }
+        },
+        {
+          "paper": 2,
+          "tool": 5,
+          "mean_grays": [
+            140.201171875,
+            101.19921875,
+            82.265625,
+            71.3984375,
+            64.568359375
+          ],
+          "pigment": {
+            "available": true,
+            "mass_sum": 410433391,
+            "nonzero_pixels": 27752,
+            "optical_mismatches": 0,
+            "repaired_blank_pixels": 0
+          }
+        }
+      ],
+      "kneaded": [
+        {
+          "paper": 0,
+          "tool": 2,
+          "before": 117.28125,
+          "light": 127.046875,
+          "normal": 152.09375,
+          "firm": 186.703125,
+          "second_dab": 219.6875
+        },
+        {
+          "paper": 0,
+          "tool": 4,
+          "before": 129.859375,
+          "light": 142.9375,
+          "normal": 174.234375,
+          "firm": 214.609375,
+          "second_dab": 239.65625
+        },
+        {
+          "paper": 0,
+          "tool": 5,
+          "before": 34.15625,
+          "light": 47.828125,
+          "normal": 92.75,
+          "firm": 176.1875,
+          "second_dab": 231.203125
+        },
+        {
+          "paper": 1,
+          "tool": 2,
+          "before": 54.515625,
+          "light": 65.234375,
+          "normal": 95.75,
+          "firm": 143.8125,
+          "second_dab": 195.296875
+        },
+        {
+          "paper": 1,
+          "tool": 4,
+          "before": 62.21875,
+          "light": 77.421875,
+          "normal": 119.375,
+          "firm": 182.796875,
+          "second_dab": 226.546875
+        },
+        {
+          "paper": 1,
+          "tool": 5,
+          "before": 16.3125,
+          "light": 26.40625,
+          "normal": 66.0625,
+          "firm": 156.5625,
+          "second_dab": 224.1875
+        },
+        {
+          "paper": 2,
+          "tool": 2,
+          "before": 122.453125,
+          "light": 131.25,
+          "normal": 153.984375,
+          "firm": 186.625,
+          "second_dab": 219.046875
+        },
+        {
+          "paper": 2,
+          "tool": 4,
+          "before": 130.703125,
+          "light": 142.6875,
+          "normal": 172.25,
+          "firm": 212.3125,
+          "second_dab": 238.46875
+        },
+        {
+          "paper": 2,
+          "tool": 5,
+          "before": 36.578125,
+          "light": 50.328125,
+          "normal": 94.421875,
+          "firm": 176.53125,
+          "second_dab": 231.140625
+        }
+      ],
+      "kneaded_real": {
+        "before": 34.15625,
+        "after": 156.765625,
+        "pressure_min": 0.12503052503052503,
+        "pressure_max": 0.88
+      },
+      "clear_ui": {
+        "blank": {
+          "available": true,
+          "mass_sum": 0,
+          "nonzero_pixels": 0,
+          "optical_mismatches": 0,
+          "repaired_blank_pixels": 0
+        },
+        "stayed_foreground": true
+      },
+      "background": {
+        "raw_disabled": true,
+        "preview_off": true,
+        "digest_before": "ad4f19fef20f2cc70ae52ac80532f65ff678eca3e54116a05769a1d45accc816",
+        "digest_after": "ad4f19fef20f2cc70ae52ac80532f65ff678eca3e54116a05769a1d45accc816",
+        "strokes_unchanged": true
+      },
+      "foreground": {
+        "strokes": 40,
+        "preview_contacts": 40,
+        "digest_changed": true
+      },
+      "passed": true,
+      "error": "",
+      "runtime_errors": []
+    },
+    "cases": []
+  },
+  "runtime_seconds": 84.07,
+  "artwork_after_sha256": "26d12f4c18498ca98b938f2d60541cd62af5f7ae982839a5b114760674d276d0",
+  "artwork_preserved": true,
+  "saved_files_after_sha256": "098c0fd8cbc6160a2016a8c1ff3fb5ec0c2f3461b563fdffba764b26d18764cd",
+  "saved_files_preserved": true
+}
