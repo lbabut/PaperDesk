@@ -16,7 +16,7 @@ Validation:
   private in-memory framebuffer. Includes the 96px bound, clipping of pixels
   and masks, invalid permits, pressure, shades, and 8ms flush scheduling.
 - ARM native modules and RCC built successfully.
-- Full native regression suite passed (27 C++ cases plus C input/preview checks),
+- Full native regression suite passed (24 C++ cases plus C input/preview checks),
   including publication repair, latency, raster, physical material, save/load,
   rapidograph, palm cancellation, and PDF export.
 
