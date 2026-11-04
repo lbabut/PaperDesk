@@ -1,0 +1,18 @@
+{
+  "version": "4.2.9",
+  "production_url": "https://paperdesk.lukaszbabut.info",
+  "source_commit": "033128374151816bb4f63455ab8e788e7bfd1cd4",
+  "source_tree_commit": "d992b6a7e33c4e48869febab51cd0bf9b9f31149",
+  "tag": "v4.2.9",
+  "health": "ok",
+  "public_feed_signatures_verified": true,
+  "public_update_sha256": "6c54f2b1f45bedb45665668aa6cd250eee3094d405dbb500e03b7d073a87fc91",
+  "public_source_sha256": "5d52d561387f44529479ae0a0881d5e13e07659ceeedb740f6d46135905e4a37",
+  "source_files_matched_git": 539,
+  "renderer_sha256": "e84e1271f9398200a789355562a682244c247cc1662f501cd1d7bcfd29481d9a",
+  "unchanged_website_files_verified": 70,
+  "older_distribution_files_preserved": 126,
+  "download_counter_before": 204,
+  "download_counter_after": 204,
+  "rollback_directory": "/home/azureuser/PaperDesk.backup-20261104T134741Z"
+}
