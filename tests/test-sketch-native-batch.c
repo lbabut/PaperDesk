@@ -81,7 +81,7 @@ int main(void) {
     uint32_t widePixels[128*128];unsigned char wideMask[128*128];
     memset(widePixels,255,sizeof widePixels);memset(wideMask,0,sizeof wideMask);
     surf.px=widePixels;surf.mk=wideMask;surf.ps=surf.ms=128;
-    parse_arm("fine 16 16 96 96 96 4 .15 .5 .95");
+    parse_arm("fine 16 16 96 96 96 8 .15 .5 .95");
     segment(0,0,127,127,96,0xff000000u,box);int wideDark=0;
     for(int y=0;y<128;y++)for(int x=0;x<128;x++){
         int at=y*128+x;

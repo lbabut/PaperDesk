@@ -170,6 +170,12 @@ Item {
             slider.pressed=false;tryCompare(backend,"preferencesWrites",1,1500);
             a.nativeRaster=old;backend.destroy();
         }
+        function test_native_tile_overlap_stays_inside_paper(){
+            var first=findChild(scene.app,"nativeTileLoader0"),last=findChild(scene.app,"nativeTileLoader9");
+            verify(first!==null);verify(last!==null);compare(first.width,129);compare(first.height,129);
+            compare(last.width,48);compare(last.height,129);
+            var bottom=findChild(scene.app,"nativeTileLoader129");verify(bottom!==null);compare(bottom.height,64);
+        }
         function test_device_detail_harness_compiles(){
             var component=Qt.createComponent("../device/papersketch-detail.qml");
             compare(component.status,Component.Ready,component.errorString());

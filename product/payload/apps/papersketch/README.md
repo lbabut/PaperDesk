@@ -77,3 +77,17 @@ The tablet canvas consumes ordered native pen contacts with their original posit
 Each tool has its own remembered size. The selected tool and hard/kneaded eraser choice are saved automatically, independently of the sketchbook, and restored on app reopen. The rear eraser uses the remembered eraser width without changing the selected drawing tool. Tool-only changes do not mark artwork unsaved. Save still commits artwork, paper and physical tool wear.
 
 Preferences use a small validated, atomic JSON file in the current app namespace. Changes are debounced and deferred while drawing; normal close flushes pending changes. An older saved single-tool size is migrated on first use.
+
+
+## Charcoal grain and broad strokes
+
+Charcoal deposition is normalized by its footprint radius, so increasing the
+size does not immediately fill every pixel with overlapping pigment. Paper
+grain modulates deposition, repeated passes build darker values, and the
+charcoal side becomes broader and flatter with stylus tilt. Soft charcoal
+retains its darker, looser response. The live charcoal preview has a stable
+grain and a feathered footprint instead of a uniform round marker fill.
+
+Native tile loaders overlap adjacent source borders by one pixel, bounded by
+the sheet, to guard against fractional-scale display seams. This overlap is
+only for display; the saved material image keeps its original coordinates.

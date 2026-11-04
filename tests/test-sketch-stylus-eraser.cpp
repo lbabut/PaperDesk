@@ -12,7 +12,7 @@ int main(int argc,char **argv){
  board.penSamples.pause();assert(!board.eraserActive(300,400));
 
  board.resetWhite();board.setMaterialOptions(0,false);
- board.begin();board.advance(5,32,1,400,900,.8,true);board.finish();
+ for(int layer=0;layer<6;layer++){board.begin();board.advance(5,32,1,400,900,.8,true);board.finish();}
  const QImage seedMass=board.material.copy(),seedImage=board.image.copy();
  const int before=qGray(seedImage.pixel(400,900));assert(before<200);
  board.pressureCurve.calibrated=true;board.pressureCurve.anchors={{.5,.75,.95}};

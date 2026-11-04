@@ -11,8 +11,8 @@ static inline unsigned char sketchPreviewGray(int tool,float pressure) {
     {255,254,254,253,251,249,246,241,228,211,193,177,164,154,144,136,128},
     {255,254,254,253,251,248,244,238,228,208,184,163,146,133,122,112,104},
     {255,254,254,252,250,246,241,233,224,199,170,143,122,107,95,85,78},
-    {255,253,251,248,239,224,202,178,154,135,121,110,100,92,84,77,71},
-    {255,252,249,241,226,204,179,153,133,118,107,98,90,83,77,71,66}};
+    {255,253,252,249,245,235,222,206,188,172,157,145,134,124,115,106,99},
+    {255,253,250,245,236,222,205,186,168,151,138,127,118,109,102,94,88}};
     if(tool==8)return 0;
     if(tool<0||tool>=6)return 255;
     if(!(pressure>0))return 255;
@@ -20,9 +20,19 @@ static inline unsigned char sketchPreviewGray(int tool,float pressure) {
     float position=pressure*16;int i=(int)position;
     return (unsigned char)(gray[tool][i]+(gray[tool][i+1]-gray[tool][i])*(position-i)+.5f);
 }
+static inline int sketchCharcoalPreviewGray(int gray,float edge,int x,int y) {
+    uint32_t n=(uint32_t)x*374761393u+(uint32_t)y*668265263u+0x9e3779b9u;
+    n=(n^(n>>13))*1274126177u;n^=n>>16;
+    uint32_t coarse=(uint32_t)(x/4)*374761393u+(uint32_t)(y/4)*668265263u+0x9e3779b9u;
+    coarse=(coarse^(coarse>>13))*1274126177u;coarse^=coarse>>16;
+    float grain=((n&255)*3+(coarse&255)*2)/1275.f;
+    float texture=.18f+.82f*(1-grain)*(1-grain);
+    float coverage=edge*edge*(.45f+.55f*texture);
+    return 255-(int)((255-gray)*coverage);
+}
 // Same Bayer thresholds as the final fast display conversion. Screen anchoring
 // avoids random flicker and repeated samples never accumulate extra density.
-static inline int sketchPreviewDot(int gray,int x,int y) {
+static inline int sketchPreviewDotMode(int gray,int x,int y,int guide) {
     static const unsigned char bayer[8][8]={
     {0,48,12,60,3,51,15,63},{32,16,44,28,35,19,47,31},
     {8,56,4,52,11,59,7,55},{40,24,36,20,43,27,39,23},
@@ -30,7 +40,9 @@ static inline int sketchPreviewDot(int gray,int x,int y) {
     {10,58,6,54,9,57,5,53},{42,26,38,22,41,25,37,21}};
     // Retain a faint 1/8-density guide even below the material's visible
     // deposition threshold. Release restores the exact material pixels.
-    if(gray>223)gray=223;
+    if(guide && gray>223)gray=223;
     return gray<=bayer[y&7][x&7]*4+2;
 }
+static inline int sketchPreviewDot(int gray,int x,int y) {return sketchPreviewDotMode(gray,x,y,1);}
+static inline int sketchPreviewDotExact(int gray,int x,int y) {return sketchPreviewDotMode(gray,x,y,0);}
 #endif

@@ -182,7 +182,9 @@ static void segment(float x0, float y0, float x1, float y1, float w, uint32_t in
             if (ex * ex + ey * ey > r * r) continue;
             // DU pen mode is binary. Leave skipped pixels and their masks
             // untouched so pale previews cannot erase existing artwork.
-            if(arm.fine && !arm.erase && !sketchPreviewDot(ink&255,x,y))continue;
+            int gray=ink&255;
+            if(arm.fine && (arm.tool==4 || arm.tool==5))gray=sketchCharcoalPreviewGray(gray,1-(ex*ex+ey*ey)/(r*r),x-arm.x,y-arm.y);
+            if(arm.fine && !arm.erase && !((arm.tool==4 || arm.tool==5)?sketchPreviewDotExact(gray,x,y):sketchPreviewDot(gray,x,y)))continue;
             surf.px[y * surf.ps + x] = arm.fine && !arm.erase ? 0xff000000u : ink;
             surf.mk[y * surf.ms + x] = 0xFF;
         }

@@ -40,6 +40,15 @@ int main(){
   unsigned g=std::min(gray,223);unsigned pixel=0xff000000u|g*0x010101u;
   assert(bool(sketchPreviewDot(gray,x,y))==(paperDisplayPixel(pixel,x,y)==0xff000000u));
  }
+ int low=255,high=0;
+ for(int y=0;y<64;y++)for(int x=0;x<64;x++){
+  int center=sketchCharcoalPreviewGray(80,1,x,y),edge=sketchCharcoalPreviewGray(80,.1f,x,y);
+  assert(center>=80&&center<=255&&edge>center);
+  assert(center==sketchCharcoalPreviewGray(80,1,x,y));
+  low=std::min(low,center);high=std::max(high,center);
+ }
+ assert(high-low>40);
+ for(int y=0;y<8;y++)for(int x=0;x<8;x++){assert(!sketchPreviewDotExact(255,x,y));assert(sketchPreviewDotExact(0,x,y));}
  puts("PASS: all six preview shades match fresh-paper material samples at 17 pressure anchors; ink stays opaque");
 #endif
 }

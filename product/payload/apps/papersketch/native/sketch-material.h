@@ -144,8 +144,8 @@ struct PaperMaterial {
             angle = tilt > 0 ? std::atan2(ty, tx) : 0;
             double width = minimumWidth[tool] + (1 - minimumWidth[tool]) * std::pow(p, widthExponent[tool]);
             double r = std::max(.8, size * .5 * width);
-            a = std::min(40.0, r * (1 + .65 * tilt + .18 * worn));
-            b = std::min(40.0, std::max(.55, r * (1 - .45 * tilt) * (1 + .30 * worn)));
+            a = std::min(40.0, r * (1 + (tool >= 4 ? 1.5 : .65) * tilt + .18 * worn));
+            b = std::min(40.0, std::max(.55, r * (1 - (tool >= 4 ? .65 : .45) * tilt) * (1 + .30 * worn)));
         } else {
             a = b = std::min(40.0, std::max(.8, size * (.18 + .82 * p) * .5));
         }
@@ -206,6 +206,7 @@ struct PaperMaterial {
         // 256-entry table for only a handful of covered pixels.
         const bool cacheFresh = tool < 6 && shape.a * shape.b >= 144;
         if (cacheFresh) prepareFreshContact(tool, p, capacityAtPressure);
+        const double charcoalDoseScale = tool == 4 || tool == 5 ? std::min(1.0, 3.0 / std::max(shape.a, shape.b)) : 1.0;
         const double bondedFraction = tool < 6 ? fixedFraction[tool] : 0;
         const double toothContact = tool < 4 ? .7 : .5;
         const double eraseContact = strength * (.15 + .85 * p);
@@ -307,6 +308,7 @@ struct PaperMaterial {
                     int room = std::max(0, capacity - fixed - loose);
                     if (room > 0) {
                         double amount = dose * edge * contact * (1 - .35 * polish) * (room / double(capacity));
+                        if (tool == 4 || tool == 5) amount *= charcoalDoseScale * (.16 + .84 * response.capacity);
                         int added = std::min(room, roundMass(amount));
                         int bonded = roundMass(added * std::min(.99, bondedFraction + .10 * polish));
                         fixed += bonded;

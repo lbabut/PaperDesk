@@ -878,7 +878,10 @@ Rectangle {
                         }
                     }
                     Loader {
-                        id:tileNative;anchors.fill:parent;active:root.nativeRasterActive;source:"native-tile.qml"
+                        id:tileNative;objectName:"nativeTileLoader"+index;anchors.left:parent.left;anchors.top:parent.top
+                        width:Math.min(tileCell.width+1,Ink.WIDTH-tileCell.x)
+                        height:Math.min(tileCell.height+1,Ink.HEIGHT-tileCell.y)
+                        active:root.nativeRasterActive;source:"native-tile.qml"
                         onLoaded:{item.sourceX=tileCell.x;item.sourceY=tileCell.y;item.raster=root.nativeRaster;}
                     }
                 }
