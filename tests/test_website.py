@@ -30,7 +30,7 @@ def load_server():
 
 class WebsiteTests(unittest.TestCase):
     def test_dots_description_links_to_the_correct_wikipedia_rules(self):
-        card = re.search(r'<h3>PaperDesk Dots</h3>(.*?)</article>', INDEX, re.S).group(1)
+        card = re.search(r'<article[^>]*data-app-stage="dots"[^>]*>(.*?)</article>', INDEX, re.S).group(1)
         self.assertIn('href="https://en.wikipedia.org/wiki/Dots_(paper-and-pencil_game)#Rules"', card)
         self.assertIn('How to play (Wikipedia)', card)
         self.assertIn('target="_blank" rel="noopener noreferrer"', card)
@@ -88,21 +88,21 @@ class WebsiteTests(unittest.TestCase):
         with self.request("/") as response:
             body = response.read().decode()
             self.assertEqual(response.status, 200)
-            self.assertIn("Your quiet<br>network desk", body)
-            self.assertIn("Open source, for real", body)
-            self.assertIn("Keep it open.", body)
+            self.assertIn("Make room<br>", body)
+            self.assertIn("A small independent project", body)
+            self.assertIn("Made with curiosity.", body)
             self.assertIn(
-                'href="https://ko-fi.com/lbabut?ref=onboarding_email_founderwelcome"',
+                'href="https://ko-fi.com/lbabut"',
                 body,
             )
-            self.assertIn("Support PaperDesk on Ko-fi", body)
-            self.assertIn("Eight thoughtful apps", body)
-            self.assertIn('id="tour"', body)
+            self.assertIn("Support on Ko-fi", body)
+            self.assertIn("Eight free apps", body)
+            self.assertIn('id="view-apps"', body)
             self.assertNotIn("Founding Edition", body)
             self.assertNotIn("€29", body)
             self.assertNotIn("<form", body)
             for screenshot in (
-                "ssh-301.png",
+                "terminal-full-20261103.png",
                 "books-301.png",
                 "dots-301.png",
                 "web-301.png",
@@ -135,9 +135,9 @@ class WebsiteTests(unittest.TestCase):
     def test_download_cards_and_polish_business_guide(self):
         with self.request('/') as response:
             page = response.read().decode()
-        self.assertIn('class="download-cards"', page)
+        self.assertIn('class="install-layout"', page)
         self.assertIn('href="/guide.html"', page)
-        self.assertIn('<details class="advanced-downloads">', page)
+        self.assertIn('<details class="paper-details">', page)
         with self.request('/guide.html') as response:
             guide = response.read().decode()
         self.assertIn('<html lang="pl">', guide)
