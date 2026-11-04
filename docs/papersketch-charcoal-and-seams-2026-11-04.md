@@ -35,13 +35,24 @@ Validation:
   and raster checks passed. Final preview checks also passed after feathering.
 - ARM native modules and RCC built; no public release published.
 
-Installation and real application testing await the owner's save/close
-confirmation. After confirmation, inspect the freshly saved image for a
-one-pixel pale column before installing; then run isolated size-80 fidelity
-checks and verify saved artwork and settings are preserved.
+Installed on the owner's tablet after explicit save/close confirmation.
 
+The actual size-80 input fidelity probe passed: 40/40 tiny contacts, all 1200
+wide-charcoal samples retained, zero input loss/overflow, no QML runtime errors.
+First native preview submission was 1ms after injected contact; maximum
+report-to-submit delay was 15ms. Full-material release tail was 2852ms in the
+500Hz stress workload. These are software timings, not optical panel latency.
 
-The most recent saved owner cache was inspected read-only. It contained no
-one-pixel white column flanked by dark pixels for more than 30 rows. The
-photographed page may have newer unsaved marks, so this does not establish
-whether its particular line is absent from saved artwork.
+The saved artwork and settings hashes are unchanged after the isolated probe.
+The installed ink/raster modules and RCC hashes match commit 117f70f's payload.
+The tablet UI service is active following restoration of the user's settings.
+
+All ten owner cache pages were inspected read-only. None contained a one-pixel
+column above gray 230 flanked by pixels below gray 70 for more than 30 rows.
+This supports investigating display composition, but does not optically
+reproduce or conclusively identify the photographed line. The tile-border guard
+is installed; visual confirmation from the tablet remains necessary.
+
+Device report: papersketch-charcoal-device-2026-11-04.json.
+Saved-page column scan: papersketch-charcoal-seam-inspection-2026-11-04.json.
+No public release or version metadata was changed.
