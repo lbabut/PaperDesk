@@ -91,3 +91,15 @@ grain and a feathered footprint instead of a uniform round marker fill.
 Native tile loaders overlap adjacent source borders by one pixel, bounded by
 the sheet, to guard against fractional-scale display seams. This overlap is
 only for display; the saved material image keeps its original coordinates.
+
+
+## Layering and foreground input
+
+Normal charcoal starts lighter and drier; soft charcoal is broader and darker,
+with more loose pigment. Successive passes darken both tools on plain, smooth
+and rough paper. Sketch suspends raw pen capture and the direct ink preview
+when its AppLoad window is disabled or hidden, then resumes on foreground
+return. Care and other windows cannot draw into the covered sketchbook.
+
+The repeatable tablet tests are documented in
+[the regression guide](../../../../docs/papersketch-foreground-layers-and-tablet-tests-2026-11-04.md).

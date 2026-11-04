@@ -43,5 +43,21 @@ int main(int argc,char**argv){
   for(int y=316;y<325;y++)for(int x=100;x<400;x++){int gray=whole.image[y*500+x]&255;minimum=std::min(minimum,gray);maximum=std::max(maximum,gray);}
   assert(maximum-minimum>60);printf("charcoal %d texture gray range %d..%d\n",tool,minimum,maximum);
  }
+
+ for(int paper=0;paper<3;paper++){
+  double first[2]={0,0};
+  for(int tool:{4,5}){
+   Canvas<PaperMaterial> layers;layers.p.setPaperKind(paper);double previous=255;
+   for(int pass=0;pass<5;pass++){
+    layers.line(tool,320,.5,48);double sum=0;int count=0;
+    for(int y=316;y<=324;y++)for(int x=100;x<400;x++){sum+=layers.image[y*500+x]&255;count++;}
+    double gray=sum/count;if(pass==0)first[tool-4]=gray;
+    assert(gray<previous-.5);previous=gray;
+   }
+   assert(previous<first[tool-4]-25);
+  }
+  assert(first[1]<first[0]-20);
+ }
+ puts("PASS five visibly darker layers and distinct normal/soft charcoal on all three papers");
  puts("PASS pressure, loose dust, layered darkening, broad grain and event invariance");
 }

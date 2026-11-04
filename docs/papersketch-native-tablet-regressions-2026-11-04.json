@@ -1,0 +1,58 @@
+{
+  "architecture": "armv7l",
+  "cases": [
+    {
+      "name": "charcoal-layers",
+      "passed": true,
+      "binary_sha256": "709d2f8d430205724329ab8e89b97969816c0fc2639f8a1ab255e35589a70eb8",
+      "seconds": 10.396,
+      "output": "{\"cases\":[{\"paper\":0,\"size\":48,\"tool\":4,\"gray\":[219.615,194.906,176.634,162.517,151.276]},{\"paper\":0,\"size\":48,\"tool\":5,\"gray\":[123.653,82.604,64.703,55.545,50.359]},{\"paper\":0,\"size\":80,\"tool\":4,\"gray\":[218.427,193.170,174.644,160.450,149.102]},{\"paper\":0,\"size\":80,\"tool\":5,\"gray\":[122.130,81.347,63.849,54.847,49.856]},{\"paper\":1,\"size\":48,\"tool\":4,\"gray\":[184.312,141.580,114.146,95.587,82.476]},{\"paper\":1,\"size\":48,\"tool\":5,\"gray\":[83.580,46.622,34.207,29.003,26.547]},{\"paper\":1,\"size\":80,\"tool\":4,\"gray\":[182.054,138.783,111.380,93.017,80.172]},{\"paper\":1,\"size\":80,\"tool\":5,\"gray\":[82.175,45.720,33.696,28.660,26.363]},{\"paper\":2,\"size\":48,\"tool\":4,\"gray\":[208.312,179.344,159.875,145.880,135.333]},{\"paper\":2,\"size\":48,\"tool\":5,\"gray\":[117.738,78.920,62.290,53.599,48.554]},{\"paper\":2,\"size\":80,\"tool\":4,\"gray\":[206.835,177.467,157.917,143.976,133.434]},{\"paper\":2,\"size\":80,\"tool\":5,\"gray\":[116.406,77.743,61.401,52.911,47.990]}],\"passed\":true}\n"
+    },
+    {
+      "name": "material",
+      "passed": true,
+      "binary_sha256": "70e0f56dcf401395f7ae2eacd9e153585289204ba5da6ef8df183294844731f3",
+      "seconds": 5.286,
+      "output": "{\"passed\":true,\"mass_conserved\":true,\"resampling_invariant\":true,\"zero_contact_noop\":true,\"bounded_saturation\":true,\"smudge_p50_us\":602,\"smudge_p95_us\":615,\"smudge_max_us\":826}\n"
+    },
+    {
+      "name": "material-realism",
+      "passed": true,
+      "binary_sha256": "950374a3931a55f9b37df66ba7293ff4f7a1e208a5621fd70f37ad10a59feac0",
+      "seconds": 1.966,
+      "output": "PASS directional tilt, pressure profiles, three paper stocks, persistent burnish, distance wear/sharpen, kneaded lift, rotated conservative finger, bounded maximum footprints and full-state event resampling\n"
+    },
+    {
+      "name": "pressure",
+      "passed": true,
+      "binary_sha256": "65027ea9af50117b020550aaf93999816baf55876c4ee3b25c6502ae4a16f3a5",
+      "seconds": 0.38,
+      "output": ""
+    },
+    {
+      "name": "touch",
+      "passed": true,
+      "binary_sha256": "2fe0de91a195aedfacad5eaac24ba6a41858f26351cb13d063d700b11387840f",
+      "seconds": 0.371,
+      "output": ""
+    },
+    {
+      "name": "pen",
+      "passed": true,
+      "binary_sha256": "ec010d5c225c43bf2ac6511fb87a48e26b02c75263cd6d68d7f2dbf726be077a",
+      "seconds": 0.467,
+      "output": "PASS ordered closed-contact queue, bounded drains without truncation, subpixel geometry and canvas gating\n"
+    },
+    {
+      "name": "display",
+      "passed": true,
+      "binary_sha256": "485f3f5c6d03c66e89aa0943c30db1d751f968a79e8dd91f6a1fdb12187460f1",
+      "seconds": 0.376,
+      "output": ""
+    }
+  ],
+  "ui_restart": false,
+  "device_input_grabbed": false,
+  "artwork_preserved": true,
+  "passed": true
+}

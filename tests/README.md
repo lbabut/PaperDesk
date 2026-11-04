@@ -199,3 +199,16 @@ button with a real pen event, requiring no new artwork. Full results and the
 operator incident are documented in [the latency audit](../docs/papersketch-latency-audit-2026-11-03.md).
 
 The `preview-shade` native group checks the six leading-trace shade tables against material-engine output at 17 pressure anchors and verifies all fast-display raster thresholds. `test-sketch-native-batch.c` also checks that pale native previews preserve underlying pixels/masks, remain stable across repeated samples, and retain opaque ink and legacy erasure.
+
+
+## Paper Sketch tablet regressions
+
+The native ARM runner executes seven suites directly on the tablet without
+restarting its UI. The extended UI probe additionally exercises five charcoal
+layers on three paper stocks, both charcoal types, actual Clear/confirmation
+taps, and real Care foreground/background transitions with injected pen input.
+Both produce JSON reports and check saved artwork preservation.
+
+See [the tablet regression guide](../docs/papersketch-foreground-layers-and-tablet-tests-2026-11-04.md)
+for commands, required device state and the distinction between CPU-only and
+UI-changing runs. The extended UI flag is --extended-fidelity-probe.

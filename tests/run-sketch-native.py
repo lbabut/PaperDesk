@@ -37,10 +37,12 @@ p.add_argument("--detail-proximity-exits",action="store_true",help="Stress repea
 p.add_argument("--detail-no-preview",action="store_true",help="Disable native preview for the detail-probe comparison")
 p.add_argument("--detail-probe",action="store_true",help="100 tiny circles and 400 hatches per tool at 500 Hz")
 p.add_argument("--fidelity-probe",action="store_true")
+p.add_argument("--extended-fidelity-probe",action="store_true",help="Also test charcoal layering and actual AppLoad background/foreground ownership")
 p.add_argument("--preferences-probe",action="store_true")
 p.add_argument("--fidelity-brush-size",type=int,choices=range(1,81),default=32)
 p.add_argument("--output",default="docs/papersketch-native-2026-10-31.json")
 a=p.parse_args()
+if a.extended_fidelity_probe:a.fidelity_probe=True
 if a.detail_user_settings and not a.detail_probe:p.error("--detail-user-settings requires --detail-probe")
 if a.detail_fullscreen and not a.detail_probe:p.error("--detail-fullscreen requires --detail-probe")
 if a.detail_check_latency and not a.detail_probe:p.error("--detail-check-latency requires --detail-probe")
@@ -87,6 +89,7 @@ if a.detail_fullscreen:harness=harness.replace("property bool fullScreenCase:fal
 if a.detail_proximity_exits:harness=harness.replace('pattern:"detail-circles"','pattern:"detail-circles-exit"')
 if a.detail_no_preview:harness=harness.replace('a.confirmation="book";','a.fastPenPreview=false;a.confirmation="book";')
 if a.fidelity_probe:harness=harness.replace("property int shadingSize:32","property int shadingSize:"+str(a.fidelity_brush_size))
+if a.extended_fidelity_probe:harness=harness.replace("property bool extendedCases:false","property bool extendedCases:true")
 if a.latency_fresh_only:
     marker="property bool freshOnly:false"
     assert harness.count(marker)==1,"Latency harness fresh-only option is missing"

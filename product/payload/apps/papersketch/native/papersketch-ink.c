@@ -251,7 +251,7 @@ static float fine_pressure(float p) {
 static float fine_width(float p) {
     if(arm.tool==8)return arm.size;
     p=fine_pressure(p);
-    const float minimum[]={.22f,.20f,.18f,.16f,.35f,.40f},exponent[]={.90f,1.05f,1.15f,1.20f,.80f,.70f};
+    const float minimum[]={.22f,.20f,.18f,.16f,.28f,.45f},exponent[]={.90f,1.05f,1.15f,1.20f,.90f,.65f};
     return arm.size*(minimum[arm.tool]+(1-minimum[arm.tool])*powf(fminf(1,fmaxf(0,p)),exponent[arm.tool]));
 }
 

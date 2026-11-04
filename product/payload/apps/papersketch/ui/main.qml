@@ -56,8 +56,19 @@ Rectangle {
     property string confirmation: ""
     readonly property bool bitmapMode:nativeRasterActive && nativeRaster && nativeRaster.materialAvailable===true
     readonly property bool rawPenMode:bitmapMode && nativeRaster && nativeRaster.rawPenInputAvailable===true
-    readonly property bool rawPenEnabled:rawPenMode && ready && visible && !closing && !replaying && !saveBlocked && !confirmation && !exportDialog && !materialsDialog && !calibrationDialog
+    readonly property bool rawPenEnabled:rawPenMode && ready && enabled && visible && !closing && !replaying && !saveBlocked && !confirmation && !exportDialog && !materialsDialog && !calibrationDialog
     readonly property bool rawHoverBlocked:typeof rawPenHover.blocking==="boolean" && rawPenHover.blocking
+    function suspendDrawingInput(){
+        nativeArmed=false;nativeWrite("off");
+        if(activeStroke){
+            if(activeSource==="finger" && bitmapMode){nativeRaster.cancel();activeStroke=null;activeSource="";nativeStroke=false;}
+            else finishStroke();
+        }
+        rawPenContact=0;
+        if(nativeRaster && typeof nativeRaster.setRawPenInputEnabled==="function")nativeRaster.setRawPenInputEnabled(false);
+    }
+    onEnabledChanged:{if(!enabled && ready)suspendDrawingInput();else if(enabled && ready)Qt.callLater(nativeHeartbeat);}
+    onVisibleChanged:{if(!visible && ready)suspendDrawingInput();else if(visible && ready)Qt.callLater(nativeHeartbeat);}
     property bool rawPenDraining:false
     property int rawPenContact:0
     property int rawPenStrokes:0
@@ -163,7 +174,7 @@ Rectangle {
         if(ready && !sizeSlider.pressed)nativeHeartbeat();
     }
     onControlsVisibleChanged:if(ready) {nativeArmed=false;nativeWrite("off");}
-    Timer { interval:400;running:root.visible && !root.closing && (!root.bitmapMode||(root.fastPenPreview&&root.finePreviewTool(root.tool,root.brushSize)));repeat:true;triggeredOnStart:true;onTriggered:root.nativeHeartbeat() }
+    Timer { interval:400;running:root.enabled && root.visible && !root.closing && (!root.bitmapMode||(root.fastPenPreview&&root.finePreviewTool(root.tool,root.brushSize)));repeat:true;triggeredOnStart:true;onTriggered:root.nativeHeartbeat() }
     function nativeWrite(value) {
         if(nativeRaster && typeof nativeRaster.writePreviewPermit==="function"){
             if(!nativeRaster.writePreviewPermit(value))nativeArmed=false;
@@ -177,6 +188,7 @@ Rectangle {
         catch(e) {nativeArmed=false;}
     }
     function nativeHeartbeat() {
+        if(!enabled || !visible || closing){nativeArmed=false;nativeWrite("off");return;}
         if(sizeSlider.pressed)return;
         if(bitmapMode&&!fastPenPreview){nativeWrite("off");nativeReady=false;nativeArmed=false;return;}
         try {
@@ -495,7 +507,7 @@ Rectangle {
         var fromRaw=rawPoint!==undefined && rawPoint!==null;
         if(materialsDialog || calibrationDialog)return;
         if(source==="pen" && activeSource==="finger"){if(bitmapMode)nativeRaster.cancel();activeStroke=null;activeSource="";}
-        if(!ready || busy || saveBlocked || confirmation) return;
+        if(!enabled || !visible || closing || !ready || busy || saveBlocked || confirmation) return;
         if(!bitmapMode && totalPoints>=Ink.MAX_POINTS) {notice="Sketchbook full. Export your pages before starting a new book.";return;}
         if(bitmapMode || (source==="pen" && nativeRaster))syncInputTransform();
         var hardwareEraser=source==="pen" && (fromRaw ? eraserHint===true : (eraserHint===true || (nativeRaster && typeof nativeRaster.eraserActive==="function" && nativeRaster.eraserActive(p.x,p.y))));

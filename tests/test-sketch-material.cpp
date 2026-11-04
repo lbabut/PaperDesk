@@ -101,7 +101,7 @@ static void testPigmentTransport() {
     Fixture hb, coal;
     hb.line(1, 160, 80, 160, 240);
     coal.line(4, 160, 80, 160, 240);
-    assert(coal.loose() > hb.loose() * 2);
+    assert(coal.loose()*hb.pageMass() > hb.loose()*coal.pageMass()*2);
     auto sum = coal.mass();
     int core = coal.gray(160, 160);
     coal.line(7, 100, 160, 240, 160, 1, 64);

@@ -51,7 +51,8 @@ Item {
             function takePenInput(){var batch=rawEvents.slice(0,64);rawEvents=rawEvents.slice(64);return batch}
             function advancePenInput(tool,size,strength,x,y,p,first,tx,ty){rawCalls++;rawX=x;rawY=y;return true}
             property int previewWrites:0
-            function writePreviewPermit(value){previewWrites++;return true}
+            property string lastPermit:""
+            function writePreviewPermit(value){lastPermit=value;previewWrites++;return true}
             function previewPressureAnchors(){return [.15,.5,.95]}
             function repairPreview(){return true}
             property string preferencesDocument:""
@@ -175,6 +176,24 @@ Item {
             verify(first!==null);verify(last!==null);compare(first.width,129);compare(first.height,129);
             compare(last.width,48);compare(last.height,129);
             var bottom=findChild(scene.app,"nativeTileLoader129");verify(bottom!==null);compare(bottom.height,64);
+        }
+        function test_background_ancestor_revokes_raw_input_and_preview(){
+            var a=scene.app,old=a.nativeRaster,oldParent=a.parent,backend=realismBackend.createObject(scene);
+            var holder=Qt.createQmlObject('import QtQuick 2.15; Item {width:1404;height:1872}',scene);
+            try{
+                a.parent=holder;backend.materialAvailable=true;backend.rawPenInputAvailable=true;
+                a.nativeRaster=backend;a.nativeRasterActive=true;a.fastPenPreview=true;
+                verify(a.rawPenEnabled);compare(backend.rawEnabled,true);
+                a.nativeArmed=true;backend.rawEvents=[[1,300,400,.6,0,0,false,1],[2,350,400,.6,0,0,false,1]];
+                a.drainPenInput();verify(a.activeStroke!==null);var calls=backend.rawCalls;
+                holder.enabled=false;verify(!a.enabled);verify(!a.rawPenEnabled);
+                compare(backend.rawEnabled,false);compare(a.nativeArmed,false);compare(backend.lastPermit,"off");
+                compare(a.activeStroke,null);compare(a.rawPenContact,0);
+                backend.rawEvents=[[1,400,500,.6,0,0,false,2],[3,410,500,.6,0,0,false,2]];
+                a.drainPenInput();compare(backend.rawCalls,calls);a.nativeHeartbeat();compare(backend.lastPermit,"off");
+                a.beginStroke(Qt.point(400,500),"pen",4,.6);compare(a.activeStroke,null);
+                backend.rawEvents=[];holder.enabled=true;verify(a.rawPenEnabled);compare(backend.rawEnabled,true);
+            }finally{a.parent=oldParent;holder.destroy();a.nativeRaster=old;backend.destroy();}
         }
         function test_device_detail_harness_compiles(){
             var component=Qt.createComponent("../device/papersketch-detail.qml");

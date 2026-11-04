@@ -53,6 +53,7 @@ struct PaperMaterial {
     // only the unburnished contact/capacity pair; pressure and tool completely
     // determine it. Keep the scalar model for polished pixels and small tips.
     // This is transient derived state, never saved with a page.
+    static double capacityResponse(int tool,double value){return tool==4 ? .35+.65*value : tool==5 ? .45+.55*value : value;}
     struct ContactResponse { double contact; int capacity; };
     std::array<ContactResponse, 256> freshContact{};
     double freshPressure = -1;
@@ -64,7 +65,7 @@ struct PaperMaterial {
         for (int t = 0; t < 256; ++t) {
             freshContact[t] = {
                 std::clamp((1.05 * p + .15 - responses[t].grain * toothContact) * 2.0, 0.0, 1.0),
-                std::max(1, int(capacityAtPressure * responses[t].capacity))};
+                std::max(1, int(capacityAtPressure * capacityResponse(tool,responses[t].capacity)))};
         }
         freshPressure = p; freshTool = tool;
     }
@@ -135,8 +136,8 @@ struct PaperMaterial {
         } else if (tool == 6 && kneaded) {
             a = b = std::max(.8, size * .5 * (.7 + .3 * std::sqrt(p)));
         } else if (tool < 6 && tool >= 0) {
-            constexpr double widthExponent[] = {.90, 1.05, 1.15, 1.20, .80, .70};
-            constexpr double minimumWidth[] = {.22, .20, .18, .16, .35, .40};
+            constexpr double widthExponent[] = {.90, 1.05, 1.15, 1.20, .90, .65};
+            constexpr double minimumWidth[] = {.22, .20, .18, .16, .28, .45};
             worn = unit(wear[tool]);
             double tx = std::isfinite(tiltX) ? std::clamp(tiltX, -1.0, 1.0) : 0;
             double ty = std::isfinite(tiltY) ? std::clamp(tiltY, -1.0, 1.0) : 0;
@@ -144,8 +145,8 @@ struct PaperMaterial {
             angle = tilt > 0 ? std::atan2(ty, tx) : 0;
             double width = minimumWidth[tool] + (1 - minimumWidth[tool]) * std::pow(p, widthExponent[tool]);
             double r = std::max(.8, size * .5 * width);
-            a = std::min(40.0, r * (1 + (tool >= 4 ? 1.5 : .65) * tilt + .18 * worn));
-            b = std::min(40.0, std::max(.55, r * (1 - (tool >= 4 ? .65 : .45) * tilt) * (1 + .30 * worn)));
+            a = std::min(40.0, r * (1 + (tool == 5 ? 1.5 : tool == 4 ? 1.0 : .65) * tilt + .18 * worn));
+            b = std::min(40.0, std::max(.55, r * (1 - (tool == 5 ? .65 : tool == 4 ? .55 : .45) * tilt) * (1 + .30 * worn)));
         } else {
             a = b = std::min(40.0, std::max(.8, size * (.18 + .82 * p) * .5));
         }
@@ -188,16 +189,16 @@ struct PaperMaterial {
         int x1 = std::min(width - 1, int(std::ceil(cx + radius)));
         int y0 = std::max(0, int(std::floor(cy - radius)));
         int y1 = std::min(height - 1, int(std::ceil(cy + radius)));
-        constexpr double doses[] = {6000, 12000, 16000, 22000, 20000, 24000};
-        constexpr double fixedFraction[] = {.94, .78, .58, .38, .14, .08};
-        constexpr double capacities[] = {18000, 30000, 40000, 55000, 65000, 65535};
+        constexpr double doses[] = {6000, 12000, 16000, 22000, 9500, 26000};
+        constexpr double fixedFraction[] = {.94, .78, .58, .38, .22, .06};
+        constexpr double capacities[] = {18000, 30000, 40000, 55000, 54000, 65535};
         // Keep divisions and tool constants outside the per-pixel hot loop.
         const double inverseA = 1.0 / (shape.a * shape.a), inverseB = 1.0 / (shape.b * shape.b);
         const double quadraticX = shape.c * shape.c * inverseA + shape.s * shape.s * inverseB;
         const double quadraticY = shape.s * shape.s * inverseA + shape.c * shape.c * inverseB;
         const double quadraticXY = 2 * shape.c * shape.s * (inverseA - inverseB);
         const double contactStrength = (tool == 7 ? .9 * std::sqrt(p) : p) * strength;
-        constexpr double doseExponent[] = {1.2, 1.35, 1.45, 1.50, .90, .80};
+        constexpr double doseExponent[] = {1.2, 1.35, 1.45, 1.50, 1.05, .75};
         const double dosePressure = tool < 6 ? std::pow(p, doseExponent[tool]) : p;
         const double dose = tool < 6 ? doses[tool] * strength * dosePressure * (1 - tone / 255.0) *
             (1 - .15 * shape.worn) : 0;
@@ -303,12 +304,13 @@ struct PaperMaterial {
                         contact = fresh.contact; capacity = fresh.capacity;
                     } else {
                         contact = std::clamp((1.05 * p + .15 - response.grain * toothContact) * 2.0, 0.0, 1.0);
-                        capacity = std::max(1, int(capacityAtPressure * response.capacity * (1 - .22 * polish)));
+                        capacity = std::max(1, int(capacityAtPressure * capacityResponse(tool,response.capacity) * (1 - .22 * polish)));
                     }
                     int room = std::max(0, capacity - fixed - loose);
                     if (room > 0) {
                         double amount = dose * edge * contact * (1 - .35 * polish) * (room / double(capacity));
-                        if (tool == 4 || tool == 5) amount *= charcoalDoseScale * (.16 + .84 * response.capacity);
+                        if (tool == 4) amount *= charcoalDoseScale * (.08 + .92 * response.capacity * response.capacity);
+                        if (tool == 5) amount *= charcoalDoseScale * (.30 + .70 * response.capacity);
                         int added = std::min(room, roundMass(amount));
                         int bonded = roundMass(added * std::min(.99, bondedFraction + .10 * polish));
                         fixed += bonded;
