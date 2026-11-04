@@ -1,0 +1,18 @@
+{
+  "installed": true,
+  "xochitl_active": true,
+  "payload_sha256": {
+    "native/papersketch-raster.so": "e84e1271f9398200a789355562a682244c247cc1662f501cd1d7bcfd29481d9a",
+    "native/papersketch-ink.so": "2643b947f47a4b3cb27b241fe0da6f4f5b8f89db6da70374cc902a2c17e14bc5",
+    "resources.rcc": "3207f8fbd23057eeaa0ebc47b684b2888d4b0b66f21d5efd0295040035e5d0a1"
+  },
+  "native_suites_passed": 9,
+  "ui_passed": true,
+  "artwork_preserved": true,
+  "saved_files_preserved": true,
+  "optical_and_physical_state_match_previous": true,
+  "shading_before_us": 4264521,
+  "shading_after_us": 3736948,
+  "release_tail_before_ms": 2680,
+  "release_tail_after_ms": 2232
+}

@@ -94,4 +94,5 @@ int main(int argc,char**){
         }
         printf("{\"tool\":%d,\"size\":%.0f,\"pressure_mode\":%d,\"before_us\":%lld,\"after_us\":%lld,\"speedup\":%.4f}\n",tool,size,variant,oldTime,newTime,double(oldTime)/newTime);fflush(stdout);
     }
+    return 0;
 }

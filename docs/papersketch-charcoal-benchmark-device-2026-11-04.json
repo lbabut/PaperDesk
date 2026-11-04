@@ -1,0 +1,16 @@
+{
+  "architecture": "armv7l",
+  "cases": [
+    {
+      "name": "charcoal-speed",
+      "passed": true,
+      "binary_sha256": "b799453c204f71ce4cfbb5d293967b9a467fc8523d15d5a89185544ec50b07da",
+      "seconds": 40.86,
+      "output": "{\"tool\":4,\"size\":48,\"pressure_mode\":0,\"before_us\":1366699,\"after_us\":943662,\"speedup\":1.4483}\n{\"tool\":4,\"size\":48,\"pressure_mode\":1,\"before_us\":1259996,\"after_us\":938095,\"speedup\":1.3431}\n{\"tool\":4,\"size\":80,\"pressure_mode\":0,\"before_us\":3723119,\"after_us\":2354922,\"speedup\":1.5810}\n{\"tool\":4,\"size\":80,\"pressure_mode\":1,\"before_us\":3356160,\"after_us\":2145621,\"speedup\":1.5642}\n{\"tool\":5,\"size\":48,\"pressure_mode\":0,\"before_us\":1788357,\"after_us\":1267957,\"speedup\":1.4104}\n{\"tool\":5,\"size\":48,\"pressure_mode\":1,\"before_us\":1644841,\"after_us\":1162668,\"speedup\":1.4147}\n{\"tool\":5,\"size\":80,\"pressure_mode\":0,\"before_us\":4924110,\"after_us\":3200500,\"speedup\":1.5385}\n{\"tool\":5,\"size\":80,\"pressure_mode\":1,\"before_us\":4416230,\"after_us\":2912279,\"speedup\":1.5164}\n"
+    }
+  ],
+  "ui_restart": false,
+  "device_input_grabbed": false,
+  "artwork_preserved": true,
+  "passed": true
+}

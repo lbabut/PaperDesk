@@ -1,0 +1,72 @@
+{
+  "architecture": "armv7l",
+  "cases": [
+    {
+      "name": "charcoal-speed",
+      "passed": true,
+      "binary_sha256": "ccd144ad521457788cbe782c3faf8b87cd692ea73e204e95623e47aa1c22e694",
+      "seconds": 99.905,
+      "output": "PASS wide charcoal vs frozen pre-optimization: exact optical/pigment/finger/burnish/wear/ink and sampler state\nPASS shared row worker serializes simultaneous independent surfaces\n"
+    },
+    {
+      "name": "charcoal-layers",
+      "passed": true,
+      "binary_sha256": "7bcb37e771acd23e1eabb21201929b0f261ad1bf9626e5e2f81d8c0dd442f718",
+      "seconds": 6.482,
+      "output": "{\"cases\":[{\"paper\":0,\"size\":48,\"tool\":4,\"gray\":[219.615,194.906,176.634,162.517,151.276]},{\"paper\":0,\"size\":48,\"tool\":5,\"gray\":[123.653,82.604,64.703,55.545,50.359]},{\"paper\":0,\"size\":80,\"tool\":4,\"gray\":[218.427,193.170,174.644,160.450,149.102]},{\"paper\":0,\"size\":80,\"tool\":5,\"gray\":[122.130,81.347,63.849,54.847,49.856]},{\"paper\":1,\"size\":48,\"tool\":4,\"gray\":[184.312,141.580,114.146,95.587,82.476]},{\"paper\":1,\"size\":48,\"tool\":5,\"gray\":[83.580,46.622,34.207,29.003,26.547]},{\"paper\":1,\"size\":80,\"tool\":4,\"gray\":[182.054,138.783,111.380,93.017,80.172]},{\"paper\":1,\"size\":80,\"tool\":5,\"gray\":[82.175,45.720,33.696,28.660,26.363]},{\"paper\":2,\"size\":48,\"tool\":4,\"gray\":[208.312,179.344,159.875,145.880,135.333]},{\"paper\":2,\"size\":48,\"tool\":5,\"gray\":[117.738,78.920,62.290,53.599,48.554]},{\"paper\":2,\"size\":80,\"tool\":4,\"gray\":[206.835,177.467,157.917,143.976,133.434]},{\"paper\":2,\"size\":80,\"tool\":5,\"gray\":[116.406,77.743,61.401,52.911,47.990]}],\"passed\":true}\n"
+    },
+    {
+      "name": "kneaded-strength",
+      "passed": true,
+      "binary_sha256": "1999b85fc6ecfdec73de5f7d3cd5a382ffd450567600ef1f7d5f949c036bf5ed",
+      "seconds": 0.537,
+      "output": "{\"cases\":[{\"media\":0,\"before\":2,\"light\":4,\"medium\":9,\"firm\":25,\"second_dab\":79},{\"media\":1,\"before\":61,\"light\":70,\"medium\":94,\"firm\":132,\"second_dab\":184},{\"media\":2,\"before\":87,\"light\":105,\"medium\":151,\"firm\":210,\"second_dab\":239},{\"media\":3,\"before\":61,\"light\":80,\"medium\":134,\"firm\":213,\"second_dab\":246}],\"passed\":true}\n"
+    },
+    {
+      "name": "material",
+      "passed": true,
+      "binary_sha256": "1a3964ea5c459165c6d2ae510345f185bf2e575a6e27105aa76158285dc81698",
+      "seconds": 5.439,
+      "output": "{\"passed\":true,\"mass_conserved\":true,\"resampling_invariant\":true,\"zero_contact_noop\":true,\"bounded_saturation\":true,\"smudge_p50_us\":657,\"smudge_p95_us\":670,\"smudge_max_us\":1068}\n"
+    },
+    {
+      "name": "material-realism",
+      "passed": true,
+      "binary_sha256": "a39842fec263d3e31cea0f3718c69b04706ee2f13a4b84dbf6455463820bdf3d",
+      "seconds": 1.971,
+      "output": "PASS directional tilt, pressure profiles, three paper stocks, persistent burnish, distance wear/sharpen, kneaded lift, rotated conservative finger, bounded maximum footprints and full-state event resampling\n"
+    },
+    {
+      "name": "pressure",
+      "passed": true,
+      "binary_sha256": "65027ea9af50117b020550aaf93999816baf55876c4ee3b25c6502ae4a16f3a5",
+      "seconds": 0.382,
+      "output": ""
+    },
+    {
+      "name": "touch",
+      "passed": true,
+      "binary_sha256": "2fe0de91a195aedfacad5eaac24ba6a41858f26351cb13d063d700b11387840f",
+      "seconds": 0.369,
+      "output": ""
+    },
+    {
+      "name": "pen",
+      "passed": true,
+      "binary_sha256": "ec010d5c225c43bf2ac6511fb87a48e26b02c75263cd6d68d7f2dbf726be077a",
+      "seconds": 0.549,
+      "output": "PASS ordered closed-contact queue, bounded drains without truncation, subpixel geometry and canvas gating\n"
+    },
+    {
+      "name": "display",
+      "passed": true,
+      "binary_sha256": "485f3f5c6d03c66e89aa0943c30db1d751f968a79e8dd91f6a1fdb12187460f1",
+      "seconds": 0.373,
+      "output": ""
+    }
+  ],
+  "ui_restart": false,
+  "device_input_grabbed": false,
+  "artwork_preserved": true,
+  "passed": true
+}

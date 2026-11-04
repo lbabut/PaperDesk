@@ -284,14 +284,15 @@ struct PaperMaterial {
                 fingerColumn[x - x0] = std::clamp(int(std::lround(dx)) + FingerCenter, 0, 80);
         }
         auto paintRows = [&](int from, int to) {
+        const int rowTool = FixedTool >= 0 ? FixedTool : tool;
         for (int y = from; y <= to; ++y) {
             const double dy = y + .5 - cy, dySquared = dy * dy * quadraticY;
-            const int fingerRow = tool == 7 ?
+            const int fingerRow = rowTool == 7 ?
                 std::clamp(int(std::lround(dy)) + FingerCenter, 0, 80) * FingerStride : 0;
             for (int x = x0; x <= x1; ++x) {
                 double edge = 1 - columnSquared[x - x0] - dySquared - columnCross[x - x0] * dy;
                 if (edge <= 0) continue;
-                if (tool == 8) {
+                if (rowTool == 8) {
                     int at = y * width + x;
                     double distance = std::sqrt(std::max(0.0, 1 - edge)) * shape.a;
                     int coverage = roundMass(255 * std::clamp(shape.a - distance, 0.0, 1.0));
@@ -304,12 +305,12 @@ struct PaperMaterial {
                     continue;
                 }
                 edge *= edge;
-                if (tool == 4 || tool == 5)
+                if (rowTool == 4 || rowTool == 5)
                     edge += edge * (1 - edge) * .55 * shape.tilt;
                 int at = y * width + x;
                 uint32_t packed = mass[at];
                 int fixed = packed >> 16, loose = packed & 65535;
-                if (tool == 7) {
+                if (rowTool == 7) {
                     int fi = fingerRow + fingerColumn[x - x0];
                     if (rotatedFinger) {
                         double dx = columnX[x - x0];
@@ -330,7 +331,7 @@ struct PaperMaterial {
                     loose += deposit;
                     held -= deposit;
                     finger[fi] = held;
-                } else if (tool == 6) {
+                } else if (rowTool == 6) {
                     if (kneaded) {
                         // A contact lifts a bounded fraction, independent of event count.
                         // More pressure or moving onto fresh paper can lift more pigment.
@@ -359,13 +360,13 @@ struct PaperMaterial {
                         contact = fresh.contact; capacity = fresh.capacity;
                     } else {
                         contact = std::clamp((1.05 * p + .15 - response.grain * toothContact) * 2.0, 0.0, 1.0);
-                        capacity = std::max(1, int(capacityAtPressure * capacityResponse(tool,response.capacity) * (1 - .22 * polish)));
+                        capacity = std::max(1, int(capacityAtPressure * capacityResponse(rowTool,response.capacity) * (1 - .22 * polish)));
                     }
                     int room = std::max(0, capacity - fixed - loose);
                     if (room > 0) {
                         double amount = dose * edge * contact * (1 - .35 * polish) * (room / double(capacity));
-                        if (tool == 4) amount *= charcoalDoseScale * (.08 + .92 * response.capacity * response.capacity);
-                        if (tool == 5) amount *= charcoalDoseScale * (.30 + .70 * response.capacity);
+                        if (rowTool == 4) amount *= charcoalDoseScale * (.08 + .92 * response.capacity * response.capacity);
+                        if (rowTool == 5) amount *= charcoalDoseScale * (.30 + .70 * response.capacity);
                         int added = std::min(room, roundMass(amount));
                         int bonded = roundMass(added * std::min(.99, bondedFraction + .10 * polish));
                         fixed += bonded;

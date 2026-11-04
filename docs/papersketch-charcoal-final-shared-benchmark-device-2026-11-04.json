@@ -1,0 +1,17 @@
+{
+  "architecture": "armv7l",
+  "cases": [
+    {
+      "shared_library_sha256": "8279bbdf14f379a5ea12e103da3b81e76afd84df86d22795e7157b3fabfdc416",
+      "name": "charcoal-speed",
+      "passed": true,
+      "binary_sha256": "81b12748ed12f8658cbcf1ed4603d794e8382b52e8dc4303c0ba13372a1fdc58",
+      "seconds": 39.197,
+      "output": "{\"tool\":4,\"size\":48,\"pressure_mode\":0,\"before_us\":1348309,\"after_us\":864078,\"speedup\":1.5604}\n{\"tool\":4,\"size\":48,\"pressure_mode\":1,\"before_us\":1246948,\"after_us\":866624,\"speedup\":1.4389}\n{\"tool\":4,\"size\":80,\"pressure_mode\":0,\"before_us\":3671836,\"after_us\":2159853,\"speedup\":1.7000}\n{\"tool\":4,\"size\":80,\"pressure_mode\":1,\"before_us\":3320929,\"after_us\":1998434,\"speedup\":1.6618}\n{\"tool\":5,\"size\":48,\"pressure_mode\":0,\"before_us\":1759124,\"after_us\":1132202,\"speedup\":1.5537}\n{\"tool\":5,\"size\":48,\"pressure_mode\":1,\"before_us\":1607216,\"after_us\":1037745,\"speedup\":1.5488}\n{\"tool\":5,\"size\":80,\"pressure_mode\":0,\"before_us\":4859213,\"after_us\":2976782,\"speedup\":1.6324}\n{\"tool\":5,\"size\":80,\"pressure_mode\":1,\"before_us\":4362915,\"after_us\":2550691,\"speedup\":1.7105}\n"
+    }
+  ],
+  "ui_restart": false,
+  "device_input_grabbed": false,
+  "artwork_preserved": true,
+  "passed": true
+}
