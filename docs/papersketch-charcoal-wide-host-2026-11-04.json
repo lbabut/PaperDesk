@@ -1,0 +1,10 @@
+{
+  "status": "candidate-not-installed",
+  "baseline_commit": "031fd0235e679dc030c9e9d1f0c1e9e6502711ab",
+  "raster_sha256": "4612c91a1b57634f5d99ce1fa63005d5d150e06bec724946bc74f2a46ae90b9a",
+  "host_final_passed": true,
+  "arm_module_build_passed": true,
+  "tablet_benchmark": "pending-connectivity",
+  "tablet_installed": false,
+  "host_final_output": "PASS wide charcoal vs frozen pre-optimization: exact optical/pigment/finger/burnish/wear/ink and sampler state\nPASS shared row worker serializes simultaneous independent surfaces\nPASS v3 ink cache exact reload, v2 pages/reset without ink leakage, finger cancellation, erasers, bounded decoding and lossless ink PDF\nPASS rear contact strength independent of nib calibration, hover gating and nib-pressure restoration\nPASS rear stylus raw tool matching, normal-tip restoration, pause clearing and experimental renderer absence\n"
+}

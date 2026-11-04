@@ -3,10 +3,12 @@ import argparse,hashlib,json,os,pathlib,shlex,subprocess,tarfile,io,time
 p=argparse.ArgumentParser(description='Run non-grabbing native Sketch regressions on the tablet ARM CPU; no UI restart.')
 p.add_argument('--host',required=True);p.add_argument('--key',required=True);p.add_argument('--known-hosts',required=True);p.add_argument('--host-key-alias')
 p.add_argument('--output',default='docs/papersketch-tablet-regressions.json')
+p.add_argument('--charcoal-benchmark',action='store_true',help='Compare the current charcoal kernel with the frozen baseline at 48 and 80 px.')
 a=p.parse_args();root=pathlib.Path(__file__).resolve().parents[1]
 cache=pathlib.Path(os.environ.get('PAPERDESK_TOOLCACHE','/home/lukasz/Documents/Codex/2026-09-25/m-2/work'))/'arm-toolchain/root'
 work=root/'work/tablet-regressions';work.mkdir(parents=True,exist_ok=True)
-names=['charcoal-layers','kneaded-strength','material','material-realism','pressure','touch','pen','display'];targets=[]
+names=['charcoal-speed','charcoal-layers','kneaded-strength','material','material-realism','pressure','touch','pen','display'];targets=[]
+if a.charcoal_benchmark:names=['charcoal-speed']
 env=dict(os.environ,LD_LIBRARY_PATH=str(cache/'usr/lib/x86_64-linux-gnu'))
 for name in names:
  source=root/('tests/test-sketch-'+name+'.cpp');target=work/name
@@ -30,7 +32,7 @@ try:
   for target in targets:archive.add(target,arcname=target.name)
  remote('tar -xf - -C '+shlex.quote(stage),stream.getvalue())
  for target in targets:
-  start=time.monotonic();output=remote(shlex.join([stage+'/'+target.name]),timeout=120).decode()
+  start=time.monotonic();output=remote(shlex.join([stage+'/'+target.name]+(['benchmark'] if a.charcoal_benchmark else [])),timeout=180).decode()
   report['cases'].append({'name':target.name,'passed':True,'binary_sha256':hashlib.sha256(target.read_bytes()).hexdigest(),'seconds':round(time.monotonic()-start,3),'output':output[-12000:]})
   print('PASS',target.name,flush=True)
 finally:

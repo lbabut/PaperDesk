@@ -6,6 +6,48 @@
 #include <cmath>
 #include <cstdint>
 #include <vector>
+#include <condition_variable>
+#include <functional>
+#include <mutex>
+#include <thread>
+
+// One lazily started worker shares disjoint charcoal scanlines with the caller.
+// Each dab completes before the next one, preserving pigment and wear order.
+class PaperMaterialRows {
+    std::mutex serial, mutex;
+    std::condition_variable ready, finished;
+    std::function<void()> task;
+    bool pending = false, stopping = false;
+    std::thread thread;
+public:
+    PaperMaterialRows() : thread([this] {
+        std::unique_lock<std::mutex> lock(mutex);
+        for (;;) {
+            ready.wait(lock,[this]{return pending || stopping;});
+            if (stopping) return;
+            auto run = std::move(task);
+            lock.unlock(); run(); lock.lock();
+            pending = false;
+            finished.notify_one();
+        }
+    }) {}
+    ~PaperMaterialRows() {
+        { std::lock_guard<std::mutex> lock(mutex); stopping = true; }
+        ready.notify_one(); thread.join();
+    }
+    void run(std::function<void()> other, const std::function<void()> &local) {
+        std::lock_guard<std::mutex> exclusive(serial);
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            task = std::move(other); pending = true;
+        }
+        ready.notify_one(); local();
+        std::unique_lock<std::mutex> lock(mutex);
+        finished.wait(lock,[this]{return !pending;});
+    }
+    static bool available() { static const bool multiple = std::thread::hardware_concurrency() > 1; return multiple; }
+    static PaperMaterialRows &instance() { static PaperMaterialRows worker; return worker; }
+};
 
 // A paper pixel holds fixed and loose 16-bit pigment masses, with their sum
 // bounded by 65535. The persistent fingertip is a second mass map: touching
@@ -176,6 +218,16 @@ struct PaperMaterial {
     void dab(uint32_t *mass, uint32_t *image, uint16_t *finger, int tool,
              double size, double tone, double strength, double cx, double cy,
              double pressure) {
+        if (tool == 4) dabImpl<4>(mass,image,finger,tool,size,tone,strength,cx,cy,pressure);
+        else if (tool == 5) dabImpl<5>(mass,image,finger,tool,size,tone,strength,cx,cy,pressure);
+        else dabImpl<-1>(mass,image,finger,tool,size,tone,strength,cx,cy,pressure);
+    }
+
+    template<int FixedTool>
+    void dabImpl(uint32_t *mass, uint32_t *image, uint16_t *finger, int tool,
+             double size, double tone, double strength, double cx, double cy,
+             double pressure) {
+        if constexpr (FixedTool >= 0) tool = FixedTool;
         if (!valid(tool, size, tone, strength, cx, cy, pressure) ||
             pressure <= 0 || strength == 0 || width <= 0 || height <= 0) return;
         double p = std::min(pressure, 1.0);
@@ -206,6 +258,8 @@ struct PaperMaterial {
         // Gate by covered area, so a narrow tilted tip does not build a
         // 256-entry table for only a handful of covered pixels.
         const bool cacheFresh = tool < 6 && shape.a * shape.b >= 144;
+        const bool parallelRows = (FixedTool == 4 || FixedTool == 5) && shape.a * shape.b >= 200 && y1-y0 >= 16
+            && PaperMaterialRows::available();
         if (cacheFresh) prepareFreshContact(tool, p, capacityAtPressure);
         const double charcoalDoseScale = tool == 4 || tool == 5 ? std::min(1.0, 3.0 / std::max(shape.a, shape.b)) : 1.0;
         const double bondedFraction = tool < 6 ? fixedFraction[tool] : 0;
@@ -229,7 +283,8 @@ struct PaperMaterial {
             if (tool == 7)
                 fingerColumn[x - x0] = std::clamp(int(std::lround(dx)) + FingerCenter, 0, 80);
         }
-        for (int y = y0; y <= y1; ++y) {
+        auto paintRows = [&](int from, int to) {
+        for (int y = from; y <= to; ++y) {
             const double dy = y + .5 - cy, dySquared = dy * dy * quadraticY;
             const int fingerRow = tool == 7 ?
                 std::clamp(int(std::lround(dy)) + FingerCenter, 0, 80) * FingerStride : 0;
@@ -331,6 +386,12 @@ struct PaperMaterial {
                 image[at] = 0xff000000u | uint32_t(gray) * 0x010101u;
             }
         }
+        };
+        if (parallelRows) {
+            const int middle = (y0 + y1) / 2;
+            PaperMaterialRows::instance().run([&]{paintRows(middle+1,y1);},
+                                               [&]{paintRows(y0,middle);});
+        } else paintRows(y0,y1);
         if (tool == 7) {
             // Friction mixes neighboring fingertip cells. Each pairwise
             // exchange is bounded and conservative. Light contact now mixes
