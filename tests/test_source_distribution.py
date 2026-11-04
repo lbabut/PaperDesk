@@ -17,7 +17,11 @@ class SourceDistributionTests(unittest.TestCase):
             self.assertNotRegex(text, r'href=["\x27][^"\x27]*(?:windows-installer|linux-installer|\.exe)')
         home = (ROOT / 'website/index.html').read_text()
         self.assertIn('paperdesk-sources-' + VERSION + '.tar.gz', home)
-        self.assertLess(home.index('Join the PaperDesk discussion'), home.index('<main'))
+        community = re.search(r'<a class="community-link"[^>]*>.*?</a>', home, re.S).group()
+        self.assertIn('https://www.reddit.com/r/RemarkableTablet/', community)
+        self.assertIn('<svg', community)
+        self.assertIn('Join the conversation on Reddit', community)
+        self.assertLess(home.index('class="community-link"'), home.index('id="view-apps"'))
 
     def test_project_archive_contains_sources_payload_and_checksums_not_secrets(self):
         archive = ROOT / 'dist' / ('paperdesk-sources-' + VERSION + '.tar.gz')

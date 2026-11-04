@@ -92,7 +92,7 @@ class WebsiteTests(unittest.TestCase):
             self.assertIn("A small independent project", body)
             self.assertIn("Made with curiosity.", body)
             self.assertIn(
-                'href="https://ko-fi.com/lbabut"',
+                'href="https://ko-fi.com/lbabut/5"',
                 body,
             )
             self.assertIn("Support on Ko-fi", body)

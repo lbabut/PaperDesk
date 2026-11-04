@@ -40,17 +40,20 @@ class SourceVisibilityTests(unittest.TestCase):
         self.assertTrue(matches, 'Source code must link directly to the GitHub repository')
         self.assertTrue(any('source code' in label.lower() for _, label in matches))
 
-    def test_source_code_is_in_top_navigation(self):
-        nav = re.search(r'<nav\b.*?</nav>', self.home, re.S).group()
-        self.assert_source_link(nav)
+    def test_source_code_is_in_persistent_footer_navigation(self):
+        footer = re.search(r'<footer\b.*?</footer>', self.home, re.S).group()
+        links = Links(footer).links
+        self.assertTrue(any(attrs.get('href') == SOURCE_URL and 'GitHub' in label for attrs, label in links))
+        self.assertNotIn(' hidden', footer)
+        self.assertGreater(self.home.index('<footer'), self.home.index('</main>'))
 
-    def test_source_code_is_a_visible_hero_button(self):
-        hero = self.home[self.home.index('id="top"'):self.home.index('class="edition-strip"')]
-        self.assert_source_link(hero)
-        links = Links(hero).links
-        source = next(attrs for attrs, _ in links if attrs.get('href') == SOURCE_URL)
-        self.assertIn('button', source.get('class', '').split())
-        self.assertNotIn('<details', hero)
+    def test_source_code_is_directly_visible_in_about_panel(self):
+        about = re.search(r'<section id="view-about".*?</section>', self.home, re.S).group()
+        self.assert_source_link(about)
+        source = next(attrs for attrs, label in Links(about).links
+                      if attrs.get('href') == SOURCE_URL and 'Source code' in label)
+        self.assertEqual(source['href'], SOURCE_URL)
+        self.assertLess(about.index('Source code on GitHub'), about.index('<details'))
 
     def test_source_code_links_on_every_public_page_use_github(self):
         for path in (ROOT / 'website').glob('*.html'):
@@ -59,12 +62,16 @@ class SourceVisibilityTests(unittest.TestCase):
                     self.assertEqual(attrs.get('href'), SOURCE_URL, str(path))
 
     def test_download_label_and_client_role_are_explicit(self):
-        self.assertIn('Browse source code on GitHub', self.home)
-        self.assertIn('Download project package', self.home)
-        self.assertIn('QML and C/C++ app code, installers, tests and licences', self.home)
-        ssh = re.search(r'<h3>Paper Terminal</h3>(.*?)</article>', self.home, re.S).group(1)
-        self.assertIn('graphical SSH client and terminal', ssh)
-        self.assertIn('connecting to other computers', ssh)
+        install = re.search(r'<section id="view-install".*?</section>', self.home, re.S).group()
+        matches = [(attrs,label) for attrs,label in Links(install).links
+                   if attrs.get('href') == '/download/paperdesk-sources-' + VERSION + '.tar.gz']
+        self.assertTrue(any('Download PaperDesk' in label for attrs,label in matches))
+        self.assertIn('Source code on GitHub', self.home)
+        self.assertIn('source code and prepared tablet files', install)
+        terminal = re.search(r'<article[^>]*data-app-stage="ssh"[^>]*>(.*?)</article>', self.home, re.S).group(1)
+        self.assertIn('SSH', terminal)
+        self.assertIn('native keyboard', terminal)
+        self.assertIn('/guide-en.html#ssh', terminal)
 
 
 if __name__ == '__main__':

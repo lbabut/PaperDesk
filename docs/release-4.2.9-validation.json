@@ -1,0 +1,24 @@
+{
+  "version": "4.2.9",
+  "date": "2026-11-04",
+  "python_tests": {
+    "run": 161,
+    "skipped": 2,
+    "passed": true
+  },
+  "qml_tests": {
+    "passed": 284,
+    "skipped": 2,
+    "failed": 0
+  },
+  "native_arm_suites_passed": 9,
+  "extended_device_input_passed": true,
+  "owner_accepted": true,
+  "renderer_sha256": "e84e1271f9398200a789355562a682244c247cc1662f501cd1d7bcfd29481d9a",
+  "rcc_sha256": "3207f8fbd23057eeaa0ebc47b684b2888d4b0b66f21d5efd0295040035e5d0a1",
+  "archive_sha256": "6c54f2b1f45bedb45665668aa6cd250eee3094d405dbb500e03b7d073a87fc91",
+  "archive_size": 3853527,
+  "signed_feeds_verified": true,
+  "unrelated_app_resource_contents_preserved": true,
+  "production_scope": "release-only; preserve current website artwork, backend, statistics, and old downloads"
+}

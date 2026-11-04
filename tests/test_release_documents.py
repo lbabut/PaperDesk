@@ -35,8 +35,8 @@ class ReleaseDocumentTests(unittest.TestCase):
 
     def test_home_shows_current_release_and_preserves_direct_github_sources(self):
         text = (ROOT / 'website/index.html').read_text()
-        self.assertIn('Get version ' + VERSION, text)
-        self.assertIn('Version ' + VERSION, text)
+        self.assertIn('Get PaperDesk ' + VERSION, text)
+        self.assertRegex(text, re.compile(r'PaperDesk\s+' + re.escape(VERSION), re.I))
         self.assertIn('/download/paperdesk-sources-' + VERSION + '.tar.gz', text)
         self.assertIn('href="https://github.com/lbabut/PaperDesk"', text)
 
