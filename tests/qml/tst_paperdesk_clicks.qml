@@ -46,6 +46,18 @@ Item {
             closeSpy.destroy()
         }
 
+        function test_all_nine_cards_fit_tablet() {
+            var names=["sketchButton","calcButton","terminalButton","webButton","rdpButton","rssButton","booksButton","dotsButton","careButton"]
+            for(var i=0;i<names.length;i++) {
+                var card=findChild(scene.app,names[i]);verify(card!==null,names[i]);
+                var p=card.mapToItem(scene,0,card.height)
+                verify(p.y<=scene.height,names[i]+" outside screen")
+                verify(card.height>=280,names[i]+" too short for text and Open")
+            }
+        }
+
+        function test_calc_button() { clickAndVerify("calcButton", "papercalc") }
+
         function test_terminal_button() {
             clickAndVerify("terminalButton", "paperterminal")
         }

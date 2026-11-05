@@ -47,7 +47,7 @@ class ReleaseCompatibilityTests(unittest.TestCase):
         for fragment in re.findall(r'href="/guide-en.html#([^"]+)"', page):
             self.assertIn('id="' + fragment + '"', guide)
         stages = set(re.findall(r'data-app-stage="([^"]+)"', page))
-        self.assertEqual(stages, {'sketch','ssh','rdp','rss','books','dots','web','care'})
+        self.assertEqual(stages, {'sketch','ssh','rdp','rss','books','dots','web','care','calc'})
         for app in stages:
             self.assertIn('/guide-en.html#' + ('updates' if app == 'care' else app), page)
 

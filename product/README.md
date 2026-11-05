@@ -1,7 +1,7 @@
-# PaperDesk 4.2.9
+# PaperDesk 4.2.10
 
 PaperDesk turns a reMarkable 2 into a quiet, monochrome network workspace.
-The bundle adds eight apps directly to the AppLoad list and keeps their
+The bundle adds nine apps directly to the AppLoad list and keeps their
 settings between sessions. The redundant hub and technical RDP worker are
 hidden from users.
 
@@ -189,3 +189,7 @@ cover pigment conservation, pressure, erasing, event sampling, persistence and
 incremental repainting. Physical pen feel and optical panel latency remain
 separate from software regression results; this release does not claim that a
 digital simulation exactly reproduces every physical pencil or paper.
+
+## Paper Calc
+
+Offline Desk, Science and Graph modes, with large static keys and a full scrollable calculation tape. See [Calc instructions](payload/apps/papercalc/README.md) for immediate-execution arithmetic, history, memory, scientific functions and graph controls.

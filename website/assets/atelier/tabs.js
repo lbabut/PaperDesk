@@ -1,7 +1,7 @@
 (() => {
   const tabs = [...document.querySelectorAll('[data-tab]')];
   const panels = [...document.querySelectorAll('[data-panel]')];
-  const aliases = {top:'home', main:'home', tools:'apps', tour:'apps', download:'install', compatibility:'install', release:'install', makers:'about', support:'about'};
+  const aliases = {calc:'apps', top:'home', main:'home', tools:'apps', tour:'apps', download:'install', compatibility:'install', release:'install', makers:'about', support:'about'};
   function selectView() {
     const fragment = location.hash.slice(1) || 'home';
     const view = aliases[fragment] || fragment;
@@ -12,6 +12,13 @@
       tab.setAttribute('aria-selected', String(active));
       tab.tabIndex = active ? 0 : -1;
     });
+    if(fragment === 'calc') {
+      document.querySelectorAll('[data-app]').forEach(item => item.setAttribute('aria-pressed', String(item.dataset.app === 'calc')));
+      document.querySelectorAll('[data-app-stage]').forEach(stage => {
+        stage.hidden = stage.dataset.appStage !== 'calc';
+        if(!stage.hidden) stage.querySelector('img').loading = 'eager';
+      });
+    }
     const label = tabs.find(tab => tab.dataset.tab === selected)?.textContent || 'Home';
     document.title = selected === 'home' ? 'PaperDesk 4 — make room for curiosity' : label + ' · PaperDesk';
   }

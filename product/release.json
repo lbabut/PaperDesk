@@ -1,7 +1,7 @@
 {
   "product": "PaperDesk",
-  "version": "4.2.9",
-  "releaseDate": "2026-11-04",
+  "version": "4.2.10",
+  "releaseDate": "2026-11-05",
   "device": "reMarkable 2",
   "components": [
     {
@@ -35,6 +35,10 @@
     {
       "id": "paperbooks",
       "name": "PaperDesk Books"
+    },
+    {
+      "id": "papercalc",
+      "name": "Paper Calc"
     }
   ],
   "internalComponents": [

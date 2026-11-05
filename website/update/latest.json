@@ -1,17 +1,17 @@
 {
   "product": "PaperDesk",
   "channel": "stable",
-  "version": "4.2.9",
-  "publishedAt": "2026-11-04",
-  "archiveUrl": "/download/paperdesk-4.2.9.zip",
-  "archiveSha256": "6c54f2b1f45bedb45665668aa6cd250eee3094d405dbb500e03b7d073a87fc91",
-  "archiveSize": 3853527,
+  "version": "4.2.10",
+  "publishedAt": "2026-11-05",
+  "archiveUrl": "/download/paperdesk-4.2.10.zip",
+  "archiveSha256": "06a0a19850d91384e9dea4f5834b8d650aad973b328532487453e853d5e2495d",
+  "archiveSize": 3883282,
   "releaseNotes": [
-    "Paper Sketch charcoal now builds darker layers with repeated strokes, with distinct normal and soft charcoal responses.",
-    "New and cleared pages start with zero pigment. Historical blank-pigment state is repaired in memory while saved marks remain intact.",
-    "The kneaded eraser lifts graphite and charcoal more visibly, with pressure control and bounded removal per contact. Lift and dab again to remove another layer.",
-    "Wide charcoal uses both CPU cores without changing the rendered pigment or texture. The tested full-app shading workload used about 12% less computation time; its release tail fell from 2.68 to 2.23 seconds.",
-    "Sketch stops accepting raw drawing input and native preview updates while another AppLoad window covers it, then resumes on return.",
-    "Expanded on-tablet regressions cover exact rendering, charcoal layering, kneaded pressure and repeated dabs, Clear, foreground ownership and shared-library performance. XOVI boot startup remains manual."
+    "New Paper Calc: an offline desk calculator, scientific expressions and three function graphs in the PaperDesk black-and-white style.",
+    "Large static keys accept rapid and overlapping contacts. Desk and Science coalesce intermediate display updates; equals and clear update immediately.",
+    "Desk keeps a scrollable full calculation tape, saved history and calculator memory. Science supports trigonometry, powers, logarithms, factorials and DEG/RAD.",
+    "Graph includes editable ranges, zoom, trace, a values table and approximate sign-changing roots. Invalid formulas and domain gaps are handled explicitly.",
+    "The release adds Calc to installation, removal, the PaperDesk launcher and the website, with fresh interface renders and English/Polish instructions.",
+    "Validated with automated calculator and Graph UI tests plus guarded input and Graph checks on reMarkable 2 / OS 3.29.0.153. XOVI startup remains manual."
   ]
 }

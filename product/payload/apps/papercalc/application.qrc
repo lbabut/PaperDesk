@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="/">
+    <file>ui/main.qml</file>
+    <file>ui/CalcKey.qml</file>
+    <file>ui/GraphPanel.qml</file>
+    <file>calc.js</file>
+    <file>office.js</file>
+  </qresource>
+</RCC>

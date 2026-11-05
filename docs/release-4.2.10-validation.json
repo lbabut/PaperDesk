@@ -1,0 +1,51 @@
+{
+  "version": "4.2.10",
+  "releaseDate": "2026-11-05",
+  "base_commit": "32f5a96e6dda540d85bbc5816cf07c0ee3dd6c9b",
+  "python": {
+    "run": 164,
+    "failed": 0,
+    "skipped": 2
+  },
+  "calculator_engine_checks": 38,
+  "calculator_qt": {
+    "passed": 35,
+    "failed": 0
+  },
+  "suite_qt": {
+    "passed": 286,
+    "failed": 0,
+    "skipped": 2
+  },
+  "native_terminal": "passed; loopback SSH test uses an isolated SSH config; no Terminal runtime code changed",
+  "terminal_core": "passed",
+  "tablet_graph_checks": 16,
+  "tablet_science": [
+    {
+      "interval_ms": 40,
+      "hold_ms": 20,
+      "presses": 72,
+      "display_updates": 29,
+      "result": "659.19",
+      "correct": true
+    },
+    {
+      "interval_ms": 60,
+      "hold_ms": 80,
+      "presses": 72,
+      "display_updates": 51,
+      "result": "659.19",
+      "correct": true
+    }
+  ],
+  "calculator_resource_sha256": "8d149452e24ae2796b2a1f6525c1cb2d0c7c6edba75eeb182fd92c10c51b5207",
+  "opticalLatencyMeasured": false,
+  "website": "Desktop browser verified: collection, Calc selection, screenshot, Graph link and direct #calc entry. English and Polish guides updated.",
+  "signed_update_sha256": "06a0a19850d91384e9dea4f5834b8d650aad973b328532487453e853d5e2495d",
+  "signatures": "Ed25519 stable/latest verified",
+  "known_limitations": [
+    "E-ink optical refresh latency is not measured by automated input tests.",
+    "The first contact immediately after Xochitl restart may be consumed by the tablet before calculator input. Automated bursts activate a non-interactive display area first.",
+    "Graph root search can miss tangent roots and has no CAS."
+  ]
+}

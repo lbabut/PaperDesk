@@ -1,0 +1,163 @@
+{
+  "scope": "awake/foreground calculator; one separately recorded non-key activation contact before entry",
+  "activation": {
+    "presses": 1,
+    "interval_ms": 120,
+    "hold_ms": 80,
+    "started_ms": 1793877433432,
+    "ended_ms": 1793877433553,
+    "writes_ok": true,
+    "scope": "non-interactive display contact to activate the tablet before monetary input"
+  },
+  "sequence": "11.11+22.22+33.33+44.44+55.55+66.66+77.77+88.88+99.99+12.34+56.78+90.12=",
+  "passed": true,
+  "presses": 864,
+  "samples": [
+    {
+      "id": "1-0",
+      "presses": 72,
+      "expected_presses": 72,
+      "value": "659.19",
+      "displayed_value": "659.19",
+      "expected_value": "659.19",
+      "correct": true,
+      "interval_ms": 120,
+      "hold_ms": 24,
+      "writes_ok": true
+    },
+    {
+      "id": "1-1",
+      "presses": 72,
+      "expected_presses": 72,
+      "value": "659.19",
+      "displayed_value": "659.19",
+      "expected_value": "659.19",
+      "correct": true,
+      "interval_ms": 60,
+      "hold_ms": 24,
+      "writes_ok": true
+    },
+    {
+      "id": "1-2",
+      "presses": 72,
+      "expected_presses": 72,
+      "value": "659.19",
+      "displayed_value": "659.19",
+      "expected_value": "659.19",
+      "correct": true,
+      "interval_ms": 40,
+      "hold_ms": 20,
+      "writes_ok": true
+    },
+    {
+      "id": "1-3",
+      "presses": 72,
+      "expected_presses": 72,
+      "value": "659.19",
+      "displayed_value": "659.19",
+      "expected_value": "659.19",
+      "correct": true,
+      "interval_ms": 60,
+      "hold_ms": 80,
+      "writes_ok": true
+    },
+    {
+      "id": "1-4",
+      "presses": 72,
+      "expected_presses": 72,
+      "value": "659.19",
+      "displayed_value": "659.19",
+      "expected_value": "659.19",
+      "correct": true,
+      "interval_ms": 120,
+      "hold_ms": 24,
+      "writes_ok": true
+    },
+    {
+      "id": "1-5",
+      "presses": 72,
+      "expected_presses": 72,
+      "value": "659.19",
+      "displayed_value": "659.19",
+      "expected_value": "659.19",
+      "correct": true,
+      "interval_ms": 60,
+      "hold_ms": 24,
+      "writes_ok": true
+    },
+    {
+      "id": "1-6",
+      "presses": 72,
+      "expected_presses": 72,
+      "value": "659.19",
+      "displayed_value": "659.19",
+      "expected_value": "659.19",
+      "correct": true,
+      "interval_ms": 40,
+      "hold_ms": 20,
+      "writes_ok": true
+    },
+    {
+      "id": "1-7",
+      "presses": 72,
+      "expected_presses": 72,
+      "value": "659.19",
+      "displayed_value": "659.19",
+      "expected_value": "659.19",
+      "correct": true,
+      "interval_ms": 60,
+      "hold_ms": 80,
+      "writes_ok": true
+    },
+    {
+      "id": "1-8",
+      "presses": 72,
+      "expected_presses": 72,
+      "value": "659.19",
+      "displayed_value": "659.19",
+      "expected_value": "659.19",
+      "correct": true,
+      "interval_ms": 120,
+      "hold_ms": 24,
+      "writes_ok": true
+    },
+    {
+      "id": "1-9",
+      "presses": 72,
+      "expected_presses": 72,
+      "value": "659.19",
+      "displayed_value": "659.19",
+      "expected_value": "659.19",
+      "correct": true,
+      "interval_ms": 60,
+      "hold_ms": 24,
+      "writes_ok": true
+    },
+    {
+      "id": "1-10",
+      "presses": 72,
+      "expected_presses": 72,
+      "value": "659.19",
+      "displayed_value": "659.19",
+      "expected_value": "659.19",
+      "correct": true,
+      "interval_ms": 40,
+      "hold_ms": 20,
+      "writes_ok": true
+    },
+    {
+      "id": "1-11",
+      "presses": 72,
+      "expected_presses": 72,
+      "value": "659.19",
+      "displayed_value": "659.19",
+      "expected_value": "659.19",
+      "correct": true,
+      "interval_ms": 60,
+      "hold_ms": 80,
+      "writes_ok": true
+    }
+  ],
+  "cold_restart_first_contact_fixed": false,
+  "optical_refresh_measured": false
+}

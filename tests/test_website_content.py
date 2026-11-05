@@ -39,8 +39,8 @@ class WebsiteContentTests(unittest.TestCase):
         page = Page(text)
         self.assertEqual(sum(t == 'h1' for t, _ in page.tags), 4)
         self.assertEqual(sum('data-tab' in a for _, a in page.tags), 4)
-        self.assertEqual(sum('data-app' in a for _, a in page.tags), 8)
-        self.assertEqual(sum('data-app-stage' in a for _, a in page.tags), 8)
+        self.assertEqual(sum('data-app' in a for _, a in page.tags), 9)
+        self.assertEqual(sum('data-app-stage' in a for _, a in page.tags), 9)
         ids = [a['id'] for _, a in page.tags if 'id' in a]
         self.assertEqual(len(ids), len(set(ids)))
         self.assertIn('https://www.linkedin.com/in/lukasz-babut', text)

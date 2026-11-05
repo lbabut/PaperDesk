@@ -1,0 +1,134 @@
+{
+  "inputs": [
+    {
+      "presses": 72,
+      "interval_ms": 40,
+      "hold_ms": 20,
+      "started_ms": 1793878873233,
+      "ended_ms": 1793878876163,
+      "writes_ok": true,
+      "id": "0"
+    },
+    {
+      "presses": 72,
+      "interval_ms": 60,
+      "hold_ms": 80,
+      "started_ms": 1793878878375,
+      "ended_ms": 1793878882753,
+      "writes_ok": true,
+      "id": "1"
+    }
+  ],
+  "physicalTouchTested": false,
+  "opticalLatencyMeasured": false,
+  "source_hashes": {
+    "calc.js": "8059f37737a564148c209de325f1c2e8f692e6e712a6d715c5b2a33238c1db79",
+    "office.js": "71e6dbd2be868aa9b95d9bab5da3fd04c1270e8c308de1764c499819317c7a41",
+    "ui/CalcKey.qml": "70bb05152902fe55c98c9f87d6d8161569fbd72ced8d1dada43cc32867e69b9a",
+    "ui/GraphPanel.qml": "6e2b9a7c08edb2271227b926206e7992324d8db268a08c0cc5d82baa406f39f9",
+    "ui/main.qml": "b80865690e1fcdc04dc7e5422dea43dc7015a7ff646807ffcd3d55aafb9a754e"
+  },
+  "activation": {
+    "presses": 1,
+    "interval_ms": 120,
+    "hold_ms": 80,
+    "started_ms": 1793878863274,
+    "ended_ms": 1793878863403,
+    "writes_ok": true
+  },
+  "result": {
+    "checks": [
+      {
+        "name": "keypad x^2-4",
+        "passed": true
+      },
+      {
+        "name": "range keypad",
+        "passed": true
+      },
+      {
+        "name": "zoom in",
+        "passed": true
+      },
+      {
+        "name": "zoom out",
+        "passed": true
+      },
+      {
+        "name": "invalid window rejected",
+        "passed": true
+      },
+      {
+        "name": "positive root",
+        "passed": true
+      },
+      {
+        "name": "negative root",
+        "passed": true
+      },
+      {
+        "name": "trace arrow",
+        "passed": true
+      },
+      {
+        "name": "trace return",
+        "passed": true
+      },
+      {
+        "name": "table values and domain",
+        "passed": true
+      },
+      {
+        "name": "disabled curve",
+        "passed": true
+      },
+      {
+        "name": "DEG trig",
+        "passed": true
+      },
+      {
+        "name": "RAD trig",
+        "passed": true
+      },
+      {
+        "name": "domain gaps and syntax",
+        "passed": true
+      },
+      {
+        "name": "pole is not a root",
+        "passed": true
+      },
+      {
+        "name": "canvas painted",
+        "passed": true
+      }
+    ],
+    "samples": [
+      {
+        "interval_ms": 40,
+        "hold_ms": 20,
+        "presses": 72,
+        "display_updates": 29,
+        "result": "659.19",
+        "correct": true
+      },
+      {
+        "interval_ms": 60,
+        "hold_ms": 80,
+        "presses": 72,
+        "display_updates": 51,
+        "result": "659.19",
+        "correct": true
+      }
+    ],
+    "passed": true
+  },
+  "date": "2026-11-05",
+  "host_engine_checks": 38,
+  "host_qt_checks_passed": 35,
+  "host_qt_checks_failed": 0,
+  "graph_input_scope": "Control handlers invoked automatically; Canvas paint verified. Mouse/touch coordinate interaction covered by host Qt tests.",
+  "science_input_scope": "Guarded evdev contacts on an activated tablet, including overlapping contacts. No optical latency measurement.",
+  "probe_sha256": "f6ca74873c800e24ee34c8904211c314063f4ea15706b20d2bc21e1596a6a7ff",
+  "resource_sha256": "8d149452e24ae2796b2a1f6525c1cb2d0c7c6edba75eeb182fd92c10c51b5207"
+}

@@ -1,3 +1,12 @@
+# 4.2.10 — 2026-11-05
+
+- New Paper Calc: an offline desk calculator, scientific expressions and three function graphs in the PaperDesk black-and-white style.
+- Large static keys accept rapid and overlapping contacts. Desk and Science coalesce intermediate display updates; equals and clear update immediately.
+- Desk keeps a scrollable full calculation tape, saved history and calculator memory. Science supports trigonometry, powers, logarithms, factorials and DEG/RAD.
+- Graph includes editable ranges, zoom, trace, a values table and approximate sign-changing roots. Invalid formulas and domain gaps are handled explicitly.
+- The release adds Calc to installation, removal, the PaperDesk launcher and the website, with fresh interface renders and English/Polish instructions.
+- Validated with automated calculator and Graph UI tests plus guarded input and Graph checks on reMarkable 2 / OS 3.29.0.153. XOVI startup remains manual.
+
 # 4.2.9 — 2026-11-04
 
 - Paper Sketch charcoal now builds darker layers with repeated strokes, with distinct normal and soft charcoal responses.

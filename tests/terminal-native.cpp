@@ -536,7 +536,13 @@ int main(int argc, char **argv) {
     // state refuses connection. A current owner-only state permits direct
     // argv-based SSH to a deliberately closed local port, retaining errors.
     {
-        TerminalView terminal; viewport(terminal);
+        // OpenSSH reads the passwd home, even after the fixture sets HOME.
+        // Keep this loopback-only check independent of the host SSH config.
+        QTemporaryDir fixture; assert(fixture.isValid());
+        const QString isolatedSsh = fixture.path() + "/ssh";
+        writeFile(isolatedSsh, "#!/bin/sh\nexec /usr/bin/ssh -F /dev/null \"$@\"\n");
+        QFile::setPermissions(isolatedSsh, QFile::ReadOwner | QFile::WriteOwner | QFile::ExeOwner);
+        TerminalView terminal; viewport(terminal); terminal.sshForTest(isolatedSsh);
         terminal.startForTest("/bin/sh", {"-c", "umask 077; mkdir -p \"$HOME/.config/rmssh\"; printf 'ready %s\\n' \"$$\" > \"$PAPERTERMINAL_STATE_FILE\"; trap 'exit 0' HUP; printf READY; while :; do sleep 1; done"});
         assert(until([&] { return terminal.textForTest().contains("READY"); }));
         assert(!terminal.connectTo("-oProxyCommand=bad", "root", "22"));

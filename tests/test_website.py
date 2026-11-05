@@ -96,7 +96,7 @@ class WebsiteTests(unittest.TestCase):
                 body,
             )
             self.assertIn("Support on Ko-fi", body)
-            self.assertIn("Eight free apps", body)
+            self.assertIn("Nine free apps", body)
             self.assertIn('id="view-apps"', body)
             self.assertNotIn("Founding Edition", body)
             self.assertNotIn("€29", body)

@@ -27,7 +27,7 @@ if [ ! -d "/home/root/xovi" ] || [ ! -d "$TARGET" ]; then
     exit 1
 fi
 
-for required in paperdesk paperterminal paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch shims; do
+for required in paperdesk paperterminal paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch papercalc shims; do
     if [ ! -d "$PAYLOAD/apps/$required" ]; then
         echo "Incomplete package: missing payload/apps/$required" >&2
         exit 1
@@ -150,7 +150,7 @@ chmod 644 "$INK_STAGE"
 ORIGINAL="$STATE/original"
 if [ ! -f "$STATE/original-recorded" ] && [ ! -f "$STATE/current-version" ]; then
     mkdir -p "$ORIGINAL/apps" "$ORIGINAL/system"
-    for app in paperdesk paperterminal literm paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch paperpet shims; do
+    for app in paperdesk paperterminal literm paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch papercalc paperpet shims; do
         if [ -e "$TARGET/$app" ]; then
             cp -R "$TARGET/$app" "$ORIGINAL/apps/$app"
         fi
@@ -172,6 +172,15 @@ if [ ! -f "$STATE/original-recorded" ] && [ ! -f "$STATE/current-version" ]; the
         cp /home/root/.local/bin/rmssh-menu "$ORIGINAL/system/rmssh-menu"
     fi
     touch "$STATE/original-recorded"
+fi
+
+# Capture a pre-existing development Calc once when upgrading an older suite.
+if [ ! -f "$STATE/calc-original-recorded" ]; then
+    mkdir -p "$ORIGINAL/apps"
+    if [ -e "$TARGET/papercalc" ] && [ ! -e "$ORIGINAL/apps/papercalc" ]; then
+        cp -R "$TARGET/papercalc" "$ORIGINAL/apps/papercalc"
+    fi
+    touch "$STATE/calc-original-recorded"
 fi
 
 # Older PaperDesk installations already have original-recorded. Capture a
@@ -255,7 +264,7 @@ if [ -e "$TARGET/paperpet" ]; then
     cp -R "$TARGET/paperpet" "$BACKUP/apps/paperpet"
     rm -rf "$TARGET/paperpet"
 fi
-for app in paperdesk paperterminal paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch shims; do
+for app in paperdesk paperterminal paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch papercalc shims; do
     REPLACING_APP=$app
     if [ -e "$TARGET/$app" ]; then
         cp -R "$TARGET/$app" "$BACKUP/apps/$app"

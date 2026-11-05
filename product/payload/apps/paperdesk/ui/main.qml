@@ -82,7 +82,7 @@ Rectangle {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
-            anchors.topMargin: 110
+            anchors.topMargin: 96
             anchors.margins: 28
             text: title
             color: cardTouch.pressed ? "white" : "black"
@@ -94,7 +94,7 @@ Rectangle {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
-            anchors.topMargin: 168
+            anchors.topMargin: 142
             anchors.margins: 28
             text: subtitle
             color: cardTouch.pressed ? "white" : "black"
@@ -159,7 +159,7 @@ Rectangle {
                         font.bold: true
                     }
                     Text {
-                        text: "Eight focused tools. One quiet workspace."
+                        text: "Nine focused tools. One quiet workspace."
                         color: "white"
                         font.pointSize: 16
                     }
@@ -173,7 +173,7 @@ Rectangle {
                     radius: 31
                     Text {
                         anchors.centerIn: parent
-                        text: "V 4.2.2"
+                        text: "V 4.2.10"
                         color: "white"
                         font.pointSize: 13
                         font.bold: true
@@ -219,10 +219,20 @@ Rectangle {
                 applicationId: "papersketch"
             }
             ProductCard {
-                objectName: "terminalButton"
+                objectName: "calcButton"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 number: "02"
+                mark: "+ ="
+                title: "Paper Calc"
+                subtitle: "Add amounts, check a full calculation tape and plot functions offline."
+                applicationId: "papercalc"
+            }
+            ProductCard {
+                objectName: "terminalButton"
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                number: "03"
                 mark: ">_"
                 title: "Paper Terminal"
                 subtitle: "Connect over SSH, use shortcuts and work with readable, zoomable text."
@@ -232,7 +242,7 @@ Rectangle {
                 objectName: "webButton"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                number: "03"
+                number: "04"
                 mark: "WWW"
                 title: "Web reader"
                 subtitle: "Read lightweight pages without animation, clutter or distracting colour."
@@ -242,7 +252,7 @@ Rectangle {
                 objectName: "rdpButton"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                number: "04"
+                number: "05"
                 mark: "RDP"
                 title: "Remote desktop"
                 subtitle: "Open a saved computer with touch, keyboard and the shortcuts you need."
@@ -252,7 +262,7 @@ Rectangle {
                 objectName: "rssButton"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                number: "05"
+                number: "06"
                 mark: "RSS"
                 title: "Reading list"
                 subtitle: "Keep feeds and full articles together, ready for offline reading."
@@ -262,7 +272,7 @@ Rectangle {
                 objectName: "booksButton"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                number: "06"
+                number: "07"
                 mark: "BK"
                 title: "Books"
                 subtitle: "Find public-domain books and take your offline shelf anywhere."
@@ -272,7 +282,7 @@ Rectangle {
                 objectName: "dotsButton"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                number: "07"
+                number: "08"
                 mark: "••"
                 title: "Dots"
                 subtitle: "Play Kropki with a person or computer, then return to your saved game."
@@ -282,7 +292,7 @@ Rectangle {
                 objectName: "careButton"
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                number: "08"
+                number: "09"
                 mark: "+"
                 title: "Care"
                 subtitle: "Read release notes and keep your apps current with signed updates."

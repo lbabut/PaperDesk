@@ -31,6 +31,7 @@ export XDG_DATA_HOME="$TEST_CONFIG/data"
 export XDG_CACHE_HOME="$TEST_CONFIG/cache"
 
 python3 -m unittest discover -s "$ROOT/tests" -p 'test_*.py' -v
+bash "$ROOT/scripts/test-calc.sh"
 # Exercise the real native QML plugin, built for the host, in an isolated
 # copy. The shipped ARM plugin and application files remain untouched.
 mkdir -p "$ROOT/work/terminal-native-tests"
@@ -40,6 +41,7 @@ mkdir -p "$ROOT/work/terminal-native-tests"
 python3 "$ROOT/scripts/build-terminal.py" --test
 mkdir -p "$QML_STAGE/tests" "$QML_STAGE/work/papersketch-tests"
 cp -a "$ROOT/tests/qml" "$QML_STAGE/tests/"
+rm "$QML_STAGE/tests/qml/tst_papercalc.qml" "$QML_STAGE/tests/qml/tst_calcgraph.qml"
 cp -a "$ROOT/tests/device" "$QML_STAGE/tests/"
 cp -a "$ROOT/product" "$QML_STAGE/product"
 cp "$ROOT/work/terminal-native-host/libpaperterminal_native.so" \

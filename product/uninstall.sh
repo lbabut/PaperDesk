@@ -15,9 +15,9 @@ NATIVE_RESTORE_STAGE=""
 trap 'if [ -n "$NATIVE_RESTORE_STAGE" ]; then rm -f "$NATIVE_RESTORE_STAGE"; fi' EXIT
 trap 'exit 1' HUP INT TERM
 
-for app in paperdesk paperterminal paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch paperpet shims; do
+for app in paperdesk paperterminal paperweb paperweb-download paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks paperbooks-download papersketch papercalc paperpet shims; do
     rm -rf "$TARGET/$app"
-    if { [ -f "$STATE/original-recorded" ] || { [ "$app" = papersketch ] && [ -f "$STATE/sketch-original-recorded" ]; }; } && [ -e "$STATE/original/apps/$app" ]; then
+    if { [ -f "$STATE/original-recorded" ] || { [ "$app" = papersketch ] && [ -f "$STATE/sketch-original-recorded" ]; } || { [ "$app" = papercalc ] && [ -f "$STATE/calc-original-recorded" ]; }; } && [ -e "$STATE/original/apps/$app" ]; then
         cp -R "$STATE/original/apps/$app" "$TARGET/$app"
     fi
 done

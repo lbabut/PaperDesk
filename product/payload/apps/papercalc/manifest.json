@@ -1,0 +1,10 @@
+{
+  "name": "Paper Calc",
+  "description": "Offline desk and scientific calculator with function graphs",
+  "icon": "icon.png",
+  "entry": "/ui/main.qml",
+  "id": "papercalc",
+  "loadsBackend": false,
+  "supportsScaling": true,
+  "canHaveMultipleFrontends": false
+}

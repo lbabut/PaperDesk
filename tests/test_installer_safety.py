@@ -9,7 +9,7 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-APPS = 'paperdesk paperterminal literm paperweb paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks papersketch shims'.split()
+APPS = 'paperdesk paperterminal literm paperweb paperrdp-login paperrdp paperrdp-profile paperrss papercare paperdots paperbooks papersketch papercalc shims'.split()
 
 
 class InstallerSafetyTests(unittest.TestCase):
