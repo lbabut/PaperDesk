@@ -1,3 +1,9 @@
+# 4.2.11 — 2026-11-05
+
+- Fix rapid alternating calculator input such as 1 + 1 + 1: passive point handlers preserve new contacts when release and press share a sensor frame.
+- The shared key control fixes touch delivery in Desk, Science and Graph while retaining immediate press actions, static keys and paced display updates.
+- New regressions cover exact accepted order and full receipts, overlapping contacts on the same key, no typing by dragging, buffered GUI delivery and tablet sensor-frame handoffs.
+
 # 4.2.10 — 2026-11-05
 
 - New Paper Calc: an offline desk calculator, scientific expressions and three function graphs in the PaperDesk black-and-white style.

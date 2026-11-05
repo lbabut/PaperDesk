@@ -43,8 +43,8 @@ calculator. Keys dispatch once on press and keep their colors while held, so a
 tap updates the display without inverting and repainting the whole key twice.
 The delete key uses the plain-text label DEL for reliable tablet font rendering.
 
-Keys consume touch points directly rather than synthesizing a single mouse
-pointer. Rapid repeated digits and a second finger landing before the first
+Keys observe touch points with passive PointHandlers rather than synthesizing
+a single mouse pointer or exclusively grabbing a MultiPointTouchArea. Rapid repeated digits and a second finger landing before the first
 finger lifts are accepted independently, once per new contact. Mouse/stylus
 input remains supported. Hardware burst probes compare both contact styles
 with twelve monetary amounts (72 presses, expected sum 659.19).
@@ -82,3 +82,16 @@ finger overlap. It restores the previous launcher configuration and removes the
 test app from AppLoad on exit. It requires the cached ARM compiler and Qt rcc;
 results are written to `work/papercalc-science-graph-device.json`. Software input
 acceptance and repaint counts do not measure the e-ink panel's optical latency.
+
+Rapid alternating-key regression: `python3 scripts/test-calc-repeat-device.py`
+uses a separate test app and isolated settings. Add `--host 192.168.1.167
+--host-key-alias 10.11.99.1` for the known Wi-Fi host. Eight streams each enter
+60 ones separated by + and finish with =, checking the full accepted key order
+and result 60. They cover release and press in one sensor frame, slot reuse,
+overlap, 50 presses/s and a 100 ms GUI stall. The host Qt tests also verify
+same-key overlap, no duplicate mouse/touch input and no typing by dragging.
+
+The host test runner also compiles `tests/calc-buffered-touch.cpp` with the
+cached Qt SDK and a C++17 compiler. Set `PAPERDESK_QT_TEST_INC` to another matching
+Qt include directory when needed. It queues touch frames before processing GUI
+events and verifies the full receipt, with and without same-frame handoffs.

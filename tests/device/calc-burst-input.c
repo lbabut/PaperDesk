@@ -17,8 +17,10 @@ static long long ms(clockid_t c){struct timespec t;clock_gettime(c,&t);return (l
 struct point{int x,y;};struct action{int time,index,down;};
 static int cmp(const void*a,const void*b){const struct action*x=a,*y=b;return x->time!=y->time?x->time-y->time:x->down-y->down;}
 int main(int argc,char**argv){
- if(argc!=3)return 2;
+ if(argc<3||argc>5)return 2;
  int interval=atoi(argv[1]),hold=atoi(argv[2]);
+ int slotCount=argc>=4?atoi(argv[3]):2, grouped=argc>=5?atoi(argv[4]):0;
+ if(slotCount<1||slotCount>2||(slotCount==1&&hold>interval)||(grouped!=0&&grouped!=1))return 2;
  if(interval<20||interval>500||hold<10||hold>=2*interval)return 2;
  struct point p[200];int n=0,x,y;
  while(scanf("%d%d",&x,&y)==2){if(n>=200||x<0||x>1403||y<0||y>1871)return 2;p[n++]=(struct point){x,y};}
@@ -39,7 +41,7 @@ int main(int argc,char**argv){
   long long at=base+a[i].time;struct timespec ts={at/1000,(at%1000)*1000000};
   while(clock_nanosleep(CLOCK_MONOTONIC,TIMER_ABSTIME,&ts,0)==EINTR&&!stop){}
   if(stop)break;
-  int slot=a[i].index%2;ok&=emit(fd,EV_ABS,ABS_MT_SLOT,slot);
+  int slot=a[i].index%slotCount;ok&=emit(fd,EV_ABS,ABS_MT_SLOT,slot);
   if(a[i].down==1){
    if(active[slot]){ok=0;break;}active[slot]=1;downs++;
    ok&=emit(fd,EV_ABS,ABS_MT_POSITION_X,p[a[i].index].x);ok&=emit(fd,EV_ABS,ABS_MT_POSITION_Y,p[a[i].index].y);
@@ -51,7 +53,9 @@ int main(int argc,char**argv){
    ok&=emit(fd,EV_ABS,ABS_MT_POSITION_X,p[a[i].index].x+(p[a[i].index].x<1403?1:-1));
    ok&=emit(fd,EV_ABS,ABS_MT_PRESSURE,121);
   }else{active[slot]=0;ok&=emit(fd,EV_ABS,ABS_MT_TRACKING_ID,-1);}
-  ok&=emit(fd,EV_KEY,BTN_TOUCH,active[0]||active[1]);ok&=emit(fd,EV_KEY,BTN_TOOL_FINGER,active[0]||active[1]);ok&=emit(fd,EV_SYN,SYN_REPORT,0);
+  if(!grouped||i+1==3*n||a[i+1].time!=a[i].time){
+   ok&=emit(fd,EV_KEY,BTN_TOUCH,active[0]||active[1]);ok&=emit(fd,EV_KEY,BTN_TOOL_FINGER,active[0]||active[1]);ok&=emit(fd,EV_SYN,SYN_REPORT,0);
+  }
  }
  for(int i=0;i<2;i++){emit(fd,EV_ABS,ABS_MT_SLOT,i);emit(fd,EV_ABS,ABS_MT_TRACKING_ID,-1);}
  emit(fd,EV_KEY,BTN_TOUCH,0);emit(fd,EV_KEY,BTN_TOOL_FINGER,0);emit(fd,EV_SYN,SYN_REPORT,0);close(fd);

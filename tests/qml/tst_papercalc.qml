@@ -45,6 +45,26 @@ Item {
             verify(list.itemAtIndex(0).height>110,'Full long receipt must wrap without truncation');
             scene.app.showHistory=false;
         }
+        function test_repeat_one_plus_handoff_data(){return [{tag:'desk',mode:'Desk',one:'deskKey20',plus:'deskKey23',equals:'deskKey24'},{tag:'science',mode:'Science',one:'calcKey1',plus:'calcKey+',equals:'calcKey='}];}
+        function test_repeat_one_plus_handoff(d){
+            scene.app.mode=d.mode;
+            if(d.mode==='Desk')scene.app.officeKey('AC');else scene.app.reset();
+            var one=findChild(scene.app,d.one),plus=findChild(scene.app,d.plus),eq=findChild(scene.app,d.equals),t=touchEvent(scene.app);
+            var previous=one,slot=0;
+            t.press(slot,one,one.width/2,one.height/2).commit();
+            // No intervening all-fingers-up event: old release and new press
+            // share a sensor frame, including repeated contacts on the same keys.
+            for(var i=1;i<120;i++){
+                var next=i===119?eq:(i%2?plus:one),nextSlot=1-slot;
+                t.release(slot,previous,previous.width/2,previous.height/2).press(nextSlot,next,next.width/2,next.height/2).commit();
+                previous=next;slot=nextSlot;
+            }
+            t.release(slot,previous,previous.width/2,previous.height/2).commit();
+            if(d.mode==='Desk'){
+                compare(scene.app.desk.input,'60');
+                compare(scene.app.desk.record,Array(60).join('1 + ')+'1 = 60');
+            }else {compare(scene.app.result,'60');compare(scene.app.expression,Array(60).join('1+')+'1');}
+        }
         function test_overlapping_touches(){
             tap('calcModeDesk');scene.app.officeKey('AC');
             var k1=findChild(scene.app,'deskKey20'),k2=findChild(scene.app,'deskKey21');
@@ -54,6 +74,22 @@ Item {
             t.release(0,k1,k1.width/2,k1.height/2).stationary(1).commit();wait(10);
             t.release(1,k2,k2.width/2,k2.height/2).commit();wait(10);
             compare(scene.app.desk.input,'12');
+        }
+        function test_two_contacts_on_same_key(){
+            scene.app.mode='Desk';scene.app.officeKey('AC');
+            var k=findChild(scene.app,'deskKey20'),t=touchEvent(scene.app);
+            t.press(0,k,k.width/2,k.height/2).commit();compare(scene.app.desk.input,'1');
+            t.stationary(0).press(1,k,k.width/2,k.height/2).commit();compare(scene.app.desk.input,'11');
+            t.release(0,k,k.width/2,k.height/2).stationary(1).commit();compare(scene.app.desk.input,'11');
+            t.release(1,k,k.width/2,k.height/2).commit();compare(scene.app.desk.input,'11');
+        }
+        function test_drag_does_not_type_more_keys(){
+            scene.app.mode='Desk';scene.app.officeKey('AC');
+            var one=findChild(scene.app,'deskKey20'),plus=findChild(scene.app,'deskKey23'),t=touchEvent(scene.app);
+            t.press(0,one,one.width/2,one.height/2).commit();
+            t.move(0,plus,plus.width/2,plus.height/2).commit();
+            t.release(0,plus,plus.width/2,plus.height/2).commit();
+            compare(scene.app.desk.input,'1');compare(scene.app.desk.op,'');
         }
         function test_persistence(){
             var a=scene.app;a.mode='Desk';a.officeKey('MC');a.officeKey('AC');a.officeKey('4');a.officeKey('2');a.officeKey('M+');a.addHistory('40 + 2 = 42');

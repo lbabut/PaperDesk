@@ -1,17 +1,14 @@
 {
   "product": "PaperDesk",
   "channel": "stable",
-  "version": "4.2.10",
+  "version": "4.2.11",
   "publishedAt": "2026-11-05",
-  "archiveUrl": "/download/paperdesk-4.2.10.zip",
-  "archiveSha256": "06a0a19850d91384e9dea4f5834b8d650aad973b328532487453e853d5e2495d",
-  "archiveSize": 3883282,
+  "archiveUrl": "/download/paperdesk-4.2.11.zip",
+  "archiveSha256": "9fc00550ad4014ee8c5ebca6b3d08c12599e1017e1c2beddc48676b7d254e20d",
+  "archiveSize": 3883469,
   "releaseNotes": [
-    "New Paper Calc: an offline desk calculator, scientific expressions and three function graphs in the PaperDesk black-and-white style.",
-    "Large static keys accept rapid and overlapping contacts. Desk and Science coalesce intermediate display updates; equals and clear update immediately.",
-    "Desk keeps a scrollable full calculation tape, saved history and calculator memory. Science supports trigonometry, powers, logarithms, factorials and DEG/RAD.",
-    "Graph includes editable ranges, zoom, trace, a values table and approximate sign-changing roots. Invalid formulas and domain gaps are handled explicitly.",
-    "The release adds Calc to installation, removal, the PaperDesk launcher and the website, with fresh interface renders and English/Polish instructions.",
-    "Validated with automated calculator and Graph UI tests plus guarded input and Graph checks on reMarkable 2 / OS 3.29.0.153. XOVI startup remains manual."
+    "Fix rapid alternating calculator input such as 1 + 1 + 1: passive point handlers preserve new contacts when release and press share a sensor frame.",
+    "The shared key control fixes touch delivery in Desk, Science and Graph while retaining immediate press actions, static keys and paced display updates.",
+    "New regressions cover exact accepted order and full receipts, overlapping contacts on the same key, no typing by dragging, buffered GUI delivery and tablet sensor-frame handoffs."
   ]
 }

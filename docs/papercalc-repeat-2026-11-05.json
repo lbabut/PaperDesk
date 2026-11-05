@@ -1,0 +1,227 @@
+{
+  "version": "4.2.11",
+  "date": "2026-11-05",
+  "reproduction": "Release and new press in the same sensor frame, repeatedly alternating 1 and +.",
+  "before": {
+    "samples": [
+      {
+        "pattern": {
+          "interval": 40,
+          "hold": 20,
+          "slots": 2,
+          "grouped": 0
+        },
+        "presses": 120,
+        "keys": "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1=",
+        "result": "60",
+        "correct": true
+      },
+      {
+        "pattern": {
+          "interval": 20,
+          "hold": 10,
+          "slots": 2,
+          "grouped": 0
+        },
+        "presses": 120,
+        "keys": "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1=",
+        "result": "60",
+        "correct": true
+      },
+      {
+        "pattern": {
+          "interval": 30,
+          "hold": 20,
+          "slots": 1,
+          "grouped": 0
+        },
+        "presses": 120,
+        "keys": "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1=",
+        "result": "60",
+        "correct": true
+      },
+      {
+        "pattern": {
+          "interval": 30,
+          "hold": 30,
+          "slots": 2,
+          "grouped": 1
+        },
+        "presses": 1,
+        "keys": "1",
+        "result": "1",
+        "correct": false
+      },
+      {
+        "pattern": {
+          "interval": 30,
+          "hold": 30,
+          "slots": 1,
+          "grouped": 1
+        },
+        "presses": 1,
+        "keys": "1",
+        "result": "1",
+        "correct": false
+      },
+      {
+        "pattern": {
+          "interval": 30,
+          "hold": 50,
+          "slots": 2,
+          "grouped": 0
+        },
+        "presses": 120,
+        "keys": "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1=",
+        "result": "60",
+        "correct": true
+      },
+      {
+        "pattern": {
+          "interval": 60,
+          "hold": 90,
+          "slots": 2,
+          "grouped": 0
+        },
+        "presses": 120,
+        "keys": "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1=",
+        "result": "60",
+        "correct": true
+      },
+      {
+        "pattern": {
+          "interval": 30,
+          "hold": 20,
+          "slots": 2,
+          "grouped": 0,
+          "stall": true
+        },
+        "presses": 120,
+        "keys": "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1=",
+        "result": "60",
+        "correct": true
+      }
+    ],
+    "passed": false
+  },
+  "after": {
+    "samples": [
+      {
+        "pattern": {
+          "interval": 40,
+          "hold": 20,
+          "slots": 2,
+          "grouped": 0
+        },
+        "presses": 120,
+        "keys": "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1=",
+        "result": "60",
+        "correct": true
+      },
+      {
+        "pattern": {
+          "interval": 20,
+          "hold": 10,
+          "slots": 2,
+          "grouped": 0
+        },
+        "presses": 120,
+        "keys": "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1=",
+        "result": "60",
+        "correct": true
+      },
+      {
+        "pattern": {
+          "interval": 30,
+          "hold": 20,
+          "slots": 1,
+          "grouped": 0
+        },
+        "presses": 120,
+        "keys": "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1=",
+        "result": "60",
+        "correct": true
+      },
+      {
+        "pattern": {
+          "interval": 30,
+          "hold": 30,
+          "slots": 2,
+          "grouped": 1
+        },
+        "presses": 120,
+        "keys": "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1=",
+        "result": "60",
+        "correct": true
+      },
+      {
+        "pattern": {
+          "interval": 30,
+          "hold": 30,
+          "slots": 1,
+          "grouped": 1
+        },
+        "presses": 120,
+        "keys": "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1=",
+        "result": "60",
+        "correct": true
+      },
+      {
+        "pattern": {
+          "interval": 30,
+          "hold": 50,
+          "slots": 2,
+          "grouped": 0
+        },
+        "presses": 120,
+        "keys": "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1=",
+        "result": "60",
+        "correct": true
+      },
+      {
+        "pattern": {
+          "interval": 60,
+          "hold": 90,
+          "slots": 2,
+          "grouped": 0
+        },
+        "presses": 120,
+        "keys": "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1=",
+        "result": "60",
+        "correct": true
+      },
+      {
+        "pattern": {
+          "interval": 30,
+          "hold": 20,
+          "slots": 2,
+          "grouped": 0,
+          "stall": true
+        },
+        "presses": 120,
+        "keys": "1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1=",
+        "result": "60",
+        "correct": true
+      }
+    ],
+    "passed": true
+  },
+  "host_engine_checks": 38,
+  "host_qt_passed": 39,
+  "host_qt_failed": 0,
+  "host_buffered_touch_cases": 4,
+  "host_buffered_touch_failures": 0,
+  "physicalTouchTested": false,
+  "opticalLatencyMeasured": false,
+  "recovery_complete": true,
+  "source_hashes": {
+    "calc.js": "8059f37737a564148c209de325f1c2e8f692e6e712a6d715c5b2a33238c1db79",
+    "office.js": "71e6dbd2be868aa9b95d9bab5da3fd04c1270e8c308de1764c499819317c7a41",
+    "ui/CalcKey.qml": "bd66308b09e23ddb5ac10fda51e007aa34fa9d6a61a00ed9a54b51b771230bf1",
+    "ui/GraphPanel.qml": "6e2b9a7c08edb2271227b926206e7992324d8db268a08c0cc5d82baa406f39f9",
+    "ui/main.qml": "b80865690e1fcdc04dc7e5422dea43dc7015a7ff646807ffcd3d55aafb9a754e"
+  },
+  "resource_sha256": "1989d779e609cbbdad2613d895b416d60226cd34d350273b2933bde829cb592f",
+  "root_cause": "MultiPointTouchArea key ownership drops new contacts during same-frame handoffs. Passive PointHandler siblings observe distinct contacts without an exclusive key grab.",
+  "preserved": "Press actions, static key colors, touch dragging behavior, mouse/stylus support and 80 ms display pacing remain covered by tests."
+}

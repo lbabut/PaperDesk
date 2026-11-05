@@ -1,0 +1,36 @@
+{
+  "version": "4.2.11",
+  "releaseDate": "2026-11-05",
+  "base_commit": "00dc494aa881e74d49fd0b8b231180464b100d3a",
+  "python": {
+    "run": 164,
+    "failed": 0,
+    "skipped": 2
+  },
+  "calculator_engine_checks": 38,
+  "calculator_qt": {
+    "passed": 39,
+    "failed": 0
+  },
+  "buffered_touch_cases": {
+    "passed": 4,
+    "failed": 0
+  },
+  "tablet_touch": {
+    "accepted": 960,
+    "expected": 960,
+    "streams": 8,
+    "each_result": "60",
+    "maximum_presses_per_second": 50,
+    "passed": true
+  },
+  "regression_report": "docs/papercalc-repeat-2026-11-05.json",
+  "calculator_resource_sha256": "1989d779e609cbbdad2613d895b416d60226cd34d350273b2933bde829cb592f",
+  "signed_update_sha256": "9fc00550ad4014ee8c5ebca6b3d08c12599e1017e1c2beddc48676b7d254e20d",
+  "native_renderer": "Unchanged sources and binaries verified against the published baseline.",
+  "opticalLatencyMeasured": false,
+  "known_limitations": [
+    "The tablet may consume its first contact after restarting Xochitl; automated bursts first activate a non-interactive display area.",
+    "Timing and input acceptance tests do not measure optical e-ink refresh latency."
+  ]
+}
