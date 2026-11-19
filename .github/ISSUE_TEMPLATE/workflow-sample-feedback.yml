@@ -1,0 +1,32 @@
+name: Workflow sample feedback
+description: Tell us what happened when you tried the free workflow worksheet.
+title: "[Workflow sample] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for trying the free sample. This issue and your GitHub profile are public.
+        Do not include passwords, keys, account details, device serial numbers, private screenshots or notebooks.
+        No purchase is required. The sample is not an installation guide or a compatibility guarantee.
+        Please describe an actual experience rather than an intention to buy.
+  - type: textarea
+    id: tried
+    attributes:
+      label: What did you try?
+      description: Describe the task and whether you actually used the worksheet. It is fine to say you only read it.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What was the result?
+      description: What specifically helped or did not help compared with your usual approach or the free manuals?
+    validations:
+      required: true
+  - type: textarea
+    id: improve
+    attributes:
+      label: What should change?
+      description: Tell us what was confusing, unnecessary or missing. Please avoid personal information.
+    validations:
+      required: true

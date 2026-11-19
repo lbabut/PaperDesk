@@ -1,0 +1,26 @@
+FREE WORKFLOW SAMPLE
+
+Public page: /workflow-sample.html
+PDF: /assets/plan400/free-sample-v01.pdf (not a program download).
+Feedback uses the public GitHub issue form workflow-sample-feedback.yml.
+No accounts, email collection, form POST API or new database on the website.
+GitHub requires an account and exposes the issue/profile publicly; the page
+and form warn against including sensitive data. No test issue is submitted.
+
+This preview is not a paid offer or a compatibility certificate. Existing
+software remains free. No seller or tax gate is cleared by publishing it.
+The 30-day paid-market validation clock remains unstarted.
+
+Review free-sample feedback after 14 days of actual publication. Aim for
+10 substantive responses, including 5 actual trials. Less evidence is
+inconclusive, not proof of rejection. If fewer than 3 trial users identify
+a specific benefit, recommend revision or stopping rather than paid launch.
+Exclude pull requests, own test posts and duplicate respondents where known;
+do not assume respondent independence. Interest is not income.
+
+Deployment: isolate these changes from the canonical dirty working tree.
+Verify the touched production baselines, publish matching code/tests to GitHub,
+back up site files and SQLite stats, stage only the allowlisted changed files,
+verify hashes, restart only the site service, check health and unchanged or
+increased program counter. Retain the old deployment for rollback. Never
+deploy unrelated local changes or replace update feeds/releases in this step.

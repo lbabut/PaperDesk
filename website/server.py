@@ -23,7 +23,7 @@ STATE_DIR = Path(os.environ.get("PAPERDESK_STATE_DIR", "/var/lib/paperdesk"))
 STATS_DB = STATE_DIR / "stats.sqlite3"
 DOWNLOAD_PATTERN = r"/download/paperdesk-(?:(?:windows|linux)-installer-|sources-)?[0-9]+\.[0-9]+\.[0-9]+(?:\.[0-9]+)?(?:\.zip|\.tar\.gz)(?:\.sha256)?"
 PUBLIC_PAGES = frozenset({"/", "/index.html", "/app.js", "/styles.css",
-                          "/guide.html", "/guide-en.html", "/guide.css",
+                          "/guide.html", "/guide-en.html", "/guide.css", "/workflow-sample.html",
                           "/update/latest.json", "/update/latest.json.sig",
                           "/update/stable.json", "/update/stable.json.sig"})
 sys.path.insert(0, str(ROOT))
