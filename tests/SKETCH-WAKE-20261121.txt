@@ -1,0 +1,33 @@
+COALESCED INPUT WAKE EXPERIMENT — REJECTED, INPUT24 RESTORED
+
+Parent6c41e2a/input24: same24-sample batches,16ms display publication,
+material and QML/resources unchanged. One atomic pending flag coalesces
+producer/continuation callbacks; empty callbacks do not invoke QML.
+All samples/contacts remain in the original ordered queue.
+
+New unit test:1000 duplicate notifications,300 events across100 closed
+contacts delivered in13 batches; subsequent producer-thread contact rearmed;
+empty stale callback and pause do not block the next contact. Passed.
+33 C++ plus2 C native regression executables passed, including exact600-point
+material/input paths. Initial test compile failure from Qt's signals macro
+colliding with a local name fixed; retained log.6 installer and5 report tests
+passed; product checksums passed.
+
+Single fresh baseline and candidate pilots, not a statistical speed claim:
+                             gap/queue-p95/release-tail ms
+baseline graphite(soft test)  50/21/58
+candidate graphite           190/26/37
+baseline tilted soft         170/1224/1284
+candidate tilted soft        179/1147/1159
+Baseline standard graphite43/20/39,normal charcoal95/41/79,absolute gates pass.
+Heavy-case queue still over1s; candidate does not meet100ms queue/150ms tail.
+No convincing overall gain; larger graphite pause, so no expanded cohort.
+This pilot rejects this candidate, not proof of a universal causal slowdown.
+Host coalescing correctness is not proof real traffic had1000 duplicate wakes.
+
+All3 complete device reports preserved original setting and17 checked saved
+cache files;1260 inputs per tool and no overflow/pending. Not a full library
+audit or physical panel/stylus latency measurement. Native candidate7c8c62d0
+was restored to input24 be89afb1 and ink5fb519b9 via owned backup HpqIbC.
+xochitl active, remarkable-fail static after restoration. No main/release/
+website change. Raw logs are retained in plan-400/sketch-wake-study-20261121.

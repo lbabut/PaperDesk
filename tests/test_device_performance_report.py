@@ -12,7 +12,7 @@ class ReportTests(unittest.TestCase):
     def good(self):
         return {"native_modules": ["sha raster", "sha ink"], "artwork_preserved": True,
                 "saved_files_preserved": True, "results": {"shading_probe": {
-                    "no_automatic_save": True, "cases": [dict(id=name, passed=True,
+                    "no_automatic_save": True, "cases": [dict(id=name, tool=1 if name=="pen-graphite" else 4, passed=True,
                     tile_visible_before_release=True, max_input_tick_gap_ms=50,
                     queue_latency={"p95_upper_ms": 30}, release_to_drained_ms=80)
                     for name in ("pen-graphite", "pen-charcoal")]}}}
@@ -39,6 +39,20 @@ class ReportTests(unittest.TestCase):
         bad = self.good()
         bad["artwork_preserved"] = False
         self.assertFalse(perf.summarize([bad])["passed"])
+
+    def test_tilted_soft_contract_is_not_silently_replaced(self):
+        good = self.good()
+        self.assertFalse(perf.summarize([good],5,True)["passed"])
+        case=good["results"]["shading_probe"]["cases"][1]
+        case["tool"]=5
+        self.assertFalse(perf.summarize([good],5,True)["passed"])
+        case["tilted_charcoal_requested"]=True
+        self.assertFalse(perf.summarize([good],5,True)["passed"])
+        case["contact"]={"tilt_x":.8,"tilt_y":0}
+        self.assertTrue(perf.summarize([good],5,True)["passed"])
+        for invalid in (0, float("nan"), True, 2):
+            case["contact"]["tilt_x"]=invalid
+            self.assertFalse(perf.summarize([good],5,True)["passed"])
 
 
 if __name__ == "__main__":

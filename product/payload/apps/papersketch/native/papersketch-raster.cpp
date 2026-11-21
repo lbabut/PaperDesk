@@ -169,7 +169,17 @@ public:
         if(consumed)consumedPointerEvents++;else forwardedPointerEvents++;
         return consumed;
     }
-    void notifyPenInput(){QMetaObject::invokeMethod(this,[this]{emit penInputReady();},Qt::QueuedConnection);}
+    std::atomic<bool> penWakeQueued{false};
+    void notifyPenInput(){
+        // Reader wakes and continuation wakes share one posted callback.
+        // Reset before emitting so work arriving during the drain can queue
+        // the next turn. The raw samples themselves remain ordered/untouched.
+        if(penWakeQueued.exchange(true))return;
+        QMetaObject::invokeMethod(this,[this]{
+            penWakeQueued=false;
+            if(penSamples.inputPending())emit penInputReady();
+        },Qt::QueuedConnection);
+    }
     struct PenQueueTiming {
         quint64 samples=0,totalMs=0,maxMs=0,batches=0,emptyBatches=0;
         std::array<quint64,1001> histogram{};

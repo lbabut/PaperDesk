@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LIMITS = {"gui_gap_ms": 200, "queue_p95_ms": 100, "release_tail_ms": 150}
 
 
-def summarize(reports):
+def summarize(reports, expected_charcoal_tool=4, require_tilt=False):
     groups = {}
     failures = []
     fingerprints = set()
@@ -27,6 +27,17 @@ def summarize(reports):
         if probe.get("no_automatic_save") is not True:
             failures.append(f"run {run}: isolated no-save contract not verified")
         for case in cases:
+            if case.get("id")=="pen-charcoal":
+                if case.get("tool")!=expected_charcoal_tool:
+                    failures.append(f"run {run}: wrong charcoal tool")
+                if require_tilt and case.get("tilted_charcoal_requested") is not True:
+                    failures.append(f"run {run}: tilted case not verified")
+                if require_tilt:
+                    tilt = [case.get("contact", {}).get(k) for k in ("tilt_x", "tilt_y")]
+                    valid = all(isinstance(v, (int, float)) and not isinstance(v, bool)
+                                and math.isfinite(v) and abs(v)<=1 for v in tilt)
+                    if not valid or sum(abs(v) for v in tilt)<=.6:
+                        failures.append(f"run {run}: actual charcoal tilt not verified")
             values = {"gui_gap_ms": case.get("max_input_tick_gap_ms"),
                       "queue_p95_ms": case.get("queue_latency", {}).get("p95_upper_ms"),
                       "release_tail_ms": case.get("release_to_drained_ms")}
@@ -56,6 +67,8 @@ def main():
     parser.add_argument("--key", required=True)
     parser.add_argument("--known-hosts", required=True)
     parser.add_argument("--expected-installed-rcc")
+    parser.add_argument("--tilted-shading", action="store_true")
+    parser.add_argument("--soft-charcoal", action="store_true")
     parser.add_argument("--repeats", type=int, default=3, choices=range(1, 6))
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
@@ -68,6 +81,10 @@ def main():
         path = args.output_dir.resolve() / f"run-{index+1}.json"
         command = [sys.executable, str(ROOT / "scripts/run-sketch-native-guarded.py"),
                    "--safe-state-confirmed", "--shading-probe", "--output", str(path)]
+        if args.tilted_shading:
+            command.append("--tilted-shading")
+        if args.soft_charcoal:
+            command.append("--soft-charcoal")
         for key in ("host", "host_key_alias", "key", "known_hosts", "expected_installed_rcc"):
             value = getattr(args, key)
             if value:
@@ -82,9 +99,10 @@ def main():
         # A measured budget failure may continue, but not an incomplete or unsafe run.
         if current is None or "results" not in current or not all(current.get(k) is True for k in ("artwork_preserved", "saved_files_preserved")):
             break
-    summary = summarize(reports)
+    summary = summarize(reports,5 if args.soft_charcoal else 4,args.tilted_shading)
     summary.update({"created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                    "requested_runs": args.repeats, "exit_codes": codes})
+                    "requested_runs": args.repeats, "exit_codes": codes,
+                    "tilted_shading": args.tilted_shading,"soft_charcoal": args.soft_charcoal})
     summary["passed"] = summary["passed"] and len(reports) == args.repeats and all(c == 0 for c in codes)
     (args.output_dir / "summary.json").write_text(json.dumps(summary, indent=2)+"\n")
     print(json.dumps(summary, indent=2))
