@@ -323,7 +323,7 @@ public:
         if(damage.isEmpty())return;
         if(!livePublication){emitDisplayDamage(damage);return;}
         // Material pixels update on every sample. Publish the first mark
-        // immediately, then notify the 130 tiles once per 16 ms window.
+        // immediately, then notify the 130 tiles once per 24 ms window.
         if(!displayPublicationTimer.isActive()){
             emitDisplayDamage(damage);
             if(livePublication)displayPublicationTimer.start();
@@ -444,7 +444,7 @@ public:
          writeError=false;saves.push_back(std::move(job));}
         saveWake.notify_one();
     }
-    SketchRaster(QObject *parent=nullptr,QString directory="/home/root/.local/share/paperdesk/sketch",QString exports=QString(),QString permit=QString("/tmp/papersketch-ink")):QObject(parent),cacheDirectory(directory),exportDirectoryOverride(exports),previewPermitPath(permit){image.fill(Qt::white);displayPublicationTimer.setInterval(16);displayPublicationTimer.setSingleShot(true);displayPublicationTimer.setTimerType(Qt::PreciseTimer);connect(&displayPublicationTimer,&QTimer::timeout,this,[this]{bool hadDamage=!displayPending.isEmpty();flushDisplayDamage();if(hadDamage&&livePublication)displayPublicationTimer.start();});proximityTimer.setInterval(40);connect(&proximityTimer,&QTimer::timeout,this,[this]{bool nearby=penSamples.nearby.load(),reader=penSamples.ready.load();if(nearby!=penNearby||reader!=penReaderReady){if(nearby&&tentativeTouch)cancel();penNearby=nearby;penReaderReady=reader;emit proximityChanged();}});proximityTimer.start();penSamples.setInputWake([this]{notifyPenInput();});writer=std::thread([this]{writeLoop();});}
+    SketchRaster(QObject *parent=nullptr,QString directory="/home/root/.local/share/paperdesk/sketch",QString exports=QString(),QString permit=QString("/tmp/papersketch-ink")):QObject(parent),cacheDirectory(directory),exportDirectoryOverride(exports),previewPermitPath(permit){image.fill(Qt::white);displayPublicationTimer.setInterval(24);displayPublicationTimer.setSingleShot(true);displayPublicationTimer.setTimerType(Qt::PreciseTimer);connect(&displayPublicationTimer,&QTimer::timeout,this,[this]{bool hadDamage=!displayPending.isEmpty();flushDisplayDamage();if(hadDamage&&livePublication)displayPublicationTimer.start();});proximityTimer.setInterval(40);connect(&proximityTimer,&QTimer::timeout,this,[this]{bool nearby=penSamples.nearby.load(),reader=penSamples.ready.load();if(nearby!=penNearby||reader!=penReaderReady){if(nearby&&tentativeTouch)cancel();penNearby=nearby;penReaderReady=reader;emit proximityChanged();}});proximityTimer.start();penSamples.setInputWake([this]{notifyPenInput();});writer=std::thread([this]{writeLoop();});}
     ~SketchRaster() override {penSamples.shutdown();{std::lock_guard<std::mutex> lock(saveMutex);stopping=true;}saveWake.notify_one();writer.join();if(pressureFd>=0)close(pressureFd);}
     mutable int pressureFd=-1;mutable double pressureLast=.5;mutable QElapsedTimer pressureAge;
     Q_INVOKABLE double penPressure(double fallback)const{

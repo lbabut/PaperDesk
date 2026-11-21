@@ -32,9 +32,9 @@ int main(int argc,char **argv){
     assert(value(stats,"tile_paint_calls")==1&&value(stats,"first_tile_paint_ms")>=value(stats,"first_publish_ms"));
     assert(board.advance(1,12,1,45,45,.7,false));
     stats=board.latencyStats();
-    // Instrument actual dispatch, not insertion into the 16 ms pending damage.
+    // Instrument actual dispatch, not insertion into the 24 ms pending damage.
     assert(value(stats,"advance_calls")==2&&value(stats,"publish_calls")==1);
-    assert(board.displayPublicationTimer.interval()==16&&board.displayPublicationTimer.isActive());
+    assert(board.displayPublicationTimer.interval()==24&&board.displayPublicationTimer.isActive());
     board.finish();stats=board.latencyStats();assert(value(stats,"publish_calls")==2);
     assert(!board.advance(-1,12,1,60,60,.7,false));
     stats=board.latencyStats();assert(value(stats,"advance_calls")==3&&value(stats,"publish_calls")==2);
@@ -57,5 +57,5 @@ int main(int argc,char **argv){
     assert(value(stats,"advance_calls")==0&&value(stats,"publish_calls")==0&&value(stats,"first_tile_paint_ms")>0);
     valid(stats,"tile_paint");
     board.begin();empty(board.latencyStats());
-    puts("PASS latency counters, epoch first entries, measured dispatch cost, 16ms queue, early returns, concurrent paint and per-stroke reset");
+    puts("PASS latency counters, epoch first entries, measured dispatch cost, 24ms queue, early returns, concurrent paint and per-stroke reset");
 }

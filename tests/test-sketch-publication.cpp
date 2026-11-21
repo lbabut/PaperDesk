@@ -60,7 +60,7 @@ int main(int argc,char **argv){
 
  SketchRaster timed(nullptr,directory.path()+"/timed");int timedEmissions=0;
  QObject::connect(&timed,&SketchRaster::damaged,[&](const QRegion&){timedEmissions++;});
- pendingStroke(timed);assert(timedEmissions==1&&timed.displayPublicationTimer.interval()==16);
+ pendingStroke(timed);assert(timedEmissions==1&&timed.displayPublicationTimer.interval()==24);
  QElapsedTimer wait;wait.start();while(timedEmissions<2&&wait.elapsed()<500)events(1);
  assert(timedEmissions==2&&timed.displayPending.isEmpty());timed.finish();events(40);assert(timedEmissions==2);
 
@@ -88,7 +88,7 @@ int main(int argc,char **argv){
   const int previousLeft=left.paintCount.load(),previousRight=right.paintCount.load();
   int emissions=0;QObject::connect(&tiled,&SketchRaster::damaged,[&](const QRegion&){emissions++;});
   tiled.begin();assert(tiled.advance(4,38,1,20,20,.6,true));assert(tiled.advance(4,38,1,80,80,.8,false));
-  assert(emissions==1&&!tiled.displayPending.isEmpty()&&tiled.displayPublicationTimer.interval()==16);
+  assert(emissions==1&&!tiled.displayPending.isEmpty()&&tiled.displayPublicationTimer.interval()==24);
   renderedFrame(window,[&]{return emissions==2&&left.paintCount.load()>previousLeft&&left.opticalPixels(76,76,8,8)==tiled.pixels(76,76,8,8);});
   assert(right.paintCount.load()==previousRight);tiled.finish();assert(emissions==2);
  }
@@ -114,5 +114,5 @@ int main(int argc,char **argv){
   repair.begin();repair.advance(1,3,1,40,40,.7,true);repair.finish(true);repair.resetWhite();
   assert(repair.previewRepair.isEmpty());
  }
- puts("PASS first-dab immediacy, 16ms timer publication, untouched tile not repainted, full-shading physical equality, exact damage union, finish/cancel/reset/release/load lifecycle");
+ puts("PASS first-dab immediacy, 24ms timer publication, untouched tile not repainted, full-shading physical equality, exact damage union, finish/cancel/reset/release/load lifecycle");
 }
