@@ -191,7 +191,7 @@ public:
             {"batches",s.batches},{"empty_batches",s.emptyBatches},{"clock_resolution_ms",1}};
     }
     Q_INVOKABLE QVariantList takePenInput(){
-        auto events=penSamples.takeInput(24);QVariantList result;
+        auto events=penSamples.takeInput(16);QVariantList result;
         const auto dequeued=PaperPen::now();penQueueTiming.batches++;
         if(events.empty())penQueueTiming.emptyBatches++;
         result.reserve(events.size());

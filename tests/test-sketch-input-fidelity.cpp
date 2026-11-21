@@ -16,7 +16,7 @@ static void checkCharcoalPath(int tool){
  batched.penSamples.frame(150+599*.8,500+100*std::sin(599*.045),0,10,.2,-.1,false,false);
  reference.finish();unsigned points=0,ends=0;
  while(batched.penSamples.inputPending()){
-  const auto batch=batched.takePenInput();assert(batch.size()<=24);
+  const auto batch=batched.takePenInput();assert(batch.size()<=16);
   for(const auto &value:batch){auto e=value.toList();int phase=e[0].toInt();
    if(phase==1)batched.begin();
    if(phase==3){batched.finish();ends++;continue;}
@@ -41,7 +41,7 @@ int main(int argc,char **argv){
  batched.penSamples.frame(150+599*.8,500+100*std::sin(599*.045),0,10,.2,-.1,false,false);
  reference.finish();QThread::msleep(20);unsigned points=0,ends=0;
  while(batched.penSamples.inputPending()){
-  const auto batch=batched.takePenInput();assert(batch.size()<=24);
+  const auto batch=batched.takePenInput();assert(batch.size()<=16);
   for(const auto &value:batch){
    auto e=value.toList();int phase=e[0].toInt();
    if(phase==1)batched.begin();
@@ -53,7 +53,7 @@ int main(int argc,char **argv){
  auto queue=batched.penQueueLatencyStats();
  assert(queue["samples"].toULongLong()==601&&queue["max_ms"].toULongLong()>=20);
  assert(queue["p95_upper_ms"].toULongLong()<=queue["max_ms"].toULongLong());
- assert(queue["batches"].toUInt()==26&&queue["empty_batches"].toUInt()==0);
+ assert(queue["batches"].toUInt()==38&&queue["empty_batches"].toUInt()==0);
  batched.takePenInput();assert(batched.penQueueLatencyStats()["empty_batches"].toUInt()==1);
  SketchRaster::PenQueueTiming tail;tail.record(-10);tail.record(2000);tail.record(4000);
  assert(tail.percentile(50)==4000&&tail.maxMs==4000&&tail.totalMs==6000);

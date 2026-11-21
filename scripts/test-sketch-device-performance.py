@@ -32,6 +32,12 @@ def summarize(reports, expected_charcoal_tool=4, require_tilt=False):
                     failures.append(f"run {run}: wrong charcoal tool")
                 if require_tilt and case.get("tilted_charcoal_requested") is not True:
                     failures.append(f"run {run}: tilted case not verified")
+                if require_tilt:
+                    tilt = [case.get("contact", {}).get(k) for k in ("tilt_x", "tilt_y")]
+                    valid = all(isinstance(v, (int, float)) and not isinstance(v, bool)
+                                and math.isfinite(v) and abs(v)<=1 for v in tilt)
+                    if not valid or sum(abs(v) for v in tilt)<=.6:
+                        failures.append(f"run {run}: actual charcoal tilt not verified")
             values = {"gui_gap_ms": case.get("max_input_tick_gap_ms"),
                       "queue_p95_ms": case.get("queue_latency", {}).get("p95_upper_ms"),
                       "release_tail_ms": case.get("release_to_drained_ms")}

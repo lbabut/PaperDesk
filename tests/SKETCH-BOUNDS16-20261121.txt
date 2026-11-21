@@ -1,0 +1,56 @@
+EXPERIMENT: ELLIPSE BOUNDS + 16-INPUT GUI TURN
+
+Based on 0b1d759, not main/release. Same conservative charcoal bounds and
+same material/pressure/spacing/publication, with takePenInput capped at16
+instead of24. No sample dropping or thinner/fainter rendering.
+The exact600-point input-fidelity test now explicitly requires <=16 events
+and38 batches for601 events, rather than26 batches at24. Its original
+old-contract assertion failed as expected, then the full suite was rerun.
+32 C++ plus2 C regression executables passed. Five report-validation and
+six installer tests passed. Actual finite tilt is checked in the report,
+not just the requested mode. Product checksum verification passed.
+Material state was previously exact against frozen input24 after8100 dabs
+and traces on host+ARM; material header is unchanged in this16-input variant.
+
+All device cohorts used1260 injected pen samples, real production handlers,
+isolated no-save namespaces, existing saved-setting/cache preservation
+checks, and automatic config/UI restoration. Not a physical panel/stylus
+latency measurement, not a full library audit. No production publication.
+CPU governor/load were not controlled; small sequential cohorts, no claim
+of precise universal speed ratio. Before-run temperature25C; CPU snapshots
+mostly1.2GHz, one16-input repeat996MHz. Raw environments retained.
+
+Pochylony soft-charcoal38px, tilt.8, 3 repetitions per cohort:
+                                  median/worst ms
+                          GUI gap     queue p95     release tail
+input24 original          227/271     1201/1247      1174/1257
+ellipse24                 231/417       76/106        201/232
+ellipse16                 117/259      371/528        494/611
+Ellipse24 rejected: worst GUI pause worse despite faster queue.
+Ellipse16 improves heavy-case median/tail vs input24, but still FAILS strict
+200ms GUI /100ms queue /150ms tail acceptance in this heavy workload.
+Do NOT relabel this as fully passed or remove failed trials from evidence.
+All heavy samples were received without overflow/pending input; image and
+pressure/geometry checks passed except aggregate gate also includes GUI gap.
+
+Ellipse16 standard upright graphite/normal-charcoal,3 runs: all gates pass.
+Graphite gap45/147, queue21/22, tail33/70ms.
+Normal charcoal gap86/190, queue50/55, tail97/99ms.
+Earlier input24 standard cohort (different diagnostic logging) was gap53/54,
+queue19/23,tail39/77 graphite; gap96/149,queue45/47,tail77/104 charcoal.
+Do not treat those earlier runs as a perfectly matched control. A matched
+input24 control cohort is retained with this session's raw evidence.
+
+DECISION: not accepted as an all-tool responsiveness fix and not retained
+on the tablet. The heavy-case improvement does not pass strict budgets;
+standard graphite has a147ms outlier versus48ms in the first new input24
+control. Three runs do not establish the cause of that outlier, but do not
+hide it or call the change regression-free. Restore input24 be89afb1.
+Further work should isolate expensive GUI-turn work rather than simply
+shrinking batches and moving latency into the queue. No new owner action
+is needed for the completed test; no claim of continuous background work.
+
+Native ellipse16 raster2db557af3f2e27eb743d180e23bb57b62d2f758d91ee403eac3809563bc2ee80.
+Ink remains5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7.
+Owned backup anOmN4 restores input24 be89afb1; ellipse24 backup fAsFZE also
+restores input24. Never use an older32-input rollback accidentally.

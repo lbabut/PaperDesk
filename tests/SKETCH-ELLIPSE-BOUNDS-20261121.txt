@@ -1,5 +1,8 @@
 EXPERIMENTAL CANDIDATE — NOT INSTALLED / NOT A RELEASE
 
+Historical checkpoint before device testing. Subsequent tests and rejection
+of ellipse24/ellipse16 are recorded in SKETCH-BOUNDS16-20261121.txt.
+
 Parent: input24 UAT 6c41e2a. Portable O2, 16 ms publication and 24-sample
 dispatch unchanged. Only normal/soft charcoal specialized dab loops clip the
 old square to conservative rotated-ellipse bounds (one-pixel guard).

@@ -47,7 +47,12 @@ class ReportTests(unittest.TestCase):
         case["tool"]=5
         self.assertFalse(perf.summarize([good],5,True)["passed"])
         case["tilted_charcoal_requested"]=True
+        self.assertFalse(perf.summarize([good],5,True)["passed"])
+        case["contact"]={"tilt_x":.8,"tilt_y":0}
         self.assertTrue(perf.summarize([good],5,True)["passed"])
+        for invalid in (0, float("nan"), True, 2):
+            case["contact"]["tilt_x"]=invalid
+            self.assertFalse(perf.summarize([good],5,True)["passed"])
 
 
 if __name__ == "__main__":
