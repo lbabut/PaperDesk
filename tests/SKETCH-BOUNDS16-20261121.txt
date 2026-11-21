@@ -40,6 +40,12 @@ Earlier input24 standard cohort (different diagnostic logging) was gap53/54,
 queue19/23,tail39/77 graphite; gap96/149,queue45/47,tail77/104 charcoal.
 Do not treat those earlier runs as a perfectly matched control. A matched
 input24 control cohort is retained with this session's raw evidence.
+Matched input24 standard control,3 runs,all gates pass:
+Graphite gap48/48,queue20/21,tail30/37ms.
+Normal charcoal gap105/116,queue40/56,tail99/124ms.
+Thus ellipse16 standard median GUI gap improved slightly, but graphite
+worst147ms vs48ms and charcoal worst190ms vs116ms regress. Small cohorts
+and uncontrolled load do not establish a universal ratio; reject for now.
 
 DECISION: not accepted as an all-tool responsiveness fix and not retained
 on the tablet. The heavy-case improvement does not pass strict budgets;
@@ -49,6 +55,11 @@ hide it or call the change regression-free. Restore input24 be89afb1.
 Further work should isolate expensive GUI-turn work rather than simply
 shrinking batches and moving latency into the queue. No new owner action
 is needed for the completed test; no claim of continuous background work.
+Final device check15:13UTC: xochitl active, remarkable-fail static, input24
+raster be89afb1 and ink5fb519b9 verified, diagnostic app removed, no contact
+or pen proximity. All15 completed reports preserved original setting plus
+17 checked cache files; this does not imply an entire-library audit.
+Raw evidence: plan-400/sketch-bounds-study-20261121/resumed-1449/.
 
 Native ellipse16 raster2db557af3f2e27eb743d180e23bb57b62d2f758d91ee403eac3809563bc2ee80.
 Ink remains5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7.
