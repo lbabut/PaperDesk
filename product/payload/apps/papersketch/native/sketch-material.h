@@ -96,18 +96,28 @@ struct PaperMaterial {
     // determine it. Keep the scalar model for polished pixels and small tips.
     // This is transient derived state, never saved with a page.
     static double capacityResponse(int tool,double value){return tool==4 ? .75+.25*value : tool==5 ? .85+.15*value : value;}
-    struct ContactResponse { double contact; int capacity; };
+    struct ContactResponse { double contact; int capacity; double reciprocal; };
+    static const std::array<double,65536> &inverseCapacities() {
+        static const auto values=[] {
+            std::array<double,65536> result{};
+            for(size_t i=1;i<result.size();i++)result[i]=1.0/double(i);
+            return result;
+        }();
+        return values;
+    }
     std::array<ContactResponse, 256> freshContact{};
     double freshPressure = -1;
     int freshTool = -1;
     void prepareFreshContact(int tool, double p, double capacityAtPressure) {
         if (freshPressure == p && freshTool == tool) return;
         const auto *responses = grainResponses().data();
+        const double *reciprocals = tool == 4 || tool == 5 ? inverseCapacities().data() : nullptr;
         const double toothContact = tool < 4 ? .7 : .5;
         for (int t = 0; t < 256; ++t) {
+            const int capacity = std::max(1, int(capacityAtPressure * capacityResponse(tool,responses[t].capacity)));
             freshContact[t] = {
                 std::clamp((1.05 * p + .15 - responses[t].grain * toothContact) * 2.0, 0.0, 1.0),
-                std::max(1, int(capacityAtPressure * capacityResponse(tool,responses[t].capacity)))};
+                capacity, reciprocals ? reciprocals[capacity] : 0};
         }
         freshPressure = p; freshTool = tool;
     }
@@ -164,6 +174,20 @@ struct PaperMaterial {
     // Pigment amounts are finite and nonnegative; this is lround without a
     // libm call in every covered pixel. Finger coordinates still use lround.
     static int roundMass(double value) { return int(value + .5); }
+    static int cachedDeposit(double prefix, int room, int capacity, double reciprocal, double factor) {
+        double amount = prefix * (room * reciprocal);
+        amount *= factor;
+        int rounded = roundMass(amount);
+        // Positive, bounded charcoal dose (<34000): reciprocal rounding is
+        // far below 1e-6. At an integer-rounding boundary use the exact old
+        // operation sequence instead. Only the integer pigment is consumed.
+        if (std::abs(amount - rounded) > .5 - 1e-6) {
+            amount = prefix * (room / double(capacity));
+            amount *= factor;
+            rounded = roundMass(amount);
+        }
+        return std::min(room, rounded);
+    }
     struct Footprint { double a, b, c, s, tilt, worn; };
     Footprint footprint(int tool, double size, double pressure) const {
         double p = unit(pressure), a, b, angle = 0, tilt = 0, worn = 0;
@@ -368,14 +392,24 @@ struct PaperMaterial {
                     }
                     int room = std::max(0, capacity - fixed - loose);
                     if (room > 0) {
-                        double amount = dose * edge * contact * (1 - .35 * polish) * (room / double(capacity));
+                        const double prefix = dose * edge * contact * (1 - .35 * polish);
+                        int added;
                         // Fixed paper-space clumps: repeat passes accumulate
                         // pigment without random event-rate dependent noise.
                         if (rowTool == 4 || rowTool == 5) {
                             double clump = .70 + .60 * ((hash(x / 3, y / 7) & 255) * (1.0 / 255.0));
-                            amount *= charcoalDoseScale * clump * (rowTool == 4 ? .35 + .65 * response.capacity : .50 + .50 * response.capacity);
+                            const double factor = charcoalDoseScale * clump * (rowTool == 4 ? .35 + .65 * response.capacity : .50 + .50 * response.capacity);
+                            if (cacheFresh && burnish[at] == 0)
+                                added = cachedDeposit(prefix, room, capacity, freshContact[tooth[at]].reciprocal, factor);
+                            else {
+                                double amount = prefix * (room / double(capacity));
+                                amount *= factor;
+                                added = std::min(room, roundMass(amount));
+                            }
+                        } else {
+                            double amount = prefix * (room / double(capacity));
+                            added = std::min(room, roundMass(amount));
                         }
-                        int added = std::min(room, roundMass(amount));
                         int bonded = roundMass(added * std::min(.99, bondedFraction + .10 * polish));
                         fixed += bonded;
                         loose += added - bonded;

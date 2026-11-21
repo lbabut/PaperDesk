@@ -1,0 +1,38 @@
+OFFLINE PROTOTYPE — REJECTED, NEVER INSTALLED
+
+Parent input24 6c41e2a; no ellipse bounds or coalesced-wake changes.
+Prototype caches reciprocal capacities for unpolished wide charcoal and
+checks the final integer pigment-rounding boundary. If within1e-6 of a
+half-integer it falls back to the original division/multiplication sequence.
+Only integer pigment is consumed; other material rules remain unchanged.
+Fresh pressure-dependent capacity is still computed exactly as before.
+Final version uses one shared65536-double inverse table (~512KiB), not a
+division for each freshContact entry at each pressure change.
+
+bench-sketch-cached-division.cpp includes the frozen input24 material under
+a separate type and compares full mass/image/finger/tooth/burnish/ink/wear/
+sampler state. Tests8100 dabs across9 tools/3 papers/eraser variants/pressure/
+size/angle/clipping, then exact state after timed paths. Also checks all
+capacities1..65535 with varied rooms/factors at rounding-boundary offsets.
+Both the earlier per-pressure reciprocal version and final shared-table
+version passed these exact checks on ARM. Host checks also retained.
+Native ARM shared module builds; product checksums updated. Full native GUI
+regression suite and application-level tests NOT run for this rejected
+offline prototype. Do not confuse the standalone ARM program with an app
+installation or physical input/panel verification.
+
+ARM standalone timing: two opposite-order repeats,300-segment traces.
+Mean new/old ratios (0/.5/.95 tilt), final shared table:
+graphite1.1043/1.0848/1.0887
+normal charcoal1.3363/1.1237/1.0904
+soft charcoal1.1612/1.1328/1.0876
+finger1.0128/1.0189/1.0164
+Earlier per-pressure version charcoal ranges1.09..1.17, also slower.
+These small uncontrolled CPU tests reject this implementation; they are not
+a universal causal speed ratio. Main app/UI stayed on input24 throughout.
+Extra lookup/rounding-guard/cache/layout costs did not justify removing the
+division. No near-equal approximation accepted as an artistic-model change.
+
+Raw logs in plan-400/sketch-wake-study-20261121 include both versions.
+Candidate raster cd3062fa is experimental/uninstalled, not a release.
+Installed raster remains be89afb1,ink5fb519b9. No main/website publication.
