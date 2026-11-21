@@ -51,3 +51,25 @@ on that same tablet while personal work is saved/closed. Startup and hash
 checks are not user acceptance: test normal/soft charcoal, repeated shading,
 pressure, smudge, erasing, save/reopen and pen responsiveness before promotion.
 Physical realism and human drawing feel still require user acceptance.
+
+## Verified UAT checkpoint
+
+On 2026-11-21 the candidate was installed on the USB reMarkable 2 running
+3.29.0.153. Both installed module hashes matched the candidate above and the
+UI restarted successfully. The stable public channel and GitHub main were
+not changed. Host regressions completed successfully: 31 C++ executables and
+2 C executables, plus 4 fault-injected UAT installer tests. Product checksums
+passed. The corrected finger-transport test also passed against the old model.
+
+The actual tablet workflow test passed saved-page reopening, atomic PNG
+export/collision handling, stable page deletion, discard and metadata recovery
+in a unique test namespace. It restored the previous UI configuration and
+verified the original Sketch document setting and 17 material/cache files;
+this is not a full notebook-library audit. A technical PNG was retained under
+Documents. No production release or human acceptance is implied.
+The synthetic evdev pen/finger input probe also passed on the installed UAT
+modules. Its settings and the same 17 original material/cache files were
+preserved. Final checks found xochitl active, the failure monitor restored to
+static, event2 at d:42, the old app RCC unchanged and the candidate raster
+actually mapped into the running UI process. This does not measure physical
+panel latency or replace drawing with a real stylus for human acceptance.
