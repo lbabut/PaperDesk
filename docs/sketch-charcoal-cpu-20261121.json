@@ -1,0 +1,20 @@
+{
+  "scope": "Isolated CPU benchmark on USB reMarkable 2; no UI restart or artwork change",
+  "workload": "400 alternating shading segments, 1200x1600 pixels, pressure 0.65; allocation/init excluded",
+  "limitation": "One measurement per case, old then UAT order. Not a statistically controlled timing study, GUI/frame latency or human input test.",
+  "old_model": "tests/fixtures/sketch-material-before-charcoal-deposit.h",
+  "uat_model_commit": "10d0f75b503d1f46ba5f17cc048ec927ef707f9f",
+  "measurements": [
+    {"tool":4,"size":8,"old_us":87917,"uat_us":91264},
+    {"tool":4,"size":24,"old_us":256658,"uat_us":252620},
+    {"tool":4,"size":48,"old_us":507854,"uat_us":485763},
+    {"tool":4,"size":80,"old_us":1160211,"uat_us":1222885},
+    {"tool":5,"size":8,"old_us":106118,"uat_us":116510},
+    {"tool":5,"size":24,"old_us":313264,"uat_us":324901},
+    {"tool":5,"size":48,"old_us":599397,"uat_us":626872},
+    {"tool":5,"size":80,"old_us":1512331,"uat_us":1574708}
+  ],
+  "prototype": "Position-only clump byte cache + response lookup; exact-state regression passed but no CPU speedup observed, NOT shipped",
+  "live_preview_observation": {"max_report_to_submit_ms":10,"max_submit_us":3006,"physical_panel_latency_measured":false},
+  "conclusion": "Material CPU change alone does not explain the reported severe slowdown. User-reported UAT responsiveness regression remains OPEN; requires safe full GUI-path profiling before promotion."
+}

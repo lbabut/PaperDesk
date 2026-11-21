@@ -73,3 +73,16 @@ preserved. Final checks found xochitl active, the failure monitor restored to
 static, event2 at d:42, the old app RCC unchanged and the candidate raster
 actually mapped into the running UI process. This does not measure physical
 panel latency or replace drawing with a real stylus for human acceptance.
+
+## OPEN: human-reported severe slowdown
+
+The owner reports better appearance but very slow drawing. UAT is NOT accepted
+for promotion on responsiveness. `bench-charcoal-uat.cpp` and
+`sketch-charcoal-cpu-20261121.json` record an isolated ARM comparison of old/new
+material on small and wide strokes. This one-pass comparison shows roughly
+-4% to +10% CPU time, not an explanation of the severe perceived delay.
+The active preview reported at most 10ms report-to-submit, which is not panel
+latency. A clump-cache prototype passed exact-state checks but did not speed
+up this workload, so it was discarded, not installed. Next: with the current
+drawing saved/closed, profile GUI input queue, raster publication and tile
+submission on the affected stroke sizes. Do not claim this issue is fixed.
