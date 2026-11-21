@@ -1,0 +1,39 @@
+EXPERIMENTAL CANDIDATE — NOT INSTALLED / NOT A RELEASE
+
+Parent: input24 UAT 6c41e2a. Portable O2, 16 ms publication and 24-sample
+dispatch unchanged. Only normal/soft charcoal specialized dab loops clip the
+old square to conservative rotated-ellipse bounds (one-pixel guard).
+Pigment, pressure, spacing, wear, serialization and display damage unchanged.
+Keep original row-worker eligibility; divide only the actual clipped rows.
+
+Correctness: frozen reference in fixtures/sketch-material-before-ellipse-bounds.h.
+bench-sketch-ellipse-bounds.cpp compares exact complete material state after
+8100 dabs (9 tools, 3 papers, eraser variants, 5 sizes, 6 angles, 5 pressures,
+clipped edges), then exact state after timed traces. Passed on host and ARM.
+31 C++ and 2 C native regression executables passed. Six installer tests and
+five report-validation tests passed; input driver builds with -Wall -Wextra.
+
+ARM standalone CPU test: two opposite-order repeats of 300-segment traces.
+Mean new/old ratios for normal charcoal at tilt 0/.5/.95: 1.024/.934/.740;
+soft charcoal: .951/.862/.705. Small noisy sample, not GUI/display latency.
+These are limited calculation savings, NOT an all-app responsiveness claim.
+
+Two guarded baseline GUI attempts were incomplete: only one graphite sample
+and two received input events despite injection writes. No latency result is
+accepted. pen_nearby was true before injection; subsequent read-only EVIOCGKEY
+confirmed touch=0, pen_nearby=1. Physical hover interference is suspected,
+not yet conclusively demonstrated. New driver refuses injection on existing
+pen/eraser proximity and on failed key-state query. It never grabs the device
+or clears a real contact. Move stylus out of range before repeating.
+
+Both incomplete tests restored UI/config and preserved original setting plus
+17 checked saved cache files. Scope is not an audit of the entire library.
+Device remains raster be89afb13593bdb2fbcf193d22fc972c3208ae776e878fb7739561f5035e4858
+and ink 5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7.
+Candidate raster 118e391b16c257e8da0cafccc3c87e388baf8630a44ad5d8b956ff3ad2644bdc
+is NOT installed. Installer requires explicit --baseline input24-20261121
+and an owned backup/rollback. No main/release/website publication.
+
+NEXT: valid input24 baseline with stylus out of range, then candidate with
+identical upright/tilted normal/soft workloads and repeated GUI/queue/tail
+gates. Restore input24 if regressions or incomplete verification remain.

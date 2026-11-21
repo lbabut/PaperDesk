@@ -23,6 +23,8 @@ p.add_argument("--expected-installed-rcc", help="Explicit known installed RCC pa
 p.add_argument("--smoke",action="store_true")
 p.add_argument("--input-probe",action="store_true")
 p.add_argument("--shading-probe",action="store_true")
+p.add_argument("--tilted-shading",action="store_true")
+p.add_argument("--soft-charcoal",action="store_true")
 p.add_argument("--micro-no-preview",action="store_true",help="Disable native preview in a micro-probe comparison")
 p.add_argument("--micro-probe",action="store_true",help="Measure 250 Hz tiny pen loops with 3px HB and 8px charcoal")
 p.add_argument("--latency-probe",action="store_true")
@@ -47,6 +49,8 @@ a=p.parse_args()
 if not a.safe_state_confirmed:
     p.error("Save/close personal work and confirm safe idle screen before UI restart; --safe-state-confirmed required")
 if a.extended_fidelity_probe:a.fidelity_probe=True
+if a.tilted_shading and not a.shading_probe:p.error("--tilted-shading requires --shading-probe")
+if a.soft_charcoal and not a.shading_probe:p.error("--soft-charcoal requires --shading-probe")
 if a.detail_user_settings and not a.detail_probe:p.error("--detail-user-settings requires --detail-probe")
 if a.detail_fullscreen and not a.detail_probe:p.error("--detail-fullscreen requires --detail-probe")
 if a.detail_check_latency and not a.detail_probe:p.error("--detail-check-latency requires --detail-probe")
@@ -89,6 +93,12 @@ for name,text in [("baseline",baseline),("constant-fast",candidate)]:
         shutil.copy2(source/"ui"/qml_name,folder/"ui"/qml_name)
 harness=(root/("tests/device/papersketch-detail.qml" if a.detail_probe else "tests/device/papersketch-preferences.qml" if a.preferences_probe else "tests/device/papersketch-input-fidelity.qml" if a.fidelity_probe else "tests/device/papersketch-stylus-eraser.qml" if a.eraser_probe else "tests/device/papersketch-latency.qml" if a.latency_probe else "tests/device/papersketch-realism.qml" if a.realism_probe else "tests/device/papersketch-workflow.qml" if a.workflow_probe else "tests/device/papersketch-controls.qml" if a.controls_probe else "tests/device/papersketch-shading.qml" if a.shading_probe else "tests/device/papersketch-input.qml" if a.input_probe else "tests/device/papersketch-native.qml")).read_text()
 if a.detail_user_settings:harness=harness.replace("property bool userSettingsCase:false","property bool userSettingsCase:true")
+if a.tilted_shading:
+    assert harness.count("property bool tiltedCharcoal:false")==1,"Tilted shading harness marker missing"
+    harness=harness.replace("property bool tiltedCharcoal:false","property bool tiltedCharcoal:true")
+if a.soft_charcoal:
+    assert harness.count("property int charcoalTool:4")==1,"Soft charcoal harness marker missing"
+    harness=harness.replace("property int charcoalTool:4","property int charcoalTool:5")
 if a.detail_fullscreen:harness=harness.replace("property bool fullScreenCase:false","property bool fullScreenCase:true")
 if a.detail_proximity_exits:harness=harness.replace('pattern:"detail-circles"','pattern:"detail-circles-exit"')
 if a.detail_no_preview:harness=harness.replace('a.confirmation="book";','a.fastPenPreview=false;a.confirmation="book";')

@@ -241,6 +241,22 @@ struct PaperMaterial {
         int x1 = std::min(width - 1, int(std::ceil(cx + radius)));
         int y0 = std::max(0, int(std::floor(cy - radius)));
         int y1 = std::min(height - 1, int(std::ceil(cy + radius)));
+        const int originalRowSpan = y1 - y0;
+        // An elongated contact cannot paint the full enclosing square. Bound
+        // its rotated ellipse conservatively, retaining a whole-pixel guard.
+        // The actual per-pixel edge calculation remains bit-for-bit unchanged.
+        if constexpr (FixedTool == 4 || FixedTool == 5) {
+          if (shape.a > shape.b * 1.25 || shape.b > shape.a * 1.25) {
+            double ac = shape.a * shape.c, bs = shape.b * shape.s;
+            double as = shape.a * shape.s, bc = shape.b * shape.c;
+            double rx = std::sqrt(ac * ac + bs * bs);
+            double ry = std::sqrt(as * as + bc * bc);
+            x0 = std::max(x0, int(std::floor(cx - rx)) - 1);
+            x1 = std::min(x1, int(std::ceil(cx + rx)) + 1);
+            y0 = std::max(y0, int(std::floor(cy - ry)) - 1);
+            y1 = std::min(y1, int(std::ceil(cy + ry)) + 1);
+          }
+        }
         constexpr double doses[] = {6000, 12000, 16000, 22000, 9500, 26000};
         constexpr double fixedFraction[] = {.94, .78, .58, .38, .22, .06};
         constexpr double capacities[] = {18000, 30000, 40000, 55000, 54000, 65535};
@@ -258,7 +274,7 @@ struct PaperMaterial {
         // Gate by covered area, so a narrow tilted tip does not build a
         // 256-entry table for only a handful of covered pixels.
         const bool cacheFresh = tool < 6 && shape.a * shape.b >= 144;
-        const bool parallelRows = (FixedTool == 4 || FixedTool == 5) && shape.a * shape.b >= 200 && y1-y0 >= 16
+        const bool parallelRows = (FixedTool == 4 || FixedTool == 5) && shape.a * shape.b >= 200 && originalRowSpan >= 16
             && PaperMaterialRows::available();
         if (cacheFresh) prepareFreshContact(tool, p, capacityAtPressure);
         const double charcoalDoseScale = tool == 4 || tool == 5 ? std::min(1.0, 3.0 / std::max(shape.a, shape.b)) : 1.0;
