@@ -24,6 +24,7 @@ Rectangle{
  function ready(){
   var d=definitions[caseIndex],a=subject.item,surface=find(a,"drawingCanvas"),win=bench.Window.window;
   var p=surface.mapToItem(win.contentItem,120,d.y0),q=surface.mapToItem(win.contentItem,1080,d.y1);
+  a.nativeRaster.resetPenQueueLatencyStats();
   firstRaster=0;firstTile=0;blankFrames=0;maxGap=0;activeGap=0;wasActive=false;slowTicks=[];phase=3;
   console.log("PAPERSKETCH_INPUT_READY "+JSON.stringify({mode:"pen",id:d.id,pattern:"shade",start:[p.x,p.y],end:[q.x,q.y]}));
  }
@@ -47,7 +48,14 @@ Rectangle{
    var display=cell.displayPixels(mx%128,my%128,32,32),raw=a.nativeRaster.pixels(mx,my,32,32),displaySum=0,rawSum=0,binary=true,grays=false;
    for(var pi=0;pi<display.length;pi+=4){var value=display[pi];binary=binary&&(value===0||value===255);displaySum+=value;rawSum+=raw[pi];grays=grays||(raw[pi]>0&&raw[pi]<255);}
    var item={raw_replayed_samples:replay[0],max_raw_batch:replay[1],active_input_tick_gap_ms:activeGap,slow_ticks:slowTicks,display_probe:"8x8 mean of actual binary tile display pixels",fast_display:a.fastDisplay,pressure_matches:matched[0],pressure_fallbacks:matched[1],display_binary:binary,display_has_samples:display.length===4096,optical_has_grays:grays,display_mean:displaySum/1024,optical_mean:rawSum/1024,id:d.id,tool:d.tool,points:s.samples||points.length,first:first,last:last,raster_seen_ms:firstRaster,tile_seen_ms:firstTile,max_input_tick_gap_ms:maxGap,blank_frames_after_visible:blankFrames,full_screen:a.fullScreen,max_material_segment_ms:a.nativePatchMaxMs,retained_points:points.length,metadata_bytes:JSON.stringify(a.notebook).length};
-   item.passed=a.fastDisplay && binary && display.length===4096 && grays && Math.abs(displaySum-rawSum)/1024<12 && matched[0]>4*matched[1] && (s.samples||points.length)>=100 && Math.abs(first[0]-120)<15 && Math.abs(first[1]-d.y0)<15 && Math.abs(last[0]-1080)<15 && Math.abs(last[1]-d.y1)<15 && blankFrames===0 && maxGap<200;
+   // Raw input supplies pressure directly, bypassing the legacy match/fallback
+   // lookup. Check its complete ordered input instead of requiring matches.
+   item.raw_input=!!s.rawInput;item.input_samples=s.inputSamples;item.finished_ms=Date.now();
+   item.input_stats=a.nativeRaster.penInputStats();
+   item.queue_latency=a.nativeRaster.penQueueLatencyStats();
+   item.native_latency=a.nativeRaster.latencyStats();
+   var inputOk=s.rawInput?(s.inputSamples===1260&&item.input_stats[1]===0&&item.input_stats[2]===0):matched[0]>4*matched[1];
+   item.passed=a.fastDisplay && binary && display.length===4096 && grays && Math.abs(displaySum-rawSum)/1024<12 && inputOk && (s.samples||points.length)>=100 && Math.abs(first[0]-120)<15 && Math.abs(first[1]-d.y0)<15 && Math.abs(last[0]-1080)<15 && Math.abs(last[1]-d.y1)<15 && blankFrames===0 && maxGap<200;
    cases.push(item);console.log("PAPERSKETCH_NATIVE_CASE "+JSON.stringify(item));
    caseIndex++;waitAt=now;phase=4;return;
   }

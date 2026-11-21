@@ -112,8 +112,8 @@ ccf4f2d3899c07061e4c02de75a79f50abefb9b95138e22e74db32376e155ff6  ./payload/apps
 739a0e9adffa914df8f16d0cce7f6f2298dfd961b8f3198a03b3f89d7e2e4f29  ./payload/apps/papersketch/native/LICENSE
 ee9c1b177ab8a95b95b4fc3c1233477a3312d5ae7b16dcdd5ac36ff88c408c73  ./payload/apps/papersketch/native/papersketch-ink.c
 5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7  ./payload/apps/papersketch/native/papersketch-ink.so
-4dcd969c860c3658de2796da05323c0b76b91e280c41ea3c2f7de271e7a7c02d  ./payload/apps/papersketch/native/papersketch-raster.cpp
-227dd2ffedc7c1f867080d08ace59c40f545c09c333efd60537b4c8120f3e975  ./payload/apps/papersketch/native/papersketch-raster.so
+c884cc2e123a31ee378431b7222c61a8f53778ea317a5851a2bcb5e0b917934f  ./payload/apps/papersketch/native/papersketch-raster.cpp
+a565a31b0b5950b59607106786030cd6817f1f49394d9a0d202689f0973d2a42  ./payload/apps/papersketch/native/papersketch-raster.so
 3273a6df0b95796f2a1ab7e195d49ac7bac3e0199bfb3b3e7dac69a020f0465d  ./payload/apps/papersketch/native/sketch-display.h
 c27d78b6ff9b88f5dc9211c4809cd6279f83fcebb68e6ef5ee75f40f0b6f9e5c  ./payload/apps/papersketch/native/sketch-material.h
 b29d2f88f4b2b8c43f0386f1871cf8913665507d893f61b00b464db8559e5c4b  ./payload/apps/papersketch/native/sketch-pen.h
@@ -121,9 +121,9 @@ c0dd54ad9789cec7f89ed90d2f09483d0978eb1ef82fad81ca60befcd7a3ab15  ./payload/apps
 b21c04ee57bb6f3aeaf91405ded9a6db89ba9c3a06e4508f1adf01102053423e  ./payload/apps/papersketch/native/sketch-preview-shade.h
 04fc785f7e6874ecd9c9730146e317355a1e27ab85a920bb79b81b47bdbdcf6c  ./payload/apps/papersketch/native/sketch-smudge.h
 fc51f67031796d82407098d31895030868c5106eb5bd57911d7e31836d061aa9  ./payload/apps/papersketch/native/sketch-touch.h
-ee7fd8ebeb0f3fc1dfb55093b34df018654f124219f7dfb66e2cd2ca22bea5e5  ./payload/apps/papersketch/resources.rcc
+173069c540b92796027b056006d38d074150c2f973cb753c2bd4596e32b50e3f  ./payload/apps/papersketch/resources.rcc
 894c8600c49d5c04cc5bfb8050118e7c2b6fa9603f92b22281a19b2caf44798a  ./payload/apps/papersketch/ui/ToolIcon.qml
-dda3e31c9113bb914afec256926c75858240dd3e5611c36448714f2bb8362819  ./payload/apps/papersketch/ui/main.qml
+e23d10cc4b911172a71f9c888ef7073f4d85ef31179b3be51b8942f3d72588ac  ./payload/apps/papersketch/ui/main.qml
 43ae63b47436425fe9bad956f766fc52dbcc305a3a2be246e16283abe57a4ae2  ./payload/apps/papersketch/ui/native-tile.qml
 66796cdf0db49c4b53aec2a22d983d5cd031373afbe7a3a2ff05f8eee19c0473  ./payload/apps/paperterminal/README.md
 419c3efad42e418ce41593dc6d93b7a4d474c71422b35569dfc0a2a8b01856e8  ./payload/apps/paperterminal/application.qrc

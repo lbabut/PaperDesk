@@ -103,7 +103,21 @@ Rectangle {
                 if(activeStroke && activeStroke.rawInput)rawPenContact=e[7];
             }else if(rawPenContact===e[7] && activeStroke && activeStroke.rawInput){
                 if(e[0]===3){finishStroke();rawPenContact=0;rawPenStrokes++;}
-                else extendStroke(p,"pen",e[3],e);
+                else if(typeof nativeRaster.advancePenMotionBatch==="function"){
+                    var batch=nativeRaster.advancePenMotionBatch(events,i,activeStroke.tool,activeStroke.size,activeStroke.strength,rawPenContact);
+                    if(batch.length===7 && batch[0]>0){
+                        activeStroke.inputSamples+=batch[0];
+                        if(batch[1]>0){
+                            var last=activeStroke.points[1];
+                            last[0]=Math.round(Ink.clamp(batch[2],0,Ink.WIDTH)*10)/10;
+                            last[1]=Math.round(Ink.clamp(batch[3],0,Ink.HEIGHT)*10)/10;last[2]=Math.round(batch[4]*100)/100;
+                            activeStroke.samples+=batch[1];
+                            activeStroke.pressureMin=Math.min(activeStroke.pressureMin,Math.round(batch[5]*100)/100);
+                            activeStroke.pressureMax=Math.max(activeStroke.pressureMax,Math.round(batch[6]*100)/100);
+                        }
+                        i+=batch[0]-1;
+                    }else extendStroke(p,"pen",e[3],e);
+                }else extendStroke(p,"pen",e[3],e);
             }
         }
         rawPenDraining=false;

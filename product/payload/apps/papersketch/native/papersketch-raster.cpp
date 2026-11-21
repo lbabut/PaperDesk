@@ -678,6 +678,22 @@ public:
         SketchLatency::Scope timing(std::atomic_load_explicit(&latency,std::memory_order_acquire),SketchLatency::Stage::Advance);
         return advancePoint(tool,size,strength,x,y,p,first,tiltX,tiltY);
     }
+    // Consecutive motion only: begin/end/overrun stay visible to QML. Every
+    // sample still reaches the same material sampler, in its original order.
+    Q_INVOKABLE QVariantList advancePenMotionBatch(QVariantList events,int start,int tool,double size,double strength,unsigned contact){
+        if(start<0||start>=events.size()||!contact)return {};
+        int taken=0,changed=0;double x=0,y=0,p=0,minP=1,maxP=0;
+        for(int i=start;i<events.size();++i){
+            const auto e=events[i].toList();
+            if(e.size()!=8||e[0].toInt()!=2||e[7].toUInt()!=contact)break;
+            taken++;
+            if(advancePenInput(tool,size,strength,e[1].toDouble(),e[2].toDouble(),e[3].toDouble(),false,e[4].toDouble(),e[5].toDouble())){
+                changed++;x=e[1].toDouble();y=e[2].toDouble();p=e[3].toDouble();
+                minP=std::min(minP,p);maxP=std::max(maxP,p);
+            }
+        }
+        return {taken,changed,x,y,p,minP,maxP};
+    }
     Q_INVOKABLE bool advance(int tool,double size,double strength,double x,double y,double p,bool first){
         SketchLatency::Scope timing(std::atomic_load_explicit(&latency,std::memory_order_acquire),SketchLatency::Stage::Advance);
         if(tool<0||tool>8||!std::isfinite(size)||size<1||size>80||!std::isfinite(strength)||strength<.05||strength>1||!std::isfinite(x)||!std::isfinite(y)||!std::isfinite(p))return false;

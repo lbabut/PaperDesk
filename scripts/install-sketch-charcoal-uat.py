@@ -15,6 +15,7 @@ p.add_argument('--host', default='10.11.99.1')
 p.add_argument('--key', required=True)
 p.add_argument('--known-hosts', required=True)
 p.add_argument('--host-key-alias')
+p.add_argument('--baseline', choices=['original', 'charcoal-20261121', 'charcoal-batch4-20261121', 'charcoal-batch8-20261121'], default='original')
 p.add_argument('--safe-state-confirmed', action='store_true')
 p.add_argument('--output', required=True, type=Path)
 a = p.parse_args()
@@ -25,6 +26,18 @@ names = ['papersketch-raster.so', 'papersketch-ink.so']
 expected = dict(zip(names, [
     'e84e1271f9398200a789355562a682244c247cc1662f501cd1d7bcfd29481d9a',
     '2643b947f47a4b3cb27b241fe0da6f4f5b8f89db6da70374cc902a2c17e14bc5']))
+if a.baseline == 'charcoal-20261121':
+    expected = dict(zip(names, [
+        '227dd2ffedc7c1f867080d08ace59c40f545c09c333efd60537b4c8120f3e975',
+        '5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7']))
+if a.baseline == 'charcoal-batch4-20261121':
+    expected = dict(zip(names, [
+        '9fe9efae2d976ebff53001c730e7e1de6727df0c986cc1fc875e67122ea01a26',
+        '5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7']))
+if a.baseline == 'charcoal-batch8-20261121':
+    expected = dict(zip(names, [
+        'df78e6c3dbbd8c25abeea06958d82e0e15ee5c5d6e543ecddef2d3a704f30952',
+        '5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7']))
 modules = root / 'product/payload/apps/papersketch/native'
 payload = {n: (modules / n).read_bytes() for n in names}
 for n, data in payload.items():

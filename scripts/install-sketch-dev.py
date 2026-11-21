@@ -15,6 +15,7 @@ parser.add_argument("--native-raster",action="store_true",help="Install the nati
 parser.add_argument("--native-raster-path",type=pathlib.Path,help="Stage this regular file as the native raster module; requires --native-raster")
 parser.add_argument("--native-ink", action="store_true", help="Install exact-build native pen preview with rollback")
 parser.add_argument("--host-key-alias")
+parser.add_argument("--expected-rcc-sha256", help="Refuse before writes if the installed Sketch resources changed")
 args = parser.parse_args()
 raster_override = None
 if args.native_raster_path is not None:
@@ -39,7 +40,7 @@ if args.native_raster and raster_override is None and not (source / "native/pape
 extensions=[]
 if args.native_ink:extensions.append("papersketch-ink.so")
 if args.native_raster:extensions.append("papersketch-raster.so")
-ssh = ["ssh", "-i", args.key, "-o", "UserKnownHostsFile=" + args.known_hosts,
+ssh = ["ssh", "-F", "/dev/null", "-i", args.key, "-o", "IdentitiesOnly=yes", "-o", "UserKnownHostsFile=" + args.known_hosts,
        "-o", "StrictHostKeyChecking=yes", "-o", "BatchMode=yes",
        "-o", "ConnectTimeout=8", "root@" + args.host]
 if args.host_key_alias:
@@ -50,7 +51,11 @@ def remote(command, data=None):
         raise RuntimeError(result.stderr.decode(errors="replace"))
     return result.stdout
 
-remote('set -eu; test -d /home/root/xovi/exthome/appload; test "$(stat -c %t:%T /dev/input/event2)" = d:42; test -z "$(pidof paperdesk-rm-touchd || true)"; ! systemctl is-active --quiet paperdesk-update.service')
+if args.expected_rcc_sha256:
+    actual = remote('sha256sum /home/root/xovi/exthome/appload/papersketch/resources.rcc').decode().split()[0]
+    if actual != args.expected_rcc_sha256:
+        raise RuntimeError('Installed Sketch RCC changed; no deployment performed')
+remote('set -eu; systemctl is-active --quiet xochitl; test -d /home/root/xovi/exthome/appload; test ! -e /home/root/xovi/exthome/appload/papersketch.new; test "$(stat -c %t:%T /dev/input/event2)" = d:42; test -z "$(pidof paperdesk-rm-touchd || true)"; ! systemctl is-active --quiet paperdesk-update.service')
 backup = remote("mktemp -d /home/root/.local/state/papersketch-install.XXXXXX").decode().strip()
 assert backup.startswith("/home/root/.local/state/papersketch-install.")
 b = shlex.quote(backup)

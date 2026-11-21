@@ -5,26 +5,38 @@
 #include <QtCore/QThread>
 int main(int argc,char **argv){
  QGuiApplication app(argc,argv);QTemporaryDir dir;
+ for(int tool:{1,4,5}){
+ const int size=tool==1?5:38;
  SketchRaster batched(nullptr,dir.path()+"/batched"),reference(nullptr,dir.path()+"/reference");
  batched.penSamples.pause();reference.penSamples.pause();batched.penSamples.enableInput(true);
  reference.begin();
  for(int i=0;i<600;i++){
   double x=150+i*.8,y=500+100*std::sin(i*.045),p=i?.65:0;
   batched.penSamples.frame(x,y,p,10,.2,-.1,false,true);
-  reference.advancePenInput(1,5,1,x,y,p,i==0,.2,-.1);
+  reference.advancePenInput(tool,size,1,x,y,p,i==0,.2,-.1);
  }
  batched.penSamples.frame(150+599*.8,500+100*std::sin(599*.045),0,10,.2,-.1,false,false);
  reference.finish();QThread::msleep(20);unsigned points=0,ends=0;
  while(batched.penSamples.inputPending()){
   const auto batch=batched.takePenInput();assert(batch.size()<=32);
-  for(const auto &value:batch){
-   auto e=value.toList();int phase=e[0].toInt();
+  for(int index=0;index<batch.size();++index){
+   auto e=batch[index].toList();int phase=e[0].toInt();
    if(phase==1)batched.begin();
    if(phase==3){batched.finish();ends++;continue;}
-   batched.advancePenInput(1,5,1,e[1].toDouble(),e[2].toDouble(),e[3].toDouble(),phase==1,e[4].toDouble(),e[5].toDouble());points++;
+   if(phase==2){
+    auto summary=batched.advancePenMotionBatch(batch,index,tool,size,1,e[7].toUInt());
+    assert(summary.size()==7&&summary[0].toInt()>0);
+    const int consumed=summary[0].toInt();points+=consumed;index+=consumed-1;continue;
+   }
+   batched.advancePenInput(tool,size,1,e[1].toDouble(),e[2].toDouble(),e[3].toDouble(),phase==1,e[4].toDouble(),e[5].toDouble());points++;
   }
  }
  assert(points==600&&ends==1&&batched.image==reference.image&&batched.material==reference.material);
+ assert(batched.physics.burnish==reference.physics.burnish&&batched.physics.wear==reference.physics.wear);
+ assert(batched.physics.untilNext==reference.physics.untilNext&&batched.finger==reference.finger);
+ assert(batched.advancePenMotionBatch({},0,tool,size,1,10).isEmpty());
+ assert(batched.advancePenMotionBatch({QVariant(QVariantList{3,0,0,0,0,0,false,10})},0,tool,size,1,10)[0].toInt()==0);
+ assert(batched.advancePenMotionBatch({QVariant(QVariantList{2,0,0,.5,0,0,false,11})},0,tool,size,1,10)[0].toInt()==0);
  auto queue=batched.penQueueLatencyStats();
  assert(queue["samples"].toULongLong()==601&&queue["max_ms"].toULongLong()>=20);
  assert(queue["p95_upper_ms"].toULongLong()<=queue["max_ms"].toULongLong());
@@ -57,5 +69,6 @@ int main(int argc,char **argv){
  int initial=qGray(batched.image.pixel(300,300));
  for(int i=0;i<400;i++)batched.advancePenInput(4,2,1,300+(i%2?.1:0),300,.4,false,0,0);
  batched.finish();assert(qGray(batched.image.pixel(300,300))<initial-5);
- puts("PASS complete 600-point curved path after GUI stall, 80 tiny contacts and subpixel reversals");
+ printf("PASS tool %d: complete 600-point curved path in 19 GUI turns, exact pixels/pigment, 80 tiny contacts and subpixel reversals\n",tool);
+ }
 }
