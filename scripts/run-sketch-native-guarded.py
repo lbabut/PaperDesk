@@ -243,6 +243,13 @@ try:
             if event["mode"]=="pen" and "input_probe" in result:
                 result["input_probe"]["pen"]["post_release_to_tile_ms"]=result["input_probe"]["pen"]["tile_seen_ms"]-event["release_ms"]
         if "input_probe" in result:result["input_probe"]["polling_granularity_ms"]=16
+        if "controls_probe" in result:
+            event=next(e for e in report["evdev_injections"] if e["id"]=="size-slider")
+            probe=result["controls_probe"]
+            probe["injected_contact_to_value_upper_ms"]=probe["first_value_seen_ms"]-event["contact_ms"]
+            probe["injected_contact_to_frame_upper_ms"]=probe["first_frame_seen_ms"]-event["contact_ms"]
+            probe["physical_touch_sensor_measured"]=False
+            probe["value_detection_note"]="First poll with brushSize>5; includes injected slider travel, not pure event dispatch latency"
         if "shading_probe" in result:
             for case in result["shading_probe"]["cases"]:
                 event=next(e for e in report["evdev_injections"] if e["id"]==case["id"])

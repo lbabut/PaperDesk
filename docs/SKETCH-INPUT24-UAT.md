@@ -47,3 +47,22 @@ Installed RCC/QML were not changed. Public downloads/main remain unchanged.
 Raw results retained locally in Plan400's on-device scheduling study. The
 candidate was temporarily rolled back after its three runs so a separate
 publication-period variant could be tested without mixing variables.
+
+After comparison, this input24 candidate was selected for HUMAN UAT only.
+The separate24ms publication variant had median/worst GUI gap118/175ms,
+queue47/57ms and tail92/135ms, and was removed. Original16ms publication is
+retained here. This is a measured tradeoff, not a claim all apps/menus are
+faster or that the reported global slowness has been fixed. Physical display
+and real stylus usability still need owner evaluation before acceptance.
+
+Final control-slider probe passed: active GUI gap29ms, detected value to
+submitted frame1ms, no QML runtime errors. Contact to detected value/frame
+114/115ms includes slider travel until size>5, not pure dispatch latency.
+The whole probe included a139ms gap before active dragging. No baseline
+controls A/B is claimed. Original document setting and17 checked caches
+were preserved, native/app hashes verified, xochitl/XOVI active, failure
+monitor restored to static and diagnostics launcher removed.
+
+Final device recovery to original32-sample UAT:
+`/home/root/.local/state/sketch-charcoal-uat.6yu1aS/rollback.sh`.
+Use guarded restart/mask handling when invoking recovery, not blind reinstall.
