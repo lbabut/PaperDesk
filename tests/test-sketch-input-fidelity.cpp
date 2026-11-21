@@ -3,8 +3,33 @@
 #include <QtCore/QTemporaryDir>
 #include <cassert>
 #include <QtCore/QThread>
+static void checkCharcoalPath(int tool){
+ QTemporaryDir dir;
+ SketchRaster batched(nullptr,dir.path()+"/batched"),reference(nullptr,dir.path()+"/reference");
+ batched.penSamples.pause();reference.penSamples.pause();batched.penSamples.enableInput(true);
+ reference.begin();
+ for(int i=0;i<600;i++){
+  double x=150+i*.8,y=500+100*std::sin(i*.045),p=i?.15+(i%17)*.045:0;
+  batched.penSamples.frame(x,y,p,10,.2,-.1,false,true);
+  reference.advancePenInput(tool,38,1,x,y,p,i==0,.2,-.1);
+ }
+ batched.penSamples.frame(150+599*.8,500+100*std::sin(599*.045),0,10,.2,-.1,false,false);
+ reference.finish();unsigned points=0,ends=0;
+ while(batched.penSamples.inputPending()){
+  const auto batch=batched.takePenInput();assert(batch.size()<=24);
+  for(const auto &value:batch){auto e=value.toList();int phase=e[0].toInt();
+   if(phase==1)batched.begin();
+   if(phase==3){batched.finish();ends++;continue;}
+   batched.advancePenInput(tool,38,1,e[1].toDouble(),e[2].toDouble(),e[3].toDouble(),phase==1,e[4].toDouble(),e[5].toDouble());points++;
+  }
+ }
+ assert(points==600&&ends==1&&batched.image==reference.image&&batched.material==reference.material);
+ assert(batched.finger==reference.finger&&batched.physics.burnish==reference.physics.burnish&&batched.physics.wear==reference.physics.wear);
+ assert(batched.penInputStats()[1].toULongLong()==0&&batched.penInputStats()[2].toULongLong()==0);
+}
 int main(int argc,char **argv){
  QGuiApplication app(argc,argv);QTemporaryDir dir;
+ checkCharcoalPath(4);checkCharcoalPath(5);
  SketchRaster batched(nullptr,dir.path()+"/batched"),reference(nullptr,dir.path()+"/reference");
  batched.penSamples.pause();reference.penSamples.pause();batched.penSamples.enableInput(true);
  reference.begin();
@@ -16,7 +41,7 @@ int main(int argc,char **argv){
  batched.penSamples.frame(150+599*.8,500+100*std::sin(599*.045),0,10,.2,-.1,false,false);
  reference.finish();QThread::msleep(20);unsigned points=0,ends=0;
  while(batched.penSamples.inputPending()){
-  const auto batch=batched.takePenInput();assert(batch.size()<=32);
+  const auto batch=batched.takePenInput();assert(batch.size()<=24);
   for(const auto &value:batch){
    auto e=value.toList();int phase=e[0].toInt();
    if(phase==1)batched.begin();
@@ -28,7 +53,7 @@ int main(int argc,char **argv){
  auto queue=batched.penQueueLatencyStats();
  assert(queue["samples"].toULongLong()==601&&queue["max_ms"].toULongLong()>=20);
  assert(queue["p95_upper_ms"].toULongLong()<=queue["max_ms"].toULongLong());
- assert(queue["batches"].toUInt()==19&&queue["empty_batches"].toUInt()==0);
+ assert(queue["batches"].toUInt()==26&&queue["empty_batches"].toUInt()==0);
  batched.takePenInput();assert(batched.penQueueLatencyStats()["empty_batches"].toUInt()==1);
  SketchRaster::PenQueueTiming tail;tail.record(-10);tail.record(2000);tail.record(4000);
  assert(tail.percentile(50)==4000&&tail.maxMs==4000&&tail.totalMs==6000);
