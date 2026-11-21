@@ -1,9 +1,11 @@
 #ifndef PAPER_SKETCH_PREVIEW_SHADE_H
 #define PAPER_SKETCH_PREVIEW_SHADE_H
 #include <stdint.h>
-// Mean optical gray of upright size-3 lines on fresh plain paper, sampled from
-// PaperMaterial at 1/16 pressure intervals. Not a replacement for its grain,
-// wear, tilt or pigment history. Regenerate with test-sketch-preview-shade.cpp
+// Pencil mean / charcoal fixed-centerline optical gray of upright size-3 lines
+// on fresh plain paper, sampled from PaperMaterial at 1/16 pressure intervals.
+// Fixed charcoal sampling includes white pixels and does not change population
+// when a pressure-expanded footprint touches a new edge row. These shades do
+// not replace grain, wear, tilt or pigment history. Regenerate with test-sketch-preview-shade.cpp
 // compiled with -DGENERATE_PREVIEW_SHADE.
 static inline unsigned char sketchPreviewGray(int tool,float pressure) {
     static const unsigned char gray[6][17]={
@@ -11,8 +13,8 @@ static inline unsigned char sketchPreviewGray(int tool,float pressure) {
     {255,254,254,253,251,249,246,241,228,211,193,177,164,154,144,136,128},
     {255,254,254,253,251,248,244,238,228,208,184,163,146,133,122,112,104},
     {255,254,254,252,250,246,241,233,224,199,170,143,122,107,95,85,78},
-    {255,254,253,253,252,251,248,243,237,231,224,218,211,204,197,190,183},
-    {255,252,247,239,226,209,187,164,141,122,106,94,84,76,68,61,55}};
+    {255,255,254,252,249,245,236,224,210,194,180,166,153,141,129,118,108},
+    {255,253,247,234,213,187,158,130,104,84,68,57,49,42,36,31,26}};
     if(tool==8)return 0;
     if(tool<0||tool>=6)return 255;
     if(!(pressure>0))return 255;
@@ -27,7 +29,9 @@ static inline int sketchCharcoalPreviewGray(int gray,float edge,int x,int y) {
     coarse=(coarse^(coarse>>13))*1274126177u;coarse^=coarse>>16;
     float grain=((n&255)*3+(coarse&255)*2)/1275.f;
     float texture=.18f+.82f*(1-grain)*(1-grain);
-    float coverage=edge*edge*(.45f+.55f*texture);
+    // Match the broader charcoal contact envelope of the material candidate.
+    // This remains a fresh-paper guide, not a reconstruction of saved pigment.
+    float coverage=edge*(.65f+.35f*edge)*(.45f+.55f*texture);
     return 255-(int)((255-gray)*coverage);
 }
 // Same Bayer thresholds as the final fast display conversion. Screen anchoring

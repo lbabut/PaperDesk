@@ -95,7 +95,7 @@ struct PaperMaterial {
     // only the unburnished contact/capacity pair; pressure and tool completely
     // determine it. Keep the scalar model for polished pixels and small tips.
     // This is transient derived state, never saved with a page.
-    static double capacityResponse(int tool,double value){return tool==4 ? .35+.65*value : tool==5 ? .45+.55*value : value;}
+    static double capacityResponse(int tool,double value){return tool==4 ? .75+.25*value : tool==5 ? .85+.15*value : value;}
     struct ContactResponse { double contact; int capacity; };
     std::array<ContactResponse, 256> freshContact{};
     double freshPressure = -1;
@@ -304,7 +304,11 @@ struct PaperMaterial {
                     }
                     continue;
                 }
-                edge *= edge;
+                // Dry charcoal makes a broken, broader contact rather than
+                // the quadratic falloff of a soft round airbrush. Keep the
+                // graphite, eraser and finger footprints exactly unchanged.
+                if (rowTool == 4 || rowTool == 5) edge *= .65 + .35 * edge;
+                else edge *= edge;
                 if (rowTool == 4 || rowTool == 5)
                     edge += edge * (1 - edge) * .55 * shape.tilt;
                 int at = y * width + x;
@@ -365,8 +369,12 @@ struct PaperMaterial {
                     int room = std::max(0, capacity - fixed - loose);
                     if (room > 0) {
                         double amount = dose * edge * contact * (1 - .35 * polish) * (room / double(capacity));
-                        if (rowTool == 4) amount *= charcoalDoseScale * (.08 + .92 * response.capacity * response.capacity);
-                        if (rowTool == 5) amount *= charcoalDoseScale * (.30 + .70 * response.capacity);
+                        // Fixed paper-space clumps: repeat passes accumulate
+                        // pigment without random event-rate dependent noise.
+                        if (rowTool == 4 || rowTool == 5) {
+                            double clump = .70 + .60 * ((hash(x / 3, y / 7) & 255) * (1.0 / 255.0));
+                            amount *= charcoalDoseScale * clump * (rowTool == 4 ? .35 + .65 * response.capacity : .50 + .50 * response.capacity);
+                        }
                         int added = std::min(room, roundMass(amount));
                         int bonded = roundMass(added * std::min(.99, bondedFraction + .10 * polish));
                         fixed += bonded;

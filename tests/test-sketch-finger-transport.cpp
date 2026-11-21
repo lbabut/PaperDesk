@@ -23,7 +23,12 @@ int main(){
    s.stroke(7,100,160,240,160,force,64);
    assert(s.total()==mass);auto moved=s.transported();assert(moved>0);
 #ifndef SKETCH_COMPARE_BASELINE
-   if(force==.13){double minimum=tool==1?15:tool==3?40:60;assert(s.core()-before>minimum);}
+   if(force==.13){
+    // Charcoal removal is relative to available darkness, not an absolute
+    // 60 gray levels (unreachable for the previous light deposit above 195).
+    double minimum=tool==1?15:tool==3?40:.30*(255-before);
+    assert(before<250);assert(s.core()-before>minimum);
+   }
 #endif
    assert(moved>previous);previous=moved;
    std::cout<<tool<<','<<force<<','<<before<<','<<s.core()<<','<<moved<<std::endl;

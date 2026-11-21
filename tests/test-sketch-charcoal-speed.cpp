@@ -1,8 +1,10 @@
-// Frozen pre-optimization kernel is intentional: compare full physical state, not just
-// the optimized formula against a restatement of itself.
+// New deposit contract versus its frozen scalar (no cache/row worker) reference.
+// Old tool compatibility is independently checked by charcoal-deposit.
 #define PaperMaterial ReferenceMaterial
-#include "fixtures/sketch-material-before-charcoal-speed.h"
+#define PaperMaterialRows ReferenceRows
+#include "fixtures/sketch-material-charcoal-deposit-scalar.h"
 #undef PaperMaterial
+#undef PaperMaterialRows
 #undef PAPER_SKETCH_MATERIAL_H
 #include "../product/payload/apps/papersketch/native/sketch-material.h"
 #include <cassert>
@@ -58,7 +60,7 @@ static void correctness(){
         }
         a.dab(tool,80,p,0);b.dab(tool,80,p,0);equal(a,b);
     }
-    puts("PASS wide charcoal vs frozen pre-optimization: exact optical/pigment/finger/burnish/wear/ink and sampler state");
+    puts("PASS new charcoal vs frozen scalar: exact optical/pigment/finger/burnish/wear/ink and sampler state");
 }
 template<class E> static long long shade(Surface<E>&s,int tool,double size,double pressure,bool varying){
     auto start=std::chrono::steady_clock::now();double px=200,py=800,ap=pressure;

@@ -1,4 +1,6 @@
-// Preview shades sampled from upright size-3 lines on fresh plain paper.
+// Pencil shades retain the legacy mean of painted pixels. Charcoal uses
+// a fixed centerline cohort: counting only painted pixels changes the sample
+// population when a wider pressure footprint reaches a new light edge row.
 // Compile with -DGENERATE_PREVIEW_SHADE to print the LUT initializer.
 #include "../product/payload/apps/papersketch/native/sketch-material.h"
 #ifndef GENERATE_PREVIEW_SHADE
@@ -21,7 +23,9 @@ int main(){
     m.segment(mass.data(),image.data(),finger.data(),tool,3,0,1,20,y,p,230,y,p,1);
    }
    double sum=0;int count=0;
-   for(auto pixel:image)if(pixel!=0xffffffffu){sum+=pixel&255;count++;}
+   if(tool==4 || tool==5){
+    for(int y=12;y<90;y+=12)for(int x=32;x<220;x++){sum+=image[y*256+x]&255;count++;}
+   }else for(auto pixel:image)if(pixel!=0xffffffffu){sum+=pixel&255;count++;}
    int gray=count?int(std::lround(sum/count)):255;
 #ifdef GENERATE_PREVIEW_SHADE
    printf("%s%d",step?",":"",gray);
@@ -49,6 +53,6 @@ int main(){
  }
  assert(high-low>40);
  for(int y=0;y<8;y++)for(int x=0;x<8;x++){assert(!sketchPreviewDotExact(255,x,y));assert(sketchPreviewDotExact(0,x,y));}
- puts("PASS: all six preview shades match fresh-paper material samples at 17 pressure anchors; ink stays opaque");
+ puts("PASS: pencil legacy mean and charcoal fixed-core shades match at 17 pressure anchors; ink stays opaque");
 #endif
 }
