@@ -21,6 +21,9 @@ subprocess.run(['gcc', '-O2', '-Wall', '-Wextra', '-Wno-format-truncation',
                 str(root / 'tests/test-sketch-native-batch.c'), '-o', str(preview_test),
                 '-ldl', '-lpthread', '-lm'], check=True)
 subprocess.run([str(preview_test)], check=True)
+rowspan_test = work / 'rowspan'
+subprocess.run(['g++', '-std=c++17', '-O2', '-pthread', str(root / 'tests/bench-sketch-rowspan.cpp'), '-o', str(rowspan_test)], check=True)
+subprocess.run([str(rowspan_test)], check=True)
 subprocess.run([str(sdk / 'lib/qt6/libexec/moc'), '-I' + str(include),
                 str(root / 'product/payload/apps/papersketch/native/papersketch-raster.cpp'),
                 '-o', str(work / 'papersketch-raster.moc')], check=True)

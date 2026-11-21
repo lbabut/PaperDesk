@@ -12,9 +12,13 @@ Rectangle{
  property var slowTicks:[]
  property real firstRaster:0
  property real firstTile:0
+ property real lastDebug:0
  property int blankFrames:0
  property var cases:[]
- property var definitions:[{id:"pen-graphite",tool:1,size:12,y0:400,y1:500,fullscreen:false},{id:"pen-charcoal",tool:4,size:38,y0:900,y1:1200,fullscreen:true}]
+ property bool tiltedCharcoal:false
+ property bool highRateShading:false
+ property int charcoalTool:4
+ property var definitions:[{id:"pen-graphite",tool:1,size:12,y0:400,y1:500,fullscreen:false},{id:"pen-charcoal",tool:charcoalTool,size:38,y0:900,y1:1200,fullscreen:true}]
  function find(item,name){if(item.objectName===name)return item;for(var i=0;i<item.children.length;i++){var v=find(item.children[i],name);if(v)return v;}return null;}
  function gray(x,y,tile){
   var a=subject.item;if(!tile)return a.nativeRaster.pixels(x,y,1,1)[0];
@@ -26,7 +30,8 @@ Rectangle{
   var p=surface.mapToItem(win.contentItem,120,d.y0),q=surface.mapToItem(win.contentItem,1080,d.y1);
   a.nativeRaster.resetPenQueueLatencyStats();
   firstRaster=0;firstTile=0;blankFrames=0;maxGap=0;activeGap=0;wasActive=false;slowTicks=[];phase=3;
-  console.log("PAPERSKETCH_INPUT_READY "+JSON.stringify({mode:"pen",id:d.id,pattern:"shade",start:[p.x,p.y],end:[q.x,q.y]}));
+  var pattern=tiltedCharcoal&&d.tool>=4?"shade-tilt":"shade";if(highRateShading)pattern+="-fast";
+  console.log("PAPERSKETCH_INPUT_READY "+JSON.stringify({mode:"pen",id:d.id,pattern:pattern,start:[p.x,p.y],end:[q.x,q.y]}));
  }
  function step(){
   var now=Date.now(),a=subject.item;if(lastTick && phase===3){var gap=now-lastTick,contact=!!(a&&a.activeSource==="pen");maxGap=Math.max(maxGap,gap);if(contact||wasActive)activeGap=Math.max(activeGap,gap);if(gap>=80)slowTicks.push({gap_ms:gap,contact:contact,previous_contact:wasActive});wasActive=contact;}lastTick=now;
@@ -39,6 +44,7 @@ Rectangle{
   if(phase===2 && now-waitAt>1500){ready();return;}
   if(phase===3){
    var d=definitions[caseIndex],mx=600,my=(d.y0+d.y1)/2;
+   if(now-lastDebug>2000){lastDebug=now;console.log("PAPERSKETCH_PROBE_PROGRESS "+JSON.stringify({id:d.id,active:a.activeSource,last_tool:a.lastStroke?a.lastStroke.tool:-1,last_samples:a.lastStroke?a.lastStroke.inputSamples:0,input:a.nativeRaster.penInputStats(),raster_gray:gray(mx,my,false),tile_gray:gray(mx,my,true),pen_nearby:a.penNearby}));}
    if(!firstRaster && gray(mx,my,false)<245)firstRaster=now;
    if(!firstTile && gray(mx,my,true)<245)firstTile=now;
    if(firstTile && gray(mx,my,true)>=245)blankFrames++;
@@ -56,6 +62,9 @@ Rectangle{
    item.native_latency=a.nativeRaster.latencyStats();
    var inputOk=s.rawInput?(s.inputSamples===1260&&item.input_stats[1]===0&&item.input_stats[2]===0):matched[0]>4*matched[1];
    item.passed=a.fastDisplay && binary && display.length===4096 && grays && Math.abs(displaySum-rawSum)/1024<12 && inputOk && (s.samples||points.length)>=100 && Math.abs(first[0]-120)<15 && Math.abs(first[1]-d.y0)<15 && Math.abs(last[0]-1080)<15 && Math.abs(last[1]-d.y1)<15 && blankFrames===0 && maxGap<200;
+   item.contact=a.nativeRaster.contactStats();item.tilted_charcoal_requested=tiltedCharcoal&&d.tool>=4;
+   item.requested_input_hz=highRateShading?500:250;
+   if(item.tilted_charcoal_requested)item.passed=item.passed&&(Math.abs(item.contact.tilt_x)+Math.abs(item.contact.tilt_y)>.6);
    cases.push(item);console.log("PAPERSKETCH_NATIVE_CASE "+JSON.stringify(item));
    caseIndex++;waitAt=now;phase=4;return;
   }
