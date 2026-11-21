@@ -29,7 +29,7 @@ Rectangle{
    if(a.brushSize>5){valueUpdates++;if(!firstUpdate)firstUpdate=now;}
    
    if(!firstUpdate||slider.pressed||now-at<4000)return;
-   result={value_updates:valueUpdates,painted_frames:frames,max_input_tick_gap_ms:activeGap,max_probe_tick_gap_ms:maxGap,gaps_over_70ms:gapEvents,final_size:a.brushSize,first_value_to_frame_ms:firstPaint-firstUpdate,real_device:true,optical_panel_latency_measured:false};
+   result={value_updates:valueUpdates,painted_frames:frames,max_input_tick_gap_ms:activeGap,max_probe_tick_gap_ms:maxGap,gaps_over_70ms:gapEvents,final_size:a.brushSize,first_value_seen_ms:firstUpdate,first_frame_seen_ms:firstPaint,first_value_to_frame_ms:firstPaint-firstUpdate,real_device:true,optical_panel_latency_measured:false};
    result.passed=a.brushSize>70 && frames>=10 && activeGap<100;
    console.log("PAPERSKETCH_NATIVE_RESULT "+JSON.stringify({execution:"real tablet size-slider pointer and rendered-frame probe",controls_probe:result,cases:[]}));phase=3;ticker.stop();
   }

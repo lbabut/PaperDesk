@@ -113,7 +113,7 @@ ccf4f2d3899c07061e4c02de75a79f50abefb9b95138e22e74db32376e155ff6  ./payload/apps
 ee9c1b177ab8a95b95b4fc3c1233477a3312d5ae7b16dcdd5ac36ff88c408c73  ./payload/apps/papersketch/native/papersketch-ink.c
 5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7  ./payload/apps/papersketch/native/papersketch-ink.so
 4dcd969c860c3658de2796da05323c0b76b91e280c41ea3c2f7de271e7a7c02d  ./payload/apps/papersketch/native/papersketch-raster.cpp
-227dd2ffedc7c1f867080d08ace59c40f545c09c333efd60537b4c8120f3e975  ./payload/apps/papersketch/native/papersketch-raster.so
+c0eb7d92639285bc3d7a7b7d01284467d2d5797bb872fb5c03a6e3c41e7f7662  ./payload/apps/papersketch/native/papersketch-raster.so
 3273a6df0b95796f2a1ab7e195d49ac7bac3e0199bfb3b3e7dac69a020f0465d  ./payload/apps/papersketch/native/sketch-display.h
 c27d78b6ff9b88f5dc9211c4809cd6279f83fcebb68e6ef5ee75f40f0b6f9e5c  ./payload/apps/papersketch/native/sketch-material.h
 b29d2f88f4b2b8c43f0386f1871cf8913665507d893f61b00b464db8559e5c4b  ./payload/apps/papersketch/native/sketch-pen.h
