@@ -1,0 +1,47 @@
+PAINTING DIAGNOSIS AND HIGH-RATE TEST — PREPARED, DEVICE RUN PENDING
+
+User clarified21November: complaint is painting, not launcher/other apps.
+No UI restart, app installation or synthetic input performed this session.
+Current drawing is not assumed disposable despite earlier scratch permission;
+owner asked to save it, move stylus away and confirm ready before guarded run.
+
+Read-only17:25UTC: xochitl active, available memory~664MiB, no swap,
+temperature22C, ondemand CPU snapshot1.2GHz, no pen contact/proximity.
+These idle snapshots do not prove performance while painting. perf/strace
+not found; BusyBox ps lacks -e/-o, used plain ps instead. No configuration
+changes, governor changes, or services stopped. rm-sync present, not stopped.
+
+Existing native-preview journal at17:22..17:24 reports:
+2197 samples/4062ms =540.9 reports/s;
+2130/3937 =541.0;
+5344/9883 =540.7.
+papersketch-ink.c increments this counter on accepted SYN_REPORT frames.
+This is the preview stream reported by existing code, NOT independent sensor
+sampling calibration and NOT a measurement of exact raster/QML consumption.
+No old 250Hz test should be called faithful reproduction of these inputs.
+
+Saved instrumented input24 reports from the preceding session:
+heavy soft charcoal:1260 injected points,5466ms injection,1284ms tail,
+advance4463.344ms,publish21.399ms,tile paint156.437ms.
+standard normal charcoal:5314ms injection,79ms tail,advance1943.499ms,
+publish39.408ms,tile paint70.305ms.
+graphite:advance~371..391ms,publication~71..73ms,tile~33ms.
+These counters indicate material advancement dominates measured native
+painting-stage cost in that synthetic heavy test. They do not time every
+QML operation, concurrent preview/thread wait or physical panel response;
+do not infer all unexplained elapsed time from their sum.
+
+New --high-rate-shading option: same1260 ordered samples/positions/pressure,
+sleep2000us vs4000us (requested500 vs250Hz); shade-fast and shade-tilt-fast.
+Thus path duration is shorter, not a claim of identical physical hand speed.
+Actual achieved rate is recorded from injection duration. Report validates
+requested/injected mode/sample count plus actual rate within80..110% of
+requested. Limits200ms GUI,100ms queue,150ms tail unchanged. No dropping
+points, no lower-pressure stroke, no weakened image/preservation checks.
+Six report unit tests pass, rate-contract C test passes; actual injector
+builds Wall/Wextra/Werror, Python syntax and diff checks pass. Product/native
+modules/resources unchanged from input24. ARM/UI500Hz test NOT yet run.
+
+Next: after explicit saved-work readiness, run guarded500Hz normal and
+tilted-soft profiles; retain actual achieved rate and stage counters. Do not
+claim repair or installation merely because test preparation is complete.
