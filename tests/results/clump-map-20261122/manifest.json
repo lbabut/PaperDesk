@@ -1,0 +1,12 @@
+[
+  {
+    "name": "byte-map",
+    "sha256": "eb9f0392ba4e346fd4c66069a50a8a040bfb8b418b1f63bec7435445852a6d02",
+    "bytes_at_1200x1600": 91600
+  },
+  {
+    "name": "double-map",
+    "sha256": "16aa1f984a239a60518411e5870675a7d294408cbe5192334b361f5e7f6bb5a1",
+    "bytes_at_1200x1600": 732800
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "status":"no_uat_candidate",
+  "base":"46bb6f4; material header unchanged from installed rowspan baseline; prefix code inherited but not used in standalone tests",
+  "experiments":[
+    {"name":"byte-map","memory_bytes_1200x1600":91600,"result":"Rejected: soft-charcoal ratios1.0095/1.2077/1.1050 at tilt0/.5/.95, candidate/baseline CPU time, two opposite-order pairs"},
+    {"name":"double-map","memory_bytes_1200x1600":732800,"result":"First run mixed, normal-charcoal ratios.9641/.8531/1.1129; soft1.0647/.8309/.9287. Confirmation normal.9996/.9948/.9969, soft.9828/.9795/.9793. Earlier apparent large gains not reproduced; at most small CPU benefit in confirmation, insufficient evidence for module/GUI trial."}
+  ],
+  "correctness":"Each host and ARM execution passes8100 cross-tool dabs,2000 varied charcoal dabs, exact image/pigment/finger/burnish/ink/wear/sampler comparisons after timed traces. Two variants compiled for host and static ARM. No full application suite claim.",
+  "limitations":"Standalone CPU benchmarks, not GUI or panel latency. Small cohorts, initialization and allocation outside timed trajectories; map construction is additional page-init work not quantified here. Prior prefix UI gain remains separate.",
+  "device":"Only standalone binaries copied into /tmp/sketch-clump-map.yRNOrq. No input injection, drawing deletion, UI restart or global module replacement. Installed raster29d4827 verified before tests.",
+  "raw_logs":"tests/results/clump-map-20261122/",
+  "next_action":"Do not adopt clump maps on this evidence. Retain exact prefix batching separately; profile per-sample cost with representative full-page workload before further algorithm changes.",
+  "production":"No main/site/public release or paid launch; canonical343 dirty entries untouched."
+}
