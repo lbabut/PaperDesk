@@ -1,0 +1,26 @@
+PASS exact state after 8100 dabs: all tools, pressure/angle/size, edges, papers and erasers
+PASS 2000 varied charcoal tilt/wear/pressure/size/clipped-state dabs
+{"repeat":0,"tool":1,"tilt":0.00,"old_us":56326,"new_us":56256,"ratio":0.9988}
+{"repeat":0,"tool":1,"tilt":0.50,"old_us":65729,"new_us":66304,"ratio":1.0087}
+{"repeat":0,"tool":1,"tilt":0.95,"old_us":68417,"new_us":68437,"ratio":1.0003}
+{"repeat":0,"tool":4,"tilt":0.00,"old_us":263281,"new_us":233429,"ratio":0.8866}
+{"repeat":0,"tool":4,"tilt":0.50,"old_us":275044,"new_us":246806,"ratio":0.8973}
+{"repeat":0,"tool":4,"tilt":0.95,"old_us":263037,"new_us":226557,"ratio":0.8613}
+{"repeat":0,"tool":5,"tilt":0.00,"old_us":340872,"new_us":303772,"ratio":0.8912}
+{"repeat":0,"tool":5,"tilt":0.50,"old_us":364108,"new_us":350075,"ratio":0.9615}
+{"repeat":0,"tool":5,"tilt":0.95,"old_us":320224,"new_us":281267,"ratio":0.8783}
+{"repeat":0,"tool":7,"tilt":0.00,"old_us":903464,"new_us":904433,"ratio":1.0011}
+{"repeat":0,"tool":7,"tilt":0.50,"old_us":904201,"new_us":904318,"ratio":1.0001}
+{"repeat":0,"tool":7,"tilt":0.95,"old_us":906506,"new_us":904248,"ratio":0.9975}
+{"repeat":1,"tool":1,"tilt":0.00,"old_us":56289,"new_us":56333,"ratio":1.0008}
+{"repeat":1,"tool":1,"tilt":0.50,"old_us":65730,"new_us":65600,"ratio":0.9980}
+{"repeat":1,"tool":1,"tilt":0.95,"old_us":68416,"new_us":68262,"ratio":0.9977}
+{"repeat":1,"tool":4,"tilt":0.00,"old_us":263029,"new_us":233639,"ratio":0.8883}
+{"repeat":1,"tool":4,"tilt":0.50,"old_us":274528,"new_us":246289,"ratio":0.8971}
+{"repeat":1,"tool":4,"tilt":0.95,"old_us":262882,"new_us":227187,"ratio":0.8642}
+{"repeat":1,"tool":5,"tilt":0.00,"old_us":334424,"new_us":304751,"ratio":0.9113}
+{"repeat":1,"tool":5,"tilt":0.50,"old_us":364239,"new_us":345599,"ratio":0.9488}
+{"repeat":1,"tool":5,"tilt":0.95,"old_us":316761,"new_us":281021,"ratio":0.8872}
+{"repeat":1,"tool":7,"tilt":0.00,"old_us":903534,"new_us":905181,"ratio":1.0018}
+{"repeat":1,"tool":7,"tilt":0.50,"old_us":904288,"new_us":905867,"ratio":1.0017}
+{"repeat":1,"tool":7,"tilt":0.95,"old_us":903461,"new_us":908268,"ratio":1.0053}
