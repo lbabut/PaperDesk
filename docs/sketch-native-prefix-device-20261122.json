@@ -1,0 +1,22 @@
+{
+  "status": "promising_partial_gain_not_accepted_uat",
+  "tested_commit": "ae52904",
+  "contract": "500Hz tilted soft charcoal; 1260 ordered input samples per tool; original 24-event drain and 16ms publication; unchanged pigment computation",
+  "sequence": [
+    {"variant":"baseline_before", "charcoal_gap_ms":182,"charcoal_queue_p95_ms":2689,"charcoal_tail_ms":2739},
+    {"variant":"candidate_1", "charcoal_gap_ms":148,"charcoal_queue_p95_ms":2371,"charcoal_tail_ms":2438},
+    {"variant":"baseline_qml_same_candidate_module", "charcoal_gap_ms":157,"charcoal_queue_p95_ms":2722,"charcoal_tail_ms":2759},
+    {"variant":"candidate_2", "charcoal_gap_ms":132,"charcoal_queue_p95_ms":2418,"charcoal_tail_ms":2476},
+    {"variant":"candidate_3", "charcoal_gap_ms":146,"charcoal_queue_p95_ms":2155,"charcoal_tail_ms":2239},
+    {"variant":"baseline_after_rollback", "charcoal_gap_ms":133,"charcoal_queue_p95_ms":2732,"charcoal_tail_ms":2801}
+  ],
+  "interpretation": "Candidate median tail 2438ms versus 2759ms control median (about 11.6% lower). Small ordered cohort, not randomized statistical evidence or physical panel measurement. No reliable GUI-gap improvement claim: final control gap was 133ms. Heavy queue100ms/tail150ms gates still fail in every run.",
+  "checks": "All six reports preserve original document setting and checked saved cache files; not a full-library audit. 1260 inputs per tool, no overflow/pending; candidate runtime-error lists empty. Graphite remained inside budgets. Host exact-state regression passed previously. No ordinary-rate candidate cohort or complete device save/export regression in this session.",
+  "device_test_scope": "Candidate QML staged in disposable harness; global native modules temporarily replaced with owned rollback backup. Main deployed QML/RCC never changed.",
+  "rollback": "/home/root/.local/state/sketch-charcoal-uat.zTaah2/rollback.sh",
+  "final_raster_sha256": "29d482734f987777a8b355df8a3511d9a93f0e843375daee0f9950c8d52975a7",
+  "final_ink_sha256": "5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7",
+  "final_rcc_sha256": "3207f8fbd23057eeaa0ebc47b684b2888d4b0b66f21d5efd0295040035e5d0a1",
+  "next_action": "Retain prefix batching for further work, profile remaining per-sample material cost and validate ordinary-rate and save/export/input behavior before any combined UI/native UAT promotion. Do not repeat blind batch/timer tuning.",
+  "production": "No main/site release; canonical 343 dirty entries untouched."
+}
