@@ -58,14 +58,25 @@ struct SketchLatency {
     struct Counter {
         std::atomic<qulonglong> calls{0},totalUs{0},maxUs{0};
         std::atomic<qlonglong> firstMs{0};
-    } advance,publish,tilePaint;
-    enum class Stage {Advance,Publish,TilePaint};
+    } advance,publish,tilePaint,dequeue,rawBatch,prefixBatch;
+    enum class Stage {Advance,Publish,TilePaint,Dequeue,RawBatch,PrefixBatch};
+    Counter *stageCounter(Stage stage){
+        switch(stage){
+        case Stage::Advance:return &advance;
+        case Stage::Publish:return &publish;
+        case Stage::TilePaint:return &tilePaint;
+        case Stage::Dequeue:return &dequeue;
+        case Stage::RawBatch:return &rawBatch;
+        case Stage::PrefixBatch:return &prefixBatch;
+        }
+        return &advance;
+    }
     struct Scope {
         std::shared_ptr<SketchLatency> owner;
         Counter *counter;
         std::chrono::steady_clock::time_point started;
         Scope(std::shared_ptr<SketchLatency> snapshot,Stage stage):owner(std::move(snapshot)),
-            counter(stage==Stage::Advance?&owner->advance:stage==Stage::Publish?&owner->publish:&owner->tilePaint),
+            counter(owner->stageCounter(stage)),
             started(std::chrono::steady_clock::now()){
             if(!counter->firstMs.load(std::memory_order_relaxed)){
                 qlonglong empty=0;
@@ -98,7 +109,11 @@ public:
     Q_INVOKABLE QVariantMap latencyStats()const{
         const auto snapshot=std::atomic_load_explicit(&latency,std::memory_order_acquire);
         auto load=[](const auto &value){return value.load(std::memory_order_relaxed);};
-        return {{"advance_calls",load(snapshot->advance.calls)},{"advance_total_us",load(snapshot->advance.totalUs)},{"advance_max_us",load(snapshot->advance.maxUs)},
+        // Nested wall-clock scopes: totals are not additive or exclusive CPU time.
+        return {{"dequeue_calls",load(snapshot->dequeue.calls)},{"dequeue_total_us",load(snapshot->dequeue.totalUs)},{"dequeue_max_us",load(snapshot->dequeue.maxUs)},
+            {"raw_batch_calls",load(snapshot->rawBatch.calls)},{"raw_batch_total_us",load(snapshot->rawBatch.totalUs)},{"raw_batch_max_us",load(snapshot->rawBatch.maxUs)},
+            {"prefix_batch_calls",load(snapshot->prefixBatch.calls)},{"prefix_batch_total_us",load(snapshot->prefixBatch.totalUs)},{"prefix_batch_max_us",load(snapshot->prefixBatch.maxUs)},
+            {"advance_calls",load(snapshot->advance.calls)},{"advance_total_us",load(snapshot->advance.totalUs)},{"advance_max_us",load(snapshot->advance.maxUs)},
             {"publish_calls",load(snapshot->publish.calls)},{"publish_total_us",load(snapshot->publish.totalUs)},{"publish_max_us",load(snapshot->publish.maxUs)},
             {"tile_paint_calls",load(snapshot->tilePaint.calls)},{"tile_paint_total_us",load(snapshot->tilePaint.totalUs)},{"tile_paint_max_us",load(snapshot->tilePaint.maxUs)},
             {"first_advance_ms",load(snapshot->advance.firstMs)},{"first_publish_ms",load(snapshot->publish.firstMs)},{"first_tile_paint_ms",load(snapshot->tilePaint.firstMs)}};
@@ -191,6 +206,7 @@ public:
             {"batches",s.batches},{"empty_batches",s.emptyBatches},{"clock_resolution_ms",1}};
     }
     std::vector<PaperPen::InputEvent> takePenEvents(){
+        SketchLatency::Scope timing(std::atomic_load_explicit(&latency,std::memory_order_acquire),SketchLatency::Stage::Dequeue);
         auto events=penSamples.takeInput(24);
         const auto dequeued=PaperPen::now();penQueueTiming.batches++;
         if(events.empty())penQueueTiming.emptyBatches++;
@@ -204,6 +220,7 @@ public:
         return QVariant(QVariantList{event.phase,p.x,p.y,p.p,p.tiltX,p.tiltY,p.eraser,p.contact});
     }
     Q_INVOKABLE QVariantList takePenInput(){
+        SketchLatency::Scope timing(std::atomic_load_explicit(&latency,std::memory_order_acquire),SketchLatency::Stage::RawBatch);
         auto events=takePenEvents();QVariantList result;result.reserve(events.size());
         for(const auto &event:events)result.append(penEventValue(event));
         return result;
@@ -212,6 +229,7 @@ public:
     // and all subsequent events stay ordered and are handled by existing QML.
     // Every physical sample still passes advancePenInput individually.
     Q_INVOKABLE QVariantList takePenBatch(int tool,double size,double strength,qulonglong contact){
+        SketchLatency::Scope timing(std::atomic_load_explicit(&latency,std::memory_order_acquire),SketchLatency::Stage::PrefixBatch);
         auto events=takePenEvents();QVariantList result;result.reserve(events.size());
         size_t consumed=0;int changed=0;double lastX=0,lastY=0,lastP=0,minP=1,maxP=0;
         if(contact && tool>=0 && tool<=8 && std::isfinite(size) && size>=1 && size<=80 && std::isfinite(strength) && strength>=.05 && strength<=1){

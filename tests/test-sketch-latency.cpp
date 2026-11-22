@@ -5,7 +5,7 @@
 #include <cassert>
 
 static qulonglong value(const QVariantMap &stats,const char *key){assert(stats.contains(key));return stats.value(key).toULongLong();}
-static void empty(const QVariantMap &stats){assert(stats.size()==12);for(auto it=stats.begin();it!=stats.end();++it)assert(it.value().toULongLong()==0);}
+static void empty(const QVariantMap &stats){assert(stats.size()==21);for(auto it=stats.begin();it!=stats.end();++it)assert(it.value().toULongLong()==0);}
 static void valid(const QVariantMap &stats,const char *stage){
     const auto name=QString::fromLatin1(stage);
     assert(stats.value(name+"_total_us").toULongLong()>=stats.value(name+"_max_us").toULongLong());
@@ -56,6 +56,13 @@ int main(int argc,char **argv){
     stats=board.latencyStats();assert(value(stats,"tile_paint_calls")==1000);
     assert(value(stats,"advance_calls")==0&&value(stats,"publish_calls")==0&&value(stats,"first_tile_paint_ms")>0);
     valid(stats,"tile_paint");
+    board.begin();empty(board.latencyStats());
+    assert(board.takePenInput().empty());
+    assert(board.takePenBatch(1,12,1,0).empty());
+    stats=board.latencyStats();
+    assert(value(stats,"dequeue_calls")==2);
+    assert(value(stats,"raw_batch_calls")==1&&value(stats,"prefix_batch_calls")==1);
+    for(const auto stage:{"dequeue","raw_batch","prefix_batch"})valid(stats,stage);
     board.begin();empty(board.latencyStats());
     puts("PASS latency counters, epoch first entries, measured dispatch cost, 16ms queue, early returns, concurrent paint and per-stroke reset");
 }
