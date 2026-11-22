@@ -1,0 +1,26 @@
+PASS exact state after 8100 dabs: all tools, pressure/angle/size, edges, papers and erasers
+PASS 2000 varied charcoal tilt/wear/pressure/size/clipped-state dabs
+{"repeat":0,"tool":1,"tilt":0.00,"old_us":5919,"new_us":5882,"ratio":0.9937}
+{"repeat":0,"tool":1,"tilt":0.50,"old_us":8331,"new_us":7457,"ratio":0.8951}
+{"repeat":0,"tool":1,"tilt":0.95,"old_us":9550,"new_us":10426,"ratio":1.0917}
+{"repeat":0,"tool":4,"tilt":0.00,"old_us":44161,"new_us":84382,"ratio":1.9108}
+{"repeat":0,"tool":4,"tilt":0.50,"old_us":171472,"new_us":168773,"ratio":0.9843}
+{"repeat":0,"tool":4,"tilt":0.95,"old_us":69641,"new_us":52597,"ratio":0.7553}
+{"repeat":0,"tool":5,"tilt":0.00,"old_us":87109,"new_us":110370,"ratio":1.2670}
+{"repeat":0,"tool":5,"tilt":0.50,"old_us":131256,"new_us":177687,"ratio":1.3537}
+{"repeat":0,"tool":5,"tilt":0.95,"old_us":81714,"new_us":61535,"ratio":0.7531}
+{"repeat":0,"tool":7,"tilt":0.00,"old_us":99912,"new_us":95405,"ratio":0.9549}
+{"repeat":0,"tool":7,"tilt":0.50,"old_us":91701,"new_us":95053,"ratio":1.0366}
+{"repeat":0,"tool":7,"tilt":0.95,"old_us":101205,"new_us":97185,"ratio":0.9603}
+{"repeat":1,"tool":1,"tilt":0.00,"old_us":4596,"new_us":4784,"ratio":1.0409}
+{"repeat":1,"tool":1,"tilt":0.50,"old_us":7806,"new_us":5268,"ratio":0.6749}
+{"repeat":1,"tool":1,"tilt":0.95,"old_us":5215,"new_us":5093,"ratio":0.9766}
+{"repeat":1,"tool":4,"tilt":0.00,"old_us":31650,"new_us":32206,"ratio":1.0176}
+{"repeat":1,"tool":4,"tilt":0.50,"old_us":37283,"new_us":34978,"ratio":0.9382}
+{"repeat":1,"tool":4,"tilt":0.95,"old_us":28950,"new_us":29686,"ratio":1.0254}
+{"repeat":1,"tool":5,"tilt":0.00,"old_us":41273,"new_us":40512,"ratio":0.9816}
+{"repeat":1,"tool":5,"tilt":0.50,"old_us":48657,"new_us":41232,"ratio":0.8474}
+{"repeat":1,"tool":5,"tilt":0.95,"old_us":39207,"new_us":36550,"ratio":0.9322}
+{"repeat":1,"tool":7,"tilt":0.00,"old_us":93712,"new_us":95200,"ratio":1.0159}
+{"repeat":1,"tool":7,"tilt":0.50,"old_us":97702,"new_us":93506,"ratio":0.9571}
+{"repeat":1,"tool":7,"tilt":0.95,"old_us":103635,"new_us":100432,"ratio":0.9691}
