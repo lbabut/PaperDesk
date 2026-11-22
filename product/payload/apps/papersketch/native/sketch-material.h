@@ -261,7 +261,7 @@ struct PaperMaterial {
         // Gate by covered area, so a narrow tilted tip does not build a
         // 256-entry table for only a handful of covered pixels.
         const bool cacheFresh = tool < 6 && shape.a * shape.b >= 144;
-        const bool parallelRows = (FixedTool == 4 || FixedTool == 5) && shape.a * shape.b >= 200 && y1-y0 >= 16
+        const bool parallelRows = (FixedTool == 4 || FixedTool == 5) && shape.a * shape.b >= 100 && y1-y0 >= 16
             && PaperMaterialRows::available();
         if (cacheFresh) prepareFreshContact(tool, p, capacityAtPressure);
         const double charcoalDoseScale = tool == 4 || tool == 5 ? std::min(1.0, 3.0 / std::max(shape.a, shape.b)) : 1.0;

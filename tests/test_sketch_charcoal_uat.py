@@ -15,7 +15,7 @@ OLD = {'papersketch-raster.so': 'e84e1271f9398200a789355562a682244c247cc1662f501
        'papersketch-ink.so': '2643b947f47a4b3cb27b241fe0da6f4f5b8f89db6da70374cc902a2c17e14bc5'}
 
 class UatSafety(unittest.TestCase):
-    def exercise(self, confirmed=True, mismatch=False, fail_install=False, current=False, input24=False):
+    def exercise(self, confirmed=True, mismatch=False, fail_install=False, current=False, input24=False, rowspan=False):
         self.calls = []
         self.failed = False
         self.installed = set()
@@ -30,6 +30,10 @@ class UatSafety(unittest.TestCase):
             if input24:
                 argv += ['--baseline', 'input24-20261121']
                 old = {'papersketch-raster.so': 'be89afb13593bdb2fbcf193d22fc972c3208ae776e878fb7739561f5035e4858',
+                       'papersketch-ink.so': '5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7'}
+            if rowspan:
+                argv += ['--baseline', 'rowspan-20261121']
+                old = {'papersketch-raster.so': '29d482734f987777a8b355df8a3511d9a93f0e843375daee0f9950c8d52975a7',
                        'papersketch-ink.so': '5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7'}
             if confirmed:
                 argv.append('--safe-state-confirmed')
@@ -95,6 +99,12 @@ class UatSafety(unittest.TestCase):
         self.assertEqual(receipt['status'], 'installed_for_uat')
         self.assertEqual(receipt['baseline_sha256']['papersketch-raster.so'],
                          '227dd2ffedc7c1f867080d08ace59c40f545c09c333efd60537b4c8120f3e975')
+
+    def test_explicit_rowspan_baseline(self):
+        error, receipt = self.exercise(rowspan=True)
+        self.assertIsNone(error)
+        self.assertEqual(receipt['baseline_sha256']['papersketch-raster.so'],
+                         '29d482734f987777a8b355df8a3511d9a93f0e843375daee0f9950c8d52975a7')
 
     def test_explicit_input24_baseline(self):
         error, receipt = self.exercise(input24=True)
