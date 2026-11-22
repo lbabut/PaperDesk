@@ -1,0 +1,25 @@
+{
+  "status":"combined_candidate_not_promoted",
+  "baseline":"Installed rowspan802925a, raster29d4827, ink5fb519b9, RCC3207f8",
+  "components":"Existing rowspan material optimization plus exact native-prefix batching; no rejected clump-map, parallel100 or blind timer/batch probes added.",
+  "new_repair":"Workflow exposed delayed nativeHeartbeat invoking nativeWrite after view teardown. Replace three Qt.callLater(nativeHeartbeat) calls with a view-owned single-shot timer. Original workflow all semantic checks passed but runtime TypeError blocked it; repaired workflow passed with empty runtime-error list. Scope is observed harness teardown, not proof of all lifecycle paths.",
+  "host":"Rebuilt RCC; full34 C++ plus2 C suite exit0;7 native installer,4 new UI installer and6 performance-report tests passed. Python compile and diff checks passed. Native binary unchanged from prefix3989ebc9.",
+  "device_reports":11,
+  "device_results":{
+    "workflow_after_repair":"passed: named PNG, collision, stable slots, reload, metadata recovery and discard/delete",
+    "fidelity":"passed, no runtime errors",
+    "rear_eraser":"passed, no runtime errors",
+    "controls":"candidate first active gap156ms failed; old QML same native142ms failed; candidate repeat active32ms passed, outside-active159ms. Variability retained, not erased.",
+    "ordinary_initial":"functional harness passed but full budget queue127ms exceeded100; now combined runner explicitly includes strict performance summarizer",
+    "ordinary_confirmation":"two runs both FAIL queue gate: charcoal125/134ms; GUI160/178ms and tails77/86ms. Graphite inside200/100/150 budgets.",
+    "ordinary_baseline_after_rollback":"PASS: graphite gap135/queue19/tail54ms; charcoal gap157/queue82/tail85ms. Single control, not randomized causal proof. Candidate ordinary queue regression risk is not outweighed by earlier heavy-case gain."
+  },
+  "previous_heavy_case":"Earlier prefix-only trial median tail2438ms versus2759ms controls (~11.6% lower) remains separate. Not retested heavy after lifecycle fix, and no whole-system gain claim.",
+  "preservation":"Every report verifies original document setting and checked saved cache files preserved; scoped check, not full-library audit. Harnesses and synthetic exports cleaned by guarded runner. No saved-library deletion.",
+  "deployment":"Native modules temporarily installed via owned a6P1x1 backup, then rolled back. Main QML/RCC NEVER replaced. New UI installer is prepared and mocked only, NOT run on tablet. No new accepted UAT, main/site/release/sales unchanged. Canonical343 dirty entries untouched.",
+  "native_rollback":"/home/root/.local/state/sketch-charcoal-uat.a6P1x1/rollback.sh",
+  "final_native_raster":"29d482734f987777a8b355df8a3511d9a93f0e843375daee0f9950c8d52975a7",
+  "final_ink":"5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7",
+  "final_rcc":"3207f8fbd23057eeaa0ebc47b684b2888d4b0b66f21d5efd0295040035e5d0a1",
+  "next_action":"Isolate lifecycle repair and native-prefix ordinary-queue behavior in separate controlled trials; do not promote the combined package or count partial gains additively. Keep all thresholds unchanged."
+}

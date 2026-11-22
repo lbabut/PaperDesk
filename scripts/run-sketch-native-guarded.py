@@ -19,7 +19,7 @@ p.add_argument("--host-key-alias")
 p.add_argument("--key",required=True)
 p.add_argument("--known-hosts",required=True)
 p.add_argument("--baseline-qml")
-p.add_argument("--candidate-probe",action="store_true",help="Stage current source QML for shading only; verify installed QML against explicit baseline")
+p.add_argument("--candidate-probe",action="store_true",help="Stage current source QML in supported isolated probes; verify installed QML against explicit baseline")
 p.add_argument("--expected-installed-rcc", help="Explicit known installed RCC packaging hash; also verify deployed QML and engine against source")
 p.add_argument("--smoke",action="store_true")
 p.add_argument("--input-probe",action="store_true")
@@ -50,7 +50,8 @@ p.add_argument("--output",default="docs/papersketch-native-2026-10-31.json")
 a=p.parse_args()
 if not a.safe_state_confirmed:
     p.error("Save/close personal work and confirm safe idle screen before UI restart; --safe-state-confirmed required")
-if a.candidate_probe and (not a.baseline_qml or not a.shading_probe):p.error("--candidate-probe requires --baseline-qml and --shading-probe")
+if a.candidate_probe and (not a.baseline_qml or not a.expected_installed_rcc or not any((a.shading_probe,a.workflow_probe,a.fidelity_probe,a.eraser_probe,a.controls_probe))):
+    p.error("--candidate-probe requires --baseline-qml, --expected-installed-rcc and a shading/workflow/fidelity/eraser/controls probe")
 if a.extended_fidelity_probe:a.fidelity_probe=True
 if a.tilted_shading and not a.shading_probe:p.error("--tilted-shading requires --shading-probe")
 if a.soft_charcoal and not a.shading_probe:p.error("--soft-charcoal requires --shading-probe")
@@ -285,8 +286,8 @@ try:
                 case["achieved_input_hz"]=event.get("requested_samples",0)*1000/case["injected_duration_ms"] if case["injected_duration_ms"]>0 else None
                 case["release_to_drained_ms"]=case["finished_ms"]-event["release_ms"]
             result["shading_probe"]["physical_panel_latency_measured"]=False
-    if a.controls_probe or a.detail_probe or a.realism_probe or a.latency_probe or a.fidelity_probe or a.eraser_probe or a.preferences_probe or a.shading_probe:
-        probe_name="shading_probe" if a.shading_probe else "controls_probe" if a.controls_probe else "detail_probe" if a.detail_probe else "preferences_probe" if a.preferences_probe else "latency_probe" if a.latency_probe else "fidelity_probe" if a.fidelity_probe else "eraser_probe" if a.eraser_probe else "realism_probe"
+    if a.controls_probe or a.detail_probe or a.realism_probe or a.latency_probe or a.fidelity_probe or a.eraser_probe or a.preferences_probe or a.shading_probe or a.workflow_probe:
+        probe_name="workflow_probe" if a.workflow_probe else "shading_probe" if a.shading_probe else "controls_probe" if a.controls_probe else "detail_probe" if a.detail_probe else "preferences_probe" if a.preferences_probe else "latency_probe" if a.latency_probe else "fidelity_probe" if a.fidelity_probe else "eraser_probe" if a.eraser_probe else "realism_probe"
         runtime_errors=[line for line in logs.splitlines() if ("bench.qml:" in line or "baseline/ui/main.qml:" in line or "constant-fast/ui/main.qml:" in line) and any(error in line for error in ("TypeError:","ReferenceError:","SyntaxError:"))]
         result[probe_name]["runtime_errors"]=runtime_errors
         result[probe_name]["passed"]=result[probe_name]["passed"] and not runtime_errors

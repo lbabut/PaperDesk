@@ -67,15 +67,15 @@ Rectangle {
         rawPenContact=0;
         if(nativeRaster && typeof nativeRaster.setRawPenInputEnabled==="function")nativeRaster.setRawPenInputEnabled(false);
     }
-    onEnabledChanged:{if(!enabled && ready)suspendDrawingInput();else if(enabled && ready)Qt.callLater(nativeHeartbeat);}
-    onVisibleChanged:{if(!visible && ready)suspendDrawingInput();else if(visible && ready)Qt.callLater(nativeHeartbeat);}
+    onEnabledChanged:{if(!enabled && ready)suspendDrawingInput();else if(enabled && ready)nativeHeartbeatLater.restart();}
+    onVisibleChanged:{if(!visible && ready)suspendDrawingInput();else if(visible && ready)nativeHeartbeatLater.restart();}
     property bool rawPenDraining:false
     property int rawPenContact:0
     property int rawPenStrokes:0
     onRawPenEnabledChanged:{
         if(ready && !rawPenEnabled)nativeWrite("off");
         if(!rawPenEnabled && activeStroke && activeStroke.rawInput)finishStroke();
-        if(ready)Qt.callLater(nativeHeartbeat);
+        if(ready)nativeHeartbeatLater.restart();
         if(nativeRaster && typeof nativeRaster.setRawPenInputEnabled==="function"){
             if(rawPenEnabled)syncInputTransform();
             nativeRaster.setRawPenInputEnabled(rawPenEnabled);
@@ -197,6 +197,9 @@ Rectangle {
         }
         catch(e) {nativeArmed=false;}
     }
+    // An owned timer is cancelled with this view. Qt.callLater(method) may
+    // retain the JS method until its QML object has already been destroyed.
+    Timer { id:nativeHeartbeatLater;interval:0;repeat:false;onTriggered:if(!root.closing)root.nativeHeartbeat() }
     function nativeHeartbeat() {
         if(!enabled || !visible || closing){nativeArmed=false;nativeWrite("off");return;}
         if(sizeSlider.pressed)return;
