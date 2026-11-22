@@ -288,7 +288,14 @@ struct PaperMaterial {
         }
         auto paintRows = [&](int from, int to) {
         const int rowTool = FixedTool >= 0 ? FixedTool : tool;
+        double clumps[84];
+        int clumpBand = -1;
         for (int y = from; y <= to; ++y) {
+            if ((rowTool == 4 || rowTool == 5) && clumpBand != y / 7) {
+                clumpBand = y / 7;
+                for (int x = x0; x <= x1; ++x)
+                    clumps[x-x0] = .70 + .60 * ((hash(x / 3, clumpBand) & 255) * (1.0 / 255.0));
+            }
             const double dy = y + .5 - cy, dySquared = dy * dy * quadraticY;
             int rowX0=x0,rowX1=x1;
             if (narrowRows) {
@@ -388,7 +395,7 @@ struct PaperMaterial {
                         // Fixed paper-space clumps: repeat passes accumulate
                         // pigment without random event-rate dependent noise.
                         if (rowTool == 4 || rowTool == 5) {
-                            double clump = .70 + .60 * ((hash(x / 3, y / 7) & 255) * (1.0 / 255.0));
+                            double clump = clumps[x-x0];
                             amount *= charcoalDoseScale * clump * (rowTool == 4 ? .35 + .65 * response.capacity : .50 + .50 * response.capacity);
                         }
                         int added = std::min(room, roundMass(amount));

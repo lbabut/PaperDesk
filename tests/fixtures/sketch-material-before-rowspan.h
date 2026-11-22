@@ -249,6 +249,9 @@ struct PaperMaterial {
         const double quadraticX = shape.c * shape.c * inverseA + shape.s * shape.s * inverseB;
         const double quadraticY = shape.s * shape.s * inverseA + shape.c * shape.c * inverseB;
         const double quadraticXY = 2 * shape.c * shape.s * (inverseA - inverseB);
+        const bool narrowRows = (FixedTool == 4 || FixedTool == 5) &&
+            shape.a * shape.b >= 64 && (shape.a > shape.b * 1.25 || shape.b > shape.a * 1.25);
+        const double inverseTwoX = narrowRows ? .5 / quadraticX : 0;
         const double contactStrength = (tool == 7 ? .9 * std::sqrt(p) : p) * strength;
         constexpr double doseExponent[] = {1.2, 1.35, 1.45, 1.50, 1.05, .75};
         const double dosePressure = tool < 6 ? std::pow(p, doseExponent[tool]) : p;
@@ -287,9 +290,22 @@ struct PaperMaterial {
         const int rowTool = FixedTool >= 0 ? FixedTool : tool;
         for (int y = from; y <= to; ++y) {
             const double dy = y + .5 - cy, dySquared = dy * dy * quadraticY;
+            int rowX0=x0,rowX1=x1;
+            if (narrowRows) {
+                const double cross=quadraticXY*dy;
+                const double discriminant=cross*cross+4*quadraticX*(1-dySquared);
+                // Sample centers outside the ellipse cannot paint. Keep a
+                // broad numerical guard and the original pixel edge test.
+                if (discriminant < -1e-10) continue;
+                if (discriminant > 0) {
+                    const double extent=std::sqrt(discriminant);
+                    rowX0=std::max(x0,int(std::floor(cx+(-cross-extent)*inverseTwoX-.5))-1);
+                    rowX1=std::min(x1,int(std::ceil(cx+(-cross+extent)*inverseTwoX-.5))+1);
+                }
+            }
             const int fingerRow = rowTool == 7 ?
                 std::clamp(int(std::lround(dy)) + FingerCenter, 0, 80) * FingerStride : 0;
-            for (int x = x0; x <= x1; ++x) {
+            for (int x = rowX0; x <= rowX1; ++x) {
                 double edge = 1 - columnSquared[x - x0] - dySquared - columnCross[x - x0] * dy;
                 if (edge <= 0) continue;
                 if (rowTool == 8) {
