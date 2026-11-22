@@ -1,0 +1,52 @@
+[
+  {
+    "name": "01-prefetch-mass",
+    "compiled": true,
+    "header_sha256": "15e941559cb1037bd7a8e2cc6f2756aa1dcebdc7de17d54bd5a5864f4bf254d3"
+  },
+  {
+    "name": "02-prefetch-response",
+    "compiled": true,
+    "header_sha256": "3ce0441e3604c0e14bf898e8f22bbc7f258083505c5f63d229171fd57ccbd0e1"
+  },
+  {
+    "name": "03-row-offset",
+    "compiled": true,
+    "header_sha256": "d6981e3abf9fe0a1f278cd0c6a514aca08b2174b991918f97add1bd2d9876148"
+  },
+  {
+    "name": "04-tight-row-guard",
+    "compiled": true,
+    "header_sha256": "f1d6d42c312ff3f3825ca0dd3c4c0231b0f3579453f791a9807005c352f1168f"
+  },
+  {
+    "name": "05-parallel-area400",
+    "compiled": true,
+    "header_sha256": "39009bfc72a2385dd0df509756c49d747db04bfce18dcb01b60cc0bbc03dd684"
+  },
+  {
+    "name": "06-parallel-area100",
+    "compiled": true,
+    "header_sha256": "1b5ae45231f5ea8b3c2b978c71af0ec62715b646d0c58a2197c0c63ea642a756"
+  },
+  {
+    "name": "07-contact-cache64",
+    "compiled": true,
+    "header_sha256": "0701d7c066516e0eed305ccd57b6d80e2735e17a3a7a2a5bd79fd5107f267d5d"
+  },
+  {
+    "name": "08-contact-cache256",
+    "compiled": true,
+    "header_sha256": "b16e4a9e5843bc788b4bbfae2c274e6913cafa84635571b294575cf39857463b"
+  },
+  {
+    "name": "09-circular-rowspan",
+    "compiled": true,
+    "header_sha256": "3e71c7752b03878356cb40706311264ef28a88a488d712b4bfc339c986c9e29f"
+  },
+  {
+    "name": "10-conditional-image-store",
+    "compiled": true,
+    "header_sha256": "95c1093510542a5cc69cbb08a12f19f9b09f6e730eb30d569b2308c6e62898d6"
+  }
+]
