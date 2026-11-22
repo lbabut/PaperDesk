@@ -89,9 +89,19 @@ Rectangle {
     function drainPenInput(){
         if(!rawPenEnabled || rawPenDraining)return;
         rawPenDraining=true;syncInputTransform();
-        var events=nativeRaster.takePenInput();
+        var canBatch=bitmapMode && activeSource==="pen" && activeStroke && activeStroke.rawInput && typeof nativeRaster.takePenBatch==="function";
+        var events=canBatch?nativeRaster.takePenBatch(activeStroke.tool,activeStroke.size,activeStroke.strength,rawPenContact):nativeRaster.takePenInput();
         for(var i=0;i<events.length;i++){
-            var e=events[i],p=Qt.point(e[1],e[2]);
+            var e=events[i];
+            if(e[0]===5){
+                activeStroke.inputSamples+=e[1];
+                if(e[2]>0){
+                    var last=activeStroke.points[1];last[0]=e[3];last[1]=e[4];last[2]=e[5];
+                    activeStroke.samples+=e[2];activeStroke.pressureMin=Math.min(activeStroke.pressureMin,e[6]);activeStroke.pressureMax=Math.max(activeStroke.pressureMax,e[7]);
+                }
+                continue;
+            }
+            var p=Qt.point(e[1],e[2]);
             if(e[0]===4){
                 if(activeStroke && activeStroke.rawInput)finishStroke();
                 rawPenContact=0;notice="Pen input was interrupted. Lift the pen and continue.";

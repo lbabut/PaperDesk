@@ -73,6 +73,8 @@ def main():
     parser.add_argument("--key", required=True)
     parser.add_argument("--known-hosts", required=True)
     parser.add_argument("--expected-installed-rcc")
+    parser.add_argument("--baseline-qml")
+    parser.add_argument("--candidate-probe",action="store_true")
     parser.add_argument("--tilted-shading", action="store_true")
     parser.add_argument("--soft-charcoal", action="store_true")
     parser.add_argument("--high-rate-shading", action="store_true")
@@ -94,7 +96,8 @@ def main():
             command.append("--soft-charcoal")
         if args.high_rate_shading:
             command.append("--high-rate-shading")
-        for key in ("host", "host_key_alias", "key", "known_hosts", "expected_installed_rcc"):
+        if args.candidate_probe:command.append("--candidate-probe")
+        for key in ("host", "host_key_alias", "key", "known_hosts", "expected_installed_rcc", "baseline_qml"):
             value = getattr(args, key)
             if value:
                 command.extend(["--"+key.replace("_", "-"), value])
@@ -109,6 +112,7 @@ def main():
         if current is None or "results" not in current or not all(current.get(k) is True for k in ("artwork_preserved", "saved_files_preserved")):
             break
     summary = summarize(reports,5 if args.soft_charcoal else 4,args.tilted_shading,500 if args.high_rate_shading else 250)
+    if args.candidate_probe:summary["scope"]="synthetic evdev shading in staged candidate QML and native handlers; not deployed QML or physical sensor/panel latency"
     summary.update({"created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                     "requested_runs": args.repeats, "exit_codes": codes,
                     "tilted_shading": args.tilted_shading,"soft_charcoal": args.soft_charcoal,"high_rate_shading":args.high_rate_shading})

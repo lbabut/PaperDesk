@@ -190,17 +190,46 @@ public:
             {"p50_upper_ms",s.percentile(50)},{"p95_upper_ms",s.percentile(95)},
             {"batches",s.batches},{"empty_batches",s.emptyBatches},{"clock_resolution_ms",1}};
     }
-    Q_INVOKABLE QVariantList takePenInput(){
-        auto events=penSamples.takeInput(24);QVariantList result;
+    std::vector<PaperPen::InputEvent> takePenEvents(){
+        auto events=penSamples.takeInput(24);
         const auto dequeued=PaperPen::now();penQueueTiming.batches++;
         if(events.empty())penQueueTiming.emptyBatches++;
-        result.reserve(events.size());
         for(const auto &event:events){const auto &p=event.sample;
             if(event.phase!=4)penQueueTiming.record(dequeued-p.time);
-            result.append(QVariant(QVariantList{event.phase,p.x,p.y,p.p,p.tiltX,p.tiltY,p.eraser,p.contact}));
         }
-        // A batch limit bounds one GUI turn; remaining events stay queued.
         if(penSamples.inputPending())notifyPenInput();
+        return events;
+    }
+    static QVariant penEventValue(const PaperPen::InputEvent &event){const auto &p=event.sample;
+        return QVariant(QVariantList{event.phase,p.x,p.y,p.p,p.tiltX,p.tiltY,p.eraser,p.contact});
+    }
+    Q_INVOKABLE QVariantList takePenInput(){
+        auto events=takePenEvents();QVariantList result;result.reserve(events.size());
+        for(const auto &event:events)result.append(penEventValue(event));
+        return result;
+    }
+    // Only consume a prefix of moves in the already-open contact. Boundaries
+    // and all subsequent events stay ordered and are handled by existing QML.
+    // Every physical sample still passes advancePenInput individually.
+    Q_INVOKABLE QVariantList takePenBatch(int tool,double size,double strength,qulonglong contact){
+        auto events=takePenEvents();QVariantList result;result.reserve(events.size());
+        size_t consumed=0;int changed=0;double lastX=0,lastY=0,lastP=0,minP=1,maxP=0;
+        if(contact && tool>=0 && tool<=8 && std::isfinite(size) && size>=1 && size<=80 && std::isfinite(strength) && strength>=.05 && strength<=1){
+            while(consumed<events.size()){
+                const auto &event=events[consumed];const auto &p=event.sample;
+                if(event.phase!=2 || p.contact!=contact)break;
+                if(advancePenInput(tool,size,strength,p.x,p.y,p.p,false,p.tiltX,p.tiltY)){
+                    changed++;
+                    lastX=std::floor(std::clamp(p.x,0.0,1200.0)*10+.5)/10;
+                    lastY=std::floor(std::clamp(p.y,0.0,1600.0)*10+.5)/10;
+                    lastP=std::floor(p.p*100+.5)/100;
+                    minP=std::min(minP,lastP);maxP=std::max(maxP,lastP);
+                }
+                consumed++;
+            }
+        }
+        if(consumed)result.append(QVariant(QVariantList{5,int(consumed),changed,lastX,lastY,lastP,minP,maxP,contact}));
+        for(size_t i=consumed;i<events.size();i++)result.append(penEventValue(events[i]));
         return result;
     }
     Q_INVOKABLE QVariantList penInputStats()const{auto s=penSamples.inputStats();return {qulonglong(s[0]),qulonglong(s[1]),qulonglong(s[2])};}

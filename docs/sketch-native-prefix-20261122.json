@@ -1,0 +1,20 @@
+{
+  "status": "host_candidate_not_device_validated",
+  "baseline_commit": "802925a",
+  "scope": "Batch only the already-open same-contact move prefix in native code; retain 24-event limit and every material advance. Return combined QML metadata and preserve boundary ordering.",
+  "candidate_raster_sha256": "3989ebc926a32ea77efed3ab9f7501775f41f37fb475e05287d2d3e665e2a8dc",
+  "candidate_rcc_sha256": "ec6802bc6bf04b8b617f2f052d72bcbe022abaa8b95107214e73d1085a07ddff",
+  "baseline_raster_sha256": "29d482734f987777a8b355df8a3511d9a93f0e843375daee0f9950c8d52975a7",
+  "tests": {
+    "native_prefix": "Passed exact image, pigment, wear, ink, endpoint, counts, pressure metadata, gaps and eraser contact transitions",
+    "installer_mocked": "7 passed; no tablet connection",
+    "performance_report": "6 passed",
+    "arm_build": "passed",
+    "candidate_probe_missing_arguments": "rejected before SSH",
+    "full_native_suite": "passed, exit 0: 34 C++ tests including rowspan benchmark and 2 C tests"
+  },
+  "device_mutations_this_session": false,
+  "performance_claim": "None. Host correctness is not proof of tablet latency improvement.",
+  "next_action": "After current drawing confirmation, measure baseline and staged candidate QML with reversible shared-module install; retain all samples and rollback if benefit is absent.",
+  "release": "No main, site or production release. No accepted UAT yet."
+}

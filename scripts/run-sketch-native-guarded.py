@@ -19,6 +19,7 @@ p.add_argument("--host-key-alias")
 p.add_argument("--key",required=True)
 p.add_argument("--known-hosts",required=True)
 p.add_argument("--baseline-qml")
+p.add_argument("--candidate-probe",action="store_true",help="Stage current source QML for shading only; verify installed QML against explicit baseline")
 p.add_argument("--expected-installed-rcc", help="Explicit known installed RCC packaging hash; also verify deployed QML and engine against source")
 p.add_argument("--smoke",action="store_true")
 p.add_argument("--input-probe",action="store_true")
@@ -49,6 +50,7 @@ p.add_argument("--output",default="docs/papersketch-native-2026-10-31.json")
 a=p.parse_args()
 if not a.safe_state_confirmed:
     p.error("Save/close personal work and confirm safe idle screen before UI restart; --safe-state-confirmed required")
+if a.candidate_probe and (not a.baseline_qml or not a.shading_probe):p.error("--candidate-probe requires --baseline-qml and --shading-probe")
 if a.extended_fidelity_probe:a.fidelity_probe=True
 if a.tilted_shading and not a.shading_probe:p.error("--tilted-shading requires --shading-probe")
 if a.soft_charcoal and not a.shading_probe:p.error("--soft-charcoal requires --shading-probe")
@@ -97,6 +99,9 @@ harness=(root/("tests/device/papersketch-detail.qml" if a.detail_probe else "tes
 if a.high_rate_shading:
     assert harness.count("property bool highRateShading:false")==1
     harness=harness.replace("property bool highRateShading:false","property bool highRateShading:true")
+if a.candidate_probe:
+    assert 'source:"baseline/ui/main.qml"' in harness
+    harness=harness.replace('source:"baseline/ui/main.qml"','source:"constant-fast/ui/main.qml"')
 if a.detail_user_settings:harness=harness.replace("property bool userSettingsCase:false","property bool userSettingsCase:true")
 if a.tilted_shading:
     assert harness.count("property bool tiltedCharcoal:false")==1,"Tilted shading harness marker missing"
@@ -166,7 +171,8 @@ for relative,installed in [
 if a.expected_installed_rcc:
     for relative in ("ui/main.qml", "engine.js"):
         actual=remote("sha256sum "+shlex.quote("/home/root/xovi/exthome/appload/papersketch/"+relative)).decode().split()[0]
-        if actual!=hashlib.sha256((source/relative).read_bytes()).hexdigest():
+        expected_source=baseline.encode() if relative=="ui/main.qml" and a.baseline_qml else (source/relative).read_bytes()
+        if actual!=hashlib.sha256(expected_source).hexdigest():
             raise RuntimeError("Installed source differs: "+relative+"; no UI restart performed")
 remote('set -eu; systemctl is-active --quiet xochitl; test "$(stat -c %t:%T /dev/input/event2)" = d:42; test -z "$(pidof paperdesk-rm-touchd || true)"; ! systemctl is-active --quiet paperdesk-update.service; test ! -e /home/root/xovi/exthome/appload/papersketch-native-bench')
 environment_before=remote("date -u; uptime; free; cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq; cat /sys/class/thermal/thermal_zone0/temp; systemctl show xochitl -p Environment").decode()
@@ -179,6 +185,8 @@ original=None
 injected=set()
 report={"candidate_qml_sha256":hashlib.sha256(candidate.encode()).hexdigest(),"source_qml_sha256":hashlib.sha256(baseline.encode()).hexdigest(),"source_engine_sha256":hashlib.sha256((source/"engine.js").read_bytes()).hexdigest(),"source_icon_sha256":hashlib.sha256((source/"ui/ToolIcon.qml").read_bytes()).hexdigest(),"backup":backup,"cache_namespace":"PaperDeskSketchNativeBenchbaseline"+namespace_suffix}
 report["environment_before"]=environment_before
+report["staged_candidate_qml_only"]=a.candidate_probe
+if a.candidate_probe:report["cache_namespace"]="PaperDeskSketchNativeBenchconstant-fast"+namespace_suffix
 try:
     if uses_input:
         cache=pathlib.Path("/home/lukasz/Documents/Codex/2026-09-25/m-2/work/arm-toolchain/root")
@@ -277,9 +285,9 @@ try:
                 case["achieved_input_hz"]=event.get("requested_samples",0)*1000/case["injected_duration_ms"] if case["injected_duration_ms"]>0 else None
                 case["release_to_drained_ms"]=case["finished_ms"]-event["release_ms"]
             result["shading_probe"]["physical_panel_latency_measured"]=False
-    if a.controls_probe or a.detail_probe or a.realism_probe or a.latency_probe or a.fidelity_probe or a.eraser_probe or a.preferences_probe:
-        probe_name="controls_probe" if a.controls_probe else "detail_probe" if a.detail_probe else "preferences_probe" if a.preferences_probe else "latency_probe" if a.latency_probe else "fidelity_probe" if a.fidelity_probe else "eraser_probe" if a.eraser_probe else "realism_probe"
-        runtime_errors=[line for line in logs.splitlines() if ("bench.qml:" in line or "baseline/ui/main.qml:" in line) and any(error in line for error in ("TypeError:","ReferenceError:","SyntaxError:"))]
+    if a.controls_probe or a.detail_probe or a.realism_probe or a.latency_probe or a.fidelity_probe or a.eraser_probe or a.preferences_probe or a.shading_probe:
+        probe_name="shading_probe" if a.shading_probe else "controls_probe" if a.controls_probe else "detail_probe" if a.detail_probe else "preferences_probe" if a.preferences_probe else "latency_probe" if a.latency_probe else "fidelity_probe" if a.fidelity_probe else "eraser_probe" if a.eraser_probe else "realism_probe"
+        runtime_errors=[line for line in logs.splitlines() if ("bench.qml:" in line or "baseline/ui/main.qml:" in line or "constant-fast/ui/main.qml:" in line) and any(error in line for error in ("TypeError:","ReferenceError:","SyntaxError:"))]
         result[probe_name]["runtime_errors"]=runtime_errors
         result[probe_name]["passed"]=result[probe_name]["passed"] and not runtime_errors
     if a.latency_probe:
