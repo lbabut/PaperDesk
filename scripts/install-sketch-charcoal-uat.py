@@ -17,7 +17,7 @@ p.add_argument('--known-hosts', required=True)
 p.add_argument('--host-key-alias')
 p.add_argument('--safe-state-confirmed', action='store_true')
 p.add_argument('--output', required=True, type=Path)
-p.add_argument('--baseline', choices=['original','charcoal-20261121','input24-20261121'], default='original')
+p.add_argument('--baseline', choices=['original','charcoal-20261121','input24-20261121','rowspan-20261121'], default='original')
 a = p.parse_args()
 if not a.safe_state_confirmed:
     p.error('Owner must permit the UI restart; save/close personal work first')
@@ -33,6 +33,10 @@ if a.baseline=='charcoal-20261121':
 if a.baseline=='input24-20261121':
     expected=dict(zip(names,[
         'be89afb13593bdb2fbcf193d22fc972c3208ae776e878fb7739561f5035e4858',
+        '5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7']))
+if a.baseline=='rowspan-20261121':
+    expected=dict(zip(names,[
+        '29d482734f987777a8b355df8a3511d9a93f0e843375daee0f9950c8d52975a7',
         '5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7']))
 modules = root / 'product/payload/apps/papersketch/native'
 payload = {n: (modules / n).read_bytes() for n in names}

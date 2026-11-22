@@ -1,0 +1,595 @@
+{
+  "baseline_commit": "802925a",
+  "experiments": [
+    {
+      "name": "01-batch12",
+      "exit_code": 1,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 49,
+          "queue_ms": 57,
+          "tail_ms": 34,
+          "hz": 500.0,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 1658,
+            "advance_total_us": 376521,
+            "first_advance_ms": 1795353203698,
+            "first_publish_ms": 1795353203698,
+            "first_tile_paint_ms": 1795353203706,
+            "publish_calls": 86,
+            "publish_max_us": 942,
+            "publish_total_us": 28093,
+            "tile_paint_calls": 244,
+            "tile_paint_max_us": 624,
+            "tile_paint_total_us": 29500
+          }
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 119,
+          "queue_ms": 3989,
+          "tail_ms": 4062,
+          "hz": 499.80166600555333,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 10483,
+            "advance_total_us": 3162963,
+            "first_advance_ms": 1795353211760,
+            "first_publish_ms": 1795353211760,
+            "first_tile_paint_ms": 1795353211780,
+            "publish_calls": 106,
+            "publish_max_us": 4754,
+            "publish_total_us": 41084,
+            "tile_paint_calls": 516,
+            "tile_paint_max_us": 4952,
+            "tile_paint_total_us": 200007
+          }
+        }
+      ]
+    },
+    {
+      "name": "02-batch20",
+      "exit_code": 1,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 46,
+          "queue_ms": 27,
+          "tail_ms": 29,
+          "hz": 499.60348929421093,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 869,
+            "advance_total_us": 350353,
+            "first_advance_ms": 1795353333796,
+            "first_publish_ms": 1795353333796,
+            "first_tile_paint_ms": 1795353333814,
+            "publish_calls": 98,
+            "publish_max_us": 596,
+            "publish_total_us": 30138,
+            "tile_paint_calls": 256,
+            "tile_paint_max_us": 367,
+            "tile_paint_total_us": 26769
+          }
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 150,
+          "queue_ms": 2949,
+          "tail_ms": 3000,
+          "hz": 499.80166600555333,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 13017,
+            "advance_total_us": 3124668,
+            "first_advance_ms": 1795353341791,
+            "first_publish_ms": 1795353341791,
+            "first_tile_paint_ms": 1795353341832,
+            "publish_calls": 65,
+            "publish_max_us": 1265,
+            "publish_total_us": 25613,
+            "tile_paint_calls": 412,
+            "tile_paint_max_us": 2080,
+            "tile_paint_total_us": 157672
+          }
+        }
+      ]
+    },
+    {
+      "name": "03-batch28",
+      "exit_code": 1,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 67,
+          "queue_ms": 33,
+          "tail_ms": 30,
+          "hz": 500.0,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 2540,
+            "advance_total_us": 385988,
+            "first_advance_ms": 1795353458367,
+            "first_publish_ms": 1795353458367,
+            "first_tile_paint_ms": 1795353458389,
+            "publish_calls": 71,
+            "publish_max_us": 912,
+            "publish_total_us": 25016,
+            "tile_paint_calls": 223,
+            "tile_paint_max_us": 457,
+            "tile_paint_total_us": 27254
+          }
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 165,
+          "queue_ms": 2585,
+          "tail_ms": 2640,
+          "hz": 500.0,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 18526,
+            "advance_total_us": 3136694,
+            "first_advance_ms": 1795353466244,
+            "first_publish_ms": 1795353466244,
+            "first_tile_paint_ms": 1795353466288,
+            "publish_calls": 47,
+            "publish_max_us": 2065,
+            "publish_total_us": 21503,
+            "tile_paint_calls": 347,
+            "tile_paint_max_us": 4621,
+            "tile_paint_total_us": 152805
+          }
+        }
+      ]
+    },
+    {
+      "name": "04-publish8",
+      "exit_code": 1,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 47,
+          "queue_ms": 25,
+          "tail_ms": 35,
+          "hz": 500.0,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 2498,
+            "advance_total_us": 356192,
+            "first_advance_ms": 1795352219356,
+            "first_publish_ms": 1795352219356,
+            "first_tile_paint_ms": 1795352219370,
+            "publish_calls": 110,
+            "publish_max_us": 629,
+            "publish_total_us": 35370,
+            "tile_paint_calls": 273,
+            "tile_paint_max_us": 520,
+            "tile_paint_total_us": 30354
+          }
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 180,
+          "queue_ms": 3005,
+          "tail_ms": 3047,
+          "hz": 500.0,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 10620,
+            "advance_total_us": 3211679,
+            "first_advance_ms": 1795352227234,
+            "first_publish_ms": 1795352227234,
+            "first_tile_paint_ms": 1795352227293,
+            "publish_calls": 54,
+            "publish_max_us": 10852,
+            "publish_total_us": 34172,
+            "tile_paint_calls": 404,
+            "tile_paint_max_us": 1775,
+            "tile_paint_total_us": 169041
+          }
+        }
+      ]
+    },
+    {
+      "name": "05-publish12",
+      "exit_code": 1,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 50,
+          "queue_ms": 21,
+          "tail_ms": 36,
+          "hz": 500.0,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 822,
+            "advance_total_us": 367509,
+            "first_advance_ms": 1795352346982,
+            "first_publish_ms": 1795352346982,
+            "first_tile_paint_ms": 1795352346993,
+            "publish_calls": 96,
+            "publish_max_us": 482,
+            "publish_total_us": 30712,
+            "tile_paint_calls": 251,
+            "tile_paint_max_us": 405,
+            "tile_paint_total_us": 28841
+          }
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 152,
+          "queue_ms": 2883,
+          "tail_ms": 2943,
+          "hz": 500.0,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 15448,
+            "advance_total_us": 3205916,
+            "first_advance_ms": 1795352354943,
+            "first_publish_ms": 1795352354944,
+            "first_tile_paint_ms": 1795352354980,
+            "publish_calls": 54,
+            "publish_max_us": 811,
+            "publish_total_us": 21524,
+            "tile_paint_calls": 336,
+            "tile_paint_max_us": 1995,
+            "tile_paint_total_us": 158589
+          }
+        }
+      ]
+    },
+    {
+      "name": "06-publish20",
+      "exit_code": 1,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 42,
+          "queue_ms": 20,
+          "tail_ms": 38,
+          "hz": 499.80166600555333,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 2370,
+            "advance_total_us": 361377,
+            "first_advance_ms": 1795352474113,
+            "first_publish_ms": 1795352474113,
+            "first_tile_paint_ms": 1795352474122,
+            "publish_calls": 90,
+            "publish_max_us": 600,
+            "publish_total_us": 28811,
+            "tile_paint_calls": 252,
+            "tile_paint_max_us": 425,
+            "tile_paint_total_us": 26754
+          }
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 140,
+          "queue_ms": 2637,
+          "tail_ms": 2684,
+          "hz": 500.0,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 10916,
+            "advance_total_us": 3087207,
+            "first_advance_ms": 1795352482050,
+            "first_publish_ms": 1795352482050,
+            "first_tile_paint_ms": 1795352482063,
+            "publish_calls": 55,
+            "publish_max_us": 3894,
+            "publish_total_us": 24942,
+            "tile_paint_calls": 380,
+            "tile_paint_max_us": 5077,
+            "tile_paint_total_us": 160501
+          }
+        }
+      ]
+    },
+    {
+      "name": "07-pending-bounds",
+      "exit_code": 1,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 56,
+          "queue_ms": 24,
+          "tail_ms": 40,
+          "hz": 500.0,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 1006,
+            "advance_total_us": 339784,
+            "first_advance_ms": 1795352603228,
+            "first_publish_ms": 1795352603228,
+            "first_tile_paint_ms": 1795352603239,
+            "publish_calls": 105,
+            "publish_max_us": 531,
+            "publish_total_us": 30619,
+            "tile_paint_calls": 271,
+            "tile_paint_max_us": 295,
+            "tile_paint_total_us": 21271
+          }
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 150,
+          "queue_ms": 2644,
+          "tail_ms": 2689,
+          "hz": 499.80166600555333,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 9974,
+            "advance_total_us": 3175489,
+            "first_advance_ms": 1795352611187,
+            "first_publish_ms": 1795352611187,
+            "first_tile_paint_ms": 1795352611206,
+            "publish_calls": 54,
+            "publish_max_us": 839,
+            "publish_total_us": 19420,
+            "tile_paint_calls": 375,
+            "tile_paint_max_us": 3345,
+            "tile_paint_total_us": 141183
+          }
+        }
+      ]
+    },
+    {
+      "name": "08-reserved-event-row",
+      "exit_code": 1,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 44,
+          "queue_ms": 24,
+          "tail_ms": 30,
+          "hz": 500.0,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 1585,
+            "advance_total_us": 353362,
+            "first_advance_ms": 1795352730446,
+            "first_publish_ms": 1795352730446,
+            "first_tile_paint_ms": 1795352730453,
+            "publish_calls": 102,
+            "publish_max_us": 503,
+            "publish_total_us": 30171,
+            "tile_paint_calls": 260,
+            "tile_paint_max_us": 401,
+            "tile_paint_total_us": 26665
+          }
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 153,
+          "queue_ms": 2631,
+          "tail_ms": 2666,
+          "hz": 499.80166600555333,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 12311,
+            "advance_total_us": 3080404,
+            "first_advance_ms": 1795352738349,
+            "first_publish_ms": 1795352738349,
+            "first_tile_paint_ms": 1795352738362,
+            "publish_calls": 55,
+            "publish_max_us": 1374,
+            "publish_total_us": 21831,
+            "tile_paint_calls": 376,
+            "tile_paint_max_us": 3631,
+            "tile_paint_total_us": 154657
+          }
+        }
+      ]
+    },
+    {
+      "name": "09-ready-fast-path",
+      "exit_code": 1,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 47,
+          "queue_ms": 19,
+          "tail_ms": 63,
+          "hz": 499.80166600555333,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 1402,
+            "advance_total_us": 378680,
+            "first_advance_ms": 1795352859293,
+            "first_publish_ms": 1795352859293,
+            "first_tile_paint_ms": 1795352859312,
+            "publish_calls": 88,
+            "publish_max_us": 1252,
+            "publish_total_us": 28549,
+            "tile_paint_calls": 242,
+            "tile_paint_max_us": 658,
+            "tile_paint_total_us": 27903
+          }
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 147,
+          "queue_ms": 2748,
+          "tail_ms": 2792,
+          "hz": 500.0,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 10478,
+            "advance_total_us": 3025690,
+            "first_advance_ms": 1795352867302,
+            "first_publish_ms": 1795352867302,
+            "first_tile_paint_ms": 1795352867340,
+            "publish_calls": 55,
+            "publish_max_us": 631,
+            "publish_total_us": 21625,
+            "tile_paint_calls": 378,
+            "tile_paint_max_us": 5286,
+            "tile_paint_total_us": 167475
+          }
+        }
+      ]
+    },
+    {
+      "name": "10-conservative-radius",
+      "exit_code": 1,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 157,
+          "queue_ms": 33,
+          "tail_ms": 79,
+          "hz": 499.80166600555333,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 1593,
+            "advance_total_us": 344896,
+            "first_advance_ms": 1795352985960,
+            "first_publish_ms": 1795352985960,
+            "first_tile_paint_ms": 1795352985978,
+            "publish_calls": 84,
+            "publish_max_us": 421,
+            "publish_total_us": 25111,
+            "tile_paint_calls": 475,
+            "tile_paint_max_us": 1612,
+            "tile_paint_total_us": 142489
+          }
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 168,
+          "queue_ms": 2764,
+          "tail_ms": 2797,
+          "hz": 499.80166600555333,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 15472,
+            "advance_total_us": 3103811,
+            "first_advance_ms": 1795352993921,
+            "first_publish_ms": 1795352993921,
+            "first_tile_paint_ms": 1795352993977,
+            "publish_calls": 55,
+            "publish_max_us": 1433,
+            "publish_total_us": 20115,
+            "tile_paint_calls": 371,
+            "tile_paint_max_us": 4395,
+            "tile_paint_total_us": 166098
+          }
+        }
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "name": "baseline-before",
+      "exit_code": 1,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 47,
+          "queue_ms": 26,
+          "tail_ms": 38,
+          "hz": 499.40546967895364,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 1568,
+            "advance_total_us": 369145,
+            "first_advance_ms": 1795352055932,
+            "first_publish_ms": 1795352055933,
+            "first_tile_paint_ms": 1795352055950,
+            "publish_calls": 96,
+            "publish_max_us": 872,
+            "publish_total_us": 30809,
+            "tile_paint_calls": 257,
+            "tile_paint_max_us": 308,
+            "tile_paint_total_us": 28573
+          }
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 161,
+          "queue_ms": 2755,
+          "tail_ms": 2797,
+          "hz": 499.20760697305866,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 20092,
+            "advance_total_us": 3177830,
+            "first_advance_ms": 1795352063837,
+            "first_publish_ms": 1795352063838,
+            "first_tile_paint_ms": 1795352063878,
+            "publish_calls": 55,
+            "publish_max_us": 904,
+            "publish_total_us": 23344,
+            "tile_paint_calls": 411,
+            "tile_paint_max_us": 2915,
+            "tile_paint_total_us": 168881
+          }
+        }
+      ]
+    },
+    {
+      "name": "baseline-after",
+      "exit_code": 1,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 52,
+          "queue_ms": 26,
+          "tail_ms": 30,
+          "hz": 500.0,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 1750,
+            "advance_total_us": 360913,
+            "first_advance_ms": 1795353068654,
+            "first_publish_ms": 1795353068654,
+            "first_tile_paint_ms": 1795353068668,
+            "publish_calls": 95,
+            "publish_max_us": 609,
+            "publish_total_us": 29207,
+            "tile_paint_calls": 257,
+            "tile_paint_max_us": 463,
+            "tile_paint_total_us": 28451
+          }
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 165,
+          "queue_ms": 2641,
+          "tail_ms": 2691,
+          "hz": 499.80166600555333,
+          "native": {
+            "advance_calls": 1260,
+            "advance_max_us": 14221,
+            "advance_total_us": 3062872,
+            "first_advance_ms": 1795353076658,
+            "first_publish_ms": 1795353076658,
+            "first_tile_paint_ms": 1795353076680,
+            "publish_calls": 55,
+            "publish_max_us": 1090,
+            "publish_total_us": 21488,
+            "tile_paint_calls": 407,
+            "tile_paint_max_us": 2941,
+            "tile_paint_total_us": 169890
+          }
+        }
+      ]
+    }
+  ],
+  "gui_reports": 12,
+  "preservation_all": true,
+  "checked_saved_files_per_report": 17,
+  "samples_per_tool": 1260,
+  "input_overflow_or_pending": false,
+  "actual_hz_range": [
+    499.20760697305866,
+    500.0
+  ],
+  "new_uat_accepted": false,
+  "installed_raster_sha256": "29d482734f987777a8b355df8a3511d9a93f0e843375daee0f9950c8d52975a7",
+  "physical_panel_latency_measured": false
+}
