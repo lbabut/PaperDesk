@@ -1,0 +1,362 @@
+{
+  "status": "ten_screening_experiments_completed_no_uat_promotion",
+  "created_at": "2026-11-22T19:29:22.784979+00:00",
+  "base_commit": "46bb6f4; original prefix QML without later lifecycle-timer repair, to isolate policy effects",
+  "variants": [
+    {
+      "name": "01-minimum4",
+      "compiled": true,
+      "host_exact_passed": true,
+      "capped_summary_coverage_assertion": false,
+      "source_sha256": "513d1d459de1962b31f06ef5962c343e30c5abeafbbd16db78585cd564cd44e8",
+      "module_sha256": "15926962d6aab9982981123cd6a9b4f90d3d53fd4434c8e1f07e69754475d2a4"
+    },
+    {
+      "name": "02-minimum8",
+      "compiled": true,
+      "host_exact_passed": true,
+      "capped_summary_coverage_assertion": false,
+      "source_sha256": "83d925f3099f7cbfa742e1318c996caf99b02381bad4a0ad05443af5ef0d30bd",
+      "module_sha256": "1b5c682e2e26d67ebbffe82e99f4bc73f06b9106ba9032a33f986173c52528f5"
+    },
+    {
+      "name": "03-minimum12",
+      "compiled": true,
+      "host_exact_passed": true,
+      "capped_summary_coverage_assertion": false,
+      "source_sha256": "130f365c7c1d866a10e2aa0697e202ae0bcbab70408a86bbb1852822fa94586c",
+      "module_sha256": "a38b00ed4752adb0433ff843b21fdd8ac166353d5fa992ca0ca03257c6719c0c"
+    },
+    {
+      "name": "04-minimum16",
+      "compiled": true,
+      "host_exact_passed": true,
+      "capped_summary_coverage_assertion": false,
+      "source_sha256": "2c9900c01bbc74e57c00ec148fb6401ad209fc8c4b2c65f2ade779b9975d0469",
+      "module_sha256": "c83b8e9f72473e50c49452f0ba671cc6a8daff6a6c06a396757796448b12fafa"
+    },
+    {
+      "name": "05-minimum20",
+      "compiled": true,
+      "host_exact_passed": true,
+      "capped_summary_coverage_assertion": false,
+      "source_sha256": "4484bf9da807085d714ca83365f70a587666dbcd5817caff67df94bfd58f2aae",
+      "module_sha256": "b38abe91d5b4663c9745991c0d45575beefeb40dc982c9b6798ade39feac4351"
+    },
+    {
+      "name": "06-minimum24",
+      "compiled": true,
+      "host_exact_passed": true,
+      "capped_summary_coverage_assertion": false,
+      "source_sha256": "324595e8875cb26150f71d0b8d3d70e056021196b7563c362e2d20552eb8427c",
+      "module_sha256": "30b040dd30f3c334a30b210c63117dc21b146c6eb072832ee3023d318ecc316e"
+    },
+    {
+      "name": "07-cap4",
+      "compiled": true,
+      "host_exact_passed": true,
+      "capped_summary_coverage_assertion": true,
+      "source_sha256": "54479085b25dd9294350e93dc95411e63c62cd9987583d3d35e77112e2cc39d8",
+      "module_sha256": "ede39c11e0be5808eece1f2bc0bf632f112fa8091b576fd75534ea3cda080e74"
+    },
+    {
+      "name": "08-cap8",
+      "compiled": true,
+      "host_exact_passed": true,
+      "capped_summary_coverage_assertion": true,
+      "source_sha256": "c3b902f5d61d4fdb4ad76d0f259897a7c6f02c061cb51767a3c103795d2e78fb",
+      "module_sha256": "64fd9612f0b2e66a01dd74d14cfeb44d6297d46c755001432e74ed55ea234826"
+    },
+    {
+      "name": "09-cap12",
+      "compiled": true,
+      "host_exact_passed": true,
+      "capped_summary_coverage_assertion": true,
+      "source_sha256": "1c79a45c85ba4b48be504e707be88f14114551075b2410c483fb748d5c551a4f",
+      "module_sha256": "bace6716d850ebc799e1eb71fa2441c6385a61397d487768b242f136fc0e78c2"
+    },
+    {
+      "name": "10-cap16",
+      "compiled": true,
+      "host_exact_passed": true,
+      "capped_summary_coverage_assertion": true,
+      "source_sha256": "9748a54d63b5e1bf39d6a443b9599a1b2693ef40ce2d647e399aea0a4102c385",
+      "module_sha256": "fdf2d5997c83cdb2b4840dea676abe793d462f01c91bbff7f765406c4f33aca0"
+    }
+  ],
+  "runs": [
+    {
+      "name": "baseline-before",
+      "exit_code": 0,
+      "passed": true,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 44,
+          "queue_ms": 20,
+          "tail_ms": 38,
+          "hz": 235.91087811271296
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 150,
+          "queue_ms": 56,
+          "tail_ms": 102,
+          "hz": 229.25764192139738
+        }
+      ]
+    },
+    {
+      "name": "01-minimum4",
+      "exit_code": 0,
+      "passed": true,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 52,
+          "queue_ms": 21,
+          "tail_ms": 29,
+          "hz": 238.90784982935153
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 148,
+          "queue_ms": 48,
+          "tail_ms": 83,
+          "hz": 225.96843615494979
+        }
+      ]
+    },
+    {
+      "name": "02-minimum8",
+      "exit_code": 0,
+      "passed": true,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 51,
+          "queue_ms": 21,
+          "tail_ms": 61,
+          "hz": 236.53088042049933
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 80,
+          "queue_ms": 46,
+          "tail_ms": 111,
+          "hz": 224.51888809693514
+        }
+      ]
+    },
+    {
+      "name": "03-minimum12",
+      "exit_code": 0,
+      "passed": true,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 51,
+          "queue_ms": 20,
+          "tail_ms": 42,
+          "hz": 237.64617125612978
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 198,
+          "queue_ms": 62,
+          "tail_ms": 51,
+          "hz": 227.43682310469313
+        }
+      ]
+    },
+    {
+      "name": "04-minimum16",
+      "exit_code": 0,
+      "passed": true,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 50,
+          "queue_ms": 24,
+          "tail_ms": 57,
+          "hz": 232.47232472324723
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 95,
+          "queue_ms": 52,
+          "tail_ms": 104,
+          "hz": 226.37441609773626
+        }
+      ]
+    },
+    {
+      "name": "05-minimum20",
+      "exit_code": 1,
+      "passed": false,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 45,
+          "queue_ms": 21,
+          "tail_ms": 30,
+          "hz": 236.79759443713587
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 214,
+          "queue_ms": 82,
+          "tail_ms": 89,
+          "hz": 227.19076812116842
+        }
+      ]
+    },
+    {
+      "name": "06-minimum24",
+      "exit_code": 1,
+      "passed": false,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 44,
+          "queue_ms": 22,
+          "tail_ms": 41,
+          "hz": 238.00528900642237
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 144,
+          "queue_ms": 112,
+          "tail_ms": 115,
+          "hz": 222.06556221360592
+        }
+      ]
+    },
+    {
+      "name": "07-cap4",
+      "exit_code": 1,
+      "passed": false,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 50,
+          "queue_ms": 19,
+          "tail_ms": 36,
+          "hz": 236.88663282571912
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 164,
+          "queue_ms": 112,
+          "tail_ms": 112,
+          "hz": 228.21952544828835
+        }
+      ]
+    },
+    {
+      "name": "08-cap8",
+      "exit_code": 1,
+      "passed": false,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 66,
+          "queue_ms": 19,
+          "tail_ms": 78,
+          "hz": 236.08768971332208
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 230,
+          "queue_ms": 66,
+          "tail_ms": 70,
+          "hz": 225.44283413848632
+        }
+      ]
+    },
+    {
+      "name": "09-cap12",
+      "exit_code": 0,
+      "passed": true,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 49,
+          "queue_ms": 19,
+          "tail_ms": 51,
+          "hz": 235.38202876891464
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 130,
+          "queue_ms": 76,
+          "tail_ms": 75,
+          "hz": 228.21952544828835
+        }
+      ]
+    },
+    {
+      "name": "10-cap16",
+      "exit_code": 0,
+      "passed": true,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 42,
+          "queue_ms": 19,
+          "tail_ms": 31,
+          "hz": 235.82257158899495
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 116,
+          "queue_ms": 70,
+          "tail_ms": 83,
+          "hz": 227.35474557921327
+        }
+      ]
+    },
+    {
+      "name": "baseline-after",
+      "exit_code": 1,
+      "passed": false,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 140,
+          "queue_ms": 20,
+          "tail_ms": 35,
+          "hz": 237.87049273173494
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 203,
+          "queue_ms": 53,
+          "tail_ms": 103,
+          "hz": 223.9601848560256
+        }
+      ]
+    }
+  ],
+  "passed_single_run_names": [
+    "01-minimum4",
+    "02-minimum8",
+    "03-minimum12",
+    "04-minimum16",
+    "09-cap12",
+    "10-cap16"
+  ],
+  "failed_single_run_names": [
+    "05-minimum20",
+    "06-minimum24",
+    "07-cap4",
+    "08-cap8"
+  ],
+  "correctness": "All ten ARM modules built;20 targeted C++ host regressions passed. Every GUI report1260 samples/tool,no overflow/pending,original setting and checked saved cache files preserved. Not a full-library audit. Material arithmetic and24-event drain/16ms publication unchanged.",
+  "cap_assertion": "Four capped-policy host tests require summarized>0 instead of>500, because their optimization intentionally handles a prefix only. Exact640 raw points/41contacts,images,pigment,pressure metadata and all other assertions remain unchanged.",
+  "limitations": "One ordinary-rate pilot per variant and two controls, not randomized/statistical proof. Record actual achieved Hz, not an exact250Hz claim. Policies may remain inactive under low backlog. No heavy500Hz validation, full device workflow regression or physical panel/sensor latency measurement for these policies.",
+  "deployment": "Staged candidate QML only; global native modules temporarily installed with own rollback after every candidate. Deployed main QML/RCC untouched; final baseline retained. No main/site/release/sales change.",
+  "interpretation": "Controls charcoal gap150/203ms,queue56/53ms,tail102/103ms. Final control itself fails200ms GUI-gap gate, so single gap failures cannot prove a policy caused slowdown. Six single-run passes are screening candidates, not accepted improvements. No convincing universal winner selected.",
+  "package_warning": "Root product remains inherited unmodified-prefix prototype, not a chosen adaptive package. The ten source/module variants are generated research artifacts under work/prefix-ten, with hashes in this report; do not install root package as the winning version.",
+  "next_action": "Compare against unmodified-prefix control and repeat only a promising candidate in ordinary and heavy scenarios before combining with an independently validated lifecycle repair. Do not select a winner from a single best metric."
+}
