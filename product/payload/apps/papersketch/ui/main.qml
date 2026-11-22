@@ -86,11 +86,19 @@ Rectangle {
         var local=exitFullScreenButton.mapFromItem(inputSurface,p.x,p.y);
         return local.x>=0 && local.y>=0 && local.x<exitFullScreenButton.width && local.y<exitFullScreenButton.height;
     }
+    // Diagnostic only; off by default. Nested wall times, not exclusive CPU or panel latency.
+    property bool inputProfiling:false
+    property var inputProfile:({calls:0,total_ms:0,max_ms:0,native_ms:0,native_max_ms:0,qml_ms:0,qml_max_ms:0})
+    function resetInputProfile(){inputProfile={calls:0,total_ms:0,max_ms:0,native_ms:0,native_max_ms:0,qml_ms:0,qml_max_ms:0};}
     function drainPenInput(){
         if(!rawPenEnabled || rawPenDraining)return;
+        var profile=inputProfiling,started=profile?Date.now():0,nativeMs=0;
+        try{
         rawPenDraining=true;syncInputTransform();
         var canBatch=bitmapMode && activeSource==="pen" && activeStroke && activeStroke.rawInput && typeof nativeRaster.takePenBatch==="function";
+        var nativeStarted=profile?Date.now():0;
         var events=canBatch?nativeRaster.takePenBatch(activeStroke.tool,activeStroke.size,activeStroke.strength,rawPenContact):nativeRaster.takePenInput();
+        if(profile)nativeMs=Date.now()-nativeStarted;
         for(var i=0;i<events.length;i++){
             var e=events[i];
             if(e[0]===5){
@@ -116,7 +124,15 @@ Rectangle {
                 else extendStroke(p,"pen",e[3],e);
             }
         }
-        rawPenDraining=false;
+        }finally{
+            rawPenDraining=false;
+            if(profile){
+                var elapsed=Date.now()-started,rest=elapsed-nativeMs,s=inputProfile;
+                s.calls++;s.total_ms+=elapsed;s.max_ms=Math.max(s.max_ms,elapsed);
+                s.native_ms+=nativeMs;s.native_max_ms=Math.max(s.native_max_ms,nativeMs);
+                s.qml_ms+=rest;s.qml_max_ms=Math.max(s.qml_max_ms,rest);
+            }
+        }
     }
     Connections{target:root.nativeRaster;ignoreUnknownSignals:true;function onPenInputReady(){root.drainPenInput();}}
     readonly property bool fastDisplay:bitmapMode && nativeRaster.fastDisplay===true

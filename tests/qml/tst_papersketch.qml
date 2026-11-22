@@ -152,7 +152,11 @@ Item {
                 events.push([3,300.1875,400.125,0,.2,-.1,false,c]);
             }
             backend.rawEvents=events;
+            a.resetInputProfile();a.inputProfiling=true;
             while(backend.rawEvents.length)a.drainPenInput();
+            verify(a.inputProfile.calls>0);verify(a.inputProfile.total_ms>=a.inputProfile.native_ms);
+            compare(a.inputProfile.qml_ms,a.inputProfile.total_ms-a.inputProfile.native_ms);
+            verify(!a.rawPenDraining);a.inputProfiling=false;a.resetInputProfile();compare(a.inputProfile.calls,0);
             compare(a.rawPenStrokes-before,100);compare(backend.beginCount,100);compare(backend.finishCount,100);
             compare(backend.rawCalls,200);compare(backend.pressureCalls,0);
             compare(backend.rawX,300.1875);compare(backend.rawY,400.125);compare(a.activeStroke,null);

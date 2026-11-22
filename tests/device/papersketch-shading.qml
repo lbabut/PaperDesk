@@ -29,6 +29,7 @@ Rectangle{
   var d=definitions[caseIndex],a=subject.item,surface=find(a,"drawingCanvas"),win=bench.Window.window;
   var p=surface.mapToItem(win.contentItem,120,d.y0),q=surface.mapToItem(win.contentItem,1080,d.y1);
   a.nativeRaster.resetPenQueueLatencyStats();
+  if(typeof a.resetInputProfile==="function"){a.resetInputProfile();a.inputProfiling=true;}
   firstRaster=0;firstTile=0;blankFrames=0;maxGap=0;activeGap=0;wasActive=false;slowTicks=[];phase=3;
   var pattern=tiltedCharcoal&&d.tool>=4?"shade-tilt":"shade";if(highRateShading)pattern+="-fast";
   console.log("PAPERSKETCH_INPUT_READY "+JSON.stringify({mode:"pen",id:d.id,pattern:pattern,start:[p.x,p.y],end:[q.x,q.y]}));
@@ -60,6 +61,8 @@ Rectangle{
    item.input_stats=a.nativeRaster.penInputStats();
    item.queue_latency=a.nativeRaster.penQueueLatencyStats();
    item.native_latency=a.nativeRaster.latencyStats();
+   item.qml_input_profile=typeof a.resetInputProfile==="function"?a.inputProfile:null;
+   item.qml_profile_scope="Date.now 1ms wall clock; native call nested in total; qml remainder includes sync, conversion, boundaries and scheduling inside handler; diagnostic overhead not excluded";
    var inputOk=s.rawInput?(s.inputSamples===1260&&item.input_stats[1]===0&&item.input_stats[2]===0):matched[0]>4*matched[1];
    item.passed=a.fastDisplay && binary && display.length===4096 && grays && Math.abs(displaySum-rawSum)/1024<12 && inputOk && (s.samples||points.length)>=100 && Math.abs(first[0]-120)<15 && Math.abs(first[1]-d.y0)<15 && Math.abs(last[0]-1080)<15 && Math.abs(last[1]-d.y1)<15 && blankFrames===0 && maxGap<200;
    item.contact=a.nativeRaster.contactStats();item.tilted_charcoal_requested=tiltedCharcoal&&d.tool>=4;

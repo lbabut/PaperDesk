@@ -1,0 +1,10 @@
+{
+  "scope": "One synthetic heavy 500Hz shading diagnostic, no performance comparison or UAT qualification",
+  "native_module_sha256": "c7ea8b34b980ddb2d2a9232413f6727abe4513d66ad707e03f42539d63998db7",
+  "charcoal": {"samples":1260,"overflow":0,"pending":0,"gui_gap_ms":138,"release_tail_ms":2359,"qml_handler_calls":55,"qml_handler_total_ms":3114,"native_call_wall_ms":3054,"qml_remainder_ms":60,"native_advance_total_us":3042078,"native_prefix_total_us":3048551,"native_dequeue_total_us":2431,"native_tile_paint_total_us":156821},
+  "graphite": {"samples":1260,"overflow":0,"pending":0,"gui_gap_ms":132,"release_tail_ms":33,"qml_handler_total_ms":539,"native_call_wall_ms":387,"qml_remainder_ms":152},
+  "interpretation": "In this run native material advancement dominates handler wall time. Further batching/QML tuning alone cannot remove the observed heavy cost. No recurrence or explanation of earlier 6.2s outlier established.",
+  "limitations": ["Nested timers overlap and must not be summed", "Date.now wall timing has 1ms granularity and instrumentation overhead", "No uninstrumented paired control, no speedup claim", "No optical panel or physical sensor latency measured", "Saved-file checks are not a full-library audit"],
+  "tests": ["Targeted profile/contact test 3 passed", "Full Sketch QML suite 67 passed, 0 failed, 2 skipped with mock backend; not native plugin qualification", "Initial improperly prepared host run 63 passed, 4 output-directory failures, retained outside report; corrected environment rerun passed", "Device artwork/settings and checked saved files preserved", "Baseline raster restored; xochitl active and failure monitor static"],
+  "next_action": "Profile material advancement sub-stages on exact deterministic workload; target a verified hot path with image/state fidelity comparisons, then controlled device trial. Keep diagnostics disabled by default."
+}
