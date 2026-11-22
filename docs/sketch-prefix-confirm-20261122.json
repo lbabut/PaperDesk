@@ -1,0 +1,620 @@
+{
+  "status": "confirmation_complete_no_automatic_uat",
+  "created_at": "2026-11-22T19:53:32.668775+00:00",
+  "plan": {
+    "sequence": [
+      "baseline",
+      "unmodified",
+      "adaptive4",
+      "adaptive4",
+      "unmodified",
+      "baseline"
+    ],
+    "modes": [
+      "ordinary",
+      "heavy"
+    ],
+    "expected_modules": {
+      "baseline": "29d482734f987777a8b355df8a3511d9a93f0e843375daee0f9950c8d52975a7",
+      "unmodified": "3989ebc926a32ea77efed3ab9f7501775f41f37fb475e05287d2d3e665e2a8dc",
+      "adaptive4": "15926962d6aab9982981123cd6a9b4f90d3d53fd4434c8e1f07e69754475d2a4"
+    },
+    "interpretation": "Selected adaptive4 from screening; not independent discovery. No lifecycle-timer patch included."
+  },
+  "groups": {
+    "ordinary": {
+      "baseline": {
+        "passed_runs": 0,
+        "runs": 2,
+        "metrics": {
+          "pen-graphite": {
+            "gap_ms": {
+              "median": 53.5,
+              "minimum": 52,
+              "maximum": 55
+            },
+            "queue_ms": {
+              "median": 20.5,
+              "minimum": 20,
+              "maximum": 21
+            },
+            "tail_ms": {
+              "median": 52.0,
+              "minimum": 32,
+              "maximum": 72
+            },
+            "hz": {
+              "median": 237.7424845179018,
+              "minimum": 236.48648648648648,
+              "maximum": 238.99848254931715
+            }
+          },
+          "pen-charcoal": {
+            "gap_ms": {
+              "median": 162.5,
+              "minimum": 144,
+              "maximum": 181
+            },
+            "queue_ms": {
+              "median": 77.5,
+              "minimum": 47,
+              "maximum": 108
+            },
+            "tail_ms": {
+              "median": 164.5,
+              "minimum": 161,
+              "maximum": 168
+            },
+            "hz": {
+              "median": 230.75390757046506,
+              "minimum": 228.2608695652174,
+              "maximum": 233.2469455757127
+            }
+          }
+        }
+      },
+      "unmodified": {
+        "passed_runs": 2,
+        "runs": 2,
+        "metrics": {
+          "pen-graphite": {
+            "gap_ms": {
+              "median": 90.5,
+              "minimum": 48,
+              "maximum": 133
+            },
+            "queue_ms": {
+              "median": 19.5,
+              "minimum": 19,
+              "maximum": 20
+            },
+            "tail_ms": {
+              "median": 32.0,
+              "minimum": 28,
+              "maximum": 36
+            },
+            "hz": {
+              "median": 237.91554357592094,
+              "minimum": 237.73584905660377,
+              "maximum": 238.0952380952381
+            }
+          },
+          "pen-charcoal": {
+            "gap_ms": {
+              "median": 102.0,
+              "minimum": 72,
+              "maximum": 132
+            },
+            "queue_ms": {
+              "median": 44.0,
+              "minimum": 43,
+              "maximum": 45
+            },
+            "tail_ms": {
+              "median": 84.0,
+              "minimum": 76,
+              "maximum": 92
+            },
+            "hz": {
+              "median": 228.0854482174106,
+              "minimum": 226.53721682847896,
+              "maximum": 229.63367960634227
+            }
+          }
+        }
+      },
+      "adaptive4": {
+        "passed_runs": 2,
+        "runs": 2,
+        "metrics": {
+          "pen-graphite": {
+            "gap_ms": {
+              "median": 51.0,
+              "minimum": 48,
+              "maximum": 54
+            },
+            "queue_ms": {
+              "median": 19.5,
+              "minimum": 19,
+              "maximum": 20
+            },
+            "tail_ms": {
+              "median": 39.5,
+              "minimum": 32,
+              "maximum": 47
+            },
+            "hz": {
+              "median": 236.46581360792004,
+              "minimum": 235.8667165855485,
+              "maximum": 237.06491063029162
+            }
+          },
+          "pen-charcoal": {
+            "gap_ms": {
+              "median": 138.0,
+              "minimum": 136,
+              "maximum": 140
+            },
+            "queue_ms": {
+              "median": 58.5,
+              "minimum": 57,
+              "maximum": 60
+            },
+            "tail_ms": {
+              "median": 103.5,
+              "minimum": 91,
+              "maximum": 116
+            },
+            "hz": {
+              "median": 228.83024322169058,
+              "minimum": 223.2854864433812,
+              "maximum": 234.375
+            }
+          }
+        }
+      }
+    },
+    "heavy": {
+      "baseline": {
+        "passed_runs": 0,
+        "runs": 2,
+        "metrics": {
+          "pen-graphite": {
+            "gap_ms": {
+              "median": 50.0,
+              "minimum": 49,
+              "maximum": 51
+            },
+            "queue_ms": {
+              "median": 26.0,
+              "minimum": 25,
+              "maximum": 27
+            },
+            "tail_ms": {
+              "median": 38.5,
+              "minimum": 38,
+              "maximum": 39
+            },
+            "hz": {
+              "median": 499.80174464710547,
+              "minimum": 499.60348929421093,
+              "maximum": 500.0
+            }
+          },
+          "pen-charcoal": {
+            "gap_ms": {
+              "median": 160.0,
+              "minimum": 143,
+              "maximum": 177
+            },
+            "queue_ms": {
+              "median": 2841.5,
+              "minimum": 2662,
+              "maximum": 3021
+            },
+            "tail_ms": {
+              "median": 2875.5,
+              "minimum": 2694,
+              "maximum": 3057
+            },
+            "hz": {
+              "median": 500.0,
+              "minimum": 500.0,
+              "maximum": 500.0
+            }
+          }
+        }
+      },
+      "unmodified": {
+        "passed_runs": 0,
+        "runs": 2,
+        "metrics": {
+          "pen-graphite": {
+            "gap_ms": {
+              "median": 99.5,
+              "minimum": 54,
+              "maximum": 145
+            },
+            "queue_ms": {
+              "median": 22.5,
+              "minimum": 22,
+              "maximum": 23
+            },
+            "tail_ms": {
+              "median": 46.0,
+              "minimum": 29,
+              "maximum": 63
+            },
+            "hz": {
+              "median": 500.0,
+              "minimum": 500.0,
+              "maximum": 500.0
+            }
+          },
+          "pen-charcoal": {
+            "gap_ms": {
+              "median": 153.0,
+              "minimum": 144,
+              "maximum": 162
+            },
+            "queue_ms": {
+              "median": 2476.5,
+              "minimum": 2394,
+              "maximum": 2559
+            },
+            "tail_ms": {
+              "median": 2534.0,
+              "minimum": 2463,
+              "maximum": 2605
+            },
+            "hz": {
+              "median": 500.0,
+              "minimum": 500.0,
+              "maximum": 500.0
+            }
+          }
+        }
+      },
+      "adaptive4": {
+        "passed_runs": 0,
+        "runs": 2,
+        "metrics": {
+          "pen-graphite": {
+            "gap_ms": {
+              "median": 91.5,
+              "minimum": 51,
+              "maximum": 132
+            },
+            "queue_ms": {
+              "median": 22.0,
+              "minimum": 21,
+              "maximum": 23
+            },
+            "tail_ms": {
+              "median": 38.0,
+              "minimum": 35,
+              "maximum": 41
+            },
+            "hz": {
+              "median": 500.0,
+              "minimum": 500.0,
+              "maximum": 500.0
+            }
+          },
+          "pen-charcoal": {
+            "gap_ms": {
+              "median": 1714.0,
+              "minimum": 174,
+              "maximum": 3254
+            },
+            "queue_ms": {
+              "median": 4315.5,
+              "minimum": 2466,
+              "maximum": 6165
+            },
+            "tail_ms": {
+              "median": 4375.0,
+              "minimum": 2545,
+              "maximum": 6205
+            },
+            "hz": {
+              "median": 500.0,
+              "minimum": 500.0,
+              "maximum": 500.0
+            }
+          }
+        }
+      }
+    }
+  },
+  "raw_metrics": [
+    {
+      "mode": "ordinary",
+      "index": 1,
+      "name": "baseline",
+      "passed": false,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 52,
+          "queue_ms": 21,
+          "tail_ms": 32,
+          "hz": 236.48648648648648
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 144,
+          "queue_ms": 108,
+          "tail_ms": 161,
+          "hz": 228.2608695652174
+        }
+      ]
+    },
+    {
+      "mode": "ordinary",
+      "index": 2,
+      "name": "unmodified",
+      "passed": true,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 48,
+          "queue_ms": 20,
+          "tail_ms": 28,
+          "hz": 237.73584905660377
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 132,
+          "queue_ms": 43,
+          "tail_ms": 92,
+          "hz": 229.63367960634227
+        }
+      ]
+    },
+    {
+      "mode": "ordinary",
+      "index": 3,
+      "name": "adaptive4",
+      "passed": true,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 48,
+          "queue_ms": 19,
+          "tail_ms": 47,
+          "hz": 237.06491063029162
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 140,
+          "queue_ms": 57,
+          "tail_ms": 116,
+          "hz": 223.2854864433812
+        }
+      ]
+    },
+    {
+      "mode": "ordinary",
+      "index": 4,
+      "name": "adaptive4",
+      "passed": true,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 54,
+          "queue_ms": 20,
+          "tail_ms": 32,
+          "hz": 235.8667165855485
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 136,
+          "queue_ms": 60,
+          "tail_ms": 91,
+          "hz": 234.375
+        }
+      ]
+    },
+    {
+      "mode": "ordinary",
+      "index": 5,
+      "name": "unmodified",
+      "passed": true,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 133,
+          "queue_ms": 19,
+          "tail_ms": 36,
+          "hz": 238.0952380952381
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 72,
+          "queue_ms": 45,
+          "tail_ms": 76,
+          "hz": 226.53721682847896
+        }
+      ]
+    },
+    {
+      "mode": "ordinary",
+      "index": 6,
+      "name": "baseline",
+      "passed": false,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 55,
+          "queue_ms": 20,
+          "tail_ms": 72,
+          "hz": 238.99848254931715
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 181,
+          "queue_ms": 47,
+          "tail_ms": 168,
+          "hz": 233.2469455757127
+        }
+      ]
+    },
+    {
+      "mode": "heavy",
+      "index": 1,
+      "name": "baseline",
+      "passed": false,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 51,
+          "queue_ms": 27,
+          "tail_ms": 39,
+          "hz": 499.60348929421093
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 143,
+          "queue_ms": 2662,
+          "tail_ms": 2694,
+          "hz": 500.0
+        }
+      ]
+    },
+    {
+      "mode": "heavy",
+      "index": 2,
+      "name": "unmodified",
+      "passed": false,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 54,
+          "queue_ms": 23,
+          "tail_ms": 29,
+          "hz": 500.0
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 144,
+          "queue_ms": 2394,
+          "tail_ms": 2463,
+          "hz": 500.0
+        }
+      ]
+    },
+    {
+      "mode": "heavy",
+      "index": 3,
+      "name": "adaptive4",
+      "passed": false,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 132,
+          "queue_ms": 23,
+          "tail_ms": 41,
+          "hz": 500.0
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 3254,
+          "queue_ms": 6165,
+          "tail_ms": 6205,
+          "hz": 500.0
+        }
+      ]
+    },
+    {
+      "mode": "heavy",
+      "index": 4,
+      "name": "adaptive4",
+      "passed": false,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 51,
+          "queue_ms": 21,
+          "tail_ms": 35,
+          "hz": 500.0
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 174,
+          "queue_ms": 2466,
+          "tail_ms": 2545,
+          "hz": 500.0
+        }
+      ]
+    },
+    {
+      "mode": "heavy",
+      "index": 5,
+      "name": "unmodified",
+      "passed": false,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 145,
+          "queue_ms": 22,
+          "tail_ms": 63,
+          "hz": 500.0
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 162,
+          "queue_ms": 2559,
+          "tail_ms": 2605,
+          "hz": 500.0
+        }
+      ]
+    },
+    {
+      "mode": "heavy",
+      "index": 6,
+      "name": "baseline",
+      "passed": false,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "gap_ms": 49,
+          "queue_ms": 25,
+          "tail_ms": 38,
+          "hz": 500.0
+        },
+        {
+          "id": "pen-charcoal",
+          "gap_ms": 177,
+          "queue_ms": 3021,
+          "tail_ms": 3057,
+          "hz": 500.0
+        }
+      ]
+    }
+  ],
+  "fidelity": "Every report1260 input samples/tool,no overflow/pending,original setting and checked saved cache files preserved; no runtime errors. Scoped checks, not full-library audit. Same pinned modules and QML, no new material math or training.",
+  "limitations": "Adaptive4 selected from previous10-policy screen, selection bias. Two runs/condition/mode, fixed balanced order, not randomized statistical evidence. Ordinary requested250Hz uses actual measured rates; heavy requested500Hz. Modes also differ in charcoal type/tilt, so compare conditions within a mode only. No physical panel/sensor latency or full device workflow qualification.",
+  "deployment": "Staged prefix QML only; lifecycle-timer repair deliberately excluded. Each tested module restored to baseline. Root product remains inherited prototype, not a new installable adaptive package. No accepted UAT,main,website,release,sales or canonical-tree changes.",
+  "interpretation": "Ordinary unmodified2/2 and adaptive2/2 pass, baseline0/2. Heavy all conditions0/2 pass. Unmodified heavy tail2463/2605ms versus baseline2694/3057ms (~11.9% lower two-run median in this cohort). Adaptive heavy2545/6205ms;6205ms spike not reproduced, and its two-run median is not a typical-performance estimate. No demonstrated benefit justifies adaptive4 complexity. Earlier combined-package failures cannot automatically be blamed on prefix batching; lifecycle integration remains a separate hypothesis, not a proven cause.",
+  "next_action": "Keep simple prefix as research candidate, do not promote adaptive4. Profile complete input-handler/QML/render scheduling and separately isolate a lifecycle fix without ordinary-rate regression. No automatic UAT: heavy absolute gates still fail. Do not add gains or infer causation from two pilots.",
+  "diagnostic_outlier": {
+    "max_input_tick_gap_ms": 3254,
+    "release_to_drained_ms": 6205,
+    "native_latency": {
+      "advance_calls": 1260,
+      "advance_max_us": 50294,
+      "advance_total_us": 3439581,
+      "first_advance_ms": 1795376824746,
+      "first_publish_ms": 1795376824746,
+      "first_tile_paint_ms": 1795376824788,
+      "publish_calls": 55,
+      "publish_max_us": 5174,
+      "publish_total_us": 29862,
+      "tile_paint_calls": 378,
+      "tile_paint_max_us": 5463,
+      "tile_paint_total_us": 166302
+    }
+  },
+  "diagnostic_note": "Outlier advance_total3.440s versus first unmodified3.120s and first baseline3.081s, while tail jumps to6.205s. These scopes overlap, are not exclusive timers and do not identify the cause. Do not attribute all delay to pigment arithmetic."
+}
