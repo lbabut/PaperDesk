@@ -1,5 +1,5 @@
-// Research-only actor. NOT linked into the app: display snapshots, lifecycle,
-// save/undo barriers and Qt ownership require separate integration.
+// Research-only actor. NOT linked into the app: immutable snapshots and close
+// are tested here, but save/undo/page lifecycle and Qt integration are not.
 #pragma once
 #include <condition_variable>
 #include <deque>
@@ -8,6 +8,27 @@
 #include <mutex>
 #include <thread>
 #include <stdexcept>
+#include <memory>
+#include <cstdint>
+// Single latest immutable snapshot; intermediate display frames may be
+// superseded, never input samples. Consumers can retain an older frame safely.
+template<class T> class MaterialSnapshotMailbox {
+public:
+ struct Frame{uint64_t revision;T data;};
+private:
+ mutable std::mutex mutex;
+ std::shared_ptr<const Frame> frame;
+public:
+ bool publish(uint64_t revision,T data){
+  auto next=std::make_shared<const Frame>(Frame{revision,std::move(data)});
+  std::lock_guard<std::mutex> lock(mutex);
+  if(frame&&revision<=frame->revision)return false;
+  frame=std::move(next);return true;
+ }
+ std::shared_ptr<const Frame> latest()const{
+  std::lock_guard<std::mutex> lock(mutex);return frame;
+ }
+};
 class DeferredMaterialPrototype {
  std::mutex mutex;
  std::condition_variable ready,idle;
@@ -30,9 +51,12 @@ class DeferredMaterialPrototype {
 public:
  explicit DeferredMaterialPrototype(size_t capacity):limit(capacity),worker([this]{run();}){}
  DeferredMaterialPrototype(const DeferredMaterialPrototype&)=delete;
- ~DeferredMaterialPrototype(){
+ ~DeferredMaterialPrototype(){close();}
+ // Owner-thread close: refuses new samples, drains accepted ones, joins.
+ // Not callable from the worker or concurrently by multiple owners.
+ void close(){
   {std::lock_guard<std::mutex> lock(mutex);stopping=true;}
-  ready.notify_one();worker.join();
+  ready.notify_one();if(worker.joinable())worker.join();
  }
  // Refusal is explicit: caller retains the sample and must retry/pause input.
  // This prototype does not define production overflow recovery.

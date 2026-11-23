@@ -1,0 +1,12 @@
+{
+ "stage":"Research prototype only; not connected to Qt or installed app",
+ "added":["Latest-only immutable revisioned snapshot mailbox with stale revision rejection","Owner-thread idempotent close refuses new jobs and joins after accepted jobs complete","Completion barrier confirms final revision1260 before reading image"],
+ "tests":["Concurrent producer1000 revisions and reader: monotonic untorn frames; retained revision1 remains immutable","Close drains100 accepted commands,refuses later command,idempotent repeated close","Capacity2 rejection/retry FIFO and exception barrier","1260 sample burst complete material state equals synchronous reference,including final published image","Host and ARM320x320 and1200x1600 pass"],
+ "arm":[{"surface":"320x320","snapshot_bytes":409600,"submit_max_us":57,"wall_us":277245},{"surface":"1200x1600","snapshot_bytes":7680000,"submit_max_us":82,"wall_us":972970}],
+ "host":[{"surface":"320x320","submit_max_us":4,"wall_us":32374},{"surface":"1200x1600","submit_max_us":13,"wall_us":97281}],
+ "timing_scope":"Wall includes both worker and synchronous reference; not speedup or GUI latency.20 full snapshots copied per1260 sample burst,not paced to display clock.",
+ "sanitizers":"Earlier320x320 snapshot/close revision passed ASan+UBSan with detect_leaks=0. Default LeakSanitizer failed because environment uses ptrace; leak checking not claimed. Final full-size extension was not rerun under sanitizers.",
+ "limitations":["Only mailbox slot bounded; consumers can retain frames and increase memory","No real save/disk,undo,page-switch,Qt lifecycle or render thread integration","Close may block until queue completes; not nonblocking UI close","No frame pacing or incremental tiles yet; copying7.68MB/frame can be expensive","No sustained-overload recovery or new UAT"],
+ "device_final":"xochitl active,raster29d4827 unchanged,monitor static; no app restart",
+ "next":"Use immutable dirty-tile snapshots plus bounded publication and test terminal save/undo/page barriers before guarded application integration"
+}
