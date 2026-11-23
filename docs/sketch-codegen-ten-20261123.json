@@ -1,0 +1,24 @@
+{
+ "scope":"10 compiler-code-generation probes, not ten algorithm changes or accepted improvements",
+ "reference_commit":"384d57e",
+ "sequence":"baseline,01..10,baseline,10..01,baseline; resumed after first09 digest mismatch, its initial failed sample retained but excluded from planned23",
+ "baseline_us":[2246718,2239701,2244827],
+ "variants":[
+  {"id":"01-o3","us":[2261449,2281768],"gain_pct":-1.19,"digest_match":true},
+  {"id":"02-no-vector","us":[2241822,2244285],"gain_pct":0.08,"digest_match":true},
+  {"id":"03-unroll","us":[2212915,2198147],"gain_pct":1.75,"digest_match":true},
+  {"id":"04-o3-unroll","us":[2204461,2206130],"gain_pct":1.76,"digest_match":true},
+  {"id":"05-no-slp","us":[2252780,2243913],"gain_pct":-0.16,"digest_match":true},
+  {"id":"06-no-ipa-cp","us":[2319276,2239635],"gain_pct":-1.54,"digest_match":true},
+  {"id":"07-no-small-inline","us":[2241266,2236702],"gain_pct":0.26,"digest_match":true},
+  {"id":"08-no-math-errno","us":[2312559,2331562],"gain_pct":-3.44,"digest_match":true},
+  {"id":"09-cortex-a7","us":[2108919,2101270],"gain_pct":6.22,"digest_match":false,"decision":"reject altered output"},
+  {"id":"10-o3-cortex-a7","us":[2168858,2101912],"gain_pct":4.88,"digest_match":false,"decision":"reject altered output"}
+ ],
+ "gain_definition":"1 - variant median / pooled baseline median; descriptive only, not statistical significance",
+ "tests":"10 host fidelity suites:8100 varied all-tool dabs plus2000 charcoal dabs and complete state comparisons to pre-rowspan reference. Host excludes ARM-only mcpu flags.11 ARM builds;23 planned CPU runs plus1 initial09 mismatch sample. ARM checks digest of mass/image only, not full physical state equality.",
+ "limitations":["Only2 runs per variant,fixed reverse order,not randomized","Compiler can affect benchmark trajectory as well as material; mismatch cause not diagnosed","Host fixture built with same host flags is not full baseline-compiler equivalence proof","No full application build or GUI latency trial; no physical panel test","No app installation,service restart or notebook mutation; CPU-only temporary executable files retained","Initial ARM-only option on host and initial abort on digest mismatch corrected with original logs retained"],
+ "decision":"No new UAT. Reject09/10;03/04 are small research leads,not user-visible gains. Do not add percentages to prior improvements.",
+ "device_final":"xochitl active,raster29d4827 baseline,monitor static",
+ "next":"Prefer a precise algorithmic hot-loop improvement; if pursuing unroll, first complete ARM state comparison and paired full-GUI tests before promotion"
+}
