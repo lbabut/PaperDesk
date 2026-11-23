@@ -1,0 +1,96 @@
+SKETCH THREAD / PREVIEW STUDY — 23 November 2026
+
+Research only. No new UAT, production/main/website update or saved-page change.
+Material/raster comparison is uninstrumented completion-wake source513c90c,
+raster5669f7707b8a3a36e4a5fc7d77b306e67884cc1107c03b014b40354aaf4c5518.
+The currently installed normal baseline is restored after every probe, not
+replaced by this research module. Inherited tracked binaries are not rebuilt
+release artifacts; do not install a clean branch checkout as a candidate.
+
+METHOD
+Read /proc/PID/task/*/stat and schedstat before and after synthetic injection.
+No affinity, scheduling priority, governor or framebuffer policy changes.
+Task birth time protects against TID reuse. A new task contributes cumulative
+CPU only if its birth is provably after the complete first snapshot; otherwise
+it remains explicitly unavailable, never zero. Vanished tasks are recorded.
+Scheduling wait is runnable time, not mutex sleep; different tasks' waits
+overlap and must not be added as elapsed duration. Names alone do not establish
+worker roles. The main PID is explicitly recorded in later reports.
+
+Initial shell sampler A1 cost300..760ms per scan and is EXCLUDED from useful
+low-overhead evidence. Its raw report is retained. Replacement single-process
+C sampler took0..20ms per scan at10ms uptime resolution, not literal zero cost.
+Windows include SSH/driver startup/reporting and some release tail, not an
+entire stroke at exact common boundaries. No independent optical panel test.
+
+CONTROLS AND ABLATION
+A2: normal8ms preview; B1: fastPenPreview=false only in disposable diagnostic
+app; A3: return to normal8ms. Product QML and saved settings were not changed.
+All use identical1260 ordered injected samples per tool at approximately500Hz.
+Disabling the guide is an ablation, NOT a proposed user feature removal.
+
+Soft tilted charcoal (ms):
+run        GUI max gap   queue p95 upper   release to drain
+A1 shell       198            1180               2113
+A2 normal      156            1183               1910
+B1 no guide    139             125               1243
+A3 normal      175             786               1997
+C1 guide16ms   171             954               1855
+A3 additionally fails center-tile-visible-before-release. All fail unchanged
+queue<100ms and release<150ms budgets. A single ablation is exploratory, not
+a statistical performance claim; return control supports further investigation.
+
+Charcoal framegen scheduled CPU: A2=1.319921s, B1=.263832s, A3=1.297645s.
+Observed windows are about3.4s. In A2/A3 the main thread records about1.6..1.7s
+runnable wait, and the two newly created CPU-heavy tasks also wait heavily.
+This supports contention involving immediate preview/frame generation; it
+does not prove all CPU time is removable or that the processor is at an
+absolute optimization limit. Main-thread CPU can increase when its waiting
+decreases, so task CPU alone is not user latency.
+
+16MS CANDIDATE
+Separate experiment/sketch-preview16-20261123, source3315655, retains all input
+processing and guide pixels. Only update coalescing deadline8->16ms changes;
+first update is immediate and release flush remains forced. Status reports
+the actual compile-time interval. No material/raster arithmetic changes.
+Native batch tests exercise both8 and16ms, pending deadlines, union bounds,
+forced tail,3072 pale tip phases, clipping, permit rejection, shade stability
+and eraser. The16ms unit passes on host and ARM;8ms control passes on host.
+ASan/UBSan pass with leak detection disabled: initial LeakSanitizer could not
+run under ptrace. Do not claim leak checking passed.
+
+C1 actual GUI probe retains the guide (case flag true),1260 samples/tool,
+no overflow/pending/runtime errors/automatic save. Graphite gap42,queue23,
+tail28ms. Heavy charcoal still fails954ms queue and1855ms tail; reject for
+UAT. framegen CPU1.130497s over3.48..3.50s window: smaller than controls but
+not sufficient to meet budgets. One pilot does not establish a reliable
+speedup; no ordinary-rate candidate cohort was run after the heavy failure.
+Runtime status explicitly reported16ms before input; module hash
+82393c675b31a29c234801eed3136ac0539d51fd8a159bcf3a27cb0ae701ff07.
+
+All five runs preserved original document setting and17 checked saved cache
+files (not a full-library audit),1260 samples/tool and zero overflow/pending.
+Each installer receipt was rolled back to its OWN backup. Final normal raster
+29d482734f987777a8b355df8a3511d9a93f0e843375daee0f9950c8d52975a7,
+ink5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7,
+RCC3207f8fbd23057eeaa0ebc47b684b2888d4b0b66f21d5efd0295040035e5d0a1;
+xochitl active, failure monitor static/unmasked. Canonical343 dirty entries
+were not edited. No experimental module or no-preview setting left installed.
+
+NEXT
+Investigate submitted preview damage/area and frame-generation work while
+preserving immediate guide and every material/input sample. Do not simply
+disable the guide, lower display quality, change priorities or infer a CPU
+ceiling. Counters narrow the next hypothesis; this study delivers diagnosis
+and a rejected implementation, not a solved painting-latency issue.
+
+EVIDENCE / REPRODUCTION
+13 Python tests include actual host observer compilation/live read, bad PIDs,
+counter reset/reuse, missing schedstat and new task accounting. Six existing
+report tests pass. ARM observer compiles with Wall/Wextra/Werror and runs in
+the actual guarded GUI probes. Strict latency/fidelity thresholds unchanged.
+Use scripts/test-sketch-device-performance.py --thread-profile with the usual
+explicit safe-state/key/known-hosts/baseline options. --shading-no-preview is
+diagnostic only. scripts/summarize-sketch-thread-study.py exports sanitized
+metrics and source-report hashes; original reports stay in the private study.
+No new prediction/training, marketing, spending or revenue is involved.
