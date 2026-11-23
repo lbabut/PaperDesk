@@ -107,14 +107,19 @@ class SketchRaster:public QObject {
     Q_PROPERTY(bool calibrationActive READ calibrationActive NOTIFY calibrationChanged)
     Q_PROPERTY(int calibrationStage READ calibrationStage NOTIFY calibrationChanged)
 public:
-    // Detached research lane. Explicit opt-in, no connection to raw input,
-    // no commit operation, and never aliases live material/image/finger data.
+    // Explicitly enabled research lane; normal input remains synchronous.
+    // Live research commits only after a worker barrier; no mutable aliases.
+    static uint64_t researchNowUs(){return uint64_t(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count());}
     struct ResearchSurface {
         PaperMaterial physics;
         std::vector<uint32_t> mass,image;
         std::vector<uint16_t> finger;
         std::atomic<int> completed{0};
         std::vector<long long> completionAges; // Worker-owned, read after drain.
+        // Disjoint producer/owner counters. Read producer counters only after
+        // drain. Wall time includes preemption and row-worker waits, not CPU.
+        uint64_t markUs=0,segmentUs=0,segmentMaxUs=0,transportUs=0,transportCalls=0,lastCompleteUs=0;
+        uint64_t initUs=0,pollUs=0,pollMaxUs=0,pollCalls=0;
         DirtyTilesPrototype tiles{1200,1600};
     };
     std::vector<uint32_t> researchDisplay;
@@ -122,6 +127,7 @@ public:
     // Owner-thread polling never drains the executor or reads its mutable pixels.
     Q_INVOKABLE int pollDeferredResearch(){
         if(!researchDeferredEnabled||!researchSurface)return -1;
+        const auto started=researchNowUs();
         auto batch=researchSurface->tiles.take();
         if(batch.revision>researchRevision){
             researchSurface->tiles.apply(batch,researchDisplay);
@@ -131,6 +137,8 @@ public:
             if(!damage.isEmpty())emit researchDamaged(damage);
             if(researchLive&&!damage.isEmpty())emit damaged(damage);
         }
+        const auto elapsed=researchNowUs()-started;
+        researchSurface->pollUs+=elapsed;researchSurface->pollMaxUs=std::max(researchSurface->pollMaxUs,elapsed);researchSurface->pollCalls++;
         return int(researchRevision);
     }
     Q_INVOKABLE QString deferredDisplayDigest() const {
@@ -143,6 +151,7 @@ public:
     bool deferredLiveEnabled=false,researchLive=false;
     bool researchFirstSample=true;
     QVariantMap lastDeferredStats;
+    uint64_t firstFinishPollUs=0,finishPolls=0;
     QString deferredCompletionError;
     Q_INVOKABLE QString completionError()const{return deferredCompletionError;}
     Q_INVOKABLE bool tryFinish(bool preview=false){
@@ -150,6 +159,7 @@ public:
         // Keep the authoritative stroke open until every accepted command has
         // completed. Polling must never turn a partial image into a saved one.
         try{
+            if(researchLive){if(!firstFinishPollUs)firstFinishPollUs=researchNowUs();finishPolls++;}
             if(researchLive&&researchWorker&&!researchWorker->isIdle())return false;
             finish(preview);return deferredCompletionError.isEmpty();
         }catch(const std::exception &e){deferredCompletionError=QString::fromUtf8(e.what());return false;}
@@ -163,24 +173,52 @@ public:
     std::shared_ptr<ResearchSurface> researchSurface;
     std::unique_ptr<SketchResearchExecutor> researchWorker;
     Q_INVOKABLE void stopDeferredResearch(){
+        const auto stopStarted=researchNowUs();
+        bool profiled=false;
         researchPollTimer.stop();
         if(researchLive&&researchWorker&&researchSurface){
             try{
-            researchWorker->drain();
+            const auto drainStarted=researchNowUs();researchWorker->drain();
+            const auto drainUs=researchNowUs()-drainStarted;
             auto ages=researchSurface->completionAges;std::sort(ages.begin(),ages.end());
             if(!ages.empty())lastDeferredStats={{"samples",int(ages.size())},{"completion_age_p95_ms",qlonglong(ages[(ages.size()*95+99)/100-1])},{"completion_age_max_ms",qlonglong(ages.back())}};
+            const auto copyStarted=researchNowUs();
             memcpy(material.bits(),researchSurface->mass.data(),1200*1600*4);
             memcpy(image.bits(),researchSurface->image.data(),1200*1600*4);
             memcpy(finger.bits(),researchSurface->finger.data(),82*81*2);
+            const auto copyUs=researchNowUs()-copyStarted,physicsStarted=researchNowUs();
             physics=researchSurface->physics;researchLive=false;
+            const auto physicsUs=researchNowUs()-physicsStarted;
+            auto &s=*researchSurface;
+            lastDeferredStats.insert("profile_schema",1);
+            lastDeferredStats.insert("profile_scope","wall microseconds; worker and owner overlap; not additive CPU or panel latency");
+            lastDeferredStats.insert("surface_init_us",qulonglong(s.initUs));
+            lastDeferredStats.insert("worker_mark_us",qulonglong(s.markUs));
+            lastDeferredStats.insert("worker_segment_us",qulonglong(s.segmentUs));
+            lastDeferredStats.insert("worker_segment_max_us",qulonglong(s.segmentMaxUs));
+            lastDeferredStats.insert("worker_transport_us",qulonglong(s.transportUs));
+            lastDeferredStats.insert("worker_transport_calls",qulonglong(s.transportCalls));
+            lastDeferredStats.insert("worker_transport_bytes",qulonglong(s.tiles.copiedBytes));
+            lastDeferredStats.insert("owner_poll_us",qulonglong(s.pollUs));
+            lastDeferredStats.insert("owner_poll_max_us",qulonglong(s.pollMaxUs));
+            lastDeferredStats.insert("owner_poll_calls",qulonglong(s.pollCalls));
+            lastDeferredStats.insert("finish_polls",qulonglong(finishPolls));
+            lastDeferredStats.insert("finish_poll_wait_us",qulonglong(firstFinishPollUs?stopStarted-firstFinishPollUs:0));
+            lastDeferredStats.insert("worker_idle_to_stop_us",qulonglong(s.lastCompleteUs&&stopStarted>s.lastCompleteUs?stopStarted-s.lastCompleteUs:0));
+            lastDeferredStats.insert("drain_us",qulonglong(drainUs));
+            lastDeferredStats.insert("commit_buffers_us",qulonglong(copyUs));
+            lastDeferredStats.insert("commit_physics_us",qulonglong(physicsUs));
+            profiled=true;
             unpublished=true;
             }catch(const std::exception &e){deferredCompletionError=QString::fromUtf8(e.what());researchLive=false;}
         }
+        const auto cleanupStarted=researchNowUs();
         researchDeferredEnabled=false;
         if(researchWorker)researchWorker->close();
         researchWorker.reset();researchSurface.reset();researchSubmitted=0;
         researchDisplay.clear();researchRevision=0;
         emit researchDamaged(QRegion(QRect(0,0,1200,1600)));
+        if(profiled){lastDeferredStats.insert("cleanup_us",qulonglong(researchNowUs()-cleanupStarted));lastDeferredStats.insert("stop_total_us",qulonglong(researchNowUs()-stopStarted));}
     }
     Q_INVOKABLE bool setDeferredResearchEnabled(bool enabled){
         stopDeferredResearch();
@@ -189,13 +227,15 @@ public:
         return startDeferredSurface();
     }
     bool startDeferredSurface(){
+        const auto started=researchNowUs();firstFinishPollUs=0;finishPolls=0;
         auto state=std::make_shared<ResearchSurface>();state->physics=physics;
         const auto *m=reinterpret_cast<const uint32_t*>(material.constBits());
         const auto *im=reinterpret_cast<const uint32_t*>(image.constBits());
         const auto *f=reinterpret_cast<const uint16_t*>(finger.constBits());
         state->mass.assign(m,m+1200*1600);state->image.assign(im,im+1200*1600);state->finger.assign(f,f+82*81);
         researchDisplay=state->image;
-        researchSurface=std::move(state);researchWorker=std::make_unique<SketchResearchExecutor>(2048);researchDeferredEnabled=true;return true;
+        researchSurface=std::move(state);researchWorker=std::make_unique<SketchResearchExecutor>(2048);researchDeferredEnabled=true;
+        researchSurface->initUs=researchNowUs()-started;return true;
     }
     Q_INVOKABLE bool submitDeferredResearch(int tool,double size,double strength,double ax,double ay,double ap,double x,double y,double p,int index){
         if(!researchDeferredEnabled||!researchWorker||!researchSurface||index!=researchSubmitted||
@@ -206,14 +246,18 @@ public:
         int segmentIndex=researchLive?(researchFirstSample?0:1):index;
         auto submittedAt=PaperPen::now();
         auto job=[state,tool,size,strength,ax,ay,ap,x,y,p,index,stride,tx,ty,aspect,angle,segmentIndex,submittedAt]{
+            auto stage=researchNowUs();
             state->physics.tiltX=tx;state->physics.tiltY=ty;state->physics.contactAspect=aspect;state->physics.contactAngle=angle;
             // First publication is a full scan: loaded pages need a non-white base.
             double radius=std::max(state->physics.footprintRadius(tool,size,ap),state->physics.footprintRadius(tool,size,p))+3;
             state->tiles.markRect(1,int(std::floor(std::min(ax,x)-radius)),int(std::floor(std::min(ay,y)-radius)),int(std::ceil(std::max(ax,x)+radius)),int(std::ceil(std::max(ay,y)+radius)));
+            state->markUs+=researchNowUs()-stage;stage=researchNowUs();
             state->physics.segment(state->mass.data(),state->image.data(),state->finger.data(),tool,size,0,strength,ax,ay,ap,x,y,p,segmentIndex);
-            if(index==0||(index+1)%stride==0)state->tiles.publishForPage(1,uint64_t(index)+1,state->image,index!=0);
+            const auto segmentElapsed=researchNowUs()-stage;state->segmentUs+=segmentElapsed;state->segmentMaxUs=std::max(state->segmentMaxUs,segmentElapsed);
+            if(index==0||(index+1)%stride==0){stage=researchNowUs();state->tiles.publishForPage(1,uint64_t(index)+1,state->image,index!=0);state->transportUs+=researchNowUs()-stage;state->transportCalls++;}
             state->completed++;
             state->completionAges.push_back(PaperPen::now()-submittedAt);
+            state->lastCompleteUs=researchNowUs();
         };
         if(researchSynchronous)job();else if(!researchWorker->trySubmit(std::move(job)))return false;
         researchSubmitted++;return true;

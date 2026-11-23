@@ -34,6 +34,13 @@ int main(int argc,char **argv){QGuiApplication app(argc,argv);QTemporaryDir dir;
  QElapsedTimer elapsed;elapsed.start();for(int i=0;i<100;i++)assert(!a.tryFinish());assert(elapsed.elapsed()<50);
  assert(a.researchLive&&a.completionError().isEmpty());release.set_value();a.researchWorker->drain();
  assert(a.tryFinish());b.finish();equal(a,b);assert(!a.researchLive);
+ const auto profile=a.deferredStats();
+ assert(profile.value("profile_schema").toInt()==1&&profile.value("samples").toInt()==2);
+ assert(profile.value("finish_polls").toULongLong()==101);
+ assert(profile.value("worker_transport_calls").toULongLong()>=1);
+ assert(profile.value("worker_transport_bytes").toULongLong()>0);
+ assert(profile.value("worker_segment_us").toULongLong()>=profile.value("worker_segment_max_us").toULongLong());
+ assert(profile.value("stop_total_us").toULongLong()>=profile.value("commit_buffers_us").toULongLong()+profile.value("commit_physics_us").toULongLong()+profile.value("cleanup_us").toULongLong());
  {
   SketchRaster failed(nullptr,dir.filePath("failed"));failed.setDeferredLiveEnabled(true);failed.begin();
   failed.advancePenInput(5,38,1,200,200,.8,true,.8,.3);
