@@ -119,6 +119,33 @@ struct PaperMaterial {
     // This is transient derived state, never saved with a page.
     static double capacityResponse(int tool,double value){return tool==4 ? .75+.25*value : tool==5 ? .85+.15*value : value;}
     struct ContactResponse { double contact; int capacity; };
+    // Exact derived values for polished charcoal pixels. Per-thread storage
+    // avoids races between row workers and is never part of a saved page.
+    // Pressure/tool/capacity changes invalidate lazily; collisions recompute.
+    struct PolishedContactCache {
+        struct Entry { uint32_t epoch=0; uint16_t key=0; ContactResponse value{}; };
+        std::array<Entry,1024> entries{};
+        uint32_t epoch=0;
+        int tool=-1;double pressure=-1,capacity=-1;
+        void prepare(int nextTool,double nextPressure,double nextCapacity){
+            if(tool==nextTool&&pressure==nextPressure&&capacity==nextCapacity)return;
+            if(++epoch==0){for(auto &entry:entries)entry.epoch=0;epoch=1;}
+            tool=nextTool;pressure=nextPressure;capacity=nextCapacity;
+        }
+        const ContactResponse &get(uint8_t polishByte,uint8_t toothByte){
+            const uint16_t key=uint16_t(unsigned(polishByte)*256+toothByte);
+            auto &entry=entries[key&1023];
+            if(entry.epoch!=epoch||entry.key!=key){
+                const auto &response=grainResponses()[key];
+                double polish=polishByte*(1.0/255.0);
+                entry.value={std::clamp((1.05*pressure+.15-response.grain*.5)*2.0,0.0,1.0),
+                    std::max(1,int(capacity*capacityResponse(tool,response.capacity)*(1-.22*polish)))};
+                entry.key=key;entry.epoch=epoch;
+            }
+            return entry.value;
+        }
+    };
+    static PolishedContactCache &polishedContactCache(){static thread_local PolishedContactCache cache;return cache;}
     std::array<ContactResponse, 256> freshContact{};
     double freshPressure = -1;
     int freshTool = -1;
@@ -310,6 +337,10 @@ struct PaperMaterial {
         }
         auto paintRows = [&](int from, int to) {
         const int rowTool = FixedTool >= 0 ? FixedTool : tool;
+        PolishedContactCache *polishedCache=nullptr;
+        if((rowTool==4||rowTool==5)&&cacheFresh){
+            polishedCache=&polishedContactCache();polishedCache->prepare(rowTool,p,capacityAtPressure);
+        }
         const int researchStripe=PaperMaterialRows::researchRowStripe();
         for (int y = from; y <= to; ++y) {
             // Offline prototype only. Both lanes see identical geometry/wear,
@@ -404,6 +435,9 @@ struct PaperMaterial {
                     if (cacheFresh && burnish[at] == 0) {
                         const auto &fresh = freshContact[tooth[at]];
                         contact = fresh.contact; capacity = fresh.capacity;
+                    } else if(polishedCache) {
+                        const auto &cached=polishedCache->get(burnish[at],tooth[at]);
+                        contact=cached.contact;capacity=cached.capacity;
                     } else {
                         contact = std::clamp((1.05 * p + .15 - response.grain * toothContact) * 2.0, 0.0, 1.0);
                         capacity = std::max(1, int(capacityAtPressure * capacityResponse(rowTool,response.capacity) * (1 - .22 * polish)));
