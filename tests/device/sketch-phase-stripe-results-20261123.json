@@ -14,8 +14,10 @@
     "Phase counters are overlapping wall time, not additive CPU time. Stripe segment timing includes marking and the lane barrier.",
     "Correct final image/state is necessary but insufficient for responsiveness; every accepted sample retained on successful completion.",
     "All candidates reverted to baseline after measurements. No production release or canonical-tree modifications.",
+    "Preservation checks cover the benchmark artwork/settings and 17 cache files, not a complete library audit or backup.",
     "ASan/UBSan rerun used detect_leaks=0: initial LeakSanitizer failed under ptrace, so leak detection is unverified.",
-    "Initial striped backend flush failed exact burnish-state regression. Merge after drain fixed it before device testing; rerun passed."
+    "Initial striped backend flush failed exact burnish-state regression. Merge after drain fixed it before device testing; rerun passed.",
+    "Ordinary completion-wake pilot delivered zero wake signals: its latency change cannot be attributed to the wakeup mechanism."
   ],
   "host_tests": [
     "1380 exact offline chunk states on host and ARM",
@@ -24,6 +26,11 @@
     "ASan/UBSan batch executor (leak detection excluded)",
     "actual advancePenInput exact state, lifecycle, stalled-worker nonblocking finish and failed-save refusal",
     "backend-deferred, release-resource, publication, workflow"
+  ],
+  "completion_wake_tests": [
+    "owner-thread delivery after stalled worker",
+    "stale epoch notification ignored",
+    "timer fallback retained"
   ],
   "variants": [
     {
@@ -517,6 +524,177 @@
                 "worker_transport_us": 283259
               },
               "queue_p95_upper_ms": 1097,
+              "strict_latency_gates_pass": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "completion_wake",
+      "source_commit": "b2b727d7f820eb84f3fa4b3c5820d12439f87760",
+      "native_sha256": "5669f7707b8a3a36e4a5fc7d77b306e67884cc1107c03b014b40354aaf4c5518",
+      "runs": [
+        {
+          "mode": "ordinary",
+          "raw_sha256": "41c3ba55e8807db22eb9ab68aa28e074ae89430a60473b47ec7dbd2407372065",
+          "artwork_preserved": true,
+          "saved_files_preserved": true,
+          "no_automatic_save": true,
+          "runtime_error_count": 0,
+          "cases": [
+            {
+              "id": "pen-graphite",
+              "input_samples": 1260,
+              "input_stats": [
+                1261,
+                0,
+                0
+              ],
+              "achieved_input_hz": 236.2204724409449,
+              "requested_input_hz": 250,
+              "max_input_tick_gap_ms": 45,
+              "release_to_drained_ms": 36,
+              "tile_visible_before_release": true,
+              "blank_frames_after_visible": 0,
+              "display_binary": true,
+              "optical_has_grays": true,
+              "display_mean": 187.5146484375,
+              "optical_mean": 187.3486328125,
+              "deferred_material": {},
+              "queue_p95_upper_ms": 19,
+              "strict_latency_gates_pass": true
+            },
+            {
+              "id": "pen-charcoal",
+              "input_samples": 1260,
+              "input_stats": [
+                2522,
+                0,
+                0
+              ],
+              "achieved_input_hz": 225.12060032160085,
+              "requested_input_hz": 250,
+              "max_input_tick_gap_ms": 146,
+              "release_to_drained_ms": 132,
+              "tile_visible_before_release": true,
+              "blank_frames_after_visible": 0,
+              "display_binary": true,
+              "optical_has_grays": true,
+              "display_mean": 133.2275390625,
+              "optical_mean": 134.26953125,
+              "deferred_material": {
+                "cleanup_us": 10013,
+                "commit_buffers_us": 29439,
+                "commit_physics_us": 10523,
+                "completion_age_max_ms": 227,
+                "completion_age_p95_ms": 149,
+                "completion_wake_delivered": 0,
+                "drain_us": 3,
+                "finish_poll_wait_us": 8,
+                "finish_polls": 1,
+                "owner_poll_calls": 125,
+                "owner_poll_max_us": 11964,
+                "owner_poll_us": 122193,
+                "profile_schema": 1,
+                "profile_scope": "wall microseconds; striped segment counter includes mark work and lane barrier; worker and owner overlap; not additive CPU or panel latency",
+                "samples": 1260,
+                "stop_total_us": 50471,
+                "surface_init_us": 113844,
+                "worker_idle_to_stop_us": 27419,
+                "worker_mark_us": 35447,
+                "worker_max_batch": 24,
+                "worker_segment_max_us": 127224,
+                "worker_segment_us": 4103782,
+                "worker_serial_rows": true,
+                "worker_stripe_batches": 220,
+                "worker_transport_bytes": 21626880,
+                "worker_transport_calls": 53,
+                "worker_transport_us": 262222
+              },
+              "queue_p95_upper_ms": 71,
+              "strict_latency_gates_pass": true
+            }
+          ]
+        },
+        {
+          "mode": "heavy",
+          "raw_sha256": "a03670a6a6d7a152be64ec487aa08ce202775d1285d9b17949960d0fac39ef6c",
+          "artwork_preserved": true,
+          "saved_files_preserved": true,
+          "no_automatic_save": true,
+          "runtime_error_count": 0,
+          "cases": [
+            {
+              "id": "pen-graphite",
+              "input_samples": 1260,
+              "input_stats": [
+                1261,
+                0,
+                0
+              ],
+              "achieved_input_hz": 500.0,
+              "requested_input_hz": 500,
+              "max_input_tick_gap_ms": 43,
+              "release_to_drained_ms": 35,
+              "tile_visible_before_release": true,
+              "blank_frames_after_visible": 0,
+              "display_binary": true,
+              "optical_has_grays": true,
+              "display_mean": 187.5146484375,
+              "optical_mean": 187.3486328125,
+              "deferred_material": {},
+              "queue_p95_upper_ms": 23,
+              "strict_latency_gates_pass": true
+            },
+            {
+              "id": "pen-charcoal",
+              "input_samples": 1260,
+              "input_stats": [
+                2522,
+                0,
+                0
+              ],
+              "achieved_input_hz": 500.0,
+              "requested_input_hz": 500,
+              "max_input_tick_gap_ms": 156,
+              "release_to_drained_ms": 1632,
+              "tile_visible_before_release": false,
+              "blank_frames_after_visible": 0,
+              "display_binary": true,
+              "optical_has_grays": true,
+              "display_mean": 133.2275390625,
+              "optical_mean": 134.26953125,
+              "deferred_material": {
+                "cleanup_us": 12122,
+                "commit_buffers_us": 22849,
+                "commit_physics_us": 10497,
+                "completion_age_max_ms": 975,
+                "completion_age_p95_ms": 954,
+                "completion_wake_delivered": 1,
+                "drain_us": 3,
+                "finish_poll_wait_us": 1001352,
+                "finish_polls": 19,
+                "owner_poll_calls": 67,
+                "owner_poll_max_us": 11295,
+                "owner_poll_us": 120549,
+                "profile_schema": 1,
+                "profile_scope": "wall microseconds; striped segment counter includes mark work and lane barrier; worker and owner overlap; not additive CPU or panel latency",
+                "samples": 1260,
+                "stop_total_us": 45833,
+                "surface_init_us": 118637,
+                "worker_idle_to_stop_us": 26255,
+                "worker_mark_us": 34728,
+                "worker_max_batch": 24,
+                "worker_segment_max_us": 108857,
+                "worker_segment_us": 3585954,
+                "worker_serial_rows": true,
+                "worker_stripe_batches": 54,
+                "worker_transport_bytes": 21168128,
+                "worker_transport_calls": 53,
+                "worker_transport_us": 302325
+              },
+              "queue_p95_upper_ms": 828,
               "strict_latency_gates_pass": false
             }
           ]
