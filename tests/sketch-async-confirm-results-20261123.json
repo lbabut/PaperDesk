@@ -1,0 +1,472 @@
+{
+  "study": "three alternating pairs, tilted soft charcoal plus graphite control",
+  "source_commit": "74bfd782aa13737b8c918de1586520834b85076a",
+  "baseline_sha256": "29d482734f987777a8b355df8a3511d9a93f0e843375daee0f9950c8d52975a7",
+  "candidate_sha256": "8902de621f757c31ac66471e5ed3741f3c010f5b4b58602793ce18d2b0401807",
+  "sequence": [
+    "a1",
+    "b1",
+    "a2",
+    "b2",
+    "a3",
+    "b3"
+  ],
+  "requested_input_hz": 250,
+  "samples_per_tool_per_run": 1260,
+  "limits_ms_strictly_less_than": {
+    "gui_gap_ms": 200,
+    "queue_p95_ms": 100,
+    "release_tail_ms": 150
+  },
+  "uat_qualified": false,
+  "runs": [
+    {
+      "label": "a1",
+      "arm": "baseline",
+      "raw_report_sha256": "419e1292c79a0f1c1c305bff0a4379fb354ba3b93b48f738583b28e095ad5c3c",
+      "completed_at": "2026-11-23T13:20:26.170723+00:00",
+      "cases": [
+        {
+          "tool": "pen-graphite",
+          "input_samples": 1260,
+          "achieved_input_hz": 235.82257158899495,
+          "gui_gap_ms": 46,
+          "queue_p95_ms": 20,
+          "release_tail_ms": 31,
+          "overflow": 0,
+          "pending": 0,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "optical_mean": 187.3486328125,
+          "display_mean": 187.5146484375,
+          "deferred_material": null
+        },
+        {
+          "tool": "pen-charcoal",
+          "input_samples": 1260,
+          "achieved_input_hz": 226.82268226822683,
+          "gui_gap_ms": 203,
+          "queue_p95_ms": 669,
+          "release_tail_ms": 662,
+          "overflow": 0,
+          "pending": 0,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "optical_mean": 134.26953125,
+          "display_mean": 133.2275390625,
+          "deferred_material": null
+        }
+      ],
+      "artwork_preserved": true,
+      "saved_files_preserved": true,
+      "no_automatic_save": true,
+      "runtime_errors": [],
+      "passed": false,
+      "failures": [
+        "run 0/pen-charcoal: device correctness/performance gate failed",
+        "run 0/pen-charcoal: gui_gap_ms=203 >= 200",
+        "run 0/pen-charcoal: queue_p95_ms=669 >= 100",
+        "run 0/pen-charcoal: release_tail_ms=662 >= 150"
+      ]
+    },
+    {
+      "label": "b1",
+      "arm": "candidate",
+      "raw_report_sha256": "d0c043a6adad4b427698ba260565f443d7041a346a6c3f638e6b9295c7c9a930",
+      "completed_at": "2026-11-23T13:22:34.542216+00:00",
+      "cases": [
+        {
+          "tool": "pen-graphite",
+          "input_samples": 1260,
+          "achieved_input_hz": 236.97573819823208,
+          "gui_gap_ms": 45,
+          "queue_p95_ms": 21,
+          "release_tail_ms": 31,
+          "overflow": 0,
+          "pending": 0,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "optical_mean": 187.3486328125,
+          "display_mean": 187.5146484375,
+          "deferred_material": {}
+        },
+        {
+          "tool": "pen-charcoal",
+          "input_samples": 1260,
+          "achieved_input_hz": 229.75929978118162,
+          "gui_gap_ms": 139,
+          "queue_p95_ms": 45,
+          "release_tail_ms": 292,
+          "overflow": 0,
+          "pending": 0,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "optical_mean": 134.26953125,
+          "display_mean": 133.2275390625,
+          "deferred_material": {
+            "completion_age_max_ms": 168,
+            "completion_age_p95_ms": 104,
+            "samples": 1260
+          }
+        }
+      ],
+      "artwork_preserved": true,
+      "saved_files_preserved": true,
+      "no_automatic_save": true,
+      "runtime_errors": [],
+      "passed": false,
+      "failures": [
+        "run 0/pen-charcoal: release_tail_ms=292 >= 150"
+      ]
+    },
+    {
+      "label": "a2",
+      "arm": "baseline",
+      "raw_report_sha256": "43ec63e136175bd1b16b295f70e7b3d9a159088e687a0a41b47e11363b41c672",
+      "completed_at": "2026-11-23T13:24:06.198083+00:00",
+      "cases": [
+        {
+          "tool": "pen-graphite",
+          "input_samples": 1260,
+          "achieved_input_hz": 235.95505617977528,
+          "gui_gap_ms": 204,
+          "queue_p95_ms": 26,
+          "release_tail_ms": 37,
+          "overflow": 0,
+          "pending": 0,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "optical_mean": 187.3486328125,
+          "display_mean": 187.5146484375,
+          "deferred_material": null
+        },
+        {
+          "tool": "pen-charcoal",
+          "input_samples": 1260,
+          "achieved_input_hz": 225.7255463991401,
+          "gui_gap_ms": 132,
+          "queue_p95_ms": 88,
+          "release_tail_ms": 102,
+          "overflow": 0,
+          "pending": 0,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "optical_mean": 134.26953125,
+          "display_mean": 133.2275390625,
+          "deferred_material": null
+        }
+      ],
+      "artwork_preserved": true,
+      "saved_files_preserved": true,
+      "no_automatic_save": true,
+      "runtime_errors": [],
+      "passed": false,
+      "failures": [
+        "run 0/pen-graphite: device correctness/performance gate failed",
+        "run 0/pen-graphite: gui_gap_ms=204 >= 200"
+      ]
+    },
+    {
+      "label": "b2",
+      "arm": "candidate",
+      "raw_report_sha256": "2e790e7547fc54aeca3af2cf069183eb9dc9f6fcecb858b3e3336dbada967075",
+      "completed_at": "2026-11-23T13:25:44.695397+00:00",
+      "cases": [
+        {
+          "tool": "pen-graphite",
+          "input_samples": 1260,
+          "achieved_input_hz": 236.70862295697916,
+          "gui_gap_ms": 46,
+          "queue_p95_ms": 18,
+          "release_tail_ms": 27,
+          "overflow": 0,
+          "pending": 0,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "optical_mean": 187.3486328125,
+          "display_mean": 187.5146484375,
+          "deferred_material": {}
+        },
+        {
+          "tool": "pen-charcoal",
+          "input_samples": 1260,
+          "achieved_input_hz": 216.60649819494586,
+          "gui_gap_ms": 194,
+          "queue_p95_ms": 122,
+          "release_tail_ms": 246,
+          "overflow": 0,
+          "pending": 0,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "optical_mean": 134.26953125,
+          "display_mean": 133.2275390625,
+          "deferred_material": {
+            "completion_age_max_ms": 337,
+            "completion_age_p95_ms": 239,
+            "samples": 1260
+          }
+        }
+      ],
+      "artwork_preserved": true,
+      "saved_files_preserved": true,
+      "no_automatic_save": true,
+      "runtime_errors": [],
+      "passed": false,
+      "failures": [
+        "run 0/pen-charcoal: queue_p95_ms=122 >= 100",
+        "run 0/pen-charcoal: release_tail_ms=246 >= 150"
+      ]
+    },
+    {
+      "label": "a3",
+      "arm": "baseline",
+      "raw_report_sha256": "5d736b165592dcd4e10b0a7f162d369fce450c40dd4ad09dc9d42bc9d51eeb09",
+      "completed_at": "2026-11-23T13:27:11.661377+00:00",
+      "cases": [
+        {
+          "tool": "pen-graphite",
+          "input_samples": 1260,
+          "achieved_input_hz": 237.9154078549849,
+          "gui_gap_ms": 46,
+          "queue_p95_ms": 20,
+          "release_tail_ms": 30,
+          "overflow": 0,
+          "pending": 0,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "optical_mean": 187.3486328125,
+          "display_mean": 187.5146484375,
+          "deferred_material": null
+        },
+        {
+          "tool": "pen-charcoal",
+          "input_samples": 1260,
+          "achieved_input_hz": 219.20668058455115,
+          "gui_gap_ms": 230,
+          "queue_p95_ms": 279,
+          "release_tail_ms": 303,
+          "overflow": 0,
+          "pending": 0,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "optical_mean": 134.26953125,
+          "display_mean": 133.2275390625,
+          "deferred_material": null
+        }
+      ],
+      "artwork_preserved": true,
+      "saved_files_preserved": true,
+      "no_automatic_save": true,
+      "runtime_errors": [],
+      "passed": false,
+      "failures": [
+        "run 0/pen-charcoal: device correctness/performance gate failed",
+        "run 0/pen-charcoal: gui_gap_ms=230 >= 200",
+        "run 0/pen-charcoal: queue_p95_ms=279 >= 100",
+        "run 0/pen-charcoal: release_tail_ms=303 >= 150"
+      ]
+    },
+    {
+      "label": "b3",
+      "arm": "candidate",
+      "raw_report_sha256": "569bf496fec4ebdef1c34f3149a27ea4b3380911d419e38879f3732e4b7630bd",
+      "completed_at": "2026-11-23T13:28:49.141682+00:00",
+      "cases": [
+        {
+          "tool": "pen-graphite",
+          "input_samples": 1260,
+          "achieved_input_hz": 236.7531003382187,
+          "gui_gap_ms": 47,
+          "queue_p95_ms": 20,
+          "release_tail_ms": 48,
+          "overflow": 0,
+          "pending": 0,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "optical_mean": 187.3486328125,
+          "display_mean": 187.5146484375,
+          "deferred_material": {}
+        },
+        {
+          "tool": "pen-charcoal",
+          "input_samples": 1260,
+          "achieved_input_hz": 232.17247097844114,
+          "gui_gap_ms": 194,
+          "queue_p95_ms": 113,
+          "release_tail_ms": 553,
+          "overflow": 0,
+          "pending": 0,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "optical_mean": 134.26953125,
+          "display_mean": 133.2275390625,
+          "deferred_material": {
+            "completion_age_max_ms": 458,
+            "completion_age_p95_ms": 316,
+            "samples": 1260
+          }
+        }
+      ],
+      "artwork_preserved": true,
+      "saved_files_preserved": true,
+      "no_automatic_save": true,
+      "runtime_errors": [],
+      "passed": false,
+      "failures": [
+        "run 0/pen-charcoal: queue_p95_ms=113 >= 100",
+        "run 0/pen-charcoal: release_tail_ms=553 >= 150"
+      ]
+    }
+  ],
+  "aggregates": {
+    "baseline": {
+      "pen-graphite": {
+        "gui_gap_ms": {
+          "median": 46,
+          "minimum": 46,
+          "maximum": 204
+        },
+        "queue_p95_ms": {
+          "median": 20,
+          "minimum": 20,
+          "maximum": 26
+        },
+        "release_tail_ms": {
+          "median": 31,
+          "minimum": 30,
+          "maximum": 37
+        },
+        "achieved_input_hz": {
+          "median": 235.95505617977528,
+          "minimum": 235.82257158899495,
+          "maximum": 237.9154078549849
+        }
+      },
+      "pen-charcoal": {
+        "gui_gap_ms": {
+          "median": 203,
+          "minimum": 132,
+          "maximum": 230
+        },
+        "queue_p95_ms": {
+          "median": 279,
+          "minimum": 88,
+          "maximum": 669
+        },
+        "release_tail_ms": {
+          "median": 303,
+          "minimum": 102,
+          "maximum": 662
+        },
+        "achieved_input_hz": {
+          "median": 225.7255463991401,
+          "minimum": 219.20668058455115,
+          "maximum": 226.82268226822683
+        }
+      }
+    },
+    "candidate": {
+      "pen-graphite": {
+        "gui_gap_ms": {
+          "median": 46,
+          "minimum": 45,
+          "maximum": 47
+        },
+        "queue_p95_ms": {
+          "median": 20,
+          "minimum": 18,
+          "maximum": 21
+        },
+        "release_tail_ms": {
+          "median": 31,
+          "minimum": 27,
+          "maximum": 48
+        },
+        "achieved_input_hz": {
+          "median": 236.7531003382187,
+          "minimum": 236.70862295697916,
+          "maximum": 236.97573819823208
+        }
+      },
+      "pen-charcoal": {
+        "gui_gap_ms": {
+          "median": 194,
+          "minimum": 139,
+          "maximum": 194
+        },
+        "queue_p95_ms": {
+          "median": 113,
+          "minimum": 45,
+          "maximum": 122
+        },
+        "release_tail_ms": {
+          "median": 292,
+          "minimum": 246,
+          "maximum": 553
+        },
+        "achieved_input_hz": {
+          "median": 229.75929978118162,
+          "minimum": 216.60649819494586,
+          "maximum": 232.17247097844114
+        }
+      }
+    }
+  },
+  "paired_charcoal_changes": [
+    {
+      "pair": 1,
+      "candidate_rate_difference_pct": 1.2946754194018917,
+      "release_tail_reduction_pct": 55.89123867069487,
+      "queue_p95_reduction_pct": 93.27354260089686
+    },
+    {
+      "pair": 2,
+      "candidate_rate_difference_pct": -4.039883101254937,
+      "release_tail_reduction_pct": -141.17647058823528,
+      "queue_p95_reduction_pct": -38.63636363636365
+    },
+    {
+      "pair": 3,
+      "candidate_rate_difference_pct": 5.914870093974578,
+      "release_tail_reduction_pct": -82.50825082508251,
+      "queue_p95_reduction_pct": 59.498207885304666
+    }
+  ],
+  "structural_correctness_checks_passed": true,
+  "decision": "Do not promote to UAT. Queue responsiveness improves in two pairs, but release tail regresses in two pairs and fails the unchanged gate in all three candidate runs.",
+  "next_experiment": "Measure worker execution, immutable tile transport, final material commit and repaint separately on the device before further scheduling changes. Keep fidelity and thresholds unchanged.",
+  "baseline_restored_after_each_pair": true,
+  "limitations": [
+    "Three fixed-order pairs are a small, non-randomized confirmation, not a general performance guarantee.",
+    "Requested 250 Hz uses relative sleeps; achieved rates are reported separately and are not identical.",
+    "Synthetic evdev input; physical sensor and e-ink panel latency are not measured.",
+    "Current study does not retest 500 Hz; prior candidate failed that stress test.",
+    "Final candidate adds small error/fullscreen guards to prior pilot; its binary hash is different.",
+    "Optical/display means are consistency probes, not a complete device image equivalence proof.",
+    "First orchestrator stopped after a1 because it wrongly demanded exit 0 for a measured performance failure. The valid a1 report was retained, safety checks reviewed, and the same sequence resumed without changing thresholds."
+  ]
+}
