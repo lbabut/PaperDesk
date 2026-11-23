@@ -41,6 +41,7 @@
 #include "sketch-smudge.h"
 #include "sketch-material.h"
 #include "sketch-deferred-research.h"
+#include "sketch-batch-research.h"
 #include "sketch-research-tiles.h"
 #include "sketch-pen.h"
 #include "sketch-touch.h"
@@ -111,7 +112,7 @@ public:
     // Live research commits only after a worker barrier; no mutable aliases.
     static uint64_t researchNowUs(){return uint64_t(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count());}
     struct ResearchSurface {
-        PaperMaterial physics;
+        PaperMaterial physics,secondPhysics;
         std::vector<uint32_t> mass,image;
         std::vector<uint16_t> finger;
         std::atomic<int> completed{0};
@@ -120,8 +121,56 @@ public:
         // drain. Wall time includes preemption and row-worker waits, not CPU.
         uint64_t markUs=0,segmentUs=0,segmentMaxUs=0,transportUs=0,transportCalls=0,lastCompleteUs=0;
         uint64_t initUs=0,pollUs=0,pollMaxUs=0,pollCalls=0;
+        uint64_t batches=0,maxBatch=0;
         DirtyTilesPrototype tiles{1200,1600};
     };
+    struct ResearchCommand {
+        int tool,index,stride,segmentIndex;
+        double size,strength,ax,ay,ap,x,y,p,tx,ty,aspect,angle;
+        long long submittedAt;
+    };
+    // Owner only, after executor drain. Restore the complete observable state
+    // for a flush/read as well as for the final authoritative commit.
+    static void mergeResearchPhysics(ResearchSurface &state){
+        auto &primary=state.physics;const auto &second=state.secondPhysics;
+        for(int y=0;y<primary.height;y++)if((y/8)&1)
+            std::copy_n(second.burnish.begin()+y*primary.width,primary.width,primary.burnish.begin()+y*primary.width);
+    }
+    static void processResearchBatch(const std::shared_ptr<ResearchSurface> &state,const std::vector<ResearchCommand> &commands){
+        std::exception_ptr failures[2];
+        const auto started=researchNowUs();
+        auto lane=[&](int index,PaperMaterial &physics){
+            // Always join both lanes before propagating failure. Partial
+            // pixels must never become a committed or saved material state.
+            try{
+                PaperMaterialRows::SerialScope serial;
+                PaperMaterialRows::ResearchStripeScope stripe(index);
+                for(const auto &c:commands){
+                    physics.tiltX=c.tx;physics.tiltY=c.ty;physics.contactAspect=c.aspect;physics.contactAngle=c.angle;
+                    if(index==0){
+                        auto stage=researchNowUs();
+                        double radius=std::max(physics.footprintRadius(c.tool,c.size,c.ap),physics.footprintRadius(c.tool,c.size,c.p))+3;
+                        state->tiles.markRect(1,int(std::floor(std::min(c.ax,c.x)-radius)),int(std::floor(std::min(c.ay,c.y)-radius)),int(std::ceil(std::max(c.ax,c.x)+radius)),int(std::ceil(std::max(c.ay,c.y)+radius)));
+                        state->markUs+=researchNowUs()-stage;
+                    }
+                    physics.segment(state->mass.data(),state->image.data(),state->finger.data(),c.tool,c.size,0,c.strength,c.ax,c.ay,c.ap,c.x,c.y,c.p,c.segmentIndex);
+                }
+            }catch(...){failures[index]=std::current_exception();}
+        };
+        PaperMaterialRows::instance().run([&]{lane(1,state->secondPhysics);},[&]{lane(0,state->physics);});
+        for(auto failure:failures)if(failure)std::rethrow_exception(failure);
+        auto elapsed=researchNowUs()-started;state->segmentUs+=elapsed;state->segmentMaxUs=std::max(state->segmentMaxUs,elapsed);
+        state->batches++;state->maxBatch=std::max(state->maxBatch,uint64_t(commands.size()));
+        bool publish=false;
+        for(const auto &c:commands)publish=publish||c.index==0||(c.index+1)%c.stride==0;
+        if(publish){
+            auto stage=researchNowUs();const auto &last=commands.back();
+            state->tiles.publishForPage(1,uint64_t(last.index)+1,state->image,commands.front().index!=0);
+            state->transportUs+=researchNowUs()-stage;state->transportCalls++;
+        }
+        for(const auto &c:commands){state->completed++;state->completionAges.push_back(PaperPen::now()-c.submittedAt);}
+        state->lastCompleteUs=researchNowUs();
+    }
     std::vector<uint32_t> researchDisplay;
     uint64_t researchRevision=0;
     // Owner-thread polling never drains the executor or reads its mutable pixels.
@@ -171,7 +220,7 @@ public:
     void settleDeferredRead()const{const_cast<SketchRaster*>(this)->settleDeferredLive();}
     int researchSubmitted=0;
     std::shared_ptr<ResearchSurface> researchSurface;
-    std::unique_ptr<SketchResearchExecutor> researchWorker;
+    std::unique_ptr<SketchBatchResearchExecutor<ResearchCommand>> researchWorker;
     Q_INVOKABLE void stopDeferredResearch(){
         const auto stopStarted=researchNowUs();
         bool profiled=false;
@@ -187,12 +236,17 @@ public:
             memcpy(image.bits(),researchSurface->image.data(),1200*1600*4);
             memcpy(finger.bits(),researchSurface->finger.data(),82*81*2);
             const auto copyUs=researchNowUs()-copyStarted,physicsStarted=researchNowUs();
+            // Only charcoal is admitted. It writes burnish in each lane's
+            // rows; tooth/ink are read-only, wear and geometry are identical.
+            mergeResearchPhysics(*researchSurface);
             physics=researchSurface->physics;researchLive=false;
             const auto physicsUs=researchNowUs()-physicsStarted;
             auto &s=*researchSurface;
             lastDeferredStats.insert("profile_schema",1);
             lastDeferredStats.insert("worker_serial_rows",true);
-            lastDeferredStats.insert("profile_scope","wall microseconds; worker and owner overlap; not additive CPU or panel latency");
+            lastDeferredStats.insert("worker_stripe_batches",qulonglong(s.batches));
+            lastDeferredStats.insert("worker_max_batch",qulonglong(s.maxBatch));
+            lastDeferredStats.insert("profile_scope","wall microseconds; striped segment counter includes mark work and lane barrier; worker and owner overlap; not additive CPU or panel latency");
             lastDeferredStats.insert("surface_init_us",qulonglong(s.initUs));
             lastDeferredStats.insert("worker_mark_us",qulonglong(s.markUs));
             lastDeferredStats.insert("worker_segment_us",qulonglong(s.segmentUs));
@@ -229,13 +283,13 @@ public:
     }
     bool startDeferredSurface(){
         const auto started=researchNowUs();firstFinishPollUs=0;finishPolls=0;
-        auto state=std::make_shared<ResearchSurface>();state->physics=physics;
+        auto state=std::make_shared<ResearchSurface>();state->physics=physics;state->secondPhysics=physics;
         const auto *m=reinterpret_cast<const uint32_t*>(material.constBits());
         const auto *im=reinterpret_cast<const uint32_t*>(image.constBits());
         const auto *f=reinterpret_cast<const uint16_t*>(finger.constBits());
         state->mass.assign(m,m+1200*1600);state->image.assign(im,im+1200*1600);state->finger.assign(f,f+82*81);
         researchDisplay=state->image;
-        researchSurface=std::move(state);researchWorker=std::make_unique<SketchResearchExecutor>(2048);researchDeferredEnabled=true;
+        researchSurface=state;researchWorker=std::make_unique<SketchBatchResearchExecutor<ResearchCommand>>(2048,24,[state](const auto &commands){processResearchBatch(state,commands);});researchDeferredEnabled=true;
         researchSurface->initUs=researchNowUs()-started;return true;
     }
     Q_INVOKABLE bool submitDeferredResearch(int tool,double size,double strength,double ax,double ay,double ap,double x,double y,double p,int index){
@@ -246,22 +300,8 @@ public:
         double tx=physics.tiltX,ty=physics.tiltY,aspect=physics.contactAspect,angle=physics.contactAngle;
         int segmentIndex=researchLive?(researchFirstSample?0:1):index;
         auto submittedAt=PaperPen::now();
-        auto job=[state,tool,size,strength,ax,ay,ap,x,y,p,index,stride,tx,ty,aspect,angle,segmentIndex,submittedAt]{
-            PaperMaterialRows::SerialScope serialRows;
-            auto stage=researchNowUs();
-            state->physics.tiltX=tx;state->physics.tiltY=ty;state->physics.contactAspect=aspect;state->physics.contactAngle=angle;
-            // First publication is a full scan: loaded pages need a non-white base.
-            double radius=std::max(state->physics.footprintRadius(tool,size,ap),state->physics.footprintRadius(tool,size,p))+3;
-            state->tiles.markRect(1,int(std::floor(std::min(ax,x)-radius)),int(std::floor(std::min(ay,y)-radius)),int(std::ceil(std::max(ax,x)+radius)),int(std::ceil(std::max(ay,y)+radius)));
-            state->markUs+=researchNowUs()-stage;stage=researchNowUs();
-            state->physics.segment(state->mass.data(),state->image.data(),state->finger.data(),tool,size,0,strength,ax,ay,ap,x,y,p,segmentIndex);
-            const auto segmentElapsed=researchNowUs()-stage;state->segmentUs+=segmentElapsed;state->segmentMaxUs=std::max(state->segmentMaxUs,segmentElapsed);
-            if(index==0||(index+1)%stride==0){stage=researchNowUs();state->tiles.publishForPage(1,uint64_t(index)+1,state->image,index!=0);state->transportUs+=researchNowUs()-stage;state->transportCalls++;}
-            state->completed++;
-            state->completionAges.push_back(PaperPen::now()-submittedAt);
-            state->lastCompleteUs=researchNowUs();
-        };
-        if(researchSynchronous)job();else if(!researchWorker->trySubmit(std::move(job)))return false;
+        ResearchCommand command{tool,index,stride,segmentIndex,size,strength,ax,ay,ap,x,y,p,tx,ty,aspect,angle,submittedAt};
+        if(researchSynchronous)processResearchBatch(state,{command});else if(!researchWorker->trySubmitCommand(command))return false;
         researchSubmitted++;return true;
     }
     Q_INVOKABLE bool publishDeferredResearch(){
@@ -273,7 +313,7 @@ public:
     }
     Q_INVOKABLE bool flushDeferredResearch(){
         if(!researchWorker)return false;
-        try{researchWorker->drain();return true;}catch(...){return false;}
+        try{researchWorker->drain();mergeResearchPhysics(*researchSurface);return true;}catch(...){return false;}
     }
     Q_INVOKABLE QString deferredResearchDigest(){
         if(!flushDeferredResearch()||!researchSurface)return QString();

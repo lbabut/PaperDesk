@@ -10,6 +10,7 @@
 #include <functional>
 #include <mutex>
 #include <thread>
+#include <stdexcept>
 
 // One lazily started worker shares disjoint charcoal scanlines with the caller.
 // Each dab completes before the next one, preserving pigment and wear order.
@@ -48,6 +49,17 @@ public:
     // Experimental worker-local policy. Never leaks into the GUI thread or
     // saved material state; nested scopes restore the previous policy.
     static bool &threadParallelAllowed(){static thread_local bool allowed=true;return allowed;}
+    static int &researchRowStripe(){static thread_local int stripe=-1;return stripe;}
+    struct ResearchStripeScope {
+        int previous;
+        explicit ResearchStripeScope(int stripe):previous(researchRowStripe()){
+            if(stripe<0||stripe>1)throw std::invalid_argument("research stripe");
+            researchRowStripe()=stripe;
+        }
+        ~ResearchStripeScope(){researchRowStripe()=previous;}
+        ResearchStripeScope(const ResearchStripeScope&)=delete;
+        ResearchStripeScope& operator=(const ResearchStripeScope&)=delete;
+    };
     struct SerialScope {
         bool previous;
         SerialScope():previous(threadParallelAllowed()){threadParallelAllowed()=false;}
@@ -298,7 +310,11 @@ struct PaperMaterial {
         }
         auto paintRows = [&](int from, int to) {
         const int rowTool = FixedTool >= 0 ? FixedTool : tool;
+        const int researchStripe=PaperMaterialRows::researchRowStripe();
         for (int y = from; y <= to; ++y) {
+            // Offline prototype only. Both lanes see identical geometry/wear,
+            // but only charcoal pixels in their disjoint eight-row stripes.
+            if((rowTool==4||rowTool==5)&&researchStripe>=0&&((y/8)&1)!=researchStripe)continue;
             const double dy = y + .5 - cy, dySquared = dy * dy * quadraticY;
             int rowX0=x0,rowX1=x1;
             if (narrowRows) {
