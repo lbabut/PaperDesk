@@ -1,0 +1,13 @@
+{
+ "purpose":"Deterministic CPU-only soft-charcoal profile; not an optimization or UAT",
+ "workload":"12 passes,1260 segments/pass,1200x1600,tool5,size38,tilt .85/.35,varied pressure,retained material between passes",
+ "arm_uninstrumented_wall_us":[2247504,2268878],
+ "host_uninstrumented_wall_us":[318141,315427],
+ "arm_profiled_wall_us":2336094,
+ "mass_image_digest":"2347201020787794403",
+ "digest_scope":"FNV-like digest of packed pigment mass and rendered image, not complete physical state or collision-free equality proof",
+ "arm_gprof_sample_pct":{"pixel_loop":71.01,"dab_setup":8.40,"libc_syscall":5.46,"rebuild_tooth":4.20},
+ "limits":["One profiled run,10ms sampling; gprof attribution with worker threads is approximate","Profile covers initialization as well as stroke work; timed wall region excludes initialization","Host timings do not predict UI latency or ARM speedup","Line-level gprof failed with ltab miscount; no line-level claims","No candidate, no speedup comparison, no physical panel measurement","Initial command with unavailable nice executed no workload, then rerun successfully","First ARM build missing toolchain LD_LIBRARY_PATH failed, corrected build passed"],
+ "device":"No application module,UI,settings or saved drawing modified; xochitl active and raster29d4827 verified during this session",
+ "next":"Measure contact/deposition/optical sub-stages or evaluate a single exact loop optimization; compare complete state rather than digest alone before device trial"
+}
