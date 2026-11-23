@@ -1,0 +1,11 @@
+{
+ "stage":"Research-only isolated actor prototype; not linked into Sketch or installed",
+ "finding":"Independent framebuffer preview for charcoal already exists in papersketch-ink.c; proposal must decouple material work rather than add another preview",
+ "contract":"One worker owns material; bounded FIFO of value-captured sample commands; full queue refuses submission explicitly; drain is completion/error barrier",
+ "tests":["1260 sample burst enqueued before reference computation; complete mass/image/finger/tooth/burnish/ink/wear/untilNext/hasInk/kneaded state equals synchronous reference","Controlled capacity2 saturation rejects extra job; caller retries, FIFO0/1/2/3 preserved","Worker exception rethrown at drain; later submission refused","Host and ARM builds and executions pass"],
+ "host_burst":{"submit_max_us":14,"wall_us_including_both_renderings":22838},
+ "arm_burst_runs":[{"submit_max_us":48,"wall_us_including_both_renderings":227922},{"submit_max_us":54,"wall_us_including_both_renderings":263147}],
+ "limits":["320x320 test surface,not production1200x1600/UI workload","Submission timing not physical pen or e-ink latency; wall includes worker+reference,not speedup comparison","Completion backlog still exists; this moves work,does not eliminate it","Capacity2048 holds entire test burst; sustained overload beyond capacity not solved","No Qt rendering,snapshot transport,undo/save/page-switch/close integration","No accepted UAT or changed production module"],
+ "device_final":"xochitl active,raster29d4827 unchanged,monitor static; only temporary CPU test executable uploaded",
+ "next":"Prototype immutable display snapshots with bounded publication and explicit save/undo/close barriers before any guarded app trial"
+}
