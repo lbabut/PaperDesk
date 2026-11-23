@@ -1,0 +1,36 @@
+{
+  "stage": "research_only_not_uat",
+  "baseline": "7043ab5",
+  "change": "Actual SketchRaster detached executor publishes immutable dirty tiles into an owner-thread display copy. QML pollDeferredResearch consumes completed revisions without draining the worker or reading mutable worker pixels.",
+  "scope": "Default disabled; no raw pen routing, commit to live page, application installation or release.",
+  "transport": {
+    "tile_size": 128,
+    "pending_bound_tiles": 130,
+    "publication": "Every submitted segment; first publication scans full image to initialize non-white pages, subsequent publications use conservative material footprint bounds.",
+    "ownership": "One producer and one owner-thread consumer; each enable creates a fresh transport. Stop drains and joins before discarding display and transport.",
+    "locking": "Poll takes a short mailbox mutex, not wait-free. It never waits for the material queue to drain. Lifecycle stop and explicit diagnostic digest remain blocking."
+  },
+  "verification": {
+    "samples": 1260,
+    "host_qml_poll_count": 36,
+    "arm_qml_poll_count": 421,
+    "checks": [
+      "Blocked executor still permits poll of initial display",
+      "Interleaved slow polling reconstructs exact independent-reference final image",
+      "QML Timer consumes actual backend revisions monotonically to 1260",
+      "Live image, material, finger and checked physics remain unchanged",
+      "Live PNG/cache save and reopen isolation, release/reset/begin/load/destruction barriers"
+    ],
+    "installed_raster_sha256": "29d482734f987777a8b355df8a3511d9a93f0e843375daee0f9950c8d52975a7",
+    "xochitl_after": "active"
+  },
+  "limitations": [
+    "QML Timer polling is not RasterTile painting, physical stylus or panel validation",
+    "No claim of actual painting latency or throughput improvement",
+    "Every-segment tile publication may add substantial copy/scan overhead; pacing needs measurement",
+    "Loaded non-white first-scan behavior implemented but not a dedicated regression scenario in this run",
+    "Only charcoal 4/5 accepted; full raw input, undo, page and commit protocol remain future work",
+    "Generated RCC excluded from research source commit; this branch is not an installable release"
+  ],
+  "next": "Exercise real offscreen RasterTile painting of detached display with paced publication, then qualify actual input/lifecycle before any UAT."
+}

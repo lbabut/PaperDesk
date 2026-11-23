@@ -41,6 +41,7 @@
 #include "sketch-smudge.h"
 #include "sketch-material.h"
 #include "sketch-deferred-research.h"
+#include "sketch-research-tiles.h"
 #include "sketch-pen.h"
 #include "sketch-touch.h"
 #include "sketch-pressure.h"
@@ -113,7 +114,24 @@ public:
         std::vector<uint32_t> mass,image;
         std::vector<uint16_t> finger;
         std::atomic<int> completed{0};
+        DirtyTilesPrototype tiles{1200,1600};
     };
+    std::vector<uint32_t> researchDisplay;
+    uint64_t researchRevision=0;
+    // Owner-thread polling never drains the executor or reads its mutable pixels.
+    Q_INVOKABLE int pollDeferredResearch(){
+        if(!researchDeferredEnabled||!researchSurface)return -1;
+        auto batch=researchSurface->tiles.take();
+        if(batch.revision>researchRevision){
+            researchSurface->tiles.apply(batch,researchDisplay);
+            researchRevision=batch.revision;
+        }
+        return int(researchRevision);
+    }
+    Q_INVOKABLE QString deferredDisplayDigest() const {
+        if(!researchDeferredEnabled)return QString();
+        return QString::fromLatin1(QCryptographicHash::hash(QByteArray::fromRawData(reinterpret_cast<const char*>(researchDisplay.data()),researchDisplay.size()*sizeof(uint32_t)),QCryptographicHash::Sha256).toHex());
+    }
     bool researchDeferredEnabled=false;
     int researchSubmitted=0;
     std::shared_ptr<ResearchSurface> researchSurface;
@@ -122,6 +140,7 @@ public:
         researchDeferredEnabled=false;
         if(researchWorker)researchWorker->close();
         researchWorker.reset();researchSurface.reset();researchSubmitted=0;
+        researchDisplay.clear();researchRevision=0;
     }
     Q_INVOKABLE bool setDeferredResearchEnabled(bool enabled){
         stopDeferredResearch();
@@ -132,6 +151,7 @@ public:
         const auto *im=reinterpret_cast<const uint32_t*>(image.constBits());
         const auto *f=reinterpret_cast<const uint16_t*>(finger.constBits());
         state->mass.assign(m,m+1200*1600);state->image.assign(im,im+1200*1600);state->finger.assign(f,f+82*81);
+        researchDisplay=state->image;
         researchSurface=std::move(state);researchWorker=std::make_unique<SketchResearchExecutor>(2048);researchDeferredEnabled=true;return true;
     }
     Q_INVOKABLE bool submitDeferredResearch(int tool,double size,double strength,double ax,double ay,double ap,double x,double y,double p,int index){
@@ -139,7 +159,12 @@ public:
             (tool!=4&&tool!=5)||strength<.05||ap<0||ap>1||p<0||p>1||ax<0||ax>1200||x<0||x>1200||ay<0||ay>1600||y<0||y>1600||!PaperMaterial::valid(tool,size,0,strength,ax,ay,ap)||!PaperMaterial::valid(tool,size,0,strength,x,y,p))return false;
         auto state=researchSurface;
         if(!researchWorker->trySubmit([state,tool,size,strength,ax,ay,ap,x,y,p,index]{
-            state->physics.segment(state->mass.data(),state->image.data(),state->finger.data(),tool,size,0,strength,ax,ay,ap,x,y,p,index);state->completed++;
+            // First publication is a full scan: loaded pages need a non-white base.
+            double radius=std::max(state->physics.footprintRadius(tool,size,ap),state->physics.footprintRadius(tool,size,p))+3;
+            state->tiles.markRect(1,int(std::floor(std::min(ax,x)-radius)),int(std::floor(std::min(ay,y)-radius)),int(std::ceil(std::max(ax,x)+radius)),int(std::ceil(std::max(ay,y)+radius)));
+            state->physics.segment(state->mass.data(),state->image.data(),state->finger.data(),tool,size,0,strength,ax,ay,ap,x,y,p,index);
+            state->tiles.publishForPage(1,uint64_t(index)+1,state->image,index!=0);
+            state->completed++;
         }))return false;
         researchSubmitted++;return true;
     }
