@@ -1,0 +1,22 @@
+{
+ "stage":"Standalone offscreen Qt raster window; NOT production Sketch,not UAT",
+ "design":"Real material actor,dirty-bounds immutable tiles,16ms consumer QBackingStore paint/flush,1ms heartbeat,1260soft-charcoal samples and post-run synchronous state/image equality",
+ "host":"6 initial plus4 paced-confirm runs passed; burst sync gaps38.102/26.943ms vs actor4.267/1.832ms. Paced confirmation actor13.007/9.596ms vs sync9.092/9.346ms:no consistent host advantage.2ms input is relative timer,not verified500Hz.",
+ "arm_initial":[
+  {"mode":"sync","input":"burst","gap_ms":248.282,"completion_ms":255.394},
+  {"mode":"actor","input":"burst","gap_ms":5.263,"completion_ms":331.789},
+  {"mode":"actor","input":"relative_timer_2ms","gap_ms":4.766,"completion_ms":2524.599},
+  {"mode":"sync","input":"relative_timer_2ms","gap_ms":5.281,"completion_ms":2540.607}
+ ],
+ "arm_batch24_ABBA":[
+  {"mode":"sync","gap_ms":17.382,"submit_ms":2.505,"completion_ms":339.899,"frames":21},
+  {"mode":"actor","gap_ms":3.999,"submit_ms":0.164,"completion_ms":348.094,"frames":22},
+  {"mode":"actor","gap_ms":3.893,"submit_ms":0.199,"completion_ms":349.543,"frames":22},
+  {"mode":"sync","gap_ms":14.539,"submit_ms":2.221,"completion_ms":274.453,"frames":17}
+ ],
+ "interpretation":"Evidence of better Qt event-loop responsiveness during backlog in this harness; not less total computation. Actor batch24 completion slower than either baseline,extra intermediate rendering has cost. No universal responsiveness or throughput win.",
+ "tests":"All18runs1260samples,final displayed revision1260,canvas/material/reference equal for image,mass,finger,tooth,burnish,ink,wear,untilNext,kneadedLift,kneadedContact,hasInk. Host and ARM builds,Python compilation,diffcheck pass.",
+ "limits":["Offscreen QBackingStore is not production QML/RasterTile or real e-ink output","No physical stylus/evdev or panel latency measured","Single ARM cohort with2batch runs/condition,no randomized significance","Batch24zero-timer approximates batch shape,not production scheduling","All-at-once burst intentionally exaggerates sync blockage;do not use as primary current-app comparison","No queue saturation/save/undo/page/close integration in Qt harness","HeadersQt6.8 with tabletQt6.10.3libraries; limited tested harness API only,not release toolchain","No app installation or restart; temporary offscreen executables retained"],
+ "device_final":"xochitl active,raster29d4827 baseline,monitor static",
+ "next":"Integrate actor behind disabled experimental path in actual isolated Sketch backend,with lifecycle/save/undo barriers and guards,then real evdev/QML tests before UAT"
+}
