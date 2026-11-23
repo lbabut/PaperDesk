@@ -58,6 +58,7 @@ Rectangle{
    // Raw input supplies pressure directly, bypassing the legacy match/fallback
    // lookup. Check its complete ordered input instead of requiring matches.
    item.raw_input=!!s.rawInput;item.input_samples=s.inputSamples;item.finished_ms=Date.now();
+   item.fast_pen_preview_enabled=a.fastPenPreview;
    item.input_stats=a.nativeRaster.penInputStats();
    item.queue_latency=a.nativeRaster.penQueueLatencyStats();
    item.native_latency=a.nativeRaster.latencyStats();

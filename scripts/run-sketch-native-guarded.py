@@ -11,6 +11,7 @@ import subprocess
 import struct
 import tarfile
 import time
+import sketch_thread_profile
 
 p=argparse.ArgumentParser()
 p.add_argument("--safe-state-confirmed",action="store_true",help="Owner has saved/closed personal work and left a safe idle screen for a UI restart")
@@ -27,6 +28,8 @@ p.add_argument("--shading-probe",action="store_true")
 p.add_argument("--tilted-shading",action="store_true")
 p.add_argument("--soft-charcoal",action="store_true")
 p.add_argument("--high-rate-shading",action="store_true")
+p.add_argument("--thread-profile",action="store_true",help="Read per-task CPU/wait counters around injections; adds boundary overhead")
+p.add_argument("--shading-no-preview",action="store_true",help="Diagnostic ablation only: disable immediate guide in isolated shading app, not a UAT candidate")
 p.add_argument("--micro-no-preview",action="store_true",help="Disable native preview in a micro-probe comparison")
 p.add_argument("--micro-probe",action="store_true",help="Measure 250 Hz tiny pen loops with 3px HB and 8px charcoal")
 p.add_argument("--latency-probe",action="store_true")
@@ -55,6 +58,7 @@ if a.extended_fidelity_probe:a.fidelity_probe=True
 if a.tilted_shading and not a.shading_probe:p.error("--tilted-shading requires --shading-probe")
 if a.soft_charcoal and not a.shading_probe:p.error("--soft-charcoal requires --shading-probe")
 if a.high_rate_shading and not a.shading_probe:p.error("--high-rate-shading requires --shading-probe")
+if a.shading_no_preview and not a.shading_probe:p.error('--shading-no-preview requires --shading-probe')
 if a.detail_user_settings and not a.detail_probe:p.error("--detail-user-settings requires --detail-probe")
 if a.detail_fullscreen and not a.detail_probe:p.error("--detail-fullscreen requires --detail-probe")
 if a.detail_check_latency and not a.detail_probe:p.error("--detail-check-latency requires --detail-probe")
@@ -70,6 +74,7 @@ if a.latency_probe and any((a.smoke,a.input_probe,a.shading_probe,a.controls_pro
 if a.detail_probe and any((a.smoke,a.input_probe,a.shading_probe,a.controls_probe,a.workflow_probe,a.realism_probe,a.pdf_probe,a.eraser_probe,a.fidelity_probe,a.preferences_probe)):
     p.error("--detail-probe must run separately from other probes")
 uses_input=a.detail_probe or a.fidelity_probe or a.eraser_probe or a.pdf_probe or a.input_probe or a.shading_probe or a.latency_probe or a.controls_probe or a.workflow_probe or a.realism_probe
+if a.thread_profile and not uses_input:p.error('--thread-profile requires an input probe')
 root=pathlib.Path(__file__).resolve().parents[1]
 work=root/"work/papersketch-native"
 app=work/"papersketch-native-bench"
@@ -99,6 +104,10 @@ harness=(root/("tests/device/papersketch-detail.qml" if a.detail_probe else "tes
 if a.high_rate_shading:
     assert harness.count("property bool highRateShading:false")==1
     harness=harness.replace("property bool highRateShading:false","property bool highRateShading:true")
+if a.shading_no_preview:
+    marker='a.confirmation="book";a.confirmAction();'
+    assert harness.count(marker)==1
+    harness=harness.replace(marker,'a.fastPenPreview=false;'+marker)
 if a.candidate_probe:
     assert 'source:"baseline/ui/main.qml"' in harness
     harness=harness.replace('source:"baseline/ui/main.qml"','source:"constant-fast/ui/main.qml"')
@@ -185,6 +194,7 @@ original=None
 injected=set()
 report={"candidate_qml_sha256":hashlib.sha256(candidate.encode()).hexdigest(),"source_qml_sha256":hashlib.sha256(baseline.encode()).hexdigest(),"source_engine_sha256":hashlib.sha256((source/"engine.js").read_bytes()).hexdigest(),"source_icon_sha256":hashlib.sha256((source/"ui/ToolIcon.qml").read_bytes()).hexdigest(),"backup":backup,"cache_namespace":"PaperDeskSketchNativeBenchbaseline"+namespace_suffix}
 report["environment_before"]=environment_before
+report['diagnostic_preview_disabled']=a.shading_no_preview
 report["staged_candidate_qml_only"]=a.candidate_probe
 if a.candidate_probe:report["cache_namespace"]="PaperDeskSketchNativeBenchconstant-fast"+namespace_suffix
 try:
@@ -194,6 +204,12 @@ try:
         driver=work/"input-driver-arm"
         subprocess.run([str(cache/"usr/bin/arm-linux-gnueabihf-gcc-12"),"--sysroot="+str(cache),"-O2",str(root/"tests/device/papersketch-input-driver.c"),"-o",str(driver)],env=env,check=True)
         remote("cat > /tmp/papersketch-input-driver; chmod 700 /tmp/papersketch-input-driver",driver.read_bytes())
+        if a.thread_profile:
+            observer=work/'task-snapshot-arm'
+            subprocess.run([str(cache/'usr/bin/arm-linux-gnueabihf-gcc-12'),'--sysroot='+str(cache),'-O2','-Wall','-Wextra','-Werror',str(root/'tests/device/sketch-task-snapshot.c'),'-o',str(observer)],env=env,check=True)
+            remote('cat > /tmp/papersketch-task-snapshot; chmod 700 /tmp/papersketch-task-snapshot',observer.read_bytes())
+            report['thread_observer_sha256']=hashlib.sha256(observer.read_bytes()).hexdigest()
+            report['thread_observer_source_sha256']=hashlib.sha256((root/'tests/device/sketch-task-snapshot.c').read_bytes()).hexdigest()
     if mask_here:remote("systemctl mask --runtime remarkable-fail.service")
     remote("systemctl stop xochitl")
     original=remote("cat /home/root/.config/remarkable/xochitl.conf")
@@ -212,6 +228,7 @@ try:
     remote("awk "+shlex.quote(launch_awk)+" "+b+"/xochitl.conf > "+b+"/launch.conf; printf '%s\\n' '' '[PaperDeskE2E]' 'autostart=true' 'applicationId=papersketch-native-bench' >> "+b+"/launch.conf; cp -p "+b+"/launch.conf /home/root/.config/remarkable/xochitl.conf")
     remote("systemctl reset-failed xochitl; systemctl start xochitl")
     pid=remote("pidof xochitl").decode().split()[0]
+    if a.thread_profile:report['thread_profile_process_pid']=int(pid)
     started=time.monotonic()
     aux=remote("cat /proc/"+pid+"/auxv")
     ticks=dict(struct.iter_unpack("<II",aux)).get(17,100)
@@ -236,12 +253,18 @@ try:
                     points=[20966-points[1]*20966/1872,points[0]*15725/1404,20966-points[3]*20966/1872,points[2]*15725/1404]
                 coords=[str(round(v)) for v in points]
                 pattern=[request["pattern"]] if request.get("pattern") else []
+                before_threads=sketch_thread_profile.parse(remote(sketch_thread_profile.command(pid)).decode()) if a.thread_profile else None
                 try:event_report=json.loads(remote(shlex.join(["/tmp/papersketch-input-driver",mode]+coords+pattern)))
                 except RuntimeError as error:
                     if "Input is busy" in str(error) or "Touch contact is active" in str(error):
                         if attempt%8==0:print("Waiting for existing "+mode+" contact to end",flush=True)
                         continue
                     raise
+                if a.thread_profile:
+                    after_threads=sketch_thread_profile.parse(remote(sketch_thread_profile.command(pid)).decode())
+                    report.setdefault('thread_profiles',[]).append(dict(id=request_id,
+                        before=before_threads,after=after_threads,
+                        delta=sketch_thread_profile.delta(before_threads,after_threads,ticks)))
                 event_report["id"]=request_id
                 report.setdefault("evdev_injections",[]).append(event_report);injected.add(request_id)
         if "PAPERSKETCH_NATIVE_CASE" in logs and cpu_start is None:

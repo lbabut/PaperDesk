@@ -78,6 +78,8 @@ def main():
     parser.add_argument("--tilted-shading", action="store_true")
     parser.add_argument("--soft-charcoal", action="store_true")
     parser.add_argument("--high-rate-shading", action="store_true")
+    parser.add_argument("--thread-profile", action="store_true")
+    parser.add_argument("--shading-no-preview", action="store_true")
     parser.add_argument("--repeats", type=int, default=3, choices=range(1, 6))
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
@@ -96,6 +98,10 @@ def main():
             command.append("--soft-charcoal")
         if args.high_rate_shading:
             command.append("--high-rate-shading")
+        if args.thread_profile:
+            command.append("--thread-profile")
+        if args.shading_no_preview:
+            command.append('--shading-no-preview')
         if args.candidate_probe:command.append("--candidate-probe")
         for key in ("host", "host_key_alias", "key", "known_hosts", "expected_installed_rcc", "baseline_qml"):
             value = getattr(args, key)
