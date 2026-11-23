@@ -299,7 +299,9 @@ public:
         state->mass.assign(m,m+1200*1600);state->image.assign(im,im+1200*1600);state->finger.assign(f,f+82*81);
         researchDisplay=state->image;
         const auto epoch=++researchEpoch;
-        researchSurface=state;researchWorker=std::make_unique<SketchBatchResearchExecutor<ResearchCommand>>(2048,24,[state](const auto &commands){processResearchBatch(state,commands);},[this,epoch]{
+        // Research-only smaller available-work batch. Publication cadence and
+        // all ordered input/material operations remain unchanged.
+        researchSurface=state;researchWorker=std::make_unique<SketchBatchResearchExecutor<ResearchCommand>>(2048,8,[state](const auto &commands){processResearchBatch(state,commands);},[this,epoch]{
             if(researchFinishWaiting.exchange(false))QMetaObject::invokeMethod(this,[this,epoch]{
                 if(researchEpoch==epoch&&researchLive&&deferredCompletionError.isEmpty()){researchWakeDelivered++;emit deferredWorkReady();}
             },Qt::QueuedConnection);

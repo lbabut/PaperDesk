@@ -45,13 +45,32 @@ int main(int argc,char **argv){QGuiApplication app(argc,argv);QTemporaryDir dir;
  assert(profile.value("profile_schema").toInt()==1&&profile.value("samples").toInt()==2);
  assert(profile.value("worker_serial_rows").toBool()&&PaperMaterialRows::threadParallelAllowed());
  assert(profile.value("worker_stripe_batches").toULongLong()>0);
- assert(profile.value("worker_max_batch").toULongLong()>0&&profile.value("worker_max_batch").toULongLong()<=24);
+ assert(profile.value("worker_max_batch").toULongLong()>0&&profile.value("worker_max_batch").toULongLong()<=8);
  assert(PaperMaterialRows::researchRowStripe()==-1);
  assert(profile.value("finish_polls").toULongLong()==101);
  assert(profile.value("worker_transport_calls").toULongLong()>=1);
  assert(profile.value("worker_transport_bytes").toULongLong()>0);
  assert(profile.value("worker_segment_us").toULongLong()>=profile.value("worker_segment_max_us").toULongLong());
  assert(profile.value("stop_total_us").toULongLong()>=profile.value("commit_buffers_us").toULongLong()+profile.value("commit_physics_us").toULongLong()+profile.value("cleanup_us").toULongLong());
+ {
+  // Force a backlog larger than two batches, without relying on host speed.
+  // Eight is a scheduling cap, never permission to drop or merge samples.
+  SketchRaster capped(nullptr,dir.filePath("capped")),reference(nullptr,dir.filePath("reference"));
+  capped.setDeferredLiveEnabled(true);capped.begin();reference.begin();
+  capped.advancePenInput(5,38,1,200,200,.8,true,.8,.3);
+  reference.advancePenInput(5,38,1,200,200,.8,true,.8,.3);
+  std::promise<void> enteredBatch,releaseBatch;auto batchGate=releaseBatch.get_future().share();
+  assert(capped.researchWorker->trySubmit([&]{enteredBatch.set_value();batchGate.wait();}));
+  enteredBatch.get_future().wait();
+  for(int i=1;i<=17;i++){
+   assert(capped.advancePenInput(5,38,1,200+i*2,200+i,.8,false,.8,.3));
+   assert(reference.advancePenInput(5,38,1,200+i*2,200+i,.8,false,.8,.3));
+  }
+  releaseBatch.set_value();capped.finish();reference.finish();equal(capped,reference);
+  const auto stats=capped.deferredStats();
+  assert(stats.value("samples").toInt()==18);
+  assert(stats.value("worker_max_batch").toInt()==8);
+ }
  {
   SketchRaster wake(nullptr,dir.filePath("wake"));wake.setDeferredLiveEnabled(true);
   int notifications=0;
