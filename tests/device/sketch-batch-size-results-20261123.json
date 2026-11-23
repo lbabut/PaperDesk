@@ -1,0 +1,360 @@
+{
+  "schema": "sketch-batch-size-study-v1",
+  "decision": "research_only_not_UAT",
+  "gates_ms_strictly_below": {
+    "gui_gap": 200,
+    "queue_p95": 100,
+    "release_tail": 150
+  },
+  "limits": [
+    "Small ABBA screening, not a statistical or physical stylus-to-panel latency claim.",
+    "Exact ordered material computation and publication stride unchanged; available-work cap only.",
+    "Safety checks cover benchmark settings/artwork and checked caches, not a full library backup.",
+    "Latency and center-tile visibility failures remain failures in the unchanged device suite.",
+    "Phase durations overlap and include preemption/barrier waits; they are not additive CPU time.",
+    "All temporary modules restored after each run. No production release."
+  ],
+  "runs": [
+    {
+      "label": "A1",
+      "batch_limit": 24,
+      "created_at": "2026-11-23T18:44:10.844637+00:00",
+      "high_rate_shading": true,
+      "source_report_sha256": "0d829679b134fc3eaeda8c2bcb96c2a4ff9fbc1be17bbc00cc03b69b4f932c8a",
+      "raster_sha256": "5669f7707b8a3a36e4a5fc7d77b306e67884cc1107c03b014b40354aaf4c5518",
+      "suite_passed": false,
+      "suite_failures": [
+        "run 0/pen-charcoal: device correctness/performance gate failed",
+        "run 0/pen-charcoal: queue_p95_ms=814 >= 100",
+        "run 0/pen-charcoal: release_tail_ms=1675 >= 150"
+      ],
+      "artwork_preserved": true,
+      "saved_files_preserved": true,
+      "no_automatic_save": true,
+      "runtime_error_count": 0,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "input_samples": 1260,
+          "input_stats": [
+            1261,
+            0,
+            0
+          ],
+          "achieved_input_hz": 500.0,
+          "requested_input_hz": 500,
+          "max_input_tick_gap_ms": 43,
+          "release_to_drained_ms": 37,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "deferred_material": {},
+          "queue_p95_upper_ms": 22
+        },
+        {
+          "id": "pen-charcoal",
+          "input_samples": 1260,
+          "input_stats": [
+            2522,
+            0,
+            0
+          ],
+          "achieved_input_hz": 500.0,
+          "requested_input_hz": 500,
+          "max_input_tick_gap_ms": 142,
+          "release_to_drained_ms": 1675,
+          "tile_visible_before_release": false,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "deferred_material": {
+            "cleanup_us": 10034,
+            "commit_buffers_us": 23480,
+            "commit_physics_us": 10147,
+            "completion_age_max_ms": 1060,
+            "completion_age_p95_ms": 981,
+            "completion_wake_delivered": 0,
+            "drain_us": 3,
+            "finish_poll_wait_us": 952974,
+            "finish_polls": 16,
+            "owner_poll_calls": 67,
+            "owner_poll_max_us": 13983,
+            "owner_poll_us": 138823,
+            "profile_schema": 1,
+            "profile_scope": "wall microseconds; striped segment counter includes mark work and lane barrier; worker and owner overlap; not additive CPU or panel latency",
+            "samples": 1260,
+            "stop_total_us": 44008,
+            "surface_init_us": 115795,
+            "worker_idle_to_stop_us": 2883,
+            "worker_mark_us": 18927,
+            "worker_max_batch": 24,
+            "worker_segment_max_us": 117575,
+            "worker_segment_us": 3671740,
+            "worker_serial_rows": true,
+            "worker_stripe_batches": 54,
+            "worker_transport_bytes": 23134208,
+            "worker_transport_calls": 53,
+            "worker_transport_us": 298569
+          },
+          "queue_p95_upper_ms": 814
+        }
+      ]
+    },
+    {
+      "label": "B1",
+      "batch_limit": 8,
+      "created_at": "2026-11-23T18:45:50.891940+00:00",
+      "high_rate_shading": true,
+      "source_report_sha256": "63e8531f0bbd27fd1dd5fb39c260058b910773f3c9046f411474a47c281286c7",
+      "raster_sha256": "137fd436429babc859bf0d29512ef1a69d90b4d8354b4bbdb50e1dff3053b6e8",
+      "suite_passed": false,
+      "suite_failures": [
+        "run 0/pen-charcoal: queue_p95_ms=704 >= 100",
+        "run 0/pen-charcoal: release_tail_ms=1885 >= 150"
+      ],
+      "artwork_preserved": true,
+      "saved_files_preserved": true,
+      "no_automatic_save": true,
+      "runtime_error_count": 0,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "input_samples": 1260,
+          "input_stats": [
+            1261,
+            0,
+            0
+          ],
+          "achieved_input_hz": 500.0,
+          "requested_input_hz": 500,
+          "max_input_tick_gap_ms": 41,
+          "release_to_drained_ms": 40,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "deferred_material": {},
+          "queue_p95_upper_ms": 23
+        },
+        {
+          "id": "pen-charcoal",
+          "input_samples": 1260,
+          "input_stats": [
+            2522,
+            0,
+            0
+          ],
+          "achieved_input_hz": 499.80166600555333,
+          "requested_input_hz": 500,
+          "max_input_tick_gap_ms": 145,
+          "release_to_drained_ms": 1885,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "deferred_material": {
+            "cleanup_us": 9449,
+            "commit_buffers_us": 21542,
+            "commit_physics_us": 9789,
+            "completion_age_max_ms": 1463,
+            "completion_age_p95_ms": 1321,
+            "completion_wake_delivered": 1,
+            "drain_us": 2,
+            "finish_poll_wait_us": 1482171,
+            "finish_polls": 27,
+            "owner_poll_calls": 78,
+            "owner_poll_max_us": 10980,
+            "owner_poll_us": 138862,
+            "profile_schema": 1,
+            "profile_scope": "wall microseconds; striped segment counter includes mark work and lane barrier; worker and owner overlap; not additive CPU or panel latency",
+            "samples": 1260,
+            "stop_total_us": 41251,
+            "surface_init_us": 110009,
+            "worker_idle_to_stop_us": 19811,
+            "worker_mark_us": 17675,
+            "worker_max_batch": 8,
+            "worker_segment_max_us": 75042,
+            "worker_segment_us": 3839443,
+            "worker_serial_rows": true,
+            "worker_stripe_batches": 159,
+            "worker_transport_bytes": 23134208,
+            "worker_transport_calls": 53,
+            "worker_transport_us": 250965
+          },
+          "queue_p95_upper_ms": 704
+        }
+      ]
+    },
+    {
+      "label": "B2",
+      "batch_limit": 8,
+      "created_at": "2026-11-23T18:47:40.848211+00:00",
+      "high_rate_shading": true,
+      "source_report_sha256": "809093cae14fc3e0fc5f48a989ccb2523774190ce98be48706b8dbb60aee17e2",
+      "raster_sha256": "137fd436429babc859bf0d29512ef1a69d90b4d8354b4bbdb50e1dff3053b6e8",
+      "suite_passed": false,
+      "suite_failures": [
+        "run 0/pen-charcoal: queue_p95_ms=943 >= 100",
+        "run 0/pen-charcoal: release_tail_ms=1704 >= 150"
+      ],
+      "artwork_preserved": true,
+      "saved_files_preserved": true,
+      "no_automatic_save": true,
+      "runtime_error_count": 0,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "input_samples": 1260,
+          "input_stats": [
+            1261,
+            0,
+            0
+          ],
+          "achieved_input_hz": 500.0,
+          "requested_input_hz": 500,
+          "max_input_tick_gap_ms": 150,
+          "release_to_drained_ms": 35,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "deferred_material": {},
+          "queue_p95_upper_ms": 34
+        },
+        {
+          "id": "pen-charcoal",
+          "input_samples": 1260,
+          "input_stats": [
+            2522,
+            0,
+            0
+          ],
+          "achieved_input_hz": 500.0,
+          "requested_input_hz": 500,
+          "max_input_tick_gap_ms": 181,
+          "release_to_drained_ms": 1704,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "deferred_material": {
+            "cleanup_us": 9953,
+            "commit_buffers_us": 21750,
+            "commit_physics_us": 10547,
+            "completion_age_max_ms": 1005,
+            "completion_age_p95_ms": 885,
+            "completion_wake_delivered": 0,
+            "drain_us": 3,
+            "finish_poll_wait_us": 996505,
+            "finish_polls": 18,
+            "owner_poll_calls": 72,
+            "owner_poll_max_us": 10388,
+            "owner_poll_us": 144511,
+            "profile_schema": 1,
+            "profile_scope": "wall microseconds; striped segment counter includes mark work and lane barrier; worker and owner overlap; not additive CPU or panel latency",
+            "samples": 1260,
+            "stop_total_us": 42662,
+            "surface_init_us": 107640,
+            "worker_idle_to_stop_us": 3807,
+            "worker_mark_us": 14901,
+            "worker_max_batch": 8,
+            "worker_segment_max_us": 59173,
+            "worker_segment_us": 3671333,
+            "worker_serial_rows": true,
+            "worker_stripe_batches": 159,
+            "worker_transport_bytes": 21168128,
+            "worker_transport_calls": 53,
+            "worker_transport_us": 264097
+          },
+          "queue_p95_upper_ms": 943
+        }
+      ]
+    },
+    {
+      "label": "A2",
+      "batch_limit": 24,
+      "created_at": "2026-11-23T18:49:20.808340+00:00",
+      "high_rate_shading": true,
+      "source_report_sha256": "abedc54ac8f776c88f45a11f1ecc9c1e1df5ece1e68698871748b805d97e1289",
+      "raster_sha256": "5669f7707b8a3a36e4a5fc7d77b306e67884cc1107c03b014b40354aaf4c5518",
+      "suite_passed": false,
+      "suite_failures": [
+        "run 0/pen-charcoal: queue_p95_ms=882 >= 100",
+        "run 0/pen-charcoal: release_tail_ms=1744 >= 150"
+      ],
+      "artwork_preserved": true,
+      "saved_files_preserved": true,
+      "no_automatic_save": true,
+      "runtime_error_count": 0,
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "input_samples": 1260,
+          "input_stats": [
+            1261,
+            0,
+            0
+          ],
+          "achieved_input_hz": 500.0,
+          "requested_input_hz": 500,
+          "max_input_tick_gap_ms": 51,
+          "release_to_drained_ms": 32,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "deferred_material": {},
+          "queue_p95_upper_ms": 24
+        },
+        {
+          "id": "pen-charcoal",
+          "input_samples": 1260,
+          "input_stats": [
+            2522,
+            0,
+            0
+          ],
+          "achieved_input_hz": 500.0,
+          "requested_input_hz": 500,
+          "max_input_tick_gap_ms": 198,
+          "release_to_drained_ms": 1744,
+          "tile_visible_before_release": true,
+          "blank_frames_after_visible": 0,
+          "display_binary": true,
+          "optical_has_grays": true,
+          "deferred_material": {
+            "cleanup_us": 9135,
+            "commit_buffers_us": 25016,
+            "commit_physics_us": 10927,
+            "completion_age_max_ms": 1041,
+            "completion_age_p95_ms": 935,
+            "completion_wake_delivered": 1,
+            "drain_us": 2,
+            "finish_poll_wait_us": 1067250,
+            "finish_polls": 21,
+            "owner_poll_calls": 75,
+            "owner_poll_max_us": 7053,
+            "owner_poll_us": 109092,
+            "profile_schema": 1,
+            "profile_scope": "wall microseconds; striped segment counter includes mark work and lane barrier; worker and owner overlap; not additive CPU or panel latency",
+            "samples": 1260,
+            "stop_total_us": 46227,
+            "surface_init_us": 169187,
+            "worker_idle_to_stop_us": 26408,
+            "worker_mark_us": 36070,
+            "worker_max_batch": 24,
+            "worker_segment_max_us": 113688,
+            "worker_segment_us": 3656127,
+            "worker_serial_rows": true,
+            "worker_stripe_batches": 59,
+            "worker_transport_bytes": 21299200,
+            "worker_transport_calls": 53,
+            "worker_transport_us": 223874
+          },
+          "queue_p95_upper_ms": 882
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+Exact striped-worker batch-size study, 23 November 2026
+
+Decision: REJECT batch8 as a demonstrated responsiveness improvement; no UAT.
+Baseline source: 513c90c4684cef0f8e3d2f13b6c6f7dafc4cc3c6 (completion wake).
+Candidate source: 8165bfa95ad394b8eb0d420bdf831832253c3758.
+Only worker available-work cap changes24 ->8. No input coalescing/dropping,
+material arithmetic change, publication-stride change or relaxed gates.
+
+Two heavy500Hz pairs in ABBA order, synthetic evdev,1260samples/tool:
+             GUI gap / input queue p95 upper / release tail, milliseconds
+A1 cap24     142 /814 /1675
+B1 cap8      145 /704 /1885
+B2 cap8      181 /943 /1704
+A2 cap24     198 /882 /1744
+Every run fails unchanged queue<100 and tail<150 thresholds. A1 also fails
+the center-tile-before-release guard; the other3 pass this particular guard.
+All4 GUI gaps are below200ms. This small cohort is not statistical proof of
+a general slowdown/speedup. Do not average failures into a passing result.
+No ordinary-input cohort was added after the decisive heavy-case rejection.
+
+Cap8 cuts longest worker batch to59..75ms vs114..118ms, but total striped
+work remains3.67..3.84s vs3.66..3.67s. These counters include waits and overlap
+with owner work; they are not additive CPU timings. Queue/tail variability
+does not support changing the installed version. Correctness is insufficient
+for UAT. This is not a hardware stylus or physical e-ink latency measurement.
+
+Verification this session:
+- Actual advancePenInput regression: identical material/image/physics,
+  midstroke save/export, reset/release, stalled worker nonblocking completion,
+  failure refuses partial save/export, queued wake owner-thread/epoch guards.
+- New deterministic backlog test:18samples, maxbatch exactly8, exactreference.
+- Host prototype:1380 exact chunk states, repeated strokes, papers, pressure,
+  tilt, clipping, ink and burnish. CPU timings are not tablet UI evidence.
+- Bounded executor FIFO/barriers/overflow refusal/drain/close/failclosed PASS.
+- backend-deferred, release-resource, publication and workflow PASS.
+-7 installer tests and6 performance-report tests PASS. ARM module built.
+- All4 device runs preserved benchmark setting/artwork and17 checked caches;
+  no automatic save,1260samples/tool,no pending/overflow/runtime errors,
+  binary display/grayscale optical checks and no blank-after-visible frames.
+  Not a complete library audit/backup.
+
+Each install restored from its own hash-guarded backup. Final18:49:39UTC:
+xochitl active, remarkable-fail static (owned masks removed), baseline raster
+29d482734f987777a8b355df8a3511d9a93f0e843375daee0f9950c8d52975a7;
+ink5fb519b9 and RCC3207f8fb unchanged. Canonical343dirty entries untouched.
+Tracked binary payloads remain inherited artifacts, NOT candidate builds;
+do not install this checkout as a release. Rebuild to reproduce the experiment.
+Actual candidate SHA is in tests/device/sketch-batch-size-results-20261123.json.
+No main/production/site change. Next: instrument lane balance and dominant
+pixel-computation costs rather than try another batch limit without evidence.
