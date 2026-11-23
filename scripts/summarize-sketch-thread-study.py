@@ -23,10 +23,12 @@ for folder in a.runs:
           'observer_sha256':r.get('thread_observer_sha256'),'suite_passed':s['passed'],'failures':s['failures'],
           'process_pid':r.get('thread_profile_process_pid'),
           'diagnostic_preview_disabled':r.get('diagnostic_preview_disabled',False),
+          'native_modules':{Path(line.split()[1]).name:line.split()[0] for line in r['native_modules']},
           'preservation':{k:r[k] for k in ['artwork_preserved','saved_files_preserved','saved_file_count']},
           'cases':[],'thread_profiles':[]}
     for c in r['results']['shading_probe']['cases']:
         item['cases'].append({k:c[k] for k in ['id','input_samples','input_stats','max_input_tick_gap_ms','queue_latency','release_to_drained_ms','tile_visible_before_release','achieved_input_hz']})
+        item['cases'][-1]['fast_pen_preview_enabled']=c.get('fast_pen_preview_enabled')
     for t in r['thread_profiles']:
         item['thread_profiles'].append({'id':t['id'],**t['delta']})
     out['runs'].append(item)
