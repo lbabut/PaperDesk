@@ -143,6 +143,17 @@ public:
     bool deferredLiveEnabled=false,researchLive=false;
     bool researchFirstSample=true;
     QVariantMap lastDeferredStats;
+    QString deferredCompletionError;
+    Q_INVOKABLE QString completionError()const{return deferredCompletionError;}
+    Q_INVOKABLE bool tryFinish(bool preview=false){
+        if(!deferredCompletionError.isEmpty())return false;
+        // Keep the authoritative stroke open until every accepted command has
+        // completed. Polling must never turn a partial image into a saved one.
+        try{
+            if(researchLive&&researchWorker&&!researchWorker->isIdle())return false;
+            finish(preview);return deferredCompletionError.isEmpty();
+        }catch(const std::exception &e){deferredCompletionError=QString::fromUtf8(e.what());return false;}
+    }
     Q_INVOKABLE QVariantMap deferredStats()const{return lastDeferredStats;}
     QTimer researchPollTimer;
     Q_INVOKABLE void setDeferredLiveEnabled(bool enabled){settleDeferredLive();deferredLiveEnabled=enabled;}
@@ -154,6 +165,7 @@ public:
     Q_INVOKABLE void stopDeferredResearch(){
         researchPollTimer.stop();
         if(researchLive&&researchWorker&&researchSurface){
+            try{
             researchWorker->drain();
             auto ages=researchSurface->completionAges;std::sort(ages.begin(),ages.end());
             if(!ages.empty())lastDeferredStats={{"samples",int(ages.size())},{"completion_age_p95_ms",qlonglong(ages[(ages.size()*95+99)/100-1])},{"completion_age_max_ms",qlonglong(ages.back())}};
@@ -162,6 +174,7 @@ public:
             memcpy(finger.bits(),researchSurface->finger.data(),82*81*2);
             physics=researchSurface->physics;researchLive=false;
             unpublished=true;
+            }catch(const std::exception &e){deferredCompletionError=QString::fromUtf8(e.what());researchLive=false;}
         }
         researchDeferredEnabled=false;
         if(researchWorker)researchWorker->close();
@@ -678,7 +691,7 @@ public:
         return out;
     }
     Q_INVOKABLE QString opticalDigest()const{settleDeferredRead();return QString::fromLatin1(QCryptographicHash::hash(QByteArray::fromRawData(reinterpret_cast<const char*>(image.constBits()),image.sizeInBytes()),QCryptographicHash::Sha256).toHex());}
-    Q_INVOKABLE bool save(const QString&path)const{settleDeferredRead();return image.save(path,"PNG");}
+    Q_INVOKABLE bool save(const QString&path)const{settleDeferredRead();return deferredCompletionError.isEmpty()&&image.save(path,"PNG");}
     Q_INVOKABLE QString documentsDirectory()const{
         if(!exportDirectoryOverride.isEmpty())return exportDirectoryOverride;
         auto directory=QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
@@ -686,6 +699,7 @@ public:
     }
     Q_INVOKABLE QVariantMap exportPng(QString name,bool overwrite=false)const{
         settleDeferredRead();
+        if(!deferredCompletionError.isEmpty())return {{"ok",false},{"error","Material processing failed; export paused."}};
         name=name.trimmed();if(name.endsWith(".png",Qt::CaseInsensitive))name.chop(4);
         bool invalid=name.isEmpty()||name.startsWith('.')||name.contains('/')||name.contains('\\')||name.toUtf8().size()>240;
         for(auto ch:name)if(ch.unicode()<32)invalid=true;
@@ -703,6 +717,7 @@ public:
     QSet<QString> pendingPdfPaths;
     Q_INVOKABLE QVariantMap exportPdf(QString name){
         settleDeferredLive();
+        if(!deferredCompletionError.isEmpty())return {{"ok",false},{"error","Material processing failed; export paused."}};
         bool controls=false;for(auto ch:name)if(ch.unicode()<32||ch.unicode()==127)controls=true;
         name=name.trimmed();if(name.endsWith(".pdf",Qt::CaseInsensitive))name.chop(4);
         bool invalid=controls||name.isEmpty()||name.startsWith('.')||name.contains('/')||name.contains(QChar(92))||name.toUtf8().size()>240;
@@ -799,6 +814,7 @@ public:
     Q_INVOKABLE QString loadNotebook(){QFile f(notebookPath());if(!f.exists())f.setFileName(cachePath(0)+".notebook.json");if(!f.open(QIODevice::ReadOnly)||f.size()>16*1024*1024)return QString();auto raw=f.readAll();restoreKit(raw);return QString::fromUtf8(raw);}
     SaveJob saveJob(int page,const QString &json,const QByteArray &document=QByteArray()){
         settleDeferredLive();
+        if(!deferredCompletionError.isEmpty())return {};
         if(!ensureMaterial())return {};return {cachePath(page),document.isEmpty()?QString():notebookPath(),json,document,image,material,finger,
             QByteArray(reinterpret_cast<const char*>(physics.burnish.data()),physics.burnish.size()),
             physics.hasInk?QByteArray(reinterpret_cast<const char*>(physics.ink.data()),physics.ink.size()):QByteArray(),physics.wear,physics.paperKind};
@@ -807,6 +823,7 @@ public:
     Q_INVOKABLE bool flushSaves(){std::unique_lock<std::mutex> lock(saveMutex);saveWake.wait(lock,[this]{return saves.empty()&&!writing;});return !writeError;}
     Q_INVOKABLE bool saveNotebook(const QString&document,int page,const QString&json){
         settleDeferredLive();
+        if(!deferredCompletionError.isEmpty())return false;
         if(!ensureMaterial())return false;
         auto object=QJsonDocument::fromJson(document.toUtf8()).object();QJsonArray wear;for(double p:physics.wear)wear.append(p);object.insert("physicalTools",wear);
         // Preserve the exact caller envelope when no physical state has changed;

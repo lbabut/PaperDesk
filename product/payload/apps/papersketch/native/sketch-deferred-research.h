@@ -49,6 +49,13 @@ class SketchResearchExecutor {
   }
  }
 public:
+ // Owner may poll completion without waiting for accepted work. No new work
+ // may be submitted between a true result and the owner's final commit.
+ bool isIdle(){
+  std::lock_guard<std::mutex> lock(mutex);
+  if(failure)std::rethrow_exception(failure);
+  return queue.empty()&&!active;
+ }
  explicit SketchResearchExecutor(size_t capacity):limit(capacity),worker([this]{run();}){}
  SketchResearchExecutor(const SketchResearchExecutor&)=delete;
  ~SketchResearchExecutor(){close();}

@@ -1,0 +1,24 @@
+{
+  "status": "research_only_not_uat",
+  "base_commit": "923fd83c556ff8e9102e74bfced2748beb918b87",
+  "device_candidate_sha256": "25fe7601c0cc2b080f40af31dce13b624354140e2cc1851e10d32a5a8877a54f",
+  "restored_baseline_sha256": "29d482734f987777a8b355df8a3511d9a93f0e843375daee0f9950c8d52975a7",
+  "changes": ["Nonblocking worker-idle completion polling", "Keep active stroke and save/page controls blocked until full completion", "Preserve queued next-contact events, including missing release boundary", "Discard unstarted deferred input on app suspension while completing accepted stroke", "Fail-closed save/export and nonthrowing worker cleanup", "Full-screen geometry gate and explicit finishing status"],
+  "tests": {"qml_passed": 71, "qml_failed": 0, "qml_skipped": 2, "native": "Exact material/lifecycle, stalled worker nonblocking poll, injected worker fault, save/export refusal, safe destruction passed", "targeted": "backend, resource, publication, workflow passed; final RCC content rechecked", "device_preservation": "All three reports confirm checked artwork and saved files preserved"},
+  "device_runs": [
+    {"variant": "candidate", "profile": "500Hz tilted soft charcoal", "actual_hz": 500, "gui_gap_ms": 210, "queue_p95_ms": 1071, "release_tail_ms": 2326, "material_completion_p95_ms": 1528},
+    {"variant": "candidate", "profile": "ordinary tilted soft charcoal", "actual_hz": 222.85107888220728, "gui_gap_ms": 129, "queue_p95_ms": 68, "release_tail_ms": 156, "material_completion_p95_ms": 157},
+    {"variant": "baseline", "profile": "ordinary tilted soft charcoal", "actual_hz": 220.24121657052962, "gui_gap_ms": 189, "queue_p95_ms": 295, "release_tail_ms": 346}
+  ],
+  "limits_ms": {"gui_gap":200,"queue_p95":100,"release_tail":150},
+  "limitations": [
+    "Single pilot per profile/variant; ordinary result is promising, not a repeatable gain claim",
+    "Ordinary relative-sleep input did not achieve nominal 250Hz; actual rates shown",
+    "500Hz backlog remains and ordinary tail narrowly fails unchanged gate",
+    "No physical sensor or e-ink panel latency measurement",
+    "Device pilots predate final failure-return/full-screen guard; these final safeguards tested on host, not yet device",
+    "Error path intentionally blocks persistence; user-facing recovery and memory-allocation-failure atomicity not qualified",
+    "No main/release/site deployment; native feature still opt-in"
+  ],
+  "next_action": "Confirm ordinary-profile result with repeated alternating baseline/candidate runs; profile actual worker material/publication costs to address high-rate backlog. Do not promote from this pilot."
+}

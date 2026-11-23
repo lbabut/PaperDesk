@@ -73,6 +73,10 @@ Item {
             property bool rear:false
             function eraserActive(){return rear}
             property int finishCount:0
+            property bool finishReady:true
+            property string finishError:""
+            function tryFinish(preview){if(!finishReady)return false;finish();return true}
+            function completionError(){return finishError}
             property int samples:0
             property bool calibrationActive:false
             property int calibrationStage:0
@@ -165,6 +169,52 @@ Item {
             compare(a.rawPenStrokes-before,100);compare(backend.finishCount,101);
             a.materialsDialog=true;verify(!a.rawPenEnabled);compare(backend.rawEnabled,false);
             a.materialsDialog=false;a.nativeRaster=old;backend.destroy();
+        }
+        function test_async_finish_preserves_following_contacts_and_blocks_save(){
+            var a=scene.app,old=a.nativeRaster,backend=realismBackend.createObject(scene);
+            backend.materialAvailable=true;backend.rawPenInputAvailable=true;backend.finishReady=false;
+            a.nativeRaster=backend;a.nativeRasterActive=true;
+            try{
+                backend.rawEvents=[[1,300,400,.7,0,0,false,1],[2,301,401,.8,0,0,false,1],[3,301,401,0,0,0,false,1],
+                                   [1,500,600,.6,0,0,false,2],[2,502,602,.9,0,0,false,2],[3,502,602,0,0,0,false,2]];
+                a.drainPenInput();verify(a.materialFinishing);verify(a.busy);compare(backend.finishCount,0);
+                compare(a.deferredRawEvents.length,3);compare(backend.beginCount,1);verify(!a.saveBook());
+                var page=a.pageIndex;a.requestLeave({kind:"new"});compare(a.pageIndex,page);compare(a.pendingLeave,null);
+                wait(50);compare(backend.finishCount,0);compare(backend.rawCalls,2);
+                backend.finishReady=true;tryCompare(a,"materialFinishing",false);tryCompare(backend,"finishCount",2);
+                compare(backend.beginCount,2);compare(backend.rawCalls,4);compare(a.deferredRawEvents.length,0);compare(a.activeStroke,null);
+            }finally{backend.finishReady=true;a.finishStroke();a.nativeRaster=old;backend.destroy();}
+        }
+        function test_async_finish_missing_release_retries_new_contact(){
+            var a=scene.app,old=a.nativeRaster,backend=realismBackend.createObject(scene);
+            backend.materialAvailable=true;backend.rawPenInputAvailable=true;backend.finishReady=false;
+            a.nativeRaster=backend;a.nativeRasterActive=true;
+            try{
+                backend.rawEvents=[[1,300,400,.7,0,0,false,1],[1,500,600,.6,0,0,false,2],[3,500,600,0,0,0,false,2]];
+                a.drainPenInput();verify(a.materialFinishing);compare(a.deferredRawEvents.length,2);compare(backend.beginCount,1);
+                backend.finishReady=true;tryCompare(backend,"finishCount",2);compare(backend.beginCount,2);compare(a.activeStroke,null);
+            }finally{backend.finishReady=true;a.finishStroke();a.nativeRaster=old;backend.destroy();}
+        }
+        function test_async_finish_suspend_drops_only_unstarted_contact(){
+            var a=scene.app,old=a.nativeRaster,backend=realismBackend.createObject(scene);
+            backend.materialAvailable=true;backend.rawPenInputAvailable=true;backend.finishReady=false;
+            a.nativeRaster=backend;a.nativeRasterActive=true;
+            try{
+                backend.rawEvents=[[1,300,400,.7,0,0,false,1],[3,300,400,0,0,0,false,1],[1,500,600,.6,0,0,false,2]];
+                a.drainPenInput();verify(a.materialFinishing);compare(a.deferredRawEvents.length,1);
+                a.enabled=false;compare(a.deferredRawEvents.length,0);verify(a.activeStroke!==null);
+                backend.finishReady=true;tryCompare(a,"materialFinishing",false);compare(backend.finishCount,1);
+                a.enabled=true;a.drainPenInput();compare(backend.beginCount,1);compare(a.activeStroke,null);
+            }finally{backend.finishReady=true;a.finishStroke();a.enabled=true;a.nativeRaster=old;backend.destroy();}
+        }
+        function test_async_finish_error_retains_stroke_and_blocks_save(){
+            var a=scene.app,old=a.nativeRaster,backend=realismBackend.createObject(scene);
+            backend.materialAvailable=true;backend.rawPenInputAvailable=true;backend.finishReady=false;backend.finishError="injected";
+            a.nativeRaster=backend;a.nativeRasterActive=true;
+            try{
+                backend.rawEvents=[[1,300,400,.7,0,0,false,1],[3,300,400,0,0,0,false,1]];a.drainPenInput();
+                verify(a.materialFinishing);verify(a.saveBlocked);verify(a.activeStroke!==null);verify(!a.saveBook());compare(backend.finishCount,0);
+            }finally{backend.finishReady=true;backend.finishError="";a.finishStroke();a.saveBlocked=false;a.notice="";a.nativeRaster=old;backend.destroy();}
         }
         function test_size_drag_defers_preview_polling_and_preferences_io(){
             var a=scene.app,old=a.nativeRaster,backend=realismBackend.createObject(scene);

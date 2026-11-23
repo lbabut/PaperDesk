@@ -59,6 +59,7 @@ Rectangle {
     readonly property bool rawPenEnabled:rawPenMode && ready && enabled && visible && !closing && !replaying && !saveBlocked && !confirmation && !exportDialog && !materialsDialog && !calibrationDialog
     readonly property bool rawHoverBlocked:typeof rawPenHover.blocking==="boolean" && rawPenHover.blocking
     function suspendDrawingInput(){
+        deferredRawEvents=[];
         nativeArmed=false;nativeWrite("off");
         if(activeStroke){
             if(activeSource==="finger" && bitmapMode){nativeRaster.cancel();activeStroke=null;activeSource="";nativeStroke=false;}
@@ -70,9 +71,12 @@ Rectangle {
     onEnabledChanged:{if(!enabled && ready)suspendDrawingInput();else if(enabled && ready)nativeHeartbeatSoon.restart();}
     onVisibleChanged:{if(!visible && ready)suspendDrawingInput();else if(visible && ready)nativeHeartbeatSoon.restart();}
     property bool rawPenDraining:false
+    property bool materialFinishing:false
+    property var deferredRawEvents:[]
     property int rawPenContact:0
     property int rawPenStrokes:0
     onRawPenEnabledChanged:{
+        if(!rawPenEnabled)deferredRawEvents=[];
         if(ready && !rawPenEnabled)nativeWrite("off");
         if(!rawPenEnabled && activeStroke && activeStroke.rawInput)finishStroke();
         if(ready)nativeHeartbeatSoon.restart();
@@ -91,13 +95,15 @@ Rectangle {
     property var inputProfile:({calls:0,total_ms:0,max_ms:0,native_ms:0,native_max_ms:0,qml_ms:0,qml_max_ms:0})
     function resetInputProfile(){inputProfile={calls:0,total_ms:0,max_ms:0,native_ms:0,native_max_ms:0,qml_ms:0,qml_max_ms:0};}
     function drainPenInput(){
-        if(!rawPenEnabled || rawPenDraining)return;
+        if(!rawPenEnabled || rawPenDraining || materialFinishing)return;
         var profile=inputProfiling,started=profile?Date.now():0,nativeMs=0;
         try{
         rawPenDraining=true;syncInputTransform();
         var canBatch=bitmapMode && activeSource==="pen" && activeStroke && activeStroke.rawInput && typeof nativeRaster.takePenBatch==="function";
         var nativeStarted=profile?Date.now():0;
-        var events=canBatch?nativeRaster.takePenBatch(activeStroke.tool,activeStroke.size,activeStroke.strength,rawPenContact):nativeRaster.takePenInput();
+        var events;
+        if(deferredRawEvents.length){events=deferredRawEvents;deferredRawEvents=[];}
+        else events=canBatch?nativeRaster.takePenBatch(activeStroke.tool,activeStroke.size,activeStroke.strength,rawPenContact):nativeRaster.takePenInput();
         if(profile)nativeMs=Date.now()-nativeStarted;
         for(var i=0;i<events.length;i++){
             var e=events[i];
@@ -115,6 +121,7 @@ Rectangle {
                 rawPenContact=0;notice="Pen input was interrupted. Lift the pen and continue.";
             }else if(e[0]===1){
                 if(activeStroke && activeStroke.rawInput)finishStroke();
+                if(materialFinishing){deferredRawEvents=events.slice(i);break;}
                 rawPenContact=0;
                 if(p.x<0 || p.y<0 || p.x>=Ink.WIDTH || p.y>=Ink.HEIGHT || rawInputOverControl(p))continue;
                 beginStroke(p,"pen",tool,e[3],e[6],e);
@@ -123,6 +130,7 @@ Rectangle {
                 if(e[0]===3){finishStroke();rawPenContact=0;rawPenStrokes++;}
                 else extendStroke(p,"pen",e[3],e);
             }
+            if(materialFinishing){deferredRawEvents=events.slice(i+1);break;}
         }
         }finally{
             rawPenDraining=false;
@@ -592,7 +600,19 @@ Rectangle {
     }
     function finishStroke() {
         if(activeStroke===null) return;
-        if(nativeRasterActive){if(activeStroke.fastPreview)nativeRaster.finish(true);else nativeRaster.finish();clearPreviewTimer.restart();if(activeStroke.fastPreview)previewRepairTimer.restart();}
+        if(nativeRasterActive){
+            if(typeof nativeRaster.tryFinish==="function"){
+                if(!nativeRaster.tryFinish(activeStroke.fastPreview===true)){
+                    materialFinishing=true;
+                    if(typeof nativeRaster.completionError==="function" && nativeRaster.completionError()){
+                        materialCompletionTimer.stop();saveBlocked=true;notice="Charcoal processing failed. Drawing retained in memory; save paused.";
+                    }else materialCompletionTimer.restart();
+                    return;
+                }
+            }else if(activeStroke.fastPreview)nativeRaster.finish(true);else nativeRaster.finish();
+            clearPreviewTimer.restart();if(activeStroke.fastPreview)previewRepairTimer.restart();
+        }
+        materialFinishing=false;materialCompletionTimer.stop();
         if(activeStroke.hardwareEraser && materialsAvailable)nativeRaster.setMaterialOptions(paperKind,kneadedEraser);
         lastStroke=activeStroke;
         if(bitmapMode){page.bitmap=true;page.revision=(page.revision||0)+1;page.strokes=[];totalPoints=0;}
@@ -601,9 +621,11 @@ Rectangle {
         for(var i=0;i<pending.length;i++)pending[i].queuedAt=Date.now();
         paintTimer.restart();dirty=true;
     }
+    Timer {id:materialCompletionTimer;interval:16;repeat:false;onTriggered:{root.finishStroke();if(!root.materialFinishing)root.drainPenInput();}}
     function requestLeave(action) {
         if(replaying || painting)return;
         finishStroke();pendingLeave=action;
+        if(materialFinishing){pendingLeave=null;return;}
         if(dirty)confirmation="leave";else executeLeave();
     }
     function requestClose(){requestLeave({kind:"close"});}
@@ -1100,7 +1122,7 @@ Rectangle {
         }
         Text {
             anchors.left:parent.left;anchors.right:parent.right;anchors.margins:20;y:91
-            text:root.notice || (root.saveBlocked?"Save paused":Ink.tools[root.tool].name+" · Finger smudge"+(root.dirty?" · Unsaved changes":" · Saved"))
+            text:root.notice || (root.saveBlocked?"Save paused":root.materialFinishing?"Finishing charcoal stroke…":Ink.tools[root.tool].name+" · Finger smudge"+(root.dirty?" · Unsaved changes":" · Saved"))
             elide:Text.ElideMiddle;font.pixelSize:19;color:"#444444"
         }
     }
@@ -1109,7 +1131,7 @@ Rectangle {
         anchors.top:parent.top;anchors.right:parent.right;anchors.margins:16
         width:56;height:56;radius:28;color:"white";border.color:"black";border.width:2
         Repeater{model:3;Rectangle{x:17;y:18+index*8;width:22;height:2;color:"black"}}
-        TapHandler{onTapped:{root.finishStroke();root.fullScreen=false;root.controlsVisible=true;}}
+        TapHandler{enabled:!root.materialFinishing;onTapped:{root.finishStroke();if(root.materialFinishing)return;root.fullScreen=false;root.controlsVisible=true;}}
     }
     DisplayMethodArea {
         anchors.fill:parent
