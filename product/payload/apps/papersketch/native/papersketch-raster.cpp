@@ -40,6 +40,7 @@
 #include <unistd.h>
 #include "sketch-smudge.h"
 #include "sketch-material.h"
+#include "sketch-deferred-research.h"
 #include "sketch-pen.h"
 #include "sketch-touch.h"
 #include "sketch-pressure.h"
@@ -105,6 +106,52 @@ class SketchRaster:public QObject {
     Q_PROPERTY(bool calibrationActive READ calibrationActive NOTIFY calibrationChanged)
     Q_PROPERTY(int calibrationStage READ calibrationStage NOTIFY calibrationChanged)
 public:
+    // Detached research lane. Explicit opt-in, no connection to raw input,
+    // no commit operation, and never aliases live material/image/finger data.
+    struct ResearchSurface {
+        PaperMaterial physics;
+        std::vector<uint32_t> mass,image;
+        std::vector<uint16_t> finger;
+        std::atomic<int> completed{0};
+    };
+    bool researchDeferredEnabled=false;
+    int researchSubmitted=0;
+    std::shared_ptr<ResearchSurface> researchSurface;
+    std::unique_ptr<SketchResearchExecutor> researchWorker;
+    Q_INVOKABLE void stopDeferredResearch(){
+        researchDeferredEnabled=false;
+        if(researchWorker)researchWorker->close();
+        researchWorker.reset();researchSurface.reset();researchSubmitted=0;
+    }
+    Q_INVOKABLE bool setDeferredResearchEnabled(bool enabled){
+        stopDeferredResearch();
+        if(!enabled)return true;
+        if(rawPointerFiltering||livePublication||tentativeTouch||!ensureMaterial())return false;
+        auto state=std::make_shared<ResearchSurface>();state->physics=physics;
+        const auto *m=reinterpret_cast<const uint32_t*>(material.constBits());
+        const auto *im=reinterpret_cast<const uint32_t*>(image.constBits());
+        const auto *f=reinterpret_cast<const uint16_t*>(finger.constBits());
+        state->mass.assign(m,m+1200*1600);state->image.assign(im,im+1200*1600);state->finger.assign(f,f+82*81);
+        researchSurface=std::move(state);researchWorker=std::make_unique<SketchResearchExecutor>(2048);researchDeferredEnabled=true;return true;
+    }
+    Q_INVOKABLE bool submitDeferredResearch(int tool,double size,double strength,double ax,double ay,double ap,double x,double y,double p,int index){
+        if(!researchDeferredEnabled||!researchWorker||!researchSurface||index!=researchSubmitted||
+            (tool!=4&&tool!=5)||strength<.05||ap<0||ap>1||p<0||p>1||ax<0||ax>1200||x<0||x>1200||ay<0||ay>1600||y<0||y>1600||!PaperMaterial::valid(tool,size,0,strength,ax,ay,ap)||!PaperMaterial::valid(tool,size,0,strength,x,y,p))return false;
+        auto state=researchSurface;
+        if(!researchWorker->trySubmit([state,tool,size,strength,ax,ay,ap,x,y,p,index]{
+            state->physics.segment(state->mass.data(),state->image.data(),state->finger.data(),tool,size,0,strength,ax,ay,ap,x,y,p,index);state->completed++;
+        }))return false;
+        researchSubmitted++;return true;
+    }
+    Q_INVOKABLE bool flushDeferredResearch(){
+        if(!researchWorker)return false;
+        try{researchWorker->drain();return true;}catch(...){return false;}
+    }
+    Q_INVOKABLE QString deferredResearchDigest(){
+        if(!flushDeferredResearch()||!researchSurface)return QString();
+        const auto &pixels=researchSurface->image;
+        return QString::fromLatin1(QCryptographicHash::hash(QByteArray::fromRawData(reinterpret_cast<const char*>(pixels.data()),pixels.size()*sizeof(uint32_t)),QCryptographicHash::Sha256).toHex());
+    }
     std::shared_ptr<SketchLatency> latency=std::make_shared<SketchLatency>();
     Q_INVOKABLE QVariantMap latencyStats()const{
         const auto snapshot=std::atomic_load_explicit(&latency,std::memory_order_acquire);
@@ -365,7 +412,7 @@ public:
         auto damage=std::move(displayPending);displayPending=QRegion();
         emitDisplayDamage(damage);
     }
-    void dropDisplayDamage(){displayPublicationTimer.stop();displayPending=QRegion();previewRepair=QRegion();livePublication=false;}
+    void dropDisplayDamage(){if(researchDeferredEnabled)stopDeferredResearch();displayPublicationTimer.stop();displayPending=QRegion();previewRepair=QRegion();livePublication=false;}
     void publishRegion(const QRegion &damage){
         if(damage.isEmpty())return;
         if(!livePublication){emitDisplayDamage(damage);return;}
@@ -492,7 +539,7 @@ public:
         saveWake.notify_one();
     }
     SketchRaster(QObject *parent=nullptr,QString directory="/home/root/.local/share/paperdesk/sketch",QString exports=QString(),QString permit=QString("/tmp/papersketch-ink")):QObject(parent),cacheDirectory(directory),exportDirectoryOverride(exports),previewPermitPath(permit){image.fill(Qt::white);displayPublicationTimer.setInterval(16);displayPublicationTimer.setSingleShot(true);displayPublicationTimer.setTimerType(Qt::PreciseTimer);connect(&displayPublicationTimer,&QTimer::timeout,this,[this]{bool hadDamage=!displayPending.isEmpty();flushDisplayDamage();if(hadDamage&&livePublication)displayPublicationTimer.start();});proximityTimer.setInterval(40);connect(&proximityTimer,&QTimer::timeout,this,[this]{bool nearby=penSamples.nearby.load(),reader=penSamples.ready.load();if(nearby!=penNearby||reader!=penReaderReady){if(nearby&&tentativeTouch)cancel();penNearby=nearby;penReaderReady=reader;emit proximityChanged();}});proximityTimer.start();penSamples.setInputWake([this]{notifyPenInput();});writer=std::thread([this]{writeLoop();});}
-    ~SketchRaster() override {penSamples.shutdown();{std::lock_guard<std::mutex> lock(saveMutex);stopping=true;}saveWake.notify_one();writer.join();if(pressureFd>=0)close(pressureFd);}
+    ~SketchRaster() override {stopDeferredResearch();penSamples.shutdown();{std::lock_guard<std::mutex> lock(saveMutex);stopping=true;}saveWake.notify_one();writer.join();if(pressureFd>=0)close(pressureFd);}
     mutable int pressureFd=-1;mutable double pressureLast=.5;mutable QElapsedTimer pressureAge;
     Q_INVOKABLE double penPressure(double fallback)const{
         if(pressureFd<0){
@@ -522,18 +569,22 @@ public:
     bool available()const{return true;}
     int maxSmudgeMs()const{return slowest;}
     Q_INVOKABLE bool importPixels(QJSValue pixels) {
+        stopDeferredResearch();
         if(pixels.property("length").toInt()!=1200*1600*4)return false;
         QImage next(1200,1600,QImage::Format_RGB32);
         for(int y=0;y<1600;y++){auto row=reinterpret_cast<QRgb*>(next.scanLine(y));for(int x=0;x<1200;x++){int v=pixels.property((y*1200+x)*4).toInt();row[x]=qRgb(v,v,v);}}
         dropDisplayDamage();currentPatches.clear();image=next;materialReady=false;ensureMaterial();publishDirty(QRect(0,0,1200,1600));return true;
     }
-    Q_INVOKABLE void setNamespace(QString name){cacheNamespace=name;kitLoaded=false;physics.wear.fill(0);loadCalibration();penSamples.activate();touchSamples.activate();proximityTimer.start();}
-    Q_INVOKABLE void release(){setRawPenInputEnabled(false);rearEraserStroke=false;dropDisplayDamage();pressureCurve.cancel();penSamples.pause();touchSamples.pause();proximityTimer.stop();image=QImage();material=QImage();finger=QImage();currentFinger=QImage();currentPatches.clear();materialReady=false;}
+    Q_INVOKABLE void setNamespace(QString name){stopDeferredResearch();cacheNamespace=name;kitLoaded=false;physics.wear.fill(0);loadCalibration();penSamples.activate();touchSamples.activate();proximityTimer.start();}
+    Q_INVOKABLE void release(){stopDeferredResearch();setRawPenInputEnabled(false);rearEraserStroke=false;dropDisplayDamage();pressureCurve.cancel();penSamples.pause();touchSamples.pause();proximityTimer.stop();image=QImage();material=QImage();finger=QImage();currentFinger=QImage();currentPatches.clear();materialReady=false;}
     Q_INVOKABLE void resetWhite(){legacyBlankRepairs=0;rearEraserStroke=false;dropDisplayDamage();currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(image.size()!=QSize(1200,1600)||image.format()!=QImage::Format_RGB32)image=QImage(1200,1600,QImage::Format_RGB32);image.fill(Qt::white);materialReady=false;ensureMaterial();physics.resetSurface();finger.fill(0);slowest=0;emit timingChanged();publishDirty(image.rect());}
     Q_INVOKABLE void clearPage(){if(!ensureMaterial())return;dropDisplayDamage();image.fill(Qt::white);material.fill(0);legacyBlankRepairs=0;finger.fill(0);physics.resetSurface();physics.resetInk();publishDirty(image.rect());}
-    Q_INVOKABLE void begin(bool tentative=false,bool rearEraser=false){rearEraserStroke=rearEraser&&!tentative;flushDisplayDamage();std::atomic_store_explicit(&latency,std::make_shared<SketchLatency>(),std::memory_order_release);livePublication=false;lastRawId=0;lastContact=0;pendingSample=PaperPen::Sample();rawReplayed=0;rawBatchMax=0;collectingDamage=false;collectedDamage=QRegion();pressureMatches=0;pressureFallbacks=0;penSamples.resetMatchDiagnostics();tiltSamples=0;touchGeometryMatches=0;touchMatches=0;touchFallbacks=0;if(!ensureMaterial())return;livePublication=true;awaitingPenContact=!tentative;tentativeTouch=tentative;currentFinger=tentative?finger:QImage();captured.fill(false);currentPatches.clear();physics.untilNext=0;pendingDirty=QRect();unpublished=false;}
+    Q_INVOKABLE void begin(bool tentative=false,bool rearEraser=false){
+        if(researchDeferredEnabled)stopDeferredResearch();
+        rearEraserStroke=rearEraser&&!tentative;flushDisplayDamage();std::atomic_store_explicit(&latency,std::make_shared<SketchLatency>(),std::memory_order_release);livePublication=false;lastRawId=0;lastContact=0;pendingSample=PaperPen::Sample();rawReplayed=0;rawBatchMax=0;collectingDamage=false;collectedDamage=QRegion();pressureMatches=0;pressureFallbacks=0;penSamples.resetMatchDiagnostics();tiltSamples=0;touchGeometryMatches=0;touchMatches=0;touchFallbacks=0;if(!ensureMaterial())return;livePublication=true;awaitingPenContact=!tentative;tentativeTouch=tentative;currentFinger=tentative?finger:QImage();captured.fill(false);currentPatches.clear();physics.untilNext=0;pendingDirty=QRect();unpublished=false;}
     Q_INVOKABLE void finish(bool preview=false){if(preview&&!pendingDirty.isEmpty()){int margin=int(std::ceil(48/std::max(.1,std::min(inputScaleX,inputScaleY))))+4;auto repair=pendingDirty.adjusted(-margin,-margin,margin,margin).intersected(image.rect());previewRepair+=repair;publishDirty(repair);}rearEraserStroke=false;currentPatches.clear();currentFinger=QImage();tentativeTouch=false;if(unpublished&&!pendingDirty.isEmpty())publishDirty(pendingDirty);livePublication=false;flushDisplayDamage();pendingDirty=QRect();unpublished=false;}
     Q_INVOKABLE void cancel(){
+        if(researchDeferredEnabled)stopDeferredResearch();
         if(!tentativeTouch)return;dropDisplayDamage();QRect dirty;for(const auto &p:currentPatches)dirty=dirty.united(p.rect);
         swapPatches(currentPatches);currentPatches.clear();finger=currentFinger;currentFinger=QImage();tentativeTouch=false;pendingDirty=QRect();if(!dirty.isEmpty())publishDirty(dirty);
     }
@@ -622,6 +673,7 @@ public:
         return raw;
     }
     Q_INVOKABLE bool loadCache(int page,const QString&json){
+        stopDeferredResearch();
         dropDisplayDamage();loadedMeta.clear();currentPatches.clear();
         QFile mf(cachePath(page)+".material");
         if(mf.open(QIODevice::ReadOnly)&&mf.size()<32*1024*1024){
