@@ -1,6 +1,7 @@
 """Targeted real SketchRaster regressions; isolated host files, no device."""
-import pathlib,subprocess,os,sys
-r=pathlib.Path(__file__).resolve().parents[1];s=pathlib.Path('/home/lukasz/Documents/Codex/2026-09-25/m-2/work/papersketch-qt-sdk/root/usr');inc=s/'include/x86_64-linux-gnu/qt6';w=r/('work/backend-probe-final' if '--finish' in sys.argv else 'work/backend-probe-verified');w.mkdir(parents=True,exist_ok=False)
+import pathlib,subprocess,os,sys,argparse
+args=argparse.ArgumentParser();args.add_argument('--finish',action='store_true');args.add_argument('--output-dir',type=pathlib.Path);options=args.parse_args()
+r=pathlib.Path(__file__).resolve().parents[1];s=pathlib.Path('/home/lukasz/Documents/Codex/2026-09-25/m-2/work/papersketch-qt-sdk/root/usr');inc=s/'include/x86_64-linux-gnu/qt6';w=options.output_dir or r/('work/backend-probe-final' if options.finish else 'work/backend-probe-verified');w.mkdir(parents=True,exist_ok=False)
 subprocess.run(['bash',str(r/'scripts/build-sketch.sh')],check=True)
 subprocess.run([str(s/'lib/qt6/libexec/moc'),'-I'+str(inc),str(r/'product/payload/apps/papersketch/native/papersketch-raster.cpp'),'-o',str(w/'papersketch-raster.moc')],check=True)
 for name in (['backend-deferred','release-resource','publication','workflow'] if '--finish' in sys.argv else ['backend-deferred','native-prefix','input-fidelity','latency','release-resource','publication','workflow']):

@@ -67,15 +67,15 @@ Rectangle {
         rawPenContact=0;
         if(nativeRaster && typeof nativeRaster.setRawPenInputEnabled==="function")nativeRaster.setRawPenInputEnabled(false);
     }
-    onEnabledChanged:{if(!enabled && ready)suspendDrawingInput();else if(enabled && ready)Qt.callLater(nativeHeartbeat);}
-    onVisibleChanged:{if(!visible && ready)suspendDrawingInput();else if(visible && ready)Qt.callLater(nativeHeartbeat);}
+    onEnabledChanged:{if(!enabled && ready)suspendDrawingInput();else if(enabled && ready)nativeHeartbeatSoon.restart();}
+    onVisibleChanged:{if(!visible && ready)suspendDrawingInput();else if(visible && ready)nativeHeartbeatSoon.restart();}
     property bool rawPenDraining:false
     property int rawPenContact:0
     property int rawPenStrokes:0
     onRawPenEnabledChanged:{
         if(ready && !rawPenEnabled)nativeWrite("off");
         if(!rawPenEnabled && activeStroke && activeStroke.rawInput)finishStroke();
-        if(ready)Qt.callLater(nativeHeartbeat);
+        if(ready)nativeHeartbeatSoon.restart();
         if(nativeRaster && typeof nativeRaster.setRawPenInputEnabled==="function"){
             if(rawPenEnabled)syncInputTransform();
             nativeRaster.setRawPenInputEnabled(rawPenEnabled);
@@ -200,6 +200,7 @@ Rectangle {
         if(ready && !sizeSlider.pressed)nativeHeartbeat();
     }
     onControlsVisibleChanged:if(ready) {nativeArmed=false;nativeWrite("off");}
+    Timer { id:nativeHeartbeatSoon;interval:0;repeat:false;onTriggered:if(!root.closing)root.nativeHeartbeat() }
     Timer { interval:400;running:root.enabled && root.visible && !root.closing && (!root.bitmapMode||(root.fastPenPreview&&root.finePreviewTool(root.tool,root.brushSize)));repeat:true;triggeredOnStart:true;onTriggered:root.nativeHeartbeat() }
     function nativeWrite(value) {
         if(nativeRaster && typeof nativeRaster.writePreviewPermit==="function"){
@@ -254,6 +255,8 @@ Rectangle {
         try {
             var proxy=Qt.createQmlObject('import QtQml 2.15; import PaperSketch.Native 1.0; QtObject { readonly property var raster: Raster }',root);
             nativeRaster=proxy.raster;nativeRaster.setNamespace(saved.category);
+            // Isolated worker candidate; this source is not the installed release.
+            if(typeof nativeRaster.setDeferredLiveEnabled==="function")nativeRaster.setDeferredLiveEnabled(true);
             if(nativeRaster.materialAvailable)nativeWrite("off");
             console.log("PaperSketch native raster available");
         } catch(e) {nativeRaster=null;console.log("PaperSketch native raster unavailable");}

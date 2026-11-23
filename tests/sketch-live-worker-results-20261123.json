@@ -1,0 +1,30 @@
+{
+  "status": "research_only_rejected_for_uat",
+  "baseline_raster_sha256": "29d482734f987777a8b355df8a3511d9a93f0e843375daee0f9950c8d52975a7",
+  "scope": "reMarkable 2, staged candidate QML, synthetic 500 Hz tilted soft-charcoal shading, 1260 input samples; not physical sensor/panel latency",
+  "limits_ms": {"gui_gap": 200, "raw_queue_p95": 100, "release_tail": 150},
+  "device_runs": [
+    {"variant": "baseline", "gui_gap_ms": 133, "raw_queue_p95_ms": 2566, "release_tail_ms": 2615},
+    {"variant": "stride8_intrusive_observer", "gui_gap_ms": 868, "raw_queue_p95_ms": 6294, "release_tail_ms": 6434, "limitation": "pixels() observation repeatedly settled worker; not comparable"},
+    {"variant": "stride8_nonblocking_observer", "gui_gap_ms": 1051, "raw_queue_p95_ms": 988, "release_tail_ms": 1903, "material_completion_p95_ms": 1142},
+    {"variant": "stride24_poll33", "gui_gap_ms": 1094, "raw_queue_p95_ms": 1372, "release_tail_ms": 1648, "material_completion_p95_ms": 961, "tile_paint_total_us": 516875},
+    {"variant": "stride24_poll33_bounded_damage", "gui_gap_ms": 1444, "raw_queue_p95_ms": 538, "release_tail_ms": 1833, "material_completion_p95_ms": 1350, "tile_paint_total_us": 197211}
+  ],
+  "correctness": [
+    "Actual advancePenInput exact material/image/physics equality: pressure, tilt, four strokes, save/resume, PNG, sharpen, tentative cancel, reset, release",
+    "Detached real SketchTile rendering exact pixels and stop/restart lifecycle, host and ARM",
+    "Bounded damage coalesces across slow-consumer publications and resets across pages",
+    "QML 67 passed, 2 skipped",
+    "Final targeted backend, release-resource, publication and workflow passed",
+    "Device reports confirm artwork_preserved and saved_files_preserved"
+  ],
+  "limitations": [
+    "Single real-device measurement per variant, not statistical evidence of speedup",
+    "Host/offscreen standalone timing does not predict whole application device latency",
+    "Finish/save/material read barriers still drain worker synchronously",
+    "Initial worker copies and material backlog remain; overflow/worker failure recovery not UAT-qualified",
+    "Native feature defaults off; experimental QML explicitly opts in",
+    "No main/release/site publication; generated binaries intentionally excluded from source commit"
+  ],
+  "next_experiment": "Separate nonblocking stroke completion and persistence state machine, with save/page/tool-switch failure tests, before any new UAT decision"
+}

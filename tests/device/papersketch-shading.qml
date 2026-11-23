@@ -21,7 +21,7 @@ Rectangle{
  property var definitions:[{id:"pen-graphite",tool:1,size:12,y0:400,y1:500,fullscreen:false},{id:"pen-charcoal",tool:charcoalTool,size:38,y0:900,y1:1200,fullscreen:true}]
  function find(item,name){if(item.objectName===name)return item;for(var i=0;i<item.children.length;i++){var v=find(item.children[i],name);if(v)return v;}return null;}
  function gray(x,y,tile){
-  var a=subject.item;if(!tile)return a.nativeRaster.pixels(x,y,1,1)[0];
+  var a=subject.item;if(!tile)return (typeof a.nativeRaster.publishedPixels==="function"?a.nativeRaster.publishedPixels(x,y,1,1):a.nativeRaster.pixels(x,y,1,1))[0];
   var size=a.artTileSize,c=Math.floor(x/size),r=Math.floor(y/size),cell=find(a,"artTile"+(r*a.artColumns+c));
   var block=cell.displayPixels(x-c*size,y-r*size,8,8),sum=0;for(var i=0;i<block.length;i+=4)sum+=block[i];return block.length?sum/(block.length/4):255;
  }
@@ -61,6 +61,7 @@ Rectangle{
    item.input_stats=a.nativeRaster.penInputStats();
    item.queue_latency=a.nativeRaster.penQueueLatencyStats();
    item.native_latency=a.nativeRaster.latencyStats();
+   item.deferred_material=typeof a.nativeRaster.deferredStats==="function"?a.nativeRaster.deferredStats():null;
    item.qml_input_profile=typeof a.resetInputProfile==="function"?a.inputProfile:null;
    item.qml_profile_scope="Date.now 1ms wall clock; native call nested in total; qml remainder includes sync, conversion, boundaries and scheduling inside handler; diagnostic overhead not excluded";
    var inputOk=s.rawInput?(s.inputSamples===1260&&item.input_stats[1]===0&&item.input_stats[2]===0):matched[0]>4*matched[1];
