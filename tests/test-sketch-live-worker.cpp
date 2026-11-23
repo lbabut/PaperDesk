@@ -8,6 +8,12 @@ static void equal(SketchRaster &a,SketchRaster &b){
  assert(a.physics.burnish==b.physics.burnish&&a.physics.tooth==b.physics.tooth&&a.physics.ink==b.physics.ink&&a.physics.wear==b.physics.wear&&a.physics.untilNext==b.physics.untilNext);
 }
 int main(int argc,char **argv){QGuiApplication app(argc,argv);QTemporaryDir dir;assert(dir.isValid());
+ assert(PaperMaterialRows::threadParallelAllowed());
+ {PaperMaterialRows::SerialScope outer;assert(!PaperMaterialRows::threadParallelAllowed());
+  {PaperMaterialRows::SerialScope inner;assert(!PaperMaterialRows::threadParallelAllowed());}
+  assert(!PaperMaterialRows::threadParallelAllowed());
+  std::thread other([]{assert(PaperMaterialRows::threadParallelAllowed());});other.join();}
+ assert(PaperMaterialRows::threadParallelAllowed());
  SketchRaster a(nullptr,dir.filePath("async")),b(nullptr,dir.filePath("sync"));a.setDeferredLiveEnabled(true);
  for(int stroke=0;stroke<4;stroke++){
   a.begin();b.begin();
@@ -36,6 +42,7 @@ int main(int argc,char **argv){QGuiApplication app(argc,argv);QTemporaryDir dir;
  assert(a.tryFinish());b.finish();equal(a,b);assert(!a.researchLive);
  const auto profile=a.deferredStats();
  assert(profile.value("profile_schema").toInt()==1&&profile.value("samples").toInt()==2);
+ assert(profile.value("worker_serial_rows").toBool()&&PaperMaterialRows::threadParallelAllowed());
  assert(profile.value("finish_polls").toULongLong()==101);
  assert(profile.value("worker_transport_calls").toULongLong()>=1);
  assert(profile.value("worker_transport_bytes").toULongLong()>0);

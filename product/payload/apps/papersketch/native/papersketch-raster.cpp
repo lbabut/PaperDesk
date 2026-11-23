@@ -191,6 +191,7 @@ public:
             const auto physicsUs=researchNowUs()-physicsStarted;
             auto &s=*researchSurface;
             lastDeferredStats.insert("profile_schema",1);
+            lastDeferredStats.insert("worker_serial_rows",true);
             lastDeferredStats.insert("profile_scope","wall microseconds; worker and owner overlap; not additive CPU or panel latency");
             lastDeferredStats.insert("surface_init_us",qulonglong(s.initUs));
             lastDeferredStats.insert("worker_mark_us",qulonglong(s.markUs));
@@ -246,6 +247,7 @@ public:
         int segmentIndex=researchLive?(researchFirstSample?0:1):index;
         auto submittedAt=PaperPen::now();
         auto job=[state,tool,size,strength,ax,ay,ap,x,y,p,index,stride,tx,ty,aspect,angle,segmentIndex,submittedAt]{
+            PaperMaterialRows::SerialScope serialRows;
             auto stage=researchNowUs();
             state->physics.tiltX=tx;state->physics.tiltY=ty;state->physics.contactAspect=aspect;state->physics.contactAngle=angle;
             // First publication is a full scan: loaded pages need a non-white base.

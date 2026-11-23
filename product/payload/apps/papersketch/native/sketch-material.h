@@ -45,7 +45,17 @@ public:
         std::unique_lock<std::mutex> lock(mutex);
         finished.wait(lock,[this]{return !pending;});
     }
-    static bool available() { static const bool multiple = std::thread::hardware_concurrency() > 1; return multiple; }
+    // Experimental worker-local policy. Never leaks into the GUI thread or
+    // saved material state; nested scopes restore the previous policy.
+    static bool &threadParallelAllowed(){static thread_local bool allowed=true;return allowed;}
+    struct SerialScope {
+        bool previous;
+        SerialScope():previous(threadParallelAllowed()){threadParallelAllowed()=false;}
+        ~SerialScope(){threadParallelAllowed()=previous;}
+        SerialScope(const SerialScope&)=delete;
+        SerialScope& operator=(const SerialScope&)=delete;
+    };
+    static bool available() { static const bool multiple = std::thread::hardware_concurrency() > 1; return threadParallelAllowed()&&multiple; }
     static PaperMaterialRows &instance() { static PaperMaterialRows worker; return worker; }
 };
 
