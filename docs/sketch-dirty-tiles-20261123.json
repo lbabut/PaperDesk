@@ -1,0 +1,11 @@
+{
+ "stage":"Research-only delta transport; no app integration or UAT",
+ "contract":"One producer/consumer; immutable per-tile versions; pending map merges latest version of EVERY changed tile until take,not only last delta; revision rejects stale publication; trusted same-page ordered consumption",
+ "tests":["259x257 partial edge tiles; disjoint updates2/3 coalesced without dropping tile; old retained tile immutable","Concurrent1000publications and destructive consumer reconstruction exact","Invalid zero tile size rejected before division","Actual1260material samples,20publications; final reconstruction and complete material state exact vs synchronous reference","FIFO,capacity refusal/retry,close drain/idempotency,error barrier retained","Host O2 and ASan+UBSan with leak checking disabled pass320x320 and1200x1600","ARM both sizes pass"],
+ "payload":[{"surface":"320x320","full20_bytes":8192000,"copied_tile_bytes":2588672,"final_pending_tiles":7},{"surface":"1200x1600","full20_bytes":153600000,"copied_tile_bytes":3698688,"final_pending_tiles":26}],
+ "arm":[{"surface":"320x320","submit_max_us":53,"wall_us":316921},{"surface":"1200x1600","submit_max_us":71,"wall_us":1832035}],
+ "timing_scope":"Combined correctness workload runs full-frame snapshots AND tile detection AND synchronous reference. Not paired performance comparison and not GUI speedup. Full-image scan remains expensive.",
+ "limits":["No Qt/render/frame pacing or actual save/undo/page transition integration","No epoch reset; same-page only,ordered single consumer","Mailbox pending slots bounded by tile count; consumers can retain additional batches","Producer scans every image tile; requires existing renderer dirty bounds before speed claims","Payload counters exclude map/shared-pointer metadata and memory reads","Leak checking disabled; no race-detector run","No app service restart or module changes"],
+ "device_final":"xochitl active,raster29d4827,monitor static",
+ "next":"Consume renderer known dirty bounds instead of full-page discovery; add generation/page barriers and paced publication before Qt integration"
+}

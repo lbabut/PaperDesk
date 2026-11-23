@@ -1,4 +1,5 @@
 #include "sketch-deferred-prototype.h"
+#include "sketch-dirty-tiles-prototype.h"
 #include "../product/payload/apps/papersketch/native/sketch-material.h"
 #include <cassert>
 #include <future>
@@ -11,6 +12,21 @@ struct Surface{
 };
 int main(int argc,char**){
  const int width=argc>1?1200:320,height=argc>1?1600:320;
+ {bool rejected=false;try{DirtyTilesPrototype invalid(1,1,0);}catch(const std::invalid_argument&){rejected=true;}assert(rejected);}
+ {DirtyTilesPrototype tiles(259,257);std::vector<uint32_t> image(259*257,0xffffffffu),canvas=image;
+  image[0]=0;assert(tiles.publish(1,image));auto retained=tiles.take();assert(retained.tiles.size()==1);
+  image[258]=123;assert(tiles.publish(2,image));image.back()=456;assert(tiles.publish(3,image));
+  auto combined=tiles.take();assert(combined.revision==3&&combined.tiles.size()==2);
+  tiles.apply(retained,canvas);tiles.apply(combined,canvas);assert(canvas==image);
+  assert(!tiles.publish(3,image));assert(tiles.publish(4,image));assert(tiles.take().tiles.empty());
+  assert((*retained.tiles.begin()->second)[0]==0);assert(tiles.tileCount()==9);
+ }
+ {DirtyTilesPrototype tiles(64,64,16);std::vector<uint32_t> image(4096,0xffffffffu),canvas=image;std::atomic<bool> finished{false};
+  std::thread writer([&]{for(int n=1;n<=1000;n++){image[(n*17)%4096]=n;assert(tiles.publish(n,image));}finished=true;});
+  uint64_t revision=0;
+  while(!finished.load()){auto batch=tiles.take();if(batch.revision){assert(batch.revision>revision);revision=batch.revision;tiles.apply(batch,canvas);}}
+  writer.join();auto tail=tiles.take();if(tail.revision){assert(tail.revision>revision);tiles.apply(tail,canvas);}assert(canvas==image);
+ }
  MaterialSnapshotMailbox<std::vector<int>> mailbox;
  assert(!mailbox.latest());assert(mailbox.publish(1,std::vector<int>(128,1)));
  auto retained=mailbox.latest();assert(!mailbox.publish(1,std::vector<int>(128,99)));
@@ -36,18 +52,21 @@ int main(int argc,char**){
   bool threw=false;try{q.drain();}catch(const std::runtime_error&){threw=true;}assert(threw);assert(!q.trySubmit([]{}));}
  Surface reference(width,height),deferred(width,height);DeferredMaterialPrototype queue(2048);long long enqueueMax=0;int applied=0;
  MaterialSnapshotMailbox<std::vector<uint32_t>> display;
+ DirtyTilesPrototype dirtyTiles(width,height);
  auto start=std::chrono::steady_clock::now();double px=30,py=30,pp=.55;
  for(int i=0;i<1260;i++){
   double t=i/1259.,x=30+(width-70)*t,y=30+(height-70)*t+8*std::sin(i*.17),p=.2+.7*(i%113)/112.;
   auto before=std::chrono::steady_clock::now();
   assert(queue.trySubmit([&,px,py,pp,x,y,p,i]{deferred.e.segment(deferred.mass.data(),deferred.image.data(),deferred.finger.data(),5,38,0,1,px,py,pp,x,y,p,i);applied++;
-   if((i+1)%64==0||i==1259)assert(display.publish(i+1,deferred.image));
+   if((i+1)%64==0||i==1259){assert(display.publish(i+1,deferred.image));assert(dirtyTiles.publish(i+1,deferred.image));}
   }));
   enqueueMax=std::max(enqueueMax,(long long)std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()-before).count());
   px=x;py=y;pp=p;
  }
  queue.drain();assert(applied==1260);
  auto saved=display.latest();assert(saved&&saved->revision==1260&&saved->data==deferred.image);
+ auto delta=dirtyTiles.take();std::vector<uint32_t> reconstructed(width*height,0xffffffffu);dirtyTiles.apply(delta,reconstructed);
+ assert(delta.revision==1260&&reconstructed==deferred.image&&delta.tiles.size()<=dirtyTiles.tileCount());
  queue.close();assert(!queue.trySubmit([]{}));
  // Enqueue the whole burst before running the reference; do not hide worker
  // backlog by spending synchronous reference time between submissions.
@@ -61,5 +80,5 @@ int main(int argc,char**){
  assert(reference.e.tooth==deferred.e.tooth&&reference.e.burnish==deferred.e.burnish&&reference.e.ink==deferred.e.ink);
  assert(reference.e.wear==deferred.e.wear&&reference.e.untilNext==deferred.e.untilNext&&reference.e.hasInk==deferred.e.hasInk);
  assert(reference.e.kneadedLift==deferred.e.kneadedLift&&reference.e.kneadedContact==deferred.e.kneadedContact);
- printf("PASS immutable/latest-only snapshots,concurrent reader,close drains/refuses,idempotent close,completion revision barrier,FIFO,1260 exact samples/full state; surface=%dx%d snapshot_bytes=%zu submit_max_us=%lld wall_us=%lld\n",width,height,deferred.image.size()*sizeof(uint32_t),enqueueMax,(long long)std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()-start).count());
+ printf("PASS coalesced dirty tiles,edge tiles,retained immutability,full reconstruction,close/barrier,FIFO,1260 exact samples/full state; surface=%dx%d full20_bytes=%zu tile_bytes=%llu final_pending_tiles=%zu submit_max_us=%lld wall_us=%lld\n",width,height,deferred.image.size()*sizeof(uint32_t)*20,(unsigned long long)dirtyTiles.copiedBytes,delta.tiles.size(),enqueueMax,(long long)std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()-start).count());
 }
