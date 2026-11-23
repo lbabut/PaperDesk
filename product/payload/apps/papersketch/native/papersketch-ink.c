@@ -29,6 +29,9 @@
 #define ARM_FILE "/tmp/papersketch-ink"
 #define ARM_STALE_S 3       // s without a heartbeat from Paper Sketch: off
 #define ARM_CHECK_MS 200
+#ifndef PREVIEW_INTERVAL_MS
+#define PREVIEW_INTERVAL_MS 16
+#endif
 #define SCREEN_W 1404
 #define SCREEN_H 1872
 static const unsigned char BUILD_ID[20] = { 0xc1,0xa6,0x69,0x8e,0xc0,0x51,0x2d,0xdd,0x88,0xc2,
@@ -101,8 +104,8 @@ static void status_file(void) {
     char tmp[128];snprintf(tmp,sizeof tmp,"/tmp/papersketch-ink-status.%d",getpid());
     int fd=open(tmp,O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW,0600);
     if(fd<0)return;
-    dprintf(fd,"{\"ready\":%s,\"pid\":%d,\"time_ms\":%lld,\"armed\":%s,\"fine_preview\":true,\"wide_preview\":true,\"tip_marker\":true,\"shade_strength\":true,\"preview_interval_ms\":8,\"report_clock_monotonic\":%s,\"max_report_to_submit_ms\":%ld,\"max_submit_us\":%ld,\"contact_ms\":%lld,\"first_update_ms\":%lld,\"fine_strokes\":%u,\"active\":%s,\"box\":[%d,%d,%d,%d]}\n",
-            backend_ready?"true":"false",getpid(),realtime_ms(),arm.on?"true":"false",report_clock_monotonic?"true":"false",max_report_to_submit_ms,max_submit_us,contact_ms,first_update_ms,fine_strokes,preview_active?"true":"false",preview_box[0],preview_box[1],preview_box[2],preview_box[3]);
+    dprintf(fd,"{\"ready\":%s,\"pid\":%d,\"time_ms\":%lld,\"armed\":%s,\"fine_preview\":true,\"wide_preview\":true,\"tip_marker\":true,\"shade_strength\":true,\"preview_interval_ms\":%d,\"report_clock_monotonic\":%s,\"max_report_to_submit_ms\":%ld,\"max_submit_us\":%ld,\"contact_ms\":%lld,\"first_update_ms\":%lld,\"fine_strokes\":%u,\"active\":%s,\"box\":[%d,%d,%d,%d]}\n",
+            backend_ready?"true":"false",getpid(),realtime_ms(),arm.on?"true":"false",PREVIEW_INTERVAL_MS,report_clock_monotonic?"true":"false",max_report_to_submit_ms,max_submit_us,contact_ms,first_update_ms,fine_strokes,preview_active?"true":"false",preview_box[0],preview_box[1],preview_box[2],preview_box[3]);
     close(fd);rename(tmp,"/tmp/papersketch-ink-status");
 }
 static void parse_arm(const char *buf) {
@@ -211,7 +214,6 @@ static void show(const int b[4]) {
 }
 
 
-#define PREVIEW_INTERVAL_MS 8
 #define PERMIT_CHECK_MS 16
 struct PreviewBatch {int box[4],dirty,updates;long last_ms,update_us;long long oldest_report_ms;};
 static int preview_poll_timeout(const struct PreviewBatch *batch,long now,int stroke) {

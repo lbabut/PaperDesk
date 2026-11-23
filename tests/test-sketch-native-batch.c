@@ -2,25 +2,27 @@
 #include "../product/payload/apps/papersketch/native/papersketch-ink.c"
 #include <assert.h>
 int main(void) {
+    assert(PREVIEW_INTERVAL_MS==8 || PREVIEW_INTERVAL_MS==16);
+    const int updates=2000/PREVIEW_INTERVAL_MS;
     struct PreviewBatch batch={0};batch.last_ms=-PREVIEW_INTERVAL_MS;
     for(long t=0;t<2000;t+=2) {
         int box[4]={(int)(t/2)%100,100,(int)(t/2)%100+2,104};
         merge_batch(&batch,box);flush_batch(&batch,t,0);
     }
-    assert(batch.updates==250);
+    assert(batch.updates==updates);
     assert(batch.dirty);
     flush_batch(&batch,2000,1);
-    assert(batch.updates==251 && !batch.dirty);
-    flush_batch(&batch,2000,1);assert(batch.updates==251);
+    assert(batch.updates==updates+1 && !batch.dirty);
+    flush_batch(&batch,2000,1);assert(batch.updates==updates+1);
     int a[4]={40,50,60,70},b[4]={10,90,20,100};
     merge_batch(&batch,a);merge_batch(&batch,b);
     assert(batch.box[0]==10 && batch.box[1]==50 && batch.box[2]==60 && batch.box[3]==100);
     flush_batch(&batch,2001,0);assert(batch.dirty);
-    flush_batch(&batch,2001,1);assert(!batch.dirty && batch.updates==252);
+    flush_batch(&batch,2001,1);assert(!batch.dirty && batch.updates==updates+2);
     batch.last_ms=100;batch.dirty=1;
-    assert(preview_poll_timeout(&batch,102,1)==6);
-    assert(preview_poll_timeout(&batch,108,1)==0);
-    assert(preview_poll_timeout(&batch,120,1)==0);
+    assert(preview_poll_timeout(&batch,102,1)==PREVIEW_INTERVAL_MS-2);
+    assert(preview_poll_timeout(&batch,100+PREVIEW_INTERVAL_MS,1)==0);
+    assert(preview_poll_timeout(&batch,100+PREVIEW_INTERVAL_MS+1,1)==0);
     batch.dirty=0;assert(preview_poll_timeout(&batch,120,0)==ARM_CHECK_MS);
     backend_ready=1;
     parse_arm("fine 10 20 200 300 3 1 .15 .5 .95");assert(arm.on&&arm.fine&&arm.tool==1);
@@ -73,7 +75,7 @@ int main(void) {
         assert(pixels[ty*32+tx]==0xff000000u&&mask[ty*32+tx]==255);
         assert(tx>=box[0]&&tx<=box[2]&&ty>=box[1]&&ty<=box[3]);
     }
-    puts("PASS: 3072 pale thin-tip phases visible; pending flush uses remaining 8ms deadline");
+    printf("PASS: 3072 pale thin-tip phases visible; pending flush uses remaining %dms deadline\n",PREVIEW_INTERVAL_MS);
     parse_arm("on 4 4 16 16 3 1 3");
     segment(4,12,20,12,32,0xffffffffu,box);
     for(int y=4;y<20;y++)for(int x=4;x<20;x++)assert(pixels[y*32+x]==0xffffffffu);
@@ -91,6 +93,6 @@ int main(void) {
     assert(wideDark>7000&&box[0]==16&&box[1]==16&&box[2]==111&&box[3]==111);
     puts("PASS: maximum wide preview clips pixels and mask to canvas");
     puts("PASS: fine-preview capability/permit bounds, pressure and ink widths, invalid permits and clipped native pixels");
-    puts("PASS: 1000 reports coalesced to 251 updates; final tail and union bounds preserved");
+    printf("PASS: 1000 reports coalesced to %d updates; final tail and union bounds preserved\n",updates+1);
     return 0;
 }
