@@ -45,6 +45,13 @@ int main(int argc,char **argv){QGuiApplication app(argc,argv);QTemporaryDir dir;
  assert(profile.value("profile_schema").toInt()==1&&profile.value("samples").toInt()==2);
  assert(profile.value("worker_serial_rows").toBool()&&PaperMaterialRows::threadParallelAllowed());
  assert(profile.value("worker_stripe_batches").toULongLong()>0);
+ const auto lanes=profile.value("lane_diagnostics").toList();assert(lanes.size()==2);
+ for(const auto &value:lanes){const auto lane=value.toMap();
+  assert(lane.value("pixels").toULongLong()>0);
+  assert(lane.value("pixels").toULongLong()==lane.value("fresh_hits").toULongLong()+lane.value("fallbacks").toULongLong());
+  assert(lane.value("row_calls").toULongLong()>0&&lane.value("clock_failures").toInt()==0);
+  assert(lane.value("cpu_us").toULongLong()>=lane.value("rows_cpu_us").toULongLong());
+ }
  assert(profile.value("worker_max_batch").toULongLong()>0&&profile.value("worker_max_batch").toULongLong()<=24);
  assert(PaperMaterialRows::researchRowStripe()==-1);
  assert(profile.value("finish_polls").toULongLong()==101);

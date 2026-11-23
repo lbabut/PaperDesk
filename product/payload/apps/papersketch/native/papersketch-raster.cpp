@@ -39,6 +39,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include "sketch-smudge.h"
+#define PAPER_SKETCH_PROFILE_MATERIAL 1
 #include "sketch-material.h"
 #include "sketch-deferred-research.h"
 #include "sketch-batch-research.h"
@@ -122,6 +123,8 @@ public:
         uint64_t markUs=0,segmentUs=0,segmentMaxUs=0,transportUs=0,transportCalls=0,lastCompleteUs=0;
         uint64_t initUs=0,pollUs=0,pollMaxUs=0,pollCalls=0;
         uint64_t batches=0,maxBatch=0;
+        PaperMaterialProfile laneProfile[2];
+        uint64_t laneCpuNs[2]{},laneWallUs[2]{},laneClockFailures[2]{};
         DirtyTilesPrototype tiles{1200,1600};
     };
     struct ResearchCommand {
@@ -140,6 +143,8 @@ public:
         std::exception_ptr failures[2];
         const auto started=researchNowUs();
         auto lane=[&](int index,PaperMaterial &physics){
+            auto wallStarted=researchNowUs();auto cpuStarted=PaperMaterialProfile::cpuNs();
+            PaperMaterialProfile::Scope profile(state->laneProfile[index]);
             // Always join both lanes before propagating failure. Partial
             // pixels must never become a committed or saved material state.
             try{
@@ -156,6 +161,10 @@ public:
                     physics.segment(state->mass.data(),state->image.data(),state->finger.data(),c.tool,c.size,0,c.strength,c.ax,c.ay,c.ap,c.x,c.y,c.p,c.segmentIndex);
                 }
             }catch(...){failures[index]=std::current_exception();}
+            auto cpuEnded=PaperMaterialProfile::cpuNs();
+            state->laneWallUs[index]+=researchNowUs()-wallStarted;
+            if(cpuStarted>=0&&cpuEnded>=cpuStarted)state->laneCpuNs[index]+=uint64_t(cpuEnded-cpuStarted);
+            else state->laneClockFailures[index]++;
         };
         PaperMaterialRows::instance().run([&]{lane(1,state->secondPhysics);},[&]{lane(0,state->physics);});
         for(auto failure:failures)if(failure)std::rethrow_exception(failure);
@@ -254,6 +263,19 @@ public:
             lastDeferredStats.insert("worker_serial_rows",true);
             lastDeferredStats.insert("worker_stripe_batches",qulonglong(s.batches));
             lastDeferredStats.insert("worker_max_batch",qulonglong(s.maxBatch));
+            QVariantList lanes;
+            for(int i=0;i<2;i++){
+                const auto &p=s.laneProfile[i];
+                lanes.append(QVariantMap{{"lane",i},{"cpu_us",qulonglong(s.laneCpuNs[i]/1000)},
+                    {"wall_us",qulonglong(s.laneWallUs[i])},{"rows_cpu_us",qulonglong(p.rowCpuNs/1000)},
+                    {"row_calls",qulonglong(p.rowCalls)},{"pixels",qulonglong(p.pixels)},
+                    {"fresh_hits",qulonglong(p.freshHits)},{"fallbacks",qulonglong(p.fallbacks)},
+                    {"burnished",qulonglong(p.burnished)},{"no_room",qulonglong(p.noRoom)},
+                    {"no_deposit",qulonglong(p.noDeposit)},
+                    {"clock_failures",qulonglong(p.clockFailures+s.laneClockFailures[i])}});
+            }
+            lastDeferredStats.insert("lane_diagnostics",lanes);
+            lastDeferredStats.insert("lane_diagnostics_scope","instrumented thread CPU and wall counters; row CPU includes counter overhead; not uninstrumented speed or panel latency");
             lastDeferredStats.insert("profile_scope","wall microseconds; striped segment counter includes mark work and lane barrier; worker and owner overlap; not additive CPU or panel latency");
             lastDeferredStats.insert("surface_init_us",qulonglong(s.initUs));
             lastDeferredStats.insert("worker_mark_us",qulonglong(s.markUs));

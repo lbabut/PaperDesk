@@ -11,6 +11,21 @@
 #include <mutex>
 #include <thread>
 #include <stdexcept>
+#ifdef PAPER_SKETCH_PROFILE_MATERIAL
+#include <time.h>
+// Diagnostic build only; activated independently in each research lane.
+// CPU clocks exclude descheduling. Pixel counters do perturb the workload.
+struct PaperMaterialProfile {
+    uint64_t pixels=0,freshHits=0,fallbacks=0,burnished=0,noRoom=0,noDeposit=0,rowCalls=0,rowCpuNs=0,clockFailures=0;
+    static PaperMaterialProfile *&active(){static thread_local PaperMaterialProfile *p=nullptr;return p;}
+    static int64_t cpuNs(){timespec t{};return clock_gettime(CLOCK_THREAD_CPUTIME_ID,&t)==0?int64_t(t.tv_sec)*1000000000+t.tv_nsec:-1;}
+    struct Scope {
+        PaperMaterialProfile *previous;
+        explicit Scope(PaperMaterialProfile &p):previous(active()){active()=&p;}
+        ~Scope(){active()=previous;}
+    };
+};
+#endif
 
 // One lazily started worker shares disjoint charcoal scanlines with the caller.
 // Each dab completes before the next one, preserving pigment and wear order.
@@ -309,6 +324,10 @@ struct PaperMaterial {
                 fingerColumn[x - x0] = std::clamp(int(std::lround(dx)) + FingerCenter, 0, 80);
         }
         auto paintRows = [&](int from, int to) {
+#ifdef PAPER_SKETCH_PROFILE_MATERIAL
+        auto *profile=PaperMaterialProfile::active();
+        auto rowStarted=profile?PaperMaterialProfile::cpuNs():-1;
+#endif
         const int rowTool = FixedTool >= 0 ? FixedTool : tool;
         const int researchStripe=PaperMaterialRows::researchRowStripe();
         for (int y = from; y <= to; ++y) {
@@ -397,18 +416,30 @@ struct PaperMaterial {
                         fixed -= std::min(fixed, roundMass(fixed * contact * .28));
                     }
                 } else {
+#ifdef PAPER_SKETCH_PROFILE_MATERIAL
+                    if(profile){profile->pixels++;if(burnish[at])profile->burnished++;}
+#endif
                     double polish = burnish[at] * (1.0 / 255.0);
                     const auto &response = responses[unsigned(burnish[at]) * 256 + tooth[at]];
                     double contact;
                     int capacity;
                     if (cacheFresh && burnish[at] == 0) {
+#ifdef PAPER_SKETCH_PROFILE_MATERIAL
+                        if(profile)profile->freshHits++;
+#endif
                         const auto &fresh = freshContact[tooth[at]];
                         contact = fresh.contact; capacity = fresh.capacity;
                     } else {
+#ifdef PAPER_SKETCH_PROFILE_MATERIAL
+                        if(profile)profile->fallbacks++;
+#endif
                         contact = std::clamp((1.05 * p + .15 - response.grain * toothContact) * 2.0, 0.0, 1.0);
                         capacity = std::max(1, int(capacityAtPressure * capacityResponse(rowTool,response.capacity) * (1 - .22 * polish)));
                     }
                     int room = std::max(0, capacity - fixed - loose);
+#ifdef PAPER_SKETCH_PROFILE_MATERIAL
+                    if(profile&&room==0)profile->noRoom++;
+#endif
                     if (room > 0) {
                         double amount = dose * edge * contact * (1 - .35 * polish) * (room / double(capacity));
                         // Fixed paper-space clumps: repeat passes accumulate
@@ -418,6 +449,9 @@ struct PaperMaterial {
                             amount *= charcoalDoseScale * clump * (rowTool == 4 ? .35 + .65 * response.capacity : .50 + .50 * response.capacity);
                         }
                         int added = std::min(room, roundMass(amount));
+#ifdef PAPER_SKETCH_PROFILE_MATERIAL
+                        if(profile&&added==0)profile->noDeposit++;
+#endif
                         int bonded = roundMass(added * std::min(.99, bondedFraction + .10 * polish));
                         fixed += bonded;
                         loose += added - bonded;
@@ -437,6 +471,13 @@ struct PaperMaterial {
                 image[at] = 0xff000000u | uint32_t(gray) * 0x010101u;
             }
         }
+#ifdef PAPER_SKETCH_PROFILE_MATERIAL
+        if(profile){
+            profile->rowCalls++;auto ended=PaperMaterialProfile::cpuNs();
+            if(rowStarted>=0&&ended>=rowStarted)profile->rowCpuNs+=uint64_t(ended-rowStarted);
+            else profile->clockFailures++;
+        }
+#endif
         };
         if (parallelRows) {
             const int middle = (y0 + y1) / 2;
