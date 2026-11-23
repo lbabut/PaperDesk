@@ -1,0 +1,458 @@
+{
+  "schema": "sketch-lane-cache-study-v1",
+  "decision": "cache_rejected_no_UAT",
+  "profile": {
+    "created_at": "2026-11-23T19:20:39.531928+00:00",
+    "lanes": [
+      {
+        "burnished": 1454941,
+        "clock_failures": 0,
+        "cpu_us": 1886174,
+        "fallbacks": 1463755,
+        "fresh_hits": 2631774,
+        "lane": 0,
+        "no_deposit": 84062,
+        "no_room": 918,
+        "pixels": 4095529,
+        "row_calls": 10230,
+        "rows_cpu_us": 1641100,
+        "wall_us": 3527286
+      },
+      {
+        "burnished": 1471159,
+        "clock_failures": 0,
+        "cpu_us": 1869683,
+        "fallbacks": 1477672,
+        "fresh_hits": 2612448,
+        "lane": 1,
+        "no_deposit": 82904,
+        "no_room": 1192,
+        "pixels": 4090120,
+        "row_calls": 10230,
+        "rows_cpu_us": 1639520,
+        "wall_us": 3688162
+      }
+    ],
+    "fallback_fraction": 0.35933949769896073,
+    "row_fraction_of_instrumented_lane_cpu": 0.8734677598215268,
+    "gui_gap_ms": 175,
+    "queue_p95_upper_ms": 774,
+    "release_tail_ms": 2171,
+    "suite_passed": false,
+    "suite_failures": [
+      "run 0/pen-charcoal: device correctness/performance gate failed",
+      "run 0/pen-charcoal: queue_p95_ms=774 >= 100",
+      "run 0/pen-charcoal: release_tail_ms=2171 >= 150"
+    ],
+    "artwork_preserved": true,
+    "saved_files_preserved": true,
+    "saved_file_count": 17,
+    "no_automatic_save": true,
+    "source_sha256": "2df5b51ee452d09fb551cbcfd6b94e3791d89f963a03c07fa6849f1abf720d37"
+  },
+  "arm_cache_runs": [
+    {
+      "name": "bench-1",
+      "source_sha256": "a7bd741ca8c89d7368dfe30e542085081957550b68c4883fb5ae9680b9a723bb",
+      "rows": [
+        {
+          "repeat": 0,
+          "tool": 1,
+          "tilt": 0.0,
+          "old_us": 56586,
+          "new_us": 59776,
+          "ratio": 1.0564
+        },
+        {
+          "repeat": 0,
+          "tool": 1,
+          "tilt": 0.5,
+          "old_us": 65841,
+          "new_us": 69511,
+          "ratio": 1.0557
+        },
+        {
+          "repeat": 0,
+          "tool": 1,
+          "tilt": 0.95,
+          "old_us": 68380,
+          "new_us": 71146,
+          "ratio": 1.0405
+        },
+        {
+          "repeat": 0,
+          "tool": 4,
+          "tilt": 0.0,
+          "old_us": 374675,
+          "new_us": 335466,
+          "ratio": 0.8954
+        },
+        {
+          "repeat": 0,
+          "tool": 4,
+          "tilt": 0.5,
+          "old_us": 293709,
+          "new_us": 310346,
+          "ratio": 1.0566
+        },
+        {
+          "repeat": 0,
+          "tool": 4,
+          "tilt": 0.95,
+          "old_us": 277758,
+          "new_us": 298262,
+          "ratio": 1.0738
+        },
+        {
+          "repeat": 0,
+          "tool": 5,
+          "tilt": 0.0,
+          "old_us": 338352,
+          "new_us": 365515,
+          "ratio": 1.0803
+        },
+        {
+          "repeat": 0,
+          "tool": 5,
+          "tilt": 0.5,
+          "old_us": 368551,
+          "new_us": 400643,
+          "ratio": 1.0871
+        },
+        {
+          "repeat": 0,
+          "tool": 5,
+          "tilt": 0.95,
+          "old_us": 321693,
+          "new_us": 342631,
+          "ratio": 1.0651
+        },
+        {
+          "repeat": 0,
+          "tool": 7,
+          "tilt": 0.0,
+          "old_us": 902876,
+          "new_us": 905268,
+          "ratio": 1.0026
+        },
+        {
+          "repeat": 0,
+          "tool": 7,
+          "tilt": 0.5,
+          "old_us": 903097,
+          "new_us": 901720,
+          "ratio": 0.9985
+        },
+        {
+          "repeat": 0,
+          "tool": 7,
+          "tilt": 0.95,
+          "old_us": 903106,
+          "new_us": 902649,
+          "ratio": 0.9995
+        },
+        {
+          "repeat": 1,
+          "tool": 1,
+          "tilt": 0.0,
+          "old_us": 56645,
+          "new_us": 59840,
+          "ratio": 1.0564
+        },
+        {
+          "repeat": 1,
+          "tool": 1,
+          "tilt": 0.5,
+          "old_us": 65832,
+          "new_us": 69084,
+          "ratio": 1.0494
+        },
+        {
+          "repeat": 1,
+          "tool": 1,
+          "tilt": 0.95,
+          "old_us": 68303,
+          "new_us": 71152,
+          "ratio": 1.0417
+        },
+        {
+          "repeat": 1,
+          "tool": 4,
+          "tilt": 0.0,
+          "old_us": 281672,
+          "new_us": 307935,
+          "ratio": 1.0932
+        },
+        {
+          "repeat": 1,
+          "tool": 4,
+          "tilt": 0.5,
+          "old_us": 288761,
+          "new_us": 310722,
+          "ratio": 1.0761
+        },
+        {
+          "repeat": 1,
+          "tool": 4,
+          "tilt": 0.95,
+          "old_us": 277591,
+          "new_us": 296756,
+          "ratio": 1.069
+        },
+        {
+          "repeat": 1,
+          "tool": 5,
+          "tilt": 0.0,
+          "old_us": 339500,
+          "new_us": 364203,
+          "ratio": 1.0728
+        },
+        {
+          "repeat": 1,
+          "tool": 5,
+          "tilt": 0.5,
+          "old_us": 368805,
+          "new_us": 400442,
+          "ratio": 1.0858
+        },
+        {
+          "repeat": 1,
+          "tool": 5,
+          "tilt": 0.95,
+          "old_us": 321260,
+          "new_us": 343841,
+          "ratio": 1.0703
+        },
+        {
+          "repeat": 1,
+          "tool": 7,
+          "tilt": 0.0,
+          "old_us": 906090,
+          "new_us": 902372,
+          "ratio": 0.9959
+        },
+        {
+          "repeat": 1,
+          "tool": 7,
+          "tilt": 0.5,
+          "old_us": 902092,
+          "new_us": 902782,
+          "ratio": 1.0008
+        },
+        {
+          "repeat": 1,
+          "tool": 7,
+          "tilt": 0.95,
+          "old_us": 905339,
+          "new_us": 902019,
+          "ratio": 0.9963
+        }
+      ]
+    },
+    {
+      "name": "bench-2",
+      "source_sha256": "7fff5a6b3f7ee58b21401d7d7f527acd6ead820ab93165fa45cd54439752f0da",
+      "rows": [
+        {
+          "repeat": 0,
+          "tool": 1,
+          "tilt": 0.0,
+          "old_us": 56917,
+          "new_us": 59777,
+          "ratio": 1.0502
+        },
+        {
+          "repeat": 0,
+          "tool": 1,
+          "tilt": 0.5,
+          "old_us": 66401,
+          "new_us": 69429,
+          "ratio": 1.0456
+        },
+        {
+          "repeat": 0,
+          "tool": 1,
+          "tilt": 0.95,
+          "old_us": 71043,
+          "new_us": 71675,
+          "ratio": 1.0089
+        },
+        {
+          "repeat": 0,
+          "tool": 4,
+          "tilt": 0.0,
+          "old_us": 278877,
+          "new_us": 298026,
+          "ratio": 1.0687
+        },
+        {
+          "repeat": 0,
+          "tool": 4,
+          "tilt": 0.5,
+          "old_us": 290388,
+          "new_us": 311929,
+          "ratio": 1.0742
+        },
+        {
+          "repeat": 0,
+          "tool": 4,
+          "tilt": 0.95,
+          "old_us": 279315,
+          "new_us": 297549,
+          "ratio": 1.0653
+        },
+        {
+          "repeat": 0,
+          "tool": 5,
+          "tilt": 0.0,
+          "old_us": 340029,
+          "new_us": 365861,
+          "ratio": 1.076
+        },
+        {
+          "repeat": 0,
+          "tool": 5,
+          "tilt": 0.5,
+          "old_us": 370590,
+          "new_us": 447911,
+          "ratio": 1.2086
+        },
+        {
+          "repeat": 0,
+          "tool": 5,
+          "tilt": 0.95,
+          "old_us": 323134,
+          "new_us": 428482,
+          "ratio": 1.326
+        },
+        {
+          "repeat": 0,
+          "tool": 7,
+          "tilt": 0.0,
+          "old_us": 906145,
+          "new_us": 902540,
+          "ratio": 0.996
+        },
+        {
+          "repeat": 0,
+          "tool": 7,
+          "tilt": 0.5,
+          "old_us": 902483,
+          "new_us": 902060,
+          "ratio": 0.9995
+        },
+        {
+          "repeat": 0,
+          "tool": 7,
+          "tilt": 0.95,
+          "old_us": 902462,
+          "new_us": 902351,
+          "ratio": 0.9999
+        },
+        {
+          "repeat": 1,
+          "tool": 1,
+          "tilt": 0.0,
+          "old_us": 56923,
+          "new_us": 69006,
+          "ratio": 1.2123
+        },
+        {
+          "repeat": 1,
+          "tool": 1,
+          "tilt": 0.5,
+          "old_us": 66120,
+          "new_us": 69202,
+          "ratio": 1.0466
+        },
+        {
+          "repeat": 1,
+          "tool": 1,
+          "tilt": 0.95,
+          "old_us": 68550,
+          "new_us": 71263,
+          "ratio": 1.0396
+        },
+        {
+          "repeat": 1,
+          "tool": 4,
+          "tilt": 0.0,
+          "old_us": 297070,
+          "new_us": 347381,
+          "ratio": 1.1694
+        },
+        {
+          "repeat": 1,
+          "tool": 4,
+          "tilt": 0.5,
+          "old_us": 334878,
+          "new_us": 395471,
+          "ratio": 1.1809
+        },
+        {
+          "repeat": 1,
+          "tool": 4,
+          "tilt": 0.95,
+          "old_us": 351967,
+          "new_us": 333090,
+          "ratio": 0.9464
+        },
+        {
+          "repeat": 1,
+          "tool": 5,
+          "tilt": 0.0,
+          "old_us": 467944,
+          "new_us": 366857,
+          "ratio": 0.784
+        },
+        {
+          "repeat": 1,
+          "tool": 5,
+          "tilt": 0.5,
+          "old_us": 387219,
+          "new_us": 439907,
+          "ratio": 1.1361
+        },
+        {
+          "repeat": 1,
+          "tool": 5,
+          "tilt": 0.95,
+          "old_us": 326778,
+          "new_us": 499256,
+          "ratio": 1.5278
+        },
+        {
+          "repeat": 1,
+          "tool": 7,
+          "tilt": 0.0,
+          "old_us": 902052,
+          "new_us": 902703,
+          "ratio": 1.0007
+        },
+        {
+          "repeat": 1,
+          "tool": 7,
+          "tilt": 0.5,
+          "old_us": 902872,
+          "new_us": 902396,
+          "ratio": 0.9995
+        },
+        {
+          "repeat": 1,
+          "tool": 7,
+          "tilt": 0.95,
+          "old_us": 907341,
+          "new_us": 902722,
+          "ratio": 0.9949
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Profile is an instrumented single synthetic GUI run, not uninstrumented speed or physical panel latency.",
+    "Pixel counters and clock reads introduce overhead, including possible cache interference; fractions characterize this instrumented run.",
+    "CPU benchmark is separate from GUI, compares exact varied traces and includes two execution orders per invocation.",
+    "Second CPU invocation is noisier; preserve all outliers. No repeatable benefit, no module installation for cache candidate.",
+    "No production/main/site changes. Diagnostic module restored from owned backup. Checked settings and17 caches are not a complete library audit."
+  ]
+}

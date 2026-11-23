@@ -1,0 +1,53 @@
+23 November2026: lane CPU diagnostic and exact polished-contact cache
+
+Outcome: NO new UAT. Cache candidate rejected before module installation.
+Profile source2088534c34649e8a229e2c0745325cc2bd2d24c1.
+Cache source8448c5b60a38dd2cf978cb3c1494cb2addc2c3a5.
+Both isolated from uninstrumented completion-wake baseline513c90c.
+Canonical343 dirty entries and production/main/site unchanged.
+
+One heavy500Hz GUI diagnostic,1260samples/tool:
+lane0 CPU1.886174s,wall3.527286s,rowsCPU1.641100s,pixels4095529;
+lane1 CPU1.869683s,wall3.688162s,rowsCPU1.639520s,pixels4090120.
+No clock failures. CPU/pixel work nearly balanced in this run.
+35.934% covered pixels used the uncached contact/capacity path.
+87.347% of instrumented lane CPU is inside pixel-row processing.
+Counters/clock reads perturb workload and may add cache interference. These
+fractions characterize the diagnostic run, not uninstrumented performance.
+GUI gap175ms,queue774ms,tail2171ms: FAILED queue/tail and center-tile guard.
+No responsiveness improvement claim; all samples/no overflow, image guards,
+original setting and17 saved caches preserved, no automatic save. Not a
+full-library backup or physical stylus-to-panel latency measurement.
+Diagnostic module restored via owned backup; no experiment left installed.
+
+Hypothesis tested: an exact1024-entry per-thread lazy cache for polished
+charcoal contact/capacity. Invalidates on pressure/tool/capacity, handles
+collisions and epoch rollover; no pigment arithmetic or input changes.
+Fresh-paper path unchanged. Thread-local state is never saved in a page.
+
+Tests on host and tablet ARM CPU:
+- All65536 keys against scalar formula, collisions/reuse, pressure/tool/
+  capacity invalidation, epoch rollover and thread isolation PASS.
+-8100 cross-tool dabs and2000 varied charcoal dabs, full exact state PASS.
+- Timed traces also compared exact state after each reference/candidate pair.
+- Actual native host lifecycle/save/export/wake/failure regression PASS.
+- Profile backend-deferred/release-resource/publication/workflow PASS.
+
+Two separate ARM CPU invocations, each baseline-first and candidate-first.
+Soft-charcoal median candidate/reference ratios1.07655 and1.17235 (higher
+is slower). First run soft ratios1.0651..1.0871; second0.7840..1.5278, noisier.
+All rows/outliers retained in JSON. No reliable improvement; no cache native
+module built or installed, no cache GUI/UAT qualification. CPU tests ran only
+as separate temporary binaries; no device restart for these tests.
+
+Read-only final check19:24:00UTC: CPUonline/possible0-1, xochitl/all observed
+threads allowed0-1, systemd CPUQuotaPerSecUSec=infinity, no configured affinity.
+This snapshot does not rule out runtime contention or ancestor limits.
+xochitl active, remarkable-fail static, raster29d482734f987777a8b355df8a3511d9a93f0e843375daee0f9950c8d52975a7,
+ink5fb519b9,RCC3207f8fb unchanged. No scheduler/governor/firmware changes.
+
+Next: per-thread CPU deltas during a guarded replay to identify competing
+work. Lane wall time substantially exceeds lane CPU; do not infer an absolute
+processor limit or make further blind cache/batch changes. Diagnostic branch
+contains instrumentation, cache branch contains a rejected experiment; neither
+is a release. Tracked binary payloads are inherited, not rebuilt candidates.
