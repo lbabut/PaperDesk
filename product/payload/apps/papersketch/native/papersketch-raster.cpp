@@ -125,6 +125,9 @@ public:
         if(batch.revision>researchRevision){
             researchSurface->tiles.apply(batch,researchDisplay);
             researchRevision=batch.revision;
+            QRegion damage;
+            for(const auto &tile:batch.tiles){int x=(tile.first%10)*128,y=(tile.first/10)*128;damage+=QRect(x,y,std::min(128,1200-x),std::min(128,1600-y));}
+            if(!damage.isEmpty())emit researchDamaged(damage);
         }
         return int(researchRevision);
     }
@@ -133,6 +136,8 @@ public:
         return QString::fromLatin1(QCryptographicHash::hash(QByteArray::fromRawData(reinterpret_cast<const char*>(researchDisplay.data()),researchDisplay.size()*sizeof(uint32_t)),QCryptographicHash::Sha256).toHex());
     }
     bool researchDeferredEnabled=false;
+    int researchPublicationStride=1; // Research harness only; final marker required.
+    bool researchSynchronous=false; // Controlled comparison only, default async.
     int researchSubmitted=0;
     std::shared_ptr<ResearchSurface> researchSurface;
     std::unique_ptr<SketchResearchExecutor> researchWorker;
@@ -141,6 +146,7 @@ public:
         if(researchWorker)researchWorker->close();
         researchWorker.reset();researchSurface.reset();researchSubmitted=0;
         researchDisplay.clear();researchRevision=0;
+        emit researchDamaged(QRegion(QRect(0,0,1200,1600)));
     }
     Q_INVOKABLE bool setDeferredResearchEnabled(bool enabled){
         stopDeferredResearch();
@@ -158,15 +164,24 @@ public:
         if(!researchDeferredEnabled||!researchWorker||!researchSurface||index!=researchSubmitted||
             (tool!=4&&tool!=5)||strength<.05||ap<0||ap>1||p<0||p>1||ax<0||ax>1200||x<0||x>1200||ay<0||ay>1600||y<0||y>1600||!PaperMaterial::valid(tool,size,0,strength,ax,ay,ap)||!PaperMaterial::valid(tool,size,0,strength,x,y,p))return false;
         auto state=researchSurface;
-        if(!researchWorker->trySubmit([state,tool,size,strength,ax,ay,ap,x,y,p,index]{
+        int stride=std::max(1,researchPublicationStride);
+        auto job=[state,tool,size,strength,ax,ay,ap,x,y,p,index,stride]{
             // First publication is a full scan: loaded pages need a non-white base.
             double radius=std::max(state->physics.footprintRadius(tool,size,ap),state->physics.footprintRadius(tool,size,p))+3;
             state->tiles.markRect(1,int(std::floor(std::min(ax,x)-radius)),int(std::floor(std::min(ay,y)-radius)),int(std::ceil(std::max(ax,x)+radius)),int(std::ceil(std::max(ay,y)+radius)));
             state->physics.segment(state->mass.data(),state->image.data(),state->finger.data(),tool,size,0,strength,ax,ay,ap,x,y,p,index);
-            state->tiles.publishForPage(1,uint64_t(index)+1,state->image,index!=0);
+            if(index==0||(index+1)%stride==0)state->tiles.publishForPage(1,uint64_t(index)+1,state->image,index!=0);
             state->completed++;
-        }))return false;
+        };
+        if(researchSynchronous)job();else if(!researchWorker->trySubmit(std::move(job)))return false;
         researchSubmitted++;return true;
+    }
+    Q_INVOKABLE bool publishDeferredResearch(){
+        if(!researchDeferredEnabled||!researchWorker||!researchSurface)return false;
+        auto state=researchSurface;
+        auto job=[state]{state->tiles.publishForPage(1,state->completed.load(),state->image);};
+        if(researchSynchronous){job();return true;}
+        return researchWorker->trySubmit(std::move(job));
     }
     Q_INVOKABLE bool flushDeferredResearch(){
         if(!researchWorker)return false;
@@ -865,6 +880,7 @@ public:
 signals:
     void calibrationChanged();
     void damaged(QRegion region);
+    void researchDamaged(QRegion region);
     void displayModeChanged();
     void proximityChanged();
     void saveFailed();
@@ -878,14 +894,18 @@ class SketchTile:public QQuickPaintedItem {
     Q_PROPERTY(QObject* raster READ raster WRITE setRaster)
     Q_PROPERTY(int sourceX MEMBER sx)
     Q_PROPERTY(int sourceY MEMBER sy)
+    Q_PROPERTY(bool research READ research WRITE setResearch)
+    bool researchMode=false;
     SketchRaster *board=nullptr;int sx=0,sy=0;QImage painted,optical;QRegion pendingDamage;bool resetDisplay=true,lastFast=true;int lastSourceX=-1,lastSourceY=-1;
 public:
     SketchTile(QQuickItem *parent=nullptr):QQuickPaintedItem(parent){setRenderTarget(QQuickPaintedItem::Image);setOpaquePainting(true);setSmooth(false);}
     QObject* raster()const{return board;}
+    bool research()const{return researchMode;}
+    void setResearch(bool enabled){researchMode=enabled;resetDisplay=true;update();}
     void setRaster(QObject*obj){
         if(board)disconnect(board,nullptr,this,nullptr);
         board=qobject_cast<SketchRaster*>(obj);resetDisplay=true;
-        if(board)connect(board,&SketchRaster::damaged,this,[this](const QRegion &region){
+        auto damage=[this](const QRegion &region){
             const QRect bounds(sx,sy,(int)width(),(int)height()),box=region.boundingRect();
             if(!box.intersects(bounds))return;
             if(region.rectCount()==1){
@@ -894,7 +914,11 @@ public:
             }
             auto local=region.intersected(bounds).translated(-sx,-sy);
             if(!local.isEmpty()){pendingDamage+=local;update(local.boundingRect());}
-        });
+        };
+        if(board){
+            connect(board,&SketchRaster::damaged,this,[this,damage](const QRegion &r){if(!researchMode)damage(r);});
+            connect(board,&SketchRaster::researchDamaged,this,[this,damage](const QRegion &r){if(researchMode){if(!board->researchDeferredEnabled)resetDisplay=true;damage(r);}});
+        }
         update();
     }
     void paint(QPainter *painter)override{
@@ -907,12 +931,15 @@ public:
             optical.fill(Qt::white);painted.fill(Qt::white);
             pendingDamage=QRegion(QRect(QPoint(0,0),size));resetDisplay=false;lastFast=fast;lastSourceX=sx;lastSourceY=sy;
         }
-        auto bounds=QRect(sx,sy,size.width(),size.height()).intersected(board->image.rect()).translated(-sx,-sy);
+        QImage researchImage;
+        if(researchMode&&board->researchDeferredEnabled&&!board->researchDisplay.empty())researchImage=QImage(reinterpret_cast<const uchar*>(board->researchDisplay.data()),1200,1600,1200*4,QImage::Format_RGB32);
+        const QImage &sourceImage=researchMode?researchImage:board->image;
+        auto bounds=QRect(sx,sy,size.width(),size.height()).intersected(sourceImage.rect()).translated(-sx,-sy);
         auto dirty=pendingDamage.intersected(bounds);pendingDamage=QRegion();
         if(!dirty.isEmpty()&&sx>=0&&sy>=0){
-            const auto source=reinterpret_cast<const uint32_t*>(board->image.constScanLine(sy))+sx;
+            const auto source=reinterpret_cast<const uint32_t*>(sourceImage.constScanLine(sy))+sx;
             auto raw=reinterpret_cast<uint32_t*>(optical.bits()),display=reinterpret_cast<uint32_t*>(painted.bits());
-            for(const auto rect:dirty)paperDisplayPatch(source,board->image.bytesPerLine()/4,raw,display,optical.bytesPerLine()/4,rect.x(),rect.y(),rect.width(),rect.height(),sx,sy,fast);
+            for(const auto rect:dirty)paperDisplayPatch(source,sourceImage.bytesPerLine()/4,raw,display,optical.bytesPerLine()/4,rect.x(),rect.y(),rect.width(),rect.height(),sx,sy,fast);
         }
         painter->setRenderHint(QPainter::SmoothPixmapTransform,false);painter->drawImage(0,0,painted);
     }
