@@ -20,6 +20,14 @@ int main(int argc,char**){
   tiles.apply(retained,canvas);tiles.apply(combined,canvas);assert(canvas==image);
   assert(!tiles.publish(3,image));assert(tiles.publish(4,image));assert(tiles.take().tiles.empty());
   assert((*retained.tiles.begin()->second)[0]==0);assert(tiles.tileCount()==9);
+  assert(tiles.beginPage(2));assert(!tiles.beginPage(2));std::fill(canvas.begin(),canvas.end(),0xffffffffu);
+  assert(!tiles.apply(retained,canvas,2));assert(canvas[0]==0xffffffffu);
+  assert(!tiles.markRect(1,0,0,258,256));assert(!tiles.publishForPage(1,99,image));
+  std::fill(image.begin(),image.end(),0xffffffffu);image.back()=789;
+  assert(tiles.markRect(2,258,256,258,256));auto inspected=tiles.inspectedTiles;
+  assert(tiles.publishForPage(2,1,image));assert(tiles.inspectedTiles==inspected+1);
+  auto nextPage=tiles.take();assert(nextPage.page==2&&nextPage.revision==1&&nextPage.tiles.size()==1);
+  assert(tiles.apply(nextPage,canvas,2)&&canvas==image);
  }
  {DirtyTilesPrototype tiles(64,64,16);std::vector<uint32_t> image(4096,0xffffffffu),canvas=image;std::atomic<bool> finished{false};
   std::thread writer([&]{for(int n=1;n<=1000;n++){image[(n*17)%4096]=n;assert(tiles.publish(n,image));}finished=true;});
@@ -57,8 +65,12 @@ int main(int argc,char**){
  for(int i=0;i<1260;i++){
   double t=i/1259.,x=30+(width-70)*t,y=30+(height-70)*t+8*std::sin(i*.17),p=.2+.7*(i%113)/112.;
   auto before=std::chrono::steady_clock::now();
-  assert(queue.trySubmit([&,px,py,pp,x,y,p,i]{deferred.e.segment(deferred.mass.data(),deferred.image.data(),deferred.finger.data(),5,38,0,1,px,py,pp,x,y,p,i);applied++;
-   if((i+1)%64==0||i==1259){assert(display.publish(i+1,deferred.image));assert(dirtyTiles.publish(i+1,deferred.image));}
+  assert(queue.trySubmit([&,px,py,pp,x,y,p,i]{
+   // Same conservative endpoint footprint bounds as advancePenInput(), before segment.
+   double radius=std::max(deferred.e.footprintRadius(5,38,pp),deferred.e.footprintRadius(5,38,p))+3;
+   assert(dirtyTiles.markRect(1,int(std::floor(std::min(px,x)-radius)),int(std::floor(std::min(py,y)-radius)),int(std::ceil(std::max(px,x)+radius)),int(std::ceil(std::max(py,y)+radius))));
+   deferred.e.segment(deferred.mass.data(),deferred.image.data(),deferred.finger.data(),5,38,0,1,px,py,pp,x,y,p,i);applied++;
+   if((i+1)%64==0||i==1259){assert(display.publish(i+1,deferred.image));assert(dirtyTiles.publishForPage(1,i+1,deferred.image));}
   }));
   enqueueMax=std::max(enqueueMax,(long long)std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()-before).count());
   px=x;py=y;pp=p;
@@ -80,5 +92,5 @@ int main(int argc,char**){
  assert(reference.e.tooth==deferred.e.tooth&&reference.e.burnish==deferred.e.burnish&&reference.e.ink==deferred.e.ink);
  assert(reference.e.wear==deferred.e.wear&&reference.e.untilNext==deferred.e.untilNext&&reference.e.hasInk==deferred.e.hasInk);
  assert(reference.e.kneadedLift==deferred.e.kneadedLift&&reference.e.kneadedContact==deferred.e.kneadedContact);
- printf("PASS coalesced dirty tiles,edge tiles,retained immutability,full reconstruction,close/barrier,FIFO,1260 exact samples/full state; surface=%dx%d full20_bytes=%zu tile_bytes=%llu final_pending_tiles=%zu submit_max_us=%lld wall_us=%lld\n",width,height,deferred.image.size()*sizeof(uint32_t)*20,(unsigned long long)dirtyTiles.copiedBytes,delta.tiles.size(),enqueueMax,(long long)std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()-start).count());
+ printf("PASS renderer-bounds tiles,page epochs/stale rejection,full reconstruction,close/barrier,FIFO,1260 exact samples/full state; surface=%dx%d full_scan_tiles=%zu inspected_tiles=%llu tile_bytes=%llu final_pending_tiles=%zu submit_max_us=%lld wall_us=%lld\n",width,height,dirtyTiles.tileCount()*20,(unsigned long long)dirtyTiles.inspectedTiles,(unsigned long long)dirtyTiles.copiedBytes,delta.tiles.size(),enqueueMax,(long long)std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()-start).count());
 }

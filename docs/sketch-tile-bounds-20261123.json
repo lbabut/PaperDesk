@@ -1,0 +1,10 @@
+{
+ "stage":"Research-only renderer-bounds transport and page-tag rejection; no Sketch integration",
+ "changes":["Accumulate dirty tiles from same endpoint footprintRadius+3 bounds used by native advancePenInput","Marked-only publication skips clean tiles; full scan remains explicit fallback","Producer page epoch reset clears white-page cache/pending; stale tagged publications and marks refused","Consumer refuses batch whose page differs from expected page"],
+ "tests":["1260soft-charcoal samples exact complete material state and reconstructed final image at320x320/1200x1600","1000concurrent publications/reconstruction,edge tiles,queue/close/error tests retained","Delayed old-page batch cannot alter cleared new canvas; stale old-page mark/publication refused; valid new-page singleedge tile reconstructed","Host O2,ASan+UBSan with detect_leaks=0 and realARM both sizes pass"],
+ "arm":[{"surface":"320x320","full_scan_tiles":180,"inspected_tiles":61,"copied_tile_bytes":2588672,"submit_max_us":76,"wall_us":295433},{"surface":"1200x1600","full_scan_tiles":2600,"inspected_tiles":85,"copied_tile_bytes":3698688,"submit_max_us":69,"wall_us":1007792}],
+ "timing_scope":"Correctness workload includes full-frame oracle snapshots and synchronous reference; not paired benchmark or GUI/pen latency. Do not infer speedup against earlier runs.",
+ "limits":["Dirty bounds validated on this soft-charcoal path,not all tools/strokes","Caller must report all actual dirty regions; omitted bounds may hide changes","Page reset producer-only after command barrier; actual material/page switching and old command rejection not integrated","Blank-page reset assumes consumer clears canvas; loaded pages need full initial publication","No Qt/disk-save/undo/frame pacing or UAT","Consumers may retain extra batches; no leak-check or race-detector claim"],
+ "device_final":"xochitl active,raster29d4827 unchanged,monitor static",
+ "next":"Build guarded Qt rendering harness using the actor and immutable tiles; verify pacing and lifecycle before attempting production app integration"
+}
