@@ -622,6 +622,12 @@ Rectangle {
         paintTimer.restart();dirty=true;
     }
     Timer {id:materialCompletionTimer;interval:16;repeat:false;onTriggered:{root.finishStroke();if(!root.materialFinishing)root.drainPenInput();}}
+    Connections {
+        target:root.nativeRaster;ignoreUnknownSignals:true
+        function onDeferredWorkReady(){
+            if(root.materialFinishing){root.finishStroke();if(!root.materialFinishing)root.drainPenInput();}
+        }
+    }
     function requestLeave(action) {
         if(replaying || painting)return;
         finishStroke();pendingLeave=action;

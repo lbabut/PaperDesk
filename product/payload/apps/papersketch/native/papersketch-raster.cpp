@@ -201,6 +201,9 @@ public:
     bool researchFirstSample=true;
     QVariantMap lastDeferredStats;
     uint64_t firstFinishPollUs=0,finishPolls=0;
+    std::atomic<bool> researchFinishWaiting{false};
+    uint64_t researchEpoch=0;
+    uint64_t researchWakeDelivered=0;
     QString deferredCompletionError;
     Q_INVOKABLE QString completionError()const{return deferredCompletionError;}
     Q_INVOKABLE bool tryFinish(bool preview=false){
@@ -209,9 +212,13 @@ public:
         // completed. Polling must never turn a partial image into a saved one.
         try{
             if(researchLive){if(!firstFinishPollUs)firstFinishPollUs=researchNowUs();finishPolls++;}
-            if(researchLive&&researchWorker&&!researchWorker->isIdle())return false;
+            if(researchLive&&researchWorker){
+                researchFinishWaiting.store(true);
+                if(!researchWorker->isIdle())return false;
+                researchFinishWaiting.store(false);
+            }
             finish(preview);return deferredCompletionError.isEmpty();
-        }catch(const std::exception &e){deferredCompletionError=QString::fromUtf8(e.what());return false;}
+        }catch(const std::exception &e){researchFinishWaiting.store(false);deferredCompletionError=QString::fromUtf8(e.what());return false;}
     }
     Q_INVOKABLE QVariantMap deferredStats()const{return lastDeferredStats;}
     QTimer researchPollTimer;
@@ -223,6 +230,7 @@ public:
     std::unique_ptr<SketchBatchResearchExecutor<ResearchCommand>> researchWorker;
     Q_INVOKABLE void stopDeferredResearch(){
         const auto stopStarted=researchNowUs();
+        researchFinishWaiting.store(false);++researchEpoch;
         bool profiled=false;
         researchPollTimer.stop();
         if(researchLive&&researchWorker&&researchSurface){
@@ -258,6 +266,7 @@ public:
             lastDeferredStats.insert("owner_poll_max_us",qulonglong(s.pollMaxUs));
             lastDeferredStats.insert("owner_poll_calls",qulonglong(s.pollCalls));
             lastDeferredStats.insert("finish_polls",qulonglong(finishPolls));
+            lastDeferredStats.insert("completion_wake_delivered",qulonglong(researchWakeDelivered));
             lastDeferredStats.insert("finish_poll_wait_us",qulonglong(firstFinishPollUs?stopStarted-firstFinishPollUs:0));
             lastDeferredStats.insert("worker_idle_to_stop_us",qulonglong(s.lastCompleteUs&&stopStarted>s.lastCompleteUs?stopStarted-s.lastCompleteUs:0));
             lastDeferredStats.insert("drain_us",qulonglong(drainUs));
@@ -282,14 +291,19 @@ public:
         return startDeferredSurface();
     }
     bool startDeferredSurface(){
-        const auto started=researchNowUs();firstFinishPollUs=0;finishPolls=0;
+        const auto started=researchNowUs();firstFinishPollUs=0;finishPolls=0;researchWakeDelivered=0;
         auto state=std::make_shared<ResearchSurface>();state->physics=physics;state->secondPhysics=physics;
         const auto *m=reinterpret_cast<const uint32_t*>(material.constBits());
         const auto *im=reinterpret_cast<const uint32_t*>(image.constBits());
         const auto *f=reinterpret_cast<const uint16_t*>(finger.constBits());
         state->mass.assign(m,m+1200*1600);state->image.assign(im,im+1200*1600);state->finger.assign(f,f+82*81);
         researchDisplay=state->image;
-        researchSurface=state;researchWorker=std::make_unique<SketchBatchResearchExecutor<ResearchCommand>>(2048,24,[state](const auto &commands){processResearchBatch(state,commands);});researchDeferredEnabled=true;
+        const auto epoch=++researchEpoch;
+        researchSurface=state;researchWorker=std::make_unique<SketchBatchResearchExecutor<ResearchCommand>>(2048,24,[state](const auto &commands){processResearchBatch(state,commands);},[this,epoch]{
+            if(researchFinishWaiting.exchange(false))QMetaObject::invokeMethod(this,[this,epoch]{
+                if(researchEpoch==epoch&&researchLive&&deferredCompletionError.isEmpty()){researchWakeDelivered++;emit deferredWorkReady();}
+            },Qt::QueuedConnection);
+        });researchDeferredEnabled=true;
         researchSurface->initUs=researchNowUs()-started;return true;
     }
     Q_INVOKABLE bool submitDeferredResearch(int tool,double size,double strength,double ax,double ay,double ap,double x,double y,double p,int index){
@@ -1047,6 +1061,7 @@ public:
         pendingDirty=pendingDirty.united(dirty);if(publish)publishDirty(dirty);else unpublished=true;return true;
     }
 signals:
+    void deferredWorkReady();
     void calibrationChanged();
     void damaged(QRegion region);
     void researchDamaged(QRegion region);

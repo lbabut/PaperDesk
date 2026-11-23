@@ -3,6 +3,7 @@
 #include <QtCore/QTemporaryDir>
 #include <cassert>
 #include <future>
+#include <QtCore/QThread>
 static void equal(SketchRaster &a,SketchRaster &b){
  assert(a.opticalDigest()==b.opticalDigest());assert(a.material==b.material&&a.finger==b.finger);
  assert(a.physics.burnish==b.physics.burnish&&a.physics.tooth==b.physics.tooth&&a.physics.ink==b.physics.ink&&a.physics.wear==b.physics.wear&&a.physics.untilNext==b.physics.untilNext);
@@ -51,6 +52,26 @@ int main(int argc,char **argv){QGuiApplication app(argc,argv);QTemporaryDir dir;
  assert(profile.value("worker_transport_bytes").toULongLong()>0);
  assert(profile.value("worker_segment_us").toULongLong()>=profile.value("worker_segment_max_us").toULongLong());
  assert(profile.value("stop_total_us").toULongLong()>=profile.value("commit_buffers_us").toULongLong()+profile.value("commit_physics_us").toULongLong()+profile.value("cleanup_us").toULongLong());
+ {
+  SketchRaster wake(nullptr,dir.filePath("wake"));wake.setDeferredLiveEnabled(true);
+  int notifications=0;
+  QObject::connect(&wake,&SketchRaster::deferredWorkReady,&wake,[&]{assert(QThread::currentThread()==app.thread());notifications++;});
+  for(int pass=0;pass<2;pass++){
+   wake.begin();assert(wake.advancePenInput(5,38,1,200,200,.8,true,.8,.3));
+   std::promise<void> waiting,resume;auto latch=resume.get_future().share();
+   assert(wake.researchWorker->trySubmit([&]{waiting.set_value();latch.wait();}));waiting.get_future().wait();
+   assert(!wake.tryFinish());resume.set_value();wake.researchWorker->drain();
+   if(pass==0){
+    QElapsedTimer deadline;deadline.start();
+    while(notifications==0&&deadline.elapsed()<2000){QCoreApplication::processEvents();QThread::msleep(1);}
+    assert(notifications==1&&wake.researchLive);assert(wake.tryFinish());
+   }else{
+    // Stop invalidates any already posted completion for the previous epoch.
+    wake.stopDeferredResearch();QCoreApplication::processEvents();assert(notifications==1);
+    wake.finish();
+   }
+  }
+ }
  {
   SketchRaster failed(nullptr,dir.filePath("failed"));failed.setDeferredLiveEnabled(true);failed.begin();
   failed.advancePenInput(5,38,1,200,200,.8,true,.8,.3);

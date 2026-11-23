@@ -14,6 +14,7 @@ template<class Command> class SketchBatchResearchExecutor {
  bool stopping=false,active=false;
  std::exception_ptr failure;
  std::function<void(const std::vector<Command>&)> process;
+ std::function<void()> idleNotify;
  std::thread worker;
  void run(){
   std::unique_lock<std::mutex> lock(mutex);
@@ -35,7 +36,17 @@ template<class Command> class SketchBatchResearchExecutor {
     if(!failure)failure=std::current_exception();
     queue.clear();stopping=true;
    }
-   active=false;if(queue.empty())idle.notify_all();
+   active=false;
+   if(queue.empty()){
+    idle.notify_all();
+    // Notify outside the lock: the receiver may poll isIdle. The GUI callback
+    // is queued, never a synchronous call into the owner from this thread.
+    lock.unlock();
+    try{if(idleNotify)idleNotify();}catch(...){
+     lock.lock();if(!failure)failure=std::current_exception();queue.clear();stopping=true;idle.notify_all();lock.unlock();
+    }
+    lock.lock();
+   }
   }
  }
  bool submit(Entry entry){
@@ -44,8 +55,8 @@ template<class Command> class SketchBatchResearchExecutor {
   queue.push_back(std::move(entry));ready.notify_one();return true;
  }
 public:
- SketchBatchResearchExecutor(size_t capacity,size_t batchSize,std::function<void(const std::vector<Command>&)> callback)
- :limit(capacity),batchLimit(std::max(size_t(1),batchSize)),process(std::move(callback)),worker([this]{run();}){}
+ SketchBatchResearchExecutor(size_t capacity,size_t batchSize,std::function<void(const std::vector<Command>&)> callback,std::function<void()> notify={})
+ :limit(capacity),batchLimit(std::max(size_t(1),batchSize)),process(std::move(callback)),idleNotify(std::move(notify)),worker([this]{run();}){}
  SketchBatchResearchExecutor(const SketchBatchResearchExecutor&)=delete;
  ~SketchBatchResearchExecutor(){close();}
  bool trySubmitCommand(Command command){return submit({std::move(command),{}});}
