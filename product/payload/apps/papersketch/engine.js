@@ -28,8 +28,9 @@ function count(b) {
     return n;
 }
 function decode(raw) {
+    if(typeof raw!=="string" || raw.length>16*1024*1024)throw Error("Sketchbook metadata is too large");
     var b=JSON.parse(raw);
-    if(!b || b.version!==1 || !Array.isArray(b.pages) || !b.pages.length || b.pages.length>12)
+    if(!b || b.version!==1 || !Array.isArray(b.pages) || !b.pages.length)
         throw Error("Invalid sketchbook");
     if(!Number.isInteger(b.index) || b.index<0 || b.index>=b.pages.length) throw Error("Invalid page");
     var total=0,slots={},nextSlot=0;

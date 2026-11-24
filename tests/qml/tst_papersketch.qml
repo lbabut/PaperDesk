@@ -716,6 +716,8 @@ Item {
         function test_device_realism_harness_compiles() {
             var component=Qt.createComponent("../device/papersketch-realism.qml");
             compare(component.status,Component.Ready,component.errorString());
+            component=Qt.createComponent("../device/papersketch-pages.qml");
+            compare(component.status,Component.Ready,component.errorString());
         }
         function test_manual_save_and_cancel_discard_page_prompt() {
             line(1,120,120,0.7);verify(scene.app.dirty);
@@ -727,32 +729,38 @@ Item {
             scene.app.resolveLeave("discard");compare(scene.app.pageIndex,0);compare(scene.app.pageCount,1);
             compare(scene.app.page.strokes.length,1);
         }
-        function test_full_book_new_page_data(){
+        function test_new_page_beyond_twelve_data(){
             return [{tag:"saved",dirty:false},{tag:"unsaved",dirty:true}];
         }
-        function test_full_book_new_page(data){
+        function test_new_page_beyond_twelve(data){
             var a=scene.app;
             while(a.notebook.pages.length<12)a.notebook.pages.push(a.blankPage());
             a.revision++;a.dirty=data.dirty;
             var before=JSON.stringify(a.notebook),saved=a.lastSavedDocument,index=a.pageIndex;
             mouseClick(findChild(a,"newPageButton"),50,25,Qt.LeftButton);
-            compare(a.confirmation,"pageLimit");compare(a.pendingLeave,null);
-            compare(findChild(a,"pageActionTitle").text,"Sketchbook is full (12 pages)");
-            verify(!findChild(a,"saveLeave").visible);verify(!findChild(a,"discardLeave").visible);
-            verify(!findChild(a,"confirmPageAction").visible);
-            if(!data.dirty){wait(50);var image=grabImage(scene);compare(image.width,scene.width);image.save(artifactPath("full-sketchbook.png"));}
-            mouseClick(findChild(a,"cancelLeave"),50,25,Qt.LeftButton);
-            compare(a.confirmation,"");compare(a.dirty,data.dirty);compare(a.pageIndex,index);
-            compare(JSON.stringify(a.notebook),before);compare(a.lastSavedDocument,saved);
+            if(data.dirty){
+                compare(a.confirmation,"leave");a.resolveLeave("cancel");
+                compare(JSON.stringify(a.notebook),before);verify(a.dirty);compare(a.pageIndex,index);
+                compare(a.lastSavedDocument,saved);a.newPage();a.resolveLeave("save");
+            }
+            tryCompare(a,"replaying",false,10000);
+            compare(a.pageCount,13);compare(a.pageIndex,12);compare(a.confirmation,"");verify(a.dirty);
+            verify(a.saveBook());compare(Ink.decode(a.lastSavedDocument).pages.length,13);
+            a.newPage();tryCompare(a,"replaying",false,10000);compare(a.pageCount,14);
+            a.selectPage(0);a.resolveLeave("discard");tryCompare(a,"replaying",false,10000);
+            compare(a.pageCount,13);compare(a.notebook.pages[12].cacheSlot,12);
         }
-        function test_full_book_defensive_dispatch_is_non_destructive(){
+        function test_large_book_round_trip_and_page_identity(){
             var a=scene.app;
-            while(a.notebook.pages.length<12)a.notebook.pages.push(a.blankPage());
+            while(a.notebook.pages.length<100)a.notebook.pages.push(a.blankPage());
             a.revision++;a.dirty=true;
-            var before=JSON.stringify(a.notebook),revision=a.revision;
-            a.pendingLeave={kind:"new"};a.executeLeave();compare(a.confirmation,"pageLimit");
-            a.confirmAction();compare(a.confirmation,"");compare(a.revision,revision);
-            compare(JSON.stringify(a.notebook),before);verify(a.dirty);
+            verify(a.saveBook());compare(Ink.decode(a.lastSavedDocument).pages.length,100);
+            a.selectPage(50);tryCompare(a,"replaying",false,10000);
+            a.deletePage();tryCompare(a,"replaying",false,10000);verify(a.saveBook());
+            compare(a.pageCount,99);compare(a.page.cacheSlot,51);
+            a.newPage();tryCompare(a,"replaying",false,10000);
+            compare(a.page.cacheSlot,100);verify(a.saveBook());
+            compare(Ink.decode(a.lastSavedDocument).pages.length,100);
         }
         function test_new_page_at_last_available_slot(){
             var a=scene.app;

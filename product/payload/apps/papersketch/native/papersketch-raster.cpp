@@ -395,9 +395,10 @@ public:
         QSaveFile f(path);return f.open(QIODevice::WriteOnly) && f.write(bytes)==bytes.size() && f.commit();
     }
     static bool documentSlots(const QByteArray &manifest,QSet<int>&pageIds){
+        if(manifest.size()>16*1024*1024)return false;
         auto envelope=QJsonDocument::fromJson(manifest).object();
         auto book=QJsonDocument::fromJson(envelope.value("document").toString().toUtf8()).object();
-        auto pages=book.value("pages").toArray();if(book.value("version").toInt()!=1||pages.isEmpty()||pages.size()>12)return false;
+        auto pages=book.value("pages").toArray();if(book.value("version").toInt()!=1||pages.isEmpty())return false;
         for(int i=0;i<pages.size();i++){
             auto page=pages[i].toObject();auto value=page.value("cacheSlot");int slot=value.isUndefined()?i:value.toInt(-1);
             if(slot<0||slot>1000000000||(!value.isUndefined()&&value.toDouble()!=slot)||pageIds.contains(slot))return false;
@@ -619,12 +620,16 @@ public:
     Q_INVOKABLE bool saveCache(int page,const QString&json){auto job=saveJob(page,json);if(job.snapshot.isNull())return false;enqueue(std::move(job));return true;}
     Q_INVOKABLE bool flushSaves(){std::unique_lock<std::mutex> lock(saveMutex);saveWake.wait(lock,[this]{return saves.empty()&&!writing;});return !writeError;}
     Q_INVOKABLE bool saveNotebook(const QString&document,int page,const QString&json){
+        // Never accept metadata that loadNotebook cannot read back.
+        if(document.size()>16*1024*1024)return false;
+        QByteArray raw=document.toUtf8();if(raw.size()>16*1024*1024)return false;
         if(!ensureMaterial())return false;
-        auto object=QJsonDocument::fromJson(document.toUtf8()).object();QJsonArray wear;for(double p:physics.wear)wear.append(p);object.insert("physicalTools",wear);
+        auto object=QJsonDocument::fromJson(raw).object();QJsonArray wear;for(double p:physics.wear)wear.append(p);object.insert("physicalTools",wear);
         // Preserve the exact caller envelope when no physical state has changed;
         // older integrations compare their untouched manifest byte-for-byte.
-        QByteArray raw=document.toUtf8();bool used=kitLoaded;for(double p:physics.wear)used=used||p>0;
+        bool used=kitLoaded;for(double p:physics.wear)used=used||p>0;
         QSet<int> pageSlots;if(used&&documentSlots(raw,pageSlots))raw=QJsonDocument(object).toJson(QJsonDocument::Compact);
+        if(raw.size()>16*1024*1024)return false;
         kitLoaded=true;
         enqueue(saveJob(page,json,raw));return true;
     }

@@ -574,7 +574,6 @@ Rectangle {
     }
     function requestLeave(action) {
         if(replaying || painting)return;
-        if(action.kind==="new" && notebook.pages.length>=12){showPageLimit();return;}
         finishStroke();pendingLeave=action;
         if(dirty)confirmation="leave";else executeLeave();
     }
@@ -593,7 +592,6 @@ Rectangle {
         var action=pendingLeave;pendingLeave=null;if(!action)return;
         if(action.kind==="close"){unloading();close();return;}
         if(action.kind==="new"){
-            if(notebook.pages.length>=12){showPageLimit();return;}
             notebook.pages.push(blankPage());performPage(notebook.pages.length-1);newUnsavedPage=true;dirty=true;return;
         }
         performPage(Math.max(0,Math.min(action.index,notebook.pages.length-1)));
@@ -603,9 +601,6 @@ Rectangle {
     }
     function selectPage(index){if(index!==pageIndex)requestLeave({kind:"page",index:index});}
     function newPage(){requestLeave({kind:"new"});}
-    function showPageLimit(){
-        pendingLeave=null;confirmation="pageLimit";
-    }
     function pageSlot(index){var value=notebook.pages[index].cacheSlot;return value===undefined?index:value;}
     function cacheMetadata(){
         var data={};for(var key in page)if(key!=="cacheSlot")data[key]=page[key];
@@ -1205,15 +1200,15 @@ Rectangle {
             Text {
                 width:840;wrapMode:Text.WordWrap;font.pixelSize:32;font.bold:true
                 objectName:"pageActionTitle"
-                text:root.confirmation==="pageLimit"?"Sketchbook is full (12 pages)":root.confirmation==="leave"?"Save changes before continuing?":root.confirmation==="delete"?"Delete this page?":"Clear this page permanently?"
+                text:root.confirmation==="leave"?"Save changes before continuing?":root.confirmation==="delete"?"Delete this page?":"Clear this page permanently?"
             }
             Text {
                 width:840;wrapMode:Text.WordWrap;font.pixelSize:23
-                text:root.confirmation==="pageLimit"?"This version supports 12 pages per sketchbook. No page was added or deleted. Your current drawing is unchanged.\n\nTo make room, return to a page you no longer need and choose Delete page. Clear page does not free a page slot. Export any drawing you want to keep before deleting it.":root.confirmation==="leave"?"Your drawing is in memory. Choose Save, Discard or Cancel.":"The current page and its unsaved marks will be removed. Other pages stay in your sketchbook. Choose Save afterward to keep this change."
+                text:root.confirmation==="leave"?"Your drawing is in memory. Choose Save, Discard or Cancel.":"The current page and its unsaved marks will be removed. Other pages stay in your sketchbook. Choose Save afterward to keep this change."
             }
             Row {
                 spacing:20
-                Action {label:root.confirmation==="pageLimit"?"Back to drawing":"Cancel";width:260;objectName:"cancelLeave";onTriggered:root.confirmation==="leave"?root.resolveLeave("cancel"):root.confirmation=""}
+                Action {label:"Cancel";width:220;objectName:"cancelLeave";onTriggered:root.confirmation==="leave"?root.resolveLeave("cancel"):root.confirmation=""}
                 Action {label:"Discard";width:220;objectName:"discardLeave";visible:root.confirmation==="leave";onTriggered:root.resolveLeave("discard")}
                 Action {label:"Save";width:220;objectName:"saveLeave";visible:root.confirmation==="leave";onTriggered:root.resolveLeave("save")}
                 Action {label:root.confirmation==="delete"?"Delete page":"Clear page";objectName:"confirmPageAction";visible:root.confirmation==="delete" || root.confirmation==="clear" || root.confirmation==="book";width:240;onTriggered:root.confirmAction()}

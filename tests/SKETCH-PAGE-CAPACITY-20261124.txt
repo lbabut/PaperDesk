@@ -1,0 +1,49 @@
+Paper Sketch page capacity UAT, 24 November 2026
+
+Supersedes the uninstalled limit-message-only candidate documented in
+SKETCH-NEW-PAGE-20261124.txt. Owner asked why a page limit is needed and
+confirmed the drawing saved/closed before interface restart.
+
+The number 12 was a hard-coded UI/decoder restriction, also duplicated in
+native documentSlots (tool-state persistence and deleted-page cleanup).
+Pixels/material are loaded per current page, not for the entire notebook.
+This patch removes that fixed page-count ceiling in all three places.
+It does NOT promise unlimited storage or constant navigation time for huge
+notebooks. Existing unique cache IDs, stroke validation/point budget, atomic
+file replacement and load bounds stay. Native saves now refuse UTF-8 metadata
+over the existing 16 MiB read bound, including after tool-state insertion.
+Decoder rejects overlarge metadata before JSON parsing. Failure keeps the
+current drawing dirty/in memory. No rendering or input cadence changes.
+
+Evidence:
+- Host QML: 71 passed, 0 failed, 2 native-tablet-only skips. Includes page 13,
+  dirty/save/cancel/discard, 100-page metadata round trip and stable identities.
+- Entire scripts/test-sketch-native.py completed successfully, including
+  extended workflow: 13 pages, physical tool state, exact saved image reopen,
+  pruning after >12 pages and rejected oversized ASCII/multibyte metadata.
+- Three installer preflight safety tests; three existing tablet-runner safety
+  tests passed. These are not exhaustive transport/rollback fault injection.
+- ARM build and RCC build passed.
+- Real tablet isolated pages-probe passed: create/save 14 drawn pages,
+  unload/reopen, compare every image digest, append/save page 15, delete a
+  middle page without changing surviving slot or image. No QML runtime errors.
+  Synthetic application calls, not physical finger or optical-panel testing.
+- Original notebook setting and 17 active-namespace files preserved by hash.
+  This is not an audit of every notebook belonging to other applications.
+
+Installed for owner UAT (not public release):
+raster a1b2246f8df6b03f17158b3bf7bad29b07ce8b8683eaa7bdff6d7ddf4433efcd
+RCC    7bcfc2d0bb5d53a51794537400cf38065699d9f80f7b807960fbe12764019ce1
+ink unchanged 5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7
+Verified loaded raster mapping, active xochitl, restored static/unmasked failure
+monitor, diagnostic app removed from AppLoad and original configuration restored.
+
+Recovery: /home/root/.local/state/sketch-pages-uat.CEOFUG contains verified
+pre-install software, xochitl.conf and copies of all 17 original namespace files.
+The software-only rollback script never restores/deletes artwork. After saving
+more than 12 pages, do NOT blindly downgrade: old decoders reject those notebooks.
+Retain the newer notebook and compatible reader; do not overwrite it with the
+pre-install 12-page backup. No saved-format migration was performed.
+
+Private reports: plan-400/preflight-v01/sketch-pages-20261124.
+Painting lag remains a separate unresolved investigation.

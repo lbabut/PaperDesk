@@ -71,5 +71,21 @@ int main(int argc,char**argv){
  assert(!QFile::exists(pages.cachePath(1)+".material"));assert(QFile::exists(pages.cachePath(0)+".material")&&QFile::exists(pages.cachePath(2)+".material")&&QFile::exists(pages.cachePath(7)+".material"));
  SketchRaster reopened(nullptr,dir.path()+"/pages");assert(reopened.loadCache(2,"p2"));assert(reopened.image==pages.image);
 
+ // The old 12-page ceiling must not disable tool-state persistence or pruning.
+ QJsonArray many;for(int slot=0;slot<13;slot++)many.append(QJsonObject{{"strokes",QJsonArray()},{"paper","plain"},{"bitmap",true},{"revision",1},{"cacheSlot",slot}});
+ auto envelope=[&](){return QString::fromUtf8(QJsonDocument(QJsonObject{{"document",QString::fromUtf8(QJsonDocument(QJsonObject{{"version",1},{"index",12},{"pages",many},{"nextCacheSlot",13}}).toJson(QJsonDocument::Compact))}}).toJson(QJsonDocument::Compact));};
+ SketchRaster large(nullptr,dir.path()+"/large");large.physics.wear[0]=.3;
+ large.image.fill(qRgb(42,42,42));assert(large.saveNotebook(envelope(),12,"p12"));assert(large.flushSaves());
+ auto persisted=large.loadNotebook();auto stored=QJsonDocument::fromJson(persisted.toUtf8()).object();
+ assert(stored.value("physicalTools").toArray()[0].toDouble()==.3);
+ assert(QJsonDocument::fromJson(stored.value("document").toString().toUtf8()).object().value("pages").toArray().size()==13);
+ SketchRaster largeReload(nullptr,dir.path()+"/large");assert(largeReload.loadNotebook()==persisted);
+ assert(largeReload.loadCache(12,"p12"));assert(largeReload.image==large.image);
+ assert(!large.saveNotebook(QString(16*1024*1024+1,'x'),12,"p12"));
+ assert(!large.saveNotebook(QString(9*1024*1024,QChar(0x0105)),12,"p12"));
+ assert(large.loadNotebook()==persisted);
+ many.removeAt(12);assert(large.saveNotebook(envelope(),0,"p0"));assert(large.flushSaves());
+ assert(!QFile::exists(large.cachePath(12)+".material"));
+
  printf("PASS named atomic Documents PNG, collision/path validation, grayscale export, coalesced curved input and contact separation\n");
 }

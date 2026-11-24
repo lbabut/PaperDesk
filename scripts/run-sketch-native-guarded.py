@@ -21,6 +21,7 @@ p.add_argument("--known-hosts",required=True)
 p.add_argument("--baseline-qml")
 p.add_argument("--expected-installed-rcc", help="Explicit known installed RCC packaging hash; also verify deployed QML and engine against source")
 p.add_argument("--smoke",action="store_true")
+p.add_argument("--pages-probe",action="store_true",help="Isolated 14-page save/reload and page identity regression; no injected input")
 p.add_argument("--input-probe",action="store_true")
 p.add_argument("--shading-probe",action="store_true")
 p.add_argument("--tilted-shading",action="store_true")
@@ -49,6 +50,8 @@ p.add_argument("--output",default="docs/papersketch-native-2026-10-31.json")
 a=p.parse_args()
 if not a.safe_state_confirmed:
     p.error("Save/close personal work and confirm safe idle screen before UI restart; --safe-state-confirmed required")
+if a.pages_probe and any((a.smoke,a.input_probe,a.shading_probe,a.controls_probe,a.workflow_probe,a.realism_probe,a.pdf_probe,a.eraser_probe,a.fidelity_probe,a.preferences_probe,a.detail_probe,a.latency_probe)):
+    p.error("--pages-probe must run separately")
 if a.extended_fidelity_probe:a.fidelity_probe=True
 if a.tilted_shading and not a.shading_probe:p.error("--tilted-shading requires --shading-probe")
 if a.soft_charcoal and not a.shading_probe:p.error("--soft-charcoal requires --shading-probe")
@@ -118,6 +121,7 @@ if a.micro_probe:
     if a.micro_no_preview:harness=harness.replace('a.tool=d.tool;', 'a.fastPenPreview=false;a.tool=d.tool;')
     harness=harness.replace('1080,620','144,384').replace('pattern:"upright"','pattern:"micro-loop"')
 if a.pdf_probe:harness=(root/"tests/device/papersketch-pdf.qml").read_text()
+if a.pages_probe:harness=(root/"tests/device/papersketch-pages.qml").read_text()
 if a.smoke:harness=harness.replace("property bool smokeOnly:false","property bool smokeOnly:true")
 if a.baseline_qml:harness=harness.replace('"constant-fast"','"tiled-fast"')
 elif candidate==baseline:harness=harness.replace('["baseline","constant-fast"]','["production-1","production-2"]')
@@ -277,8 +281,8 @@ try:
                 case["achieved_input_hz"]=event.get("requested_samples",0)*1000/case["injected_duration_ms"] if case["injected_duration_ms"]>0 else None
                 case["release_to_drained_ms"]=case["finished_ms"]-event["release_ms"]
             result["shading_probe"]["physical_panel_latency_measured"]=False
-    if a.controls_probe or a.detail_probe or a.realism_probe or a.latency_probe or a.fidelity_probe or a.eraser_probe or a.preferences_probe:
-        probe_name="controls_probe" if a.controls_probe else "detail_probe" if a.detail_probe else "preferences_probe" if a.preferences_probe else "latency_probe" if a.latency_probe else "fidelity_probe" if a.fidelity_probe else "eraser_probe" if a.eraser_probe else "realism_probe"
+    if a.pages_probe or a.controls_probe or a.detail_probe or a.realism_probe or a.latency_probe or a.fidelity_probe or a.eraser_probe or a.preferences_probe:
+        probe_name="pages_probe" if a.pages_probe else "controls_probe" if a.controls_probe else "detail_probe" if a.detail_probe else "preferences_probe" if a.preferences_probe else "latency_probe" if a.latency_probe else "fidelity_probe" if a.fidelity_probe else "eraser_probe" if a.eraser_probe else "realism_probe"
         runtime_errors=[line for line in logs.splitlines() if ("bench.qml:" in line or "baseline/ui/main.qml:" in line) and any(error in line for error in ("TypeError:","ReferenceError:","SyntaxError:"))]
         result[probe_name]["runtime_errors"]=runtime_errors
         result[probe_name]["passed"]=result[probe_name]["passed"] and not runtime_errors
@@ -435,6 +439,9 @@ if a.fidelity_probe:
 
 if a.preferences_probe:
     assert report["results"]["preferences_probe"]["passed"],"Independent tool preferences probe failed"
+
+if a.pages_probe:
+    assert report["results"]["pages_probe"]["passed"],"Large notebook save/reload probe failed"
 
 if a.detail_probe:
     assert report["results"]["detail_probe"]["passed"],"Tiny circles and surrounding hatching probe failed"
