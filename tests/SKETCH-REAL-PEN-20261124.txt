@@ -1,0 +1,61 @@
+PHYSICAL PEN DIAGNOSTIC — 24 November 2026
+
+Human UAT reports severe lag; a private 16.94s original120fps video is
+confirmed by the owner to play at normal speed. Sampled frames show the
+stylus moving ahead of charcoal appearing in patches. This is a failed human
+usability outcome, not a reason to promote earlier synthetic-pass results.
+Video, raw event traces and personal artwork must not be published to GitHub.
+
+READ-ONLY TABLET EVIDENCE
+At12:01..12:03UTC, xochitl active, loaded normal rowspan raster29d482734f987777a8b355df8a3511d9a93f0e843375daee0f9950c8d52975a7
+and ink5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7.
+Preview fine/wide enabled, tool5,size42 in UI (~40.37screenpx), strength1.
+Last stored contact1795521118605ms has first_update_ms equal to contact_ms,
+max_report_to_submit_ms15 and max_submit_us6877. These describe only the
+last stored contact and SOFTWARE submission, not optical display completion.
+The preview is not simply absent/disabled. Logs around the recording contain
+1452reports/2711ms,1254/2344ms,1516/2805ms,1103/2041ms (~535..540Hz).
+They count preview reports, not independently verified material samples.
+Do not attribute the optical delay conclusively to one thread from this data.
+
+NEW RECORDER
+scripts/capture-sketch-real-pen.py locates Wacom by /proc input identity,
+not an assumed event number: actual pen event1, pt_mt touchscreen event2.
+Existing preview code also discovers by pen capabilities; no discovery bug
+is claimed. The recorder reads only the audited armv7l/OS3.29.0.153 profile,
+uses strict known-host SSH and an independent read-only evdev fd via cat.
+It never grabs input, injects events, restarts apps, installs modules, changes
+settings or modifies saved artwork. Maximum capture60s; default30s. Preview
+status polled about once a second; detected disarm stops local capture, with
+up to one poll interval/SSH delay. Remote timeout remains bounded regardless.
+Status freshness/process identity are checked initially and during capture;
+sparse polls cannot measure subsecond
+render timing and add some observer/SSH overhead.
+
+Raw32-bit little-endian input_event stream retained privately with SHA256.
+Reports preserve every captured contact report, pressure/tilt/coordinates,
+flag SYN_DROPPED,time reversals,truncated events and incomplete contacts.
+Missing initial axis values are null, NOT reconstructed. replay_ready requires
+complete known axes and pen/rubber identity for all contacts and no
+dropped/reversed/unfinished data;
+this does NOT authorize injection, prove sensor fidelity or define a calibrated
+material replay. BTN_TOOL_RUBBER can also be unknown until reported.
+No-contact capture is explicitly no_complete_contact, not successful UAT.
+
+VALIDATION
+11 parser/discovery tests cover input device selection, contact ordering,
+500Hz timestamps, no hover/idle success, loss/truncation and unknown axes.
+Actual5s idle smoke1 recorded0bytes, failed due to direct BusyBox timeout
+termination becoming SSH255. Evidence retained, not counted as success.
+Fixed by retaining a remote shell parent so child status is explicit.
+Actual5s idle smoke2 exits143 with CAPTURE_EXIT=143 and correctly reports
+no_complete_contact. This validates bounded idle transport only, not an
+actual physical pen capture or an improvement in drawing responsiveness.
+
+NEXT
+Owner opens Sketch and signals start; record30s including a few ordinary
+charcoal strokes, lift and idle tail. A second phone recording during this
+window is useful for correlation but not mandatory for collecting real input.
+No need to discard/save the current page for this read-only capture. Compare
+captured cadence/pressure/tilt and software preview submission against visible
+output before modifying renderer architecture. No new UAT or production change.
