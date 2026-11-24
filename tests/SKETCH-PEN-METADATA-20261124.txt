@@ -31,7 +31,8 @@ Validation24November:
   process start, partial evidence retention on helper failure, and mapping cases.
   Existing11 raw-capture and14 private-corpus tests passed.
   Native ARM gcc12 -O2 -Wall -Wextra -Werror -marm build passed.
-  Two SSH attempts to the previously verified Wi-Fi host timed out. No helper
+  SSH to the previously verified Wi-Fi host first timed out, then returned
+  No route to host. No helper
   upload, live snapshot, new physical contact capture or device validation done.
 
 Next: when tablet is reachable, create a unique temporary helper directory,
