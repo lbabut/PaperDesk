@@ -1,0 +1,29 @@
+New page capacity UX regression, 2026-11-24
+
+Baseline: 802925a227811c4046e54d7f14fe9813e4f96270, installed rowspan source.
+Read-only device diagnosis: active notebook has 12 pages, index 11.
+The pre-existing capacity of 12 is enforced in QML, the JavaScript decoder
+and native persistence. No capacity or saved-format change in this patch.
+
+Previously New page on a full dirty book requested Save/Discard before
+failing with a small footer notice. It could therefore save or discard
+unnecessarily even though the requested page could not be added.
+
+Now capacity is checked before that prompt, with a non-destructive modal
+and a single Back to drawing action. Defensive execution also checks the
+limit. Unknown confirmation kinds cannot fall through to redraw/dirty state.
+The message distinguishes Delete page from Clear page; no deletion is
+performed automatically. PDF export is a rendered copy, not an editable
+material/sketchbook backup.
+
+Host QML tests cover full saved and unsaved notebooks through the real
+button, unchanged notebook/index/dirty/saved document, absence of save,
+discard and destructive actions, defensive dispatch, and creating page 12.
+Complete Sketch suite: 71 passed, 0 failed, 2 skipped (tablet native runtime
+required). Offscreen screenshot full-sketchbook.png visually checked.
+
+Candidate RCC SHA256:
+30192844e115fbd9cd27fafbd86d1733c43bb370634cf8d064350e98cdbaedfc
+
+Not installed or accepted on tablet yet. Live software and drawings were
+not modified. This is not a painting-performance fix or a public release.

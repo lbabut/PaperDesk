@@ -727,6 +727,42 @@ Item {
             scene.app.resolveLeave("discard");compare(scene.app.pageIndex,0);compare(scene.app.pageCount,1);
             compare(scene.app.page.strokes.length,1);
         }
+        function test_full_book_new_page_data(){
+            return [{tag:"saved",dirty:false},{tag:"unsaved",dirty:true}];
+        }
+        function test_full_book_new_page(data){
+            var a=scene.app;
+            while(a.notebook.pages.length<12)a.notebook.pages.push(a.blankPage());
+            a.revision++;a.dirty=data.dirty;
+            var before=JSON.stringify(a.notebook),saved=a.lastSavedDocument,index=a.pageIndex;
+            mouseClick(findChild(a,"newPageButton"),50,25,Qt.LeftButton);
+            compare(a.confirmation,"pageLimit");compare(a.pendingLeave,null);
+            compare(findChild(a,"pageActionTitle").text,"Sketchbook is full (12 pages)");
+            verify(!findChild(a,"saveLeave").visible);verify(!findChild(a,"discardLeave").visible);
+            verify(!findChild(a,"confirmPageAction").visible);
+            if(!data.dirty){wait(50);verify(grabImage(scene).save(artifactPath("full-sketchbook.png")));}
+            mouseClick(findChild(a,"cancelLeave"),50,25,Qt.LeftButton);
+            compare(a.confirmation,"");compare(a.dirty,data.dirty);compare(a.pageIndex,index);
+            compare(JSON.stringify(a.notebook),before);compare(a.lastSavedDocument,saved);
+        }
+        function test_full_book_defensive_dispatch_is_non_destructive(){
+            var a=scene.app;
+            while(a.notebook.pages.length<12)a.notebook.pages.push(a.blankPage());
+            a.revision++;a.dirty=true;
+            var before=JSON.stringify(a.notebook),revision=a.revision;
+            a.pendingLeave={kind:"new"};a.executeLeave();compare(a.confirmation,"pageLimit");
+            a.confirmAction();compare(a.confirmation,"");compare(a.revision,revision);
+            compare(JSON.stringify(a.notebook),before);verify(a.dirty);
+        }
+        function test_new_page_at_last_available_slot(){
+            var a=scene.app;
+            while(a.notebook.pages.length<11)a.notebook.pages.push(a.blankPage());
+            a.revision++;a.dirty=false;a.newPage();
+            tryCompare(a,"replaying",false,10000);
+            compare(a.pageCount,12);compare(a.pageIndex,11);compare(a.confirmation,"");
+            verify(a.dirty);verify(a.newUnsavedPage);
+            compare(Ink.decode(JSON.stringify(a.notebook)).pages.length,12);
+        }
         function test_full_screen_and_round_menu_button() {
             scene.app.fullScreen=true;wait(80);
             compare(findChild(scene.app,"sketchHeader").height,0);
