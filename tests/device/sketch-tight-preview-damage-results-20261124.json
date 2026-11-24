@@ -1,0 +1,675 @@
+{
+  "host": {
+    "schema": 1,
+    "scope": "Offline idealized screen-space geometry, not GUI or panel latency; masks reset only after submission accounting. Unchanged pixel writes are never suppressed.",
+    "cases": [
+      {
+        "reference": {
+          "shape": "serpentine",
+          "tool": 1,
+          "interval_ms": 2,
+          "samples": 1260,
+          "submissions": 316,
+          "segment_box_pixels": 979836,
+          "submitted_box_pixels": 409401,
+          "tight_touched_box_pixels": 349905,
+          "touched_pixels_per_batch_sum": 77233,
+          "max_width": 73,
+          "max_height": 54,
+          "image_fnv64": "e462557b6b4aba5d"
+        },
+        "candidate": {
+          "shape": "serpentine",
+          "tool": 1,
+          "interval_ms": 2,
+          "samples": 1260,
+          "submissions": 316,
+          "segment_box_pixels": 800596,
+          "submitted_box_pixels": 349905,
+          "tight_touched_box_pixels": 349905,
+          "touched_pixels_per_batch_sum": 77233,
+          "max_width": 69,
+          "max_height": 52,
+          "image_fnv64": "e462557b6b4aba5d"
+        },
+        "area_reduction_pct": 14.532451068756547
+      },
+      {
+        "reference": {
+          "shape": "serpentine",
+          "tool": 1,
+          "interval_ms": 4,
+          "samples": 1260,
+          "submissions": 631,
+          "segment_box_pixels": 979836,
+          "submitted_box_pixels": 608302,
+          "tight_touched_box_pixels": 507165,
+          "touched_pixels_per_batch_sum": 115692,
+          "max_width": 73,
+          "max_height": 45,
+          "image_fnv64": "e462557b6b4aba5d"
+        },
+        "candidate": {
+          "shape": "serpentine",
+          "tool": 1,
+          "interval_ms": 4,
+          "samples": 1260,
+          "submissions": 631,
+          "segment_box_pixels": 800596,
+          "submitted_box_pixels": 507165,
+          "tight_touched_box_pixels": 507165,
+          "touched_pixels_per_batch_sum": 115692,
+          "max_width": 69,
+          "max_height": 44,
+          "image_fnv64": "e462557b6b4aba5d"
+        },
+        "area_reduction_pct": 16.626116632856704
+      },
+      {
+        "reference": {
+          "shape": "serpentine",
+          "tool": 5,
+          "interval_ms": 2,
+          "samples": 1260,
+          "submissions": 316,
+          "segment_box_pixels": 1545730,
+          "submitted_box_pixels": 588843,
+          "tight_touched_box_pixels": 437650,
+          "touched_pixels_per_batch_sum": 90167,
+          "max_width": 80,
+          "max_height": 57,
+          "image_fnv64": "d223ddaa23d5e7bd"
+        },
+        "candidate": {
+          "shape": "serpentine",
+          "tool": 5,
+          "interval_ms": 2,
+          "samples": 1260,
+          "submissions": 316,
+          "segment_box_pixels": 1060584,
+          "submitted_box_pixels": 437650,
+          "tight_touched_box_pixels": 437650,
+          "touched_pixels_per_batch_sum": 90167,
+          "max_width": 73,
+          "max_height": 53,
+          "image_fnv64": "d223ddaa23d5e7bd"
+        },
+        "area_reduction_pct": 25.67628383117402
+      },
+      {
+        "reference": {
+          "shape": "serpentine",
+          "tool": 5,
+          "interval_ms": 4,
+          "samples": 1260,
+          "submissions": 631,
+          "segment_box_pixels": 1545730,
+          "submitted_box_pixels": 912339,
+          "tight_touched_box_pixels": 651027,
+          "touched_pixels_per_batch_sum": 132558,
+          "max_width": 80,
+          "max_height": 48,
+          "image_fnv64": "d223ddaa23d5e7bd"
+        },
+        "candidate": {
+          "shape": "serpentine",
+          "tool": 5,
+          "interval_ms": 4,
+          "samples": 1260,
+          "submissions": 631,
+          "segment_box_pixels": 1060584,
+          "submitted_box_pixels": 651027,
+          "tight_touched_box_pixels": 651027,
+          "touched_pixels_per_batch_sum": 132558,
+          "max_width": 73,
+          "max_height": 43,
+          "image_fnv64": "d223ddaa23d5e7bd"
+        },
+        "area_reduction_pct": 28.641985051609108
+      },
+      {
+        "reference": {
+          "shape": "diagonal",
+          "tool": 1,
+          "interval_ms": 2,
+          "samples": 1260,
+          "submissions": 316,
+          "segment_box_pixels": 852024,
+          "submitted_box_pixels": 254924,
+          "tight_touched_box_pixels": 209641,
+          "touched_pixels_per_batch_sum": 48314,
+          "max_width": 38,
+          "max_height": 38,
+          "image_fnv64": "fd99c9bc1b918155"
+        },
+        "candidate": {
+          "shape": "diagonal",
+          "tool": 1,
+          "interval_ms": 2,
+          "samples": 1260,
+          "submissions": 316,
+          "segment_box_pixels": 688641,
+          "submitted_box_pixels": 209641,
+          "tight_touched_box_pixels": 209641,
+          "touched_pixels_per_batch_sum": 48314,
+          "max_width": 36,
+          "max_height": 36,
+          "image_fnv64": "fd99c9bc1b918155"
+        },
+        "area_reduction_pct": 17.763333385636503
+      },
+      {
+        "reference": {
+          "shape": "diagonal",
+          "tool": 1,
+          "interval_ms": 4,
+          "samples": 1260,
+          "submissions": 631,
+          "segment_box_pixels": 852024,
+          "submitted_box_pixels": 461477,
+          "tight_touched_box_pixels": 376834,
+          "touched_pixels_per_batch_sum": 86706,
+          "max_width": 37,
+          "max_height": 37,
+          "image_fnv64": "fd99c9bc1b918155"
+        },
+        "candidate": {
+          "shape": "diagonal",
+          "tool": 1,
+          "interval_ms": 4,
+          "samples": 1260,
+          "submissions": 631,
+          "segment_box_pixels": 688641,
+          "submitted_box_pixels": 376834,
+          "tight_touched_box_pixels": 376834,
+          "touched_pixels_per_batch_sum": 86706,
+          "max_width": 35,
+          "max_height": 35,
+          "image_fnv64": "fd99c9bc1b918155"
+        },
+        "area_reduction_pct": 18.34175917759715
+      },
+      {
+        "reference": {
+          "shape": "diagonal",
+          "tool": 5,
+          "interval_ms": 2,
+          "samples": 1260,
+          "submissions": 316,
+          "segment_box_pixels": 1377753,
+          "submitted_box_pixels": 396030,
+          "tight_touched_box_pixels": 271708,
+          "touched_pixels_per_batch_sum": 52894,
+          "max_width": 41,
+          "max_height": 41,
+          "image_fnv64": "3f5f18dfd1489115"
+        },
+        "candidate": {
+          "shape": "diagonal",
+          "tool": 5,
+          "interval_ms": 2,
+          "samples": 1260,
+          "submissions": 316,
+          "segment_box_pixels": 915570,
+          "submitted_box_pixels": 271708,
+          "tight_touched_box_pixels": 271708,
+          "touched_pixels_per_batch_sum": 52894,
+          "max_width": 37,
+          "max_height": 37,
+          "image_fnv64": "3f5f18dfd1489115"
+        },
+        "area_reduction_pct": 31.392066257606743
+      },
+      {
+        "reference": {
+          "shape": "diagonal",
+          "tool": 5,
+          "interval_ms": 4,
+          "samples": 1260,
+          "submissions": 631,
+          "segment_box_pixels": 1377753,
+          "submitted_box_pixels": 728714,
+          "tight_touched_box_pixels": 492137,
+          "touched_pixels_per_batch_sum": 95302,
+          "max_width": 40,
+          "max_height": 40,
+          "image_fnv64": "3f5f18dfd1489115"
+        },
+        "candidate": {
+          "shape": "diagonal",
+          "tool": 5,
+          "interval_ms": 4,
+          "samples": 1260,
+          "submissions": 631,
+          "segment_box_pixels": 915570,
+          "submitted_box_pixels": 492137,
+          "tight_touched_box_pixels": 492137,
+          "touched_pixels_per_batch_sum": 95302,
+          "max_width": 37,
+          "max_height": 37,
+          "image_fnv64": "3f5f18dfd1489115"
+        },
+        "area_reduction_pct": 32.4649999862772
+      },
+      {
+        "reference": {
+          "shape": "stationary",
+          "tool": 1,
+          "interval_ms": 2,
+          "samples": 1260,
+          "submissions": 316,
+          "segment_box_pixels": 812196,
+          "submitted_box_pixels": 218548,
+          "tight_touched_box_pixels": 177867,
+          "touched_pixels_per_batch_sum": 42158,
+          "max_width": 37,
+          "max_height": 37,
+          "image_fnv64": "57c0d91e93a3796c"
+        },
+        "candidate": {
+          "shape": "stationary",
+          "tool": 1,
+          "interval_ms": 2,
+          "samples": 1260,
+          "submissions": 316,
+          "segment_box_pixels": 651735,
+          "submitted_box_pixels": 177867,
+          "tight_touched_box_pixels": 177867,
+          "touched_pixels_per_batch_sum": 42158,
+          "max_width": 34,
+          "max_height": 34,
+          "image_fnv64": "57c0d91e93a3796c"
+        },
+        "area_reduction_pct": 18.614217471676696
+      },
+      {
+        "reference": {
+          "shape": "stationary",
+          "tool": 1,
+          "interval_ms": 4,
+          "samples": 1260,
+          "submissions": 631,
+          "segment_box_pixels": 812196,
+          "submitted_box_pixels": 424327,
+          "tight_touched_box_pixels": 342402,
+          "touched_pixels_per_batch_sum": 80504,
+          "max_width": 37,
+          "max_height": 37,
+          "image_fnv64": "57c0d91e93a3796c"
+        },
+        "candidate": {
+          "shape": "stationary",
+          "tool": 1,
+          "interval_ms": 4,
+          "samples": 1260,
+          "submissions": 631,
+          "segment_box_pixels": 651735,
+          "submitted_box_pixels": 342402,
+          "tight_touched_box_pixels": 342402,
+          "touched_pixels_per_batch_sum": 80504,
+          "max_width": 34,
+          "max_height": 34,
+          "image_fnv64": "57c0d91e93a3796c"
+        },
+        "area_reduction_pct": 19.307043860041905
+      },
+      {
+        "reference": {
+          "shape": "stationary",
+          "tool": 5,
+          "interval_ms": 2,
+          "samples": 1260,
+          "submissions": 316,
+          "segment_box_pixels": 1318716,
+          "submitted_box_pixels": 342988,
+          "tight_touched_box_pixels": 233326,
+          "touched_pixels_per_batch_sum": 44379,
+          "max_width": 39,
+          "max_height": 39,
+          "image_fnv64": "b18792ce5fc60d0c"
+        },
+        "candidate": {
+          "shape": "stationary",
+          "tool": 5,
+          "interval_ms": 2,
+          "samples": 1260,
+          "submissions": 316,
+          "segment_box_pixels": 892500,
+          "submitted_box_pixels": 233326,
+          "tight_touched_box_pixels": 233326,
+          "touched_pixels_per_batch_sum": 44379,
+          "max_width": 33,
+          "max_height": 33,
+          "image_fnv64": "b18792ce5fc60d0c"
+        },
+        "area_reduction_pct": 31.972547144506514
+      },
+      {
+        "reference": {
+          "shape": "stationary",
+          "tool": 5,
+          "interval_ms": 4,
+          "samples": 1260,
+          "submissions": 631,
+          "segment_box_pixels": 1318716,
+          "submitted_box_pixels": 674767,
+          "tight_touched_box_pixels": 460105,
+          "touched_pixels_per_batch_sum": 86022,
+          "max_width": 39,
+          "max_height": 39,
+          "image_fnv64": "b18792ce5fc60d0c"
+        },
+        "candidate": {
+          "shape": "stationary",
+          "tool": 5,
+          "interval_ms": 4,
+          "samples": 1260,
+          "submissions": 631,
+          "segment_box_pixels": 892500,
+          "submitted_box_pixels": 460105,
+          "tight_touched_box_pixels": 460105,
+          "touched_pixels_per_batch_sum": 86022,
+          "max_width": 33,
+          "max_height": 33,
+          "image_fnv64": "b18792ce5fc60d0c"
+        },
+        "area_reduction_pct": 31.812759070908925
+      },
+      {
+        "reference": {
+          "shape": "adversarial_jumps",
+          "tool": 1,
+          "interval_ms": 2,
+          "samples": 60,
+          "submissions": 16,
+          "segment_box_pixels": 53717256,
+          "submitted_box_pixels": 13679228,
+          "tight_touched_box_pixels": 13600947,
+          "touched_pixels_per_batch_sum": 120072,
+          "max_width": 997,
+          "max_height": 937,
+          "image_fnv64": "52fbfb116091e73c"
+        },
+        "candidate": {
+          "shape": "adversarial_jumps",
+          "tool": 1,
+          "interval_ms": 2,
+          "samples": 60,
+          "submissions": 16,
+          "segment_box_pixels": 53396202,
+          "submitted_box_pixels": 13600947,
+          "tight_touched_box_pixels": 13600947,
+          "touched_pixels_per_batch_sum": 120072,
+          "max_width": 994,
+          "max_height": 934,
+          "image_fnv64": "52fbfb116091e73c"
+        },
+        "area_reduction_pct": 0.5722618264714985
+      },
+      {
+        "reference": {
+          "shape": "adversarial_jumps",
+          "tool": 1,
+          "interval_ms": 4,
+          "samples": 60,
+          "submissions": 31,
+          "segment_box_pixels": 53717256,
+          "submitted_box_pixels": 27335367,
+          "tight_touched_box_pixels": 27174209,
+          "touched_pixels_per_batch_sum": 231691,
+          "max_width": 997,
+          "max_height": 937,
+          "image_fnv64": "52fbfb116091e73c"
+        },
+        "candidate": {
+          "shape": "adversarial_jumps",
+          "tool": 1,
+          "interval_ms": 4,
+          "samples": 60,
+          "submissions": 31,
+          "segment_box_pixels": 53396202,
+          "submitted_box_pixels": 27174209,
+          "tight_touched_box_pixels": 27174209,
+          "touched_pixels_per_batch_sum": 231691,
+          "max_width": 994,
+          "max_height": 934,
+          "image_fnv64": "52fbfb116091e73c"
+        },
+        "area_reduction_pct": 0.5895585744285059
+      },
+      {
+        "reference": {
+          "shape": "adversarial_jumps",
+          "tool": 5,
+          "interval_ms": 2,
+          "samples": 60,
+          "submissions": 16,
+          "segment_box_pixels": 54574656,
+          "submitted_box_pixels": 13890188,
+          "tight_touched_box_pixels": 13709608,
+          "touched_pixels_per_batch_sum": 153487,
+          "max_width": 999,
+          "max_height": 939,
+          "image_fnv64": "ddc313a4bc0548ed"
+        },
+        "candidate": {
+          "shape": "adversarial_jumps",
+          "tool": 5,
+          "interval_ms": 2,
+          "samples": 60,
+          "submissions": 16,
+          "segment_box_pixels": 53861740,
+          "submitted_box_pixels": 13709608,
+          "tight_touched_box_pixels": 13709608,
+          "touched_pixels_per_batch_sum": 153487,
+          "max_width": 993,
+          "max_height": 933,
+          "image_fnv64": "ddc313a4bc0548ed"
+        },
+        "area_reduction_pct": 1.3000543981118162
+      },
+      {
+        "reference": {
+          "shape": "adversarial_jumps",
+          "tool": 5,
+          "interval_ms": 4,
+          "samples": 60,
+          "submissions": 31,
+          "segment_box_pixels": 54574656,
+          "submitted_box_pixels": 27764367,
+          "tight_touched_box_pixels": 27401797,
+          "touched_pixels_per_batch_sum": 298665,
+          "max_width": 999,
+          "max_height": 939,
+          "image_fnv64": "ddc313a4bc0548ed"
+        },
+        "candidate": {
+          "shape": "adversarial_jumps",
+          "tool": 5,
+          "interval_ms": 4,
+          "samples": 60,
+          "submissions": 31,
+          "segment_box_pixels": 53861740,
+          "submitted_box_pixels": 27401797,
+          "tight_touched_box_pixels": 27401797,
+          "touched_pixels_per_batch_sum": 298665,
+          "max_width": 993,
+          "max_height": 933,
+          "image_fnv64": "ddc313a4bc0548ed"
+        },
+        "area_reduction_pct": 1.3058824643832123
+      }
+    ],
+    "fidelity": {
+      "reference": {
+        "cases": 1024,
+        "touched_pixels": 1704422,
+        "pixels_masks_fnv64": "7929ace3cc7fd6d4"
+      },
+      "candidate": {
+        "cases": 1024,
+        "touched_pixels": 1704422,
+        "pixels_masks_fnv64": "7929ace3cc7fd6d4"
+      }
+    },
+    "bench": [
+      {
+        "variant": "reference",
+        "segments": 5040,
+        "seconds": 0.069165057,
+        "segment_box_pixels": 6182920,
+        "image_fnv64": "d223ddaa23d5e7bd"
+      },
+      {
+        "variant": "candidate",
+        "segments": 5040,
+        "seconds": 0.069865447,
+        "segment_box_pixels": 4242336,
+        "image_fnv64": "d223ddaa23d5e7bd"
+      },
+      {
+        "variant": "candidate",
+        "segments": 5040,
+        "seconds": 0.07147911,
+        "segment_box_pixels": 4242336,
+        "image_fnv64": "d223ddaa23d5e7bd"
+      },
+      {
+        "variant": "reference",
+        "segments": 5040,
+        "seconds": 0.072419151,
+        "segment_box_pixels": 6182920,
+        "image_fnv64": "d223ddaa23d5e7bd"
+      },
+      {
+        "variant": "reference",
+        "segments": 5040,
+        "seconds": 0.072198329,
+        "segment_box_pixels": 6182920,
+        "image_fnv64": "d223ddaa23d5e7bd"
+      },
+      {
+        "variant": "candidate",
+        "segments": 5040,
+        "seconds": 0.07146226,
+        "segment_box_pixels": 4242336,
+        "image_fnv64": "d223ddaa23d5e7bd"
+      },
+      {
+        "variant": "candidate",
+        "segments": 5040,
+        "seconds": 0.070457291,
+        "segment_box_pixels": 4242336,
+        "image_fnv64": "d223ddaa23d5e7bd"
+      },
+      {
+        "variant": "reference",
+        "segments": 5040,
+        "seconds": 0.068894642,
+        "segment_box_pixels": 6182920,
+        "image_fnv64": "d223ddaa23d5e7bd"
+      }
+    ],
+    "candidate_to_reference_median_time_ratio": 1.003934293141507,
+    "binary_sha256": {
+      "reference": "087b2b7b47b7e9961a58637ce1a49ea22c7e9c4b58134f09d903b66b47186c59",
+      "candidate": "cb39d5e100eeb227862c6e74d61ca493c88267c59e1b82f33254aa9c346cdc2d"
+    }
+  },
+  "arm": {
+    "schema": 1,
+    "started_at": "2026-11-24T08:31:04.965766+00:00",
+    "binary_sha256": {
+      "reference": "b7f2b729e71e15313ac6c7d76c4e4bda27f1d02a2fe3f905776cb0768d1ace8f",
+      "candidate": "3d04ca7e6c3421a048d378c6732ab5476248b0c35b8aa1ebe140fedc5cc29d09"
+    },
+    "scope": "Standalone CPU/fidelity fixture, not live GUI/panel; no device app changes",
+    "fidelity": {
+      "reference": {
+        "cases": 1024,
+        "touched_pixels": 1704422,
+        "pixels_masks_fnv64": "7929ace3cc7fd6d4"
+      },
+      "candidate": {
+        "cases": 1024,
+        "touched_pixels": 1704422,
+        "pixels_masks_fnv64": "7929ace3cc7fd6d4"
+      }
+    },
+    "bench": [
+      {
+        "variant": "reference",
+        "segments": 5040,
+        "seconds": 0.860069371,
+        "segment_box_pixels": 6182920,
+        "image_fnv64": "d223ddaa23d5e7bd"
+      },
+      {
+        "variant": "candidate",
+        "segments": 5040,
+        "seconds": 0.848654699,
+        "segment_box_pixels": 4242336,
+        "image_fnv64": "d223ddaa23d5e7bd"
+      },
+      {
+        "variant": "candidate",
+        "segments": 5040,
+        "seconds": 0.84622052,
+        "segment_box_pixels": 4242336,
+        "image_fnv64": "d223ddaa23d5e7bd"
+      },
+      {
+        "variant": "reference",
+        "segments": 5040,
+        "seconds": 0.857958557,
+        "segment_box_pixels": 6182920,
+        "image_fnv64": "d223ddaa23d5e7bd"
+      },
+      {
+        "variant": "reference",
+        "segments": 5040,
+        "seconds": 0.862882165,
+        "segment_box_pixels": 6182920,
+        "image_fnv64": "d223ddaa23d5e7bd"
+      },
+      {
+        "variant": "candidate",
+        "segments": 5040,
+        "seconds": 0.844714813,
+        "segment_box_pixels": 4242336,
+        "image_fnv64": "d223ddaa23d5e7bd"
+      },
+      {
+        "variant": "candidate",
+        "segments": 5040,
+        "seconds": 0.85350256,
+        "segment_box_pixels": 4242336,
+        "image_fnv64": "d223ddaa23d5e7bd"
+      },
+      {
+        "variant": "reference",
+        "segments": 5040,
+        "seconds": 0.86062298,
+        "segment_box_pixels": 6182920,
+        "image_fnv64": "d223ddaa23d5e7bd"
+      }
+    ],
+    "candidate_to_reference_median_time_ratio": 0.9849960790579466,
+    "passed": true,
+    "finished_at": "2026-11-24T08:31:21.093737+00:00"
+  },
+  "arm_build": {
+    "compiler": "/home/lukasz/Documents/Codex/2026-09-25/m-2/work/arm-toolchain/root/usr/bin/arm-linux-gnueabihf-gcc-12",
+    "source_sha256": {
+      "tests/test-sketch-preview-damage.c": "f8d04cd0832fd94b871d5f83baa01796880e471cb935ed35239f124b8458f914",
+      "product/payload/apps/papersketch/native/papersketch-ink.c": "a4e7085297cfd685be44b3a12e2d24a981a34ed5dcbaa8258d790afc26140411",
+      "product/payload/apps/papersketch/native/sketch-preview-shade.h": "b21c04ee57bb6f3aeaf91405ded9a6db89ba9c3a06e4508f1adf01102053423e"
+    },
+    "binary_sha256": {
+      "reference": "b7f2b729e71e15313ac6c7d76c4e4bda27f1d02a2fe3f905776cb0768d1ace8f",
+      "candidate": "3d04ca7e6c3421a048d378c6732ab5476248b0c35b8aa1ebe140fedc5cc29d09"
+    }
+  },
+  "uat_ready": false,
+  "installed": false
+}

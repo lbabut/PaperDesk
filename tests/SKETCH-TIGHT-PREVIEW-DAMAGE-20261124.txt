@@ -1,0 +1,83 @@
+Sketch preview damage experiment — 24 November 2026
+
+Status: CPU/geometry candidate ONLY. Not installed, not UAT, no GUI or panel
+speedup demonstrated. No artwork/settings/services changed on the tablet.
+
+Baseline: e0bc19661b0a792a2c53fe2f94a5d542fba5cdec, the normal 8ms preview
+and uninstrumented completion-wake raster source (not the rejected 16ms branch).
+The canonical dirty tree and main/website were not modified.
+
+Change
+Track the first/last written pixel of each preview row and return the union
+including the guaranteed tip. All pixel and mask writes still occur, including
+writes whose value already equals the framebuffer. No suppression based on
+shared framebuffer equality (the asynchronous material/display path can change
+it). No input dropping, interval change, material change or preview removal.
+Empty off-canvas legacy calls keep their old conservative rectangle.
+PREVIEW_TIGHT_BOUNDS=0 compiles the old bounding calculation as a test control.
+
+Offline geometry evidence
+16 idealized screen-space cases: serpentine, diagonal, stationary, adversarial
+jumps; graphite/soft charcoal; 250/500Hz nominal schedule. These are NOT captured
+evdev samples or actual xochitl submission timing. Serpentine matches the device
+driver's 21x60 topology with screen-space coordinates; jump case is bounded to
+60 samples. The native preview itself does not use stylus tilt.
+
+Soft-charcoal serpentine at nominal 500Hz (1260 samples, 316 submissions):
+submitted bounding area 588843 -> 437650 pixel-units, reduction 25.67628%.
+At 250Hz (631 submissions): 912339 -> 651027, reduction 28.64199%.
+Counts sum rectangle areas across submissions, NOT unique screen pixels.
+Exact touched bounds are verified in every case; no mask writes lie outside
+submitted regions. Batch masks reset for measurement, never on the live device.
+Same final image digest, sample count, touched-pixel total and submission count.
+No framegen block size/merging/cost model is assumed: reduced requested area
+does not imply an equal reduction in CPU or panel latency.
+
+Fidelity
+1024 seeded cases cover tools 0..5/8, legacy ink/eraser, shades, clipping,
+widths 1..96 and empty off-canvas calls. Host and ARM controls/candidates have
+the same pixels/masks FNV64 7929ace3cc7fd6d4, 1704422 marked pixels; every write
+is inside its submitted box and armed canvas. Existing native batch test
+passes, including 3072 pale-tip phases, final forced flush, union bounds,
+permit safety and shade/eraser preservation. ASan/UBSan fidelity passes with
+detect_leaks=0; leak checking was not performed.
+5 report-validation tests reject incomplete/duplicate sweeps, changed images,
+sample/submission loss, changed coverage and missing damage. Existing 13 task
+profile and 6 device report tests pass.
+
+Standalone CPU on actual tablet
+2026-11-24 08:31:04–08:31:21 UTC, two ABBA sequences, 5040 segments per run:
+reference: .860069371, .857958557, .862882165, .860622980 seconds
+candidate: .848654699, .846220520, .844714813, .853502560 seconds
+candidate/reference median ratio .9849960791 (about 1.5% lower).
+All final image digests d223ddaa23d5e7bd. Host final ratio 1.0039342931.
+These are small isolated CPU observations, NOT a proven end-to-end improvement.
+The program uses private memory; no access to framebuffer, event devices,
+saved notebooks or live app internals. xochitl PID3671 remained active and
+preview unarmed before/after. No restart, installation, governor or service edit.
+
+Reproduction
+python3 scripts/test-sketch-preview-damage.py --output /tmp/NEW-HOST-DIRECTORY
+Use --cc ARM_GCC --sysroot ARM_SYSROOT --build-only for ARM fixtures.
+scripts/test-sketch-preview-cpu-device.py requires explicit trusted SSH key,
+known-hosts and host alias, checks drawing is unarmed, verifies uploaded hashes,
+records before/after and stops between runs if painting resumes. Its 'passed'
+flag means fixture checks passed, not UAT latency gates.
+
+Artifacts / deployment caveat
+Archive: plan-400/preflight-v01/sketch-tight-preview-damage-20261124
+ARM reference b7f2b729e71e15313ac6c7d76c4e4bda27f1d02a2fe3f905776cb0768d1ace8f
+ARM candidate 3d04ca7e6c3421a048d378c6732ab5476248b0c35b8aa1ebe140fedc5cc29d09
+Built but NOT installed ink.so:
+2598023caaff68176bd682d8384834077f61a26af440d762d5f61fb19a85ecaf
+This research branch intentionally does not commit generated binary payloads.
+Inherited tracked .so/RCC files are NOT an installable candidate package.
+
+Next gate
+Confirm current scratch artwork may be discarded before a guarded GUI restart.
+Build both raster and ink from this branch; compare against normal 8ms
+completion-wake controls, keep all 1260 samples and unchanged strict budgets:
+GUI gap <200ms, input queue p95 upper <100ms, release-to-drained <150ms,
+pixel/lifecycle preservation. Roll back own receipt after each experiment.
+No UAT promotion without real GUI measurements; physical stylus/panel remains
+a separate check. A smaller rectangle alone does not qualify the candidate.

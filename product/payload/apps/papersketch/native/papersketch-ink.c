@@ -164,6 +164,10 @@ static int open_surface(void) {
 
 static int clampi(int v, int lo, int hi) { return v < lo ? lo : v > hi ? hi : v; }
 
+#ifndef PREVIEW_TIGHT_BOUNDS
+#define PREVIEW_TIGHT_BOUNDS 1
+#endif
+
 // Paint a round-ended segment of width w, clipped to the armed canvas; returns its box
 static void segment(float x0, float y0, float x1, float y1, float w, uint32_t ink, int box[4]) {
     float minimum=arm.fine?.5f:.75f;
@@ -173,7 +177,13 @@ static void segment(float x0, float y0, float x1, float y1, float w, uint32_t in
     int bx1 = clampi((int)((x0 > x1 ? x0 : x1) + r + 1), arm.x, arm.x + arm.w - 1);
     int by1 = clampi((int)((y0 > y1 ? y0 : y1) + r + 1), arm.y, arm.y + arm.h - 1);
     float dx = x1 - x0, dy = y1 - y0, len2 = dx * dx + dy * dy;
-    for (int y = by0; y <= by1; y++)
+#if PREVIEW_TIGHT_BOUNDS
+    int tight[4]={bx1+1,by1+1,bx0-1,by0-1};
+#endif
+    for (int y = by0; y <= by1; y++) {
+#if PREVIEW_TIGHT_BOUNDS
+        int first=bx1+1,last=bx0-1;
+#endif
         for (int x = bx0; x <= bx1; x++) {
             float px = x + 0.5f - x0, py = y + 0.5f - y0;
             float t = len2 > 0 ? (px * dx + py * dy) / len2 : 0;
@@ -187,15 +197,41 @@ static void segment(float x0, float y0, float x1, float y1, float w, uint32_t in
             if(arm.fine && !arm.erase && !((arm.tool==4 || arm.tool==5)?sketchPreviewDotExact(gray,x,y):sketchPreviewDot(gray,x,y)))continue;
             surf.px[y * surf.ps + x] = arm.fine && !arm.erase ? 0xff000000u : ink;
             surf.mk[y * surf.ms + x] = 0xFF;
+#if PREVIEW_TIGHT_BOUNDS
+            if(first>bx1)first=x;
+            last=x;
+#endif
         }
+#if PREVIEW_TIGHT_BOUNDS
+        if(last>=first){
+            if(first<tight[0])tight[0]=first;
+            if(last>tight[2])tight[2]=last;
+            if(y<tight[1])tight[1]=y;
+            tight[3]=y;
+        }
+#endif
+    }
     // A sparse pale Bayer cell can miss an entire subpixel-sized nib. Keep
     // exactly one physical pixel at the latest tip visible, independently of
     // shade. The body remains tool-shaded; release repairs exact material.
     if(arm.fine && !arm.erase && x1>=arm.x && x1<arm.x+arm.w && y1>=arm.y && y1<arm.y+arm.h){
         int tx=(int)x1,ty=(int)y1;
         surf.px[ty*surf.ps+tx]=0xff000000u;surf.mk[ty*surf.ms+tx]=255;
+#if PREVIEW_TIGHT_BOUNDS
+        if(tx<tight[0])tight[0]=tx;
+        if(tx>tight[2])tight[2]=tx;
+        if(ty<tight[1])tight[1]=ty;
+        if(ty>tight[3])tight[3]=ty;
+#endif
     }
     box[0] = bx0; box[1] = by0; box[2] = bx1; box[3] = by1;
+#if PREVIEW_TIGHT_BOUNDS
+    // Bound every write, including unchanged pixels and the guaranteed tip.
+    // Never skip a write/submit by comparing shared framebuffer contents: the
+    // asynchronous display/material renderer can repaint those concurrently.
+    // Empty off-canvas legacy calls retain their historical conservative box.
+    if(tight[2]>=tight[0] && tight[3]>=tight[1])memcpy(box,tight,sizeof tight);
+#endif
 }
 
 static void show(const int b[4]) {
