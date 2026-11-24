@@ -1,0 +1,43 @@
+Private recorded-motion preview CPU diagnostic, 24 November 2026
+
+No installed product changes. This branch contains diagnostic tools, not a
+new installable performance candidate. Do not deploy its inherited binaries.
+
+scripts/sketch-preview-workload.py requires SHA-bound audited canvas contacts
+and metadata brackets before/after each contact. Reject missing/distant or
+changed settings/ranges, unknown input, nonzero preview-axis origin, eraser,
+nonpositive/out-of-range pressure. Reuses all reports including stationary
+coordinates. Export is private/exclusive, not published raw drawing data.
+Same sampled settings do not prove no change between metadata observations.
+
+tests/sketch-preview-workload.c includes the actual native preview source.
+Calls its pressure, width, shading and segment functions on a white private
+heap framebuffer and mask. Never calls the XOVI constructor, event reader,
+framebuffer opener or display submission. No threads, injection or UI restart.
+Three passes measure thread CPU and wall time with reset buffers; repeated
+digests must match. This isolates preview pixel computation only, not the
+material engine, event queue, OS scheduling, display submission or panel.
+The exact material viewport/history remains unknown. This is NOT an exact
+artwork replay and is not a fix or proof of responsiveness.
+
+Usage (local/private):
+ python3 scripts/sketch-preview-workload.py --capture PRIVATE_CAPTURE --output NEW_PRIVATE_DIR
+ gcc -std=c11 -O2 tests/sketch-preview-workload.c -ldl -lpthread -lm -o /tmp/sketch-preview-workload
+ /tmp/sketch-preview-workload NEW_PRIVATE_DIR/contact-INDEX.txt
+ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p test_sketch_preview_workload.py -v
+
+Actual capture: four audited canvas contacts, 6762 reports (3626,1754,791,591),
+all painted by the host workload with stable per-contact output over three
+passes. Tools4/4/4/5, screen sizes73.055/73.055/73.055/62.48125.
+No pixel claims about the user's actual canvas: test background is white.
+Sampled native per-contact report-to-submit maxima103/359/60/189ms are not
+optical timing. The earlier session-wide34072us submit maximum belongs to
+a contact that began before capture; do not attribute it to these four.
+Their sampled submit-call maxima are17660/20637/10420/8605us respectively.
+
+ARM executable compiled, but tablet Wi-Fi attempts timed out then returned
+No route to host. No ARM CPU execution or new device/UAT validation this turn.
+Host CPU measurements cannot be transferred to the tablet's Cortex-A7.
+Compiler warns about an inherited open_pen snprintf path bound in included
+source; that function is never invoked by this diagnostic. No product code
+was changed to suppress the warning.
