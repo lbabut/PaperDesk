@@ -11,8 +11,7 @@ a=p.parse_args()
 out={'schema':1,'uat_ready':False,'runs':[],
      'limitations':['Read-only task counters around synthetic evdev injection, not whole-stroke CPU or physical panel latency.',
                     'Boundary scans and SSH delay included; no zero-cost observer/control claim.',
-                    'Thread names do not prove worker roles. Runnable wait excludes blocking and overlaps across threads.',
-                    'Initial shell sampler deliberately retained, excluded from low-overhead evidence; no thresholds relaxed.']}
+                    'Thread names do not prove worker roles. Runnable wait excludes blocking and overlaps across threads.']}
 for folder in a.runs:
     report_path=folder/'probe/run-1.json'
     r=json.loads(report_path.read_text())
@@ -32,6 +31,8 @@ for folder in a.runs:
     for t in r['thread_profiles']:
         item['thread_profiles'].append({'id':t['id'],**t['delta']})
     out['runs'].append(item)
+if any(r['observer']=='shell_high_overhead_excluded' for r in out['runs']):
+    out['limitations'].append('Shell sampler retained but excluded from low-overhead evidence; no thresholds relaxed.')
 a.output.parent.mkdir(parents=True,exist_ok=True)
 a.output.write_text(json.dumps(out,indent=2)+'\n')
 print(a.output)

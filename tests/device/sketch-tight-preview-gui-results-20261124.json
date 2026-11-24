@@ -1,0 +1,2217 @@
+{
+  "schema": 1,
+  "uat_ready": false,
+  "runs": [
+    {
+      "run": "sketch-tight-gui-a1-20261124",
+      "report_sha256": "2bcc86b3589e515e987138a2d4fcbf481479e7a6df5e293688551a062d7462d3",
+      "observer": "single_process_c",
+      "observer_sha256": "2b26a2c88fa96ec0356a3bbbb480d682e120ddb2c8921b37d74cfb055f8db3f2",
+      "suite_passed": false,
+      "failures": [
+        "run 0/pen-charcoal: device correctness/performance gate failed",
+        "run 0/pen-charcoal: queue_p95_ms=1172 >= 100",
+        "run 0/pen-charcoal: release_tail_ms=2109 >= 150"
+      ],
+      "process_pid": 5262,
+      "diagnostic_preview_disabled": false,
+      "native_modules": {
+        "papersketch-raster.so": "5669f7707b8a3a36e4a5fc7d77b306e67884cc1107c03b014b40354aaf4c5518",
+        "papersketch-ink.so": "5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7"
+      },
+      "preservation": {
+        "artwork_preserved": true,
+        "saved_files_preserved": true,
+        "saved_file_count": 17
+      },
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "input_samples": 1260,
+          "input_stats": [
+            1261,
+            0,
+            0
+          ],
+          "max_input_tick_gap_ms": 41,
+          "queue_latency": {
+            "batches": 203,
+            "clock_resolution_ms": 1,
+            "empty_batches": 2,
+            "max_ms": 39,
+            "p50_upper_ms": 7,
+            "p95_upper_ms": 24,
+            "samples": 1261,
+            "total_ms": 11050
+          },
+          "release_to_drained_ms": 61,
+          "tile_visible_before_release": true,
+          "achieved_input_hz": 499.80166600555333,
+          "fast_pen_preview_enabled": true
+        },
+        {
+          "id": "pen-charcoal",
+          "input_samples": 1260,
+          "input_stats": [
+            2522,
+            0,
+            0
+          ],
+          "max_input_tick_gap_ms": 158,
+          "queue_latency": {
+            "batches": 55,
+            "clock_resolution_ms": 1,
+            "empty_batches": 1,
+            "max_ms": 1172,
+            "p50_upper_ms": 646,
+            "p95_upper_ms": 1172,
+            "samples": 1261,
+            "total_ms": 781443
+          },
+          "release_to_drained_ms": 2109,
+          "tile_visible_before_release": false,
+          "achieved_input_hz": 499.80166600555333,
+          "fast_pen_preview_enabled": true
+        }
+      ],
+      "thread_profiles": [
+        {
+          "id": "pen-graphite",
+          "wall_lower_seconds": 3.2399999999906868,
+          "wall_upper_seconds": 3.2600000000093132,
+          "snapshot_scan_seconds": [
+            0.010000000009313226,
+            0.010000000009313226
+          ],
+          "threads": [
+            {
+              "tid": "5262",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 2.62,
+              "scheduled_seconds": 2.62310775,
+              "runnable_wait_seconds": 0.33898725
+            },
+            {
+              "tid": "5293",
+              "name": "framegen",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.69,
+              "scheduled_seconds": 0.706082125,
+              "runnable_wait_seconds": 0.000497
+            },
+            {
+              "tid": "5266",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.19,
+              "scheduled_seconds": 0.185875875,
+              "runnable_wait_seconds": 0.280982875
+            },
+            {
+              "tid": "5303",
+              "name": "QThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.05,
+              "scheduled_seconds": 0.051039625,
+              "runnable_wait_seconds": 0.18395675
+            },
+            {
+              "tid": "5413",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.05,
+              "scheduled_seconds": 0.05107675,
+              "runnable_wait_seconds": 0.201485125
+            },
+            {
+              "tid": "5274",
+              "name": "swt-fbc-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.01692675,
+              "runnable_wait_seconds": 0.00021825
+            },
+            {
+              "tid": "5275",
+              "name": "swt-act-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.023142125,
+              "runnable_wait_seconds": 0.130921625
+            },
+            {
+              "tid": "5276",
+              "name": "swt-act-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.02367475,
+              "runnable_wait_seconds": 0.086259375
+            },
+            {
+              "tid": "5430",
+              "name": "QNetworkAccessM",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.001778,
+              "runnable_wait_seconds": 0.000173375
+            },
+            {
+              "tid": "5273",
+              "name": "swt-fbc-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.01,
+              "scheduled_seconds": 0.00888525,
+              "runnable_wait_seconds": 0.003989625
+            },
+            {
+              "tid": "5292",
+              "name": "vsync-flip",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.01,
+              "scheduled_seconds": 0.015464875,
+              "runnable_wait_seconds": 0.000242875
+            },
+            {
+              "tid": "5326",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.01,
+              "scheduled_seconds": 0.005682,
+              "runnable_wait_seconds": 0.003941375
+            },
+            {
+              "tid": "5327",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.01,
+              "scheduled_seconds": 0.0062435,
+              "runnable_wait_seconds": 6.2125e-05
+            },
+            {
+              "tid": "5270",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5271",
+              "name": "swt-proc-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5272",
+              "name": "swt-proc-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5280",
+              "name": "QEvdevTouchScre",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5281",
+              "name": "EPFramebufferQu",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5302",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5304",
+              "name": "PenInputThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5324",
+              "name": "LibraryLoader",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5325",
+              "name": "QDBusConnection",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5359",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5380",
+              "name": "ScreenShare",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.00029975,
+              "runnable_wait_seconds": 0.000139625
+            },
+            {
+              "tid": "5389",
+              "name": "QQmlThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5414",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.00222875,
+              "runnable_wait_seconds": 0.0103895
+            },
+            {
+              "tid": "5415",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            }
+          ],
+          "new_or_reused_tids": [],
+          "vanished_tids": [],
+          "limitation": "Boundary scan and SSH overhead included; waits overlap across threads. Missing tasks are not zero CPU. Names do not prove worker roles."
+        },
+        {
+          "id": "pen-charcoal",
+          "wall_lower_seconds": 3.419999999983702,
+          "wall_upper_seconds": 3.419999999983702,
+          "snapshot_scan_seconds": [
+            0.0,
+            0.0
+          ],
+          "threads": [
+            {
+              "tid": "5262",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 1.56,
+              "scheduled_seconds": 1.559631875,
+              "runnable_wait_seconds": 1.7461365
+            },
+            {
+              "tid": "5293",
+              "name": "framegen",
+              "origin": "matched_birth",
+              "cpu_seconds": 1.47,
+              "scheduled_seconds": 1.46990725,
+              "runnable_wait_seconds": 0.000318375
+            },
+            {
+              "tid": "5470",
+              "name": "xochitl",
+              "origin": "born_in_window_cumulative",
+              "cpu_seconds": 1.04,
+              "scheduled_seconds": 1.05800125,
+              "runnable_wait_seconds": 1.72355225
+            },
+            {
+              "tid": "5471",
+              "name": "xochitl",
+              "origin": "born_in_window_cumulative",
+              "cpu_seconds": 0.95,
+              "scheduled_seconds": 0.9556705,
+              "runnable_wait_seconds": 1.65109575
+            },
+            {
+              "tid": "5266",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.54,
+              "scheduled_seconds": 0.533496,
+              "runnable_wait_seconds": 0.379212875
+            },
+            {
+              "tid": "5274",
+              "name": "swt-fbc-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.06,
+              "scheduled_seconds": 0.056272375,
+              "runnable_wait_seconds": 0.022389375
+            },
+            {
+              "tid": "5303",
+              "name": "QThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.05,
+              "scheduled_seconds": 0.058044375,
+              "runnable_wait_seconds": 0.205644375
+            },
+            {
+              "tid": "5271",
+              "name": "swt-proc-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.04,
+              "scheduled_seconds": 0.03670075,
+              "runnable_wait_seconds": 0.004954125
+            },
+            {
+              "tid": "5273",
+              "name": "swt-fbc-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.04,
+              "scheduled_seconds": 0.042963125,
+              "runnable_wait_seconds": 0.274879
+            },
+            {
+              "tid": "5276",
+              "name": "swt-act-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.04,
+              "scheduled_seconds": 0.031676125,
+              "runnable_wait_seconds": 0.053164125
+            },
+            {
+              "tid": "5413",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.04,
+              "scheduled_seconds": 0.049755625,
+              "runnable_wait_seconds": 0.213836
+            },
+            {
+              "tid": "5272",
+              "name": "swt-proc-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.03,
+              "scheduled_seconds": 0.0373155,
+              "runnable_wait_seconds": 0.08981725
+            },
+            {
+              "tid": "5275",
+              "name": "swt-act-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.03,
+              "scheduled_seconds": 0.034852875,
+              "runnable_wait_seconds": 0.437138125
+            },
+            {
+              "tid": "5292",
+              "name": "vsync-flip",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.01755975,
+              "runnable_wait_seconds": 0.000292375
+            },
+            {
+              "tid": "5326",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.022263375,
+              "runnable_wait_seconds": 0.055204875
+            },
+            {
+              "tid": "5327",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.026339375,
+              "runnable_wait_seconds": 0.0129785
+            },
+            {
+              "tid": "5270",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5280",
+              "name": "QEvdevTouchScre",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5281",
+              "name": "EPFramebufferQu",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5302",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5304",
+              "name": "PenInputThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5324",
+              "name": "LibraryLoader",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5325",
+              "name": "QDBusConnection",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5359",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5380",
+              "name": "ScreenShare",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.00029925,
+              "runnable_wait_seconds": 2.625e-05
+            },
+            {
+              "tid": "5389",
+              "name": "QQmlThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5414",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.00261975,
+              "runnable_wait_seconds": 0.069265375
+            },
+            {
+              "tid": "5415",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "5430",
+              "name": "QNetworkAccessM",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            }
+          ],
+          "new_or_reused_tids": [],
+          "vanished_tids": [],
+          "limitation": "Boundary scan and SSH overhead included; waits overlap across threads. Missing tasks are not zero CPU. Names do not prove worker roles."
+        }
+      ]
+    },
+    {
+      "run": "sketch-tight-gui-b1-20261124",
+      "report_sha256": "89a01925a08270723b7fd0a9ad1d562a99ac21518ab479004e0cc30e0180ccdb",
+      "observer": "single_process_c",
+      "observer_sha256": "2b26a2c88fa96ec0356a3bbbb480d682e120ddb2c8921b37d74cfb055f8db3f2",
+      "suite_passed": false,
+      "failures": [
+        "run 0/pen-charcoal: device correctness/performance gate failed",
+        "run 0/pen-charcoal: queue_p95_ms=1053 >= 100",
+        "run 0/pen-charcoal: release_tail_ms=1976 >= 150"
+      ],
+      "process_pid": 6210,
+      "diagnostic_preview_disabled": false,
+      "native_modules": {
+        "papersketch-raster.so": "5669f7707b8a3a36e4a5fc7d77b306e67884cc1107c03b014b40354aaf4c5518",
+        "papersketch-ink.so": "2598023caaff68176bd682d8384834077f61a26af440d762d5f61fb19a85ecaf"
+      },
+      "preservation": {
+        "artwork_preserved": true,
+        "saved_files_preserved": true,
+        "saved_file_count": 17
+      },
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "input_samples": 1260,
+          "input_stats": [
+            1261,
+            0,
+            0
+          ],
+          "max_input_tick_gap_ms": 47,
+          "queue_latency": {
+            "batches": 225,
+            "clock_resolution_ms": 1,
+            "empty_batches": 0,
+            "max_ms": 41,
+            "p50_upper_ms": 7,
+            "p95_upper_ms": 22,
+            "samples": 1261,
+            "total_ms": 10040
+          },
+          "release_to_drained_ms": 29,
+          "tile_visible_before_release": true,
+          "achieved_input_hz": 499.80166600555333,
+          "fast_pen_preview_enabled": true
+        },
+        {
+          "id": "pen-charcoal",
+          "input_samples": 1260,
+          "input_stats": [
+            2522,
+            0,
+            0
+          ],
+          "max_input_tick_gap_ms": 169,
+          "queue_latency": {
+            "batches": 54,
+            "clock_resolution_ms": 1,
+            "empty_batches": 1,
+            "max_ms": 1053,
+            "p50_upper_ms": 713,
+            "p95_upper_ms": 1053,
+            "samples": 1261,
+            "total_ms": 874021
+          },
+          "release_to_drained_ms": 1976,
+          "tile_visible_before_release": false,
+          "achieved_input_hz": 499.80166600555333,
+          "fast_pen_preview_enabled": true
+        }
+      ],
+      "thread_profiles": [
+        {
+          "id": "pen-graphite",
+          "wall_lower_seconds": 3.220000000001164,
+          "wall_upper_seconds": 3.2299999999813735,
+          "snapshot_scan_seconds": [
+            0.009999999980209395,
+            0.0
+          ],
+          "threads": [
+            {
+              "tid": "6210",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 2.61,
+              "scheduled_seconds": 2.61569425,
+              "runnable_wait_seconds": 0.16189475
+            },
+            {
+              "tid": "6241",
+              "name": "framegen",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.66,
+              "scheduled_seconds": 0.653512625,
+              "runnable_wait_seconds": 0.000213375
+            },
+            {
+              "tid": "6214",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.18,
+              "scheduled_seconds": 0.182379375,
+              "runnable_wait_seconds": 0.51203225
+            },
+            {
+              "tid": "6362",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.06,
+              "scheduled_seconds": 0.05287875,
+              "runnable_wait_seconds": 0.13445225
+            },
+            {
+              "tid": "6251",
+              "name": "QThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.05,
+              "scheduled_seconds": 0.052105875,
+              "runnable_wait_seconds": 0.11342575
+            },
+            {
+              "tid": "6240",
+              "name": "vsync-flip",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.03,
+              "scheduled_seconds": 0.017135125,
+              "runnable_wait_seconds": 0.000312375
+            },
+            {
+              "tid": "6223",
+              "name": "swt-fbc-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.0130395,
+              "runnable_wait_seconds": 0.015706875
+            },
+            {
+              "tid": "6226",
+              "name": "swt-act-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.0199165,
+              "runnable_wait_seconds": 0.223252
+            },
+            {
+              "tid": "6224",
+              "name": "swt-fbc-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.01,
+              "scheduled_seconds": 0.014712375,
+              "runnable_wait_seconds": 9.9e-05
+            },
+            {
+              "tid": "6225",
+              "name": "swt-act-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.01,
+              "scheduled_seconds": 0.019826125,
+              "runnable_wait_seconds": 0.22594025
+            },
+            {
+              "tid": "6274",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.01,
+              "scheduled_seconds": 0.006227625,
+              "runnable_wait_seconds": 2.9375e-05
+            },
+            {
+              "tid": "6220",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6221",
+              "name": "swt-proc-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6222",
+              "name": "swt-proc-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6234",
+              "name": "QEvdevTouchScre",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6235",
+              "name": "EPFramebufferQu",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6250",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6252",
+              "name": "PenInputThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6272",
+              "name": "LibraryLoader",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6273",
+              "name": "QDBusConnection",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6275",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.004978375,
+              "runnable_wait_seconds": 0.000419875
+            },
+            {
+              "tid": "6308",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6328",
+              "name": "ScreenShare",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.000276,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6337",
+              "name": "QQmlThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6363",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.002300125,
+              "runnable_wait_seconds": 0.01132025
+            },
+            {
+              "tid": "6364",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6378",
+              "name": "QNetworkAccessM",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.00211775,
+              "runnable_wait_seconds": 0.0
+            }
+          ],
+          "new_or_reused_tids": [],
+          "vanished_tids": [],
+          "limitation": "Boundary scan and SSH overhead included; waits overlap across threads. Missing tasks are not zero CPU. Names do not prove worker roles."
+        },
+        {
+          "id": "pen-charcoal",
+          "wall_lower_seconds": 3.4600000000209548,
+          "wall_upper_seconds": 3.470000000001164,
+          "snapshot_scan_seconds": [
+            0.0,
+            0.009999999980209395
+          ],
+          "threads": [
+            {
+              "tid": "6210",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 1.66,
+              "scheduled_seconds": 1.648783875,
+              "runnable_wait_seconds": 1.6332895
+            },
+            {
+              "tid": "6241",
+              "name": "framegen",
+              "origin": "matched_birth",
+              "cpu_seconds": 1.29,
+              "scheduled_seconds": 1.285567625,
+              "runnable_wait_seconds": 0.000165875
+            },
+            {
+              "tid": "6424",
+              "name": "xochitl",
+              "origin": "born_in_window_cumulative",
+              "cpu_seconds": 1.12,
+              "scheduled_seconds": 1.123688,
+              "runnable_wait_seconds": 1.541572125
+            },
+            {
+              "tid": "6425",
+              "name": "xochitl",
+              "origin": "born_in_window_cumulative",
+              "cpu_seconds": 0.98,
+              "scheduled_seconds": 0.98815925,
+              "runnable_wait_seconds": 1.539436875
+            },
+            {
+              "tid": "6214",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.55,
+              "scheduled_seconds": 0.55417175,
+              "runnable_wait_seconds": 0.278101
+            },
+            {
+              "tid": "6223",
+              "name": "swt-fbc-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.05,
+              "scheduled_seconds": 0.045851125,
+              "runnable_wait_seconds": 0.144721625
+            },
+            {
+              "tid": "6251",
+              "name": "QThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.05,
+              "scheduled_seconds": 0.055839125,
+              "runnable_wait_seconds": 0.392443125
+            },
+            {
+              "tid": "6362",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.05,
+              "scheduled_seconds": 0.050162,
+              "runnable_wait_seconds": 0.294637
+            },
+            {
+              "tid": "6221",
+              "name": "swt-proc-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.04,
+              "scheduled_seconds": 0.031952125,
+              "runnable_wait_seconds": 0.079750625
+            },
+            {
+              "tid": "6224",
+              "name": "swt-fbc-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.04,
+              "scheduled_seconds": 0.040118875,
+              "runnable_wait_seconds": 0.13495325
+            },
+            {
+              "tid": "6222",
+              "name": "swt-proc-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.03,
+              "scheduled_seconds": 0.033848375,
+              "runnable_wait_seconds": 0.014659125
+            },
+            {
+              "tid": "6225",
+              "name": "swt-act-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.03,
+              "scheduled_seconds": 0.03198975,
+              "runnable_wait_seconds": 0.44613275
+            },
+            {
+              "tid": "6274",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.03,
+              "scheduled_seconds": 0.026974375,
+              "runnable_wait_seconds": 0.0114745
+            },
+            {
+              "tid": "6226",
+              "name": "swt-act-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.032893,
+              "runnable_wait_seconds": 0.449653125
+            },
+            {
+              "tid": "6240",
+              "name": "vsync-flip",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.017704,
+              "runnable_wait_seconds": 0.000282125
+            },
+            {
+              "tid": "6275",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.023670625,
+              "runnable_wait_seconds": 0.050326875
+            },
+            {
+              "tid": "6220",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6234",
+              "name": "QEvdevTouchScre",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6235",
+              "name": "EPFramebufferQu",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6250",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6252",
+              "name": "PenInputThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6272",
+              "name": "LibraryLoader",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6273",
+              "name": "QDBusConnection",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6308",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6328",
+              "name": "ScreenShare",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.000328375,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6337",
+              "name": "QQmlThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6363",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.00265675,
+              "runnable_wait_seconds": 0.04709575
+            },
+            {
+              "tid": "6364",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "6378",
+              "name": "QNetworkAccessM",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            }
+          ],
+          "new_or_reused_tids": [],
+          "vanished_tids": [],
+          "limitation": "Boundary scan and SSH overhead included; waits overlap across threads. Missing tasks are not zero CPU. Names do not prove worker roles."
+        }
+      ]
+    },
+    {
+      "run": "sketch-tight-gui-b2-20261124",
+      "report_sha256": "c19c4b2094fc0336784848802e3b47a2c5da2866a0ebc13e7e27f5f968d0a513",
+      "observer": "single_process_c",
+      "observer_sha256": "2b26a2c88fa96ec0356a3bbbb480d682e120ddb2c8921b37d74cfb055f8db3f2",
+      "suite_passed": false,
+      "failures": [
+        "run 0/pen-charcoal: device correctness/performance gate failed",
+        "run 0/pen-charcoal: gui_gap_ms=224 >= 200",
+        "run 0/pen-charcoal: queue_p95_ms=1183 >= 100",
+        "run 0/pen-charcoal: release_tail_ms=1910 >= 150"
+      ],
+      "process_pid": 7161,
+      "diagnostic_preview_disabled": false,
+      "native_modules": {
+        "papersketch-raster.so": "5669f7707b8a3a36e4a5fc7d77b306e67884cc1107c03b014b40354aaf4c5518",
+        "papersketch-ink.so": "2598023caaff68176bd682d8384834077f61a26af440d762d5f61fb19a85ecaf"
+      },
+      "preservation": {
+        "artwork_preserved": true,
+        "saved_files_preserved": true,
+        "saved_file_count": 17
+      },
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "input_samples": 1260,
+          "input_stats": [
+            1261,
+            0,
+            0
+          ],
+          "max_input_tick_gap_ms": 46,
+          "queue_latency": {
+            "batches": 190,
+            "clock_resolution_ms": 1,
+            "empty_batches": 0,
+            "max_ms": 38,
+            "p50_upper_ms": 8,
+            "p95_upper_ms": 24,
+            "samples": 1261,
+            "total_ms": 11604
+          },
+          "release_to_drained_ms": 39,
+          "tile_visible_before_release": true,
+          "achieved_input_hz": 500.0,
+          "fast_pen_preview_enabled": true
+        },
+        {
+          "id": "pen-charcoal",
+          "input_samples": 1260,
+          "input_stats": [
+            2522,
+            0,
+            0
+          ],
+          "max_input_tick_gap_ms": 224,
+          "queue_latency": {
+            "batches": 55,
+            "clock_resolution_ms": 1,
+            "empty_batches": 1,
+            "max_ms": 1183,
+            "p50_upper_ms": 965,
+            "p95_upper_ms": 1183,
+            "samples": 1261,
+            "total_ms": 978897
+          },
+          "release_to_drained_ms": 1910,
+          "tile_visible_before_release": true,
+          "achieved_input_hz": 500.0,
+          "fast_pen_preview_enabled": true
+        }
+      ],
+      "thread_profiles": [
+        {
+          "id": "pen-graphite",
+          "wall_lower_seconds": 3.1900000000023283,
+          "wall_upper_seconds": 3.1999999999825377,
+          "snapshot_scan_seconds": [
+            0.0,
+            0.009999999980209395
+          ],
+          "threads": [
+            {
+              "tid": "7161",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 2.56,
+              "scheduled_seconds": 2.553966,
+              "runnable_wait_seconds": 0.27766525
+            },
+            {
+              "tid": "7198",
+              "name": "framegen",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.68,
+              "scheduled_seconds": 0.667266875,
+              "runnable_wait_seconds": 0.0002885
+            },
+            {
+              "tid": "7165",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.18,
+              "scheduled_seconds": 0.185635875,
+              "runnable_wait_seconds": 0.46804
+            },
+            {
+              "tid": "7202",
+              "name": "QThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.05,
+              "scheduled_seconds": 0.053251375,
+              "runnable_wait_seconds": 0.1409445
+            },
+            {
+              "tid": "7312",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.05,
+              "scheduled_seconds": 0.054013125,
+              "runnable_wait_seconds": 0.0390015
+            },
+            {
+              "tid": "7180",
+              "name": "swt-act-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.02315725,
+              "runnable_wait_seconds": 0.0648175
+            },
+            {
+              "tid": "7181",
+              "name": "swt-act-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.020158875,
+              "runnable_wait_seconds": 0.1589645
+            },
+            {
+              "tid": "7197",
+              "name": "vsync-flip",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.015254875,
+              "runnable_wait_seconds": 0.00021075
+            },
+            {
+              "tid": "7178",
+              "name": "swt-fbc-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.01,
+              "scheduled_seconds": 0.014587375,
+              "runnable_wait_seconds": 0.000507125
+            },
+            {
+              "tid": "7179",
+              "name": "swt-fbc-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.01,
+              "scheduled_seconds": 0.011076125,
+              "runnable_wait_seconds": 0.000628875
+            },
+            {
+              "tid": "7225",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.01,
+              "scheduled_seconds": 0.007746375,
+              "runnable_wait_seconds": 6.1e-05
+            },
+            {
+              "tid": "7313",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.01,
+              "scheduled_seconds": 0.002206125,
+              "runnable_wait_seconds": 0.01174825
+            },
+            {
+              "tid": "7175",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7176",
+              "name": "swt-proc-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7177",
+              "name": "swt-proc-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7185",
+              "name": "QEvdevTouchScre",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7186",
+              "name": "EPFramebufferQu",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7201",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7203",
+              "name": "PenInputThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7223",
+              "name": "LibraryLoader",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7224",
+              "name": "QDBusConnection",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7226",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.00382725,
+              "runnable_wait_seconds": 0.008229375
+            },
+            {
+              "tid": "7256",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7276",
+              "name": "ScreenShare",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.000298625,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7291",
+              "name": "QQmlThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7314",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7331",
+              "name": "QNetworkAccessM",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0017925,
+              "runnable_wait_seconds": 0.0
+            }
+          ],
+          "new_or_reused_tids": [],
+          "vanished_tids": [],
+          "limitation": "Boundary scan and SSH overhead included; waits overlap across threads. Missing tasks are not zero CPU. Names do not prove worker roles."
+        },
+        {
+          "id": "pen-charcoal",
+          "wall_lower_seconds": 3.5199999999895226,
+          "wall_upper_seconds": 3.529999999998836,
+          "snapshot_scan_seconds": [
+            0.0,
+            0.010000000009313226
+          ],
+          "threads": [
+            {
+              "tid": "7161",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 1.61,
+              "scheduled_seconds": 1.613740375,
+              "runnable_wait_seconds": 1.764092125
+            },
+            {
+              "tid": "7198",
+              "name": "framegen",
+              "origin": "matched_birth",
+              "cpu_seconds": 1.28,
+              "scheduled_seconds": 1.2836455,
+              "runnable_wait_seconds": 0.000225625
+            },
+            {
+              "tid": "7372",
+              "name": "xochitl",
+              "origin": "born_in_window_cumulative",
+              "cpu_seconds": 1.13,
+              "scheduled_seconds": 1.141136625,
+              "runnable_wait_seconds": 1.577244625
+            },
+            {
+              "tid": "7373",
+              "name": "xochitl",
+              "origin": "born_in_window_cumulative",
+              "cpu_seconds": 1.02,
+              "scheduled_seconds": 1.032021125,
+              "runnable_wait_seconds": 1.631255875
+            },
+            {
+              "tid": "7165",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.56,
+              "scheduled_seconds": 0.556440125,
+              "runnable_wait_seconds": 0.215580375
+            },
+            {
+              "tid": "7202",
+              "name": "QThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.05,
+              "scheduled_seconds": 0.05354125,
+              "runnable_wait_seconds": 0.281772125
+            },
+            {
+              "tid": "7180",
+              "name": "swt-act-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.04,
+              "scheduled_seconds": 0.0352115,
+              "runnable_wait_seconds": 0.319631875
+            },
+            {
+              "tid": "7181",
+              "name": "swt-act-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.04,
+              "scheduled_seconds": 0.035728875,
+              "runnable_wait_seconds": 0.029647375
+            },
+            {
+              "tid": "7225",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.04,
+              "scheduled_seconds": 0.02611125,
+              "runnable_wait_seconds": 0.007462875
+            },
+            {
+              "tid": "7312",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.04,
+              "scheduled_seconds": 0.044215125,
+              "runnable_wait_seconds": 0.326386875
+            },
+            {
+              "tid": "7177",
+              "name": "swt-proc-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.03,
+              "scheduled_seconds": 0.033646875,
+              "runnable_wait_seconds": 0.027614
+            },
+            {
+              "tid": "7178",
+              "name": "swt-fbc-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.03,
+              "scheduled_seconds": 0.045785625,
+              "runnable_wait_seconds": 0.030703875
+            },
+            {
+              "tid": "7179",
+              "name": "swt-fbc-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.03,
+              "scheduled_seconds": 0.039259625,
+              "runnable_wait_seconds": 0.05569675
+            },
+            {
+              "tid": "7226",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.03,
+              "scheduled_seconds": 0.026924,
+              "runnable_wait_seconds": 0.035087
+            },
+            {
+              "tid": "7176",
+              "name": "swt-proc-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.02221,
+              "runnable_wait_seconds": 0.0191685
+            },
+            {
+              "tid": "7197",
+              "name": "vsync-flip",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.01815275,
+              "runnable_wait_seconds": 0.000308125
+            },
+            {
+              "tid": "7175",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7185",
+              "name": "QEvdevTouchScre",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7186",
+              "name": "EPFramebufferQu",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7201",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7203",
+              "name": "PenInputThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7223",
+              "name": "LibraryLoader",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7224",
+              "name": "QDBusConnection",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7256",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7276",
+              "name": "ScreenShare",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.000247375,
+              "runnable_wait_seconds": 0.00156825
+            },
+            {
+              "tid": "7291",
+              "name": "QQmlThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7313",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.002744875,
+              "runnable_wait_seconds": 0.0100525
+            },
+            {
+              "tid": "7314",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "7331",
+              "name": "QNetworkAccessM",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            }
+          ],
+          "new_or_reused_tids": [],
+          "vanished_tids": [],
+          "limitation": "Boundary scan and SSH overhead included; waits overlap across threads. Missing tasks are not zero CPU. Names do not prove worker roles."
+        }
+      ]
+    },
+    {
+      "run": "sketch-tight-gui-a2-20261124",
+      "report_sha256": "91d6b57e6419f3695df2c99c034260ab57e8550e2b89ba2e8fdc9b78fb8446c6",
+      "observer": "single_process_c",
+      "observer_sha256": "2b26a2c88fa96ec0356a3bbbb480d682e120ddb2c8921b37d74cfb055f8db3f2",
+      "suite_passed": false,
+      "failures": [
+        "run 0/pen-charcoal: device correctness/performance gate failed",
+        "run 0/pen-charcoal: gui_gap_ms=203 >= 200",
+        "run 0/pen-charcoal: queue_p95_ms=1088 >= 100",
+        "run 0/pen-charcoal: release_tail_ms=2023 >= 150"
+      ],
+      "process_pid": 8102,
+      "diagnostic_preview_disabled": false,
+      "native_modules": {
+        "papersketch-raster.so": "5669f7707b8a3a36e4a5fc7d77b306e67884cc1107c03b014b40354aaf4c5518",
+        "papersketch-ink.so": "5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7"
+      },
+      "preservation": {
+        "artwork_preserved": true,
+        "saved_files_preserved": true,
+        "saved_file_count": 17
+      },
+      "cases": [
+        {
+          "id": "pen-graphite",
+          "input_samples": 1260,
+          "input_stats": [
+            1261,
+            0,
+            0
+          ],
+          "max_input_tick_gap_ms": 54,
+          "queue_latency": {
+            "batches": 199,
+            "clock_resolution_ms": 1,
+            "empty_batches": 1,
+            "max_ms": 45,
+            "p50_upper_ms": 8,
+            "p95_upper_ms": 25,
+            "samples": 1261,
+            "total_ms": 11996
+          },
+          "release_to_drained_ms": 29,
+          "tile_visible_before_release": true,
+          "achieved_input_hz": 499.80166600555333,
+          "fast_pen_preview_enabled": true
+        },
+        {
+          "id": "pen-charcoal",
+          "input_samples": 1260,
+          "input_stats": [
+            2522,
+            0,
+            0
+          ],
+          "max_input_tick_gap_ms": 203,
+          "queue_latency": {
+            "batches": 54,
+            "clock_resolution_ms": 1,
+            "empty_batches": 1,
+            "max_ms": 1088,
+            "p50_upper_ms": 761,
+            "p95_upper_ms": 1088,
+            "samples": 1261,
+            "total_ms": 886800
+          },
+          "release_to_drained_ms": 2023,
+          "tile_visible_before_release": false,
+          "achieved_input_hz": 500.0,
+          "fast_pen_preview_enabled": true
+        }
+      ],
+      "thread_profiles": [
+        {
+          "id": "pen-graphite",
+          "wall_lower_seconds": 3.209999999991851,
+          "wall_upper_seconds": 3.220000000001164,
+          "snapshot_scan_seconds": [
+            0.010000000009313226,
+            0.0
+          ],
+          "threads": [
+            {
+              "tid": "8102",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 2.53,
+              "scheduled_seconds": 2.5402545,
+              "runnable_wait_seconds": 0.2914365
+            },
+            {
+              "tid": "8130",
+              "name": "framegen",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.72,
+              "scheduled_seconds": 0.70416925,
+              "runnable_wait_seconds": 0.00024975
+            },
+            {
+              "tid": "8106",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.19,
+              "scheduled_seconds": 0.191081625,
+              "runnable_wait_seconds": 0.24232625
+            },
+            {
+              "tid": "8251",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.05,
+              "scheduled_seconds": 0.0505795,
+              "runnable_wait_seconds": 0.11280575
+            },
+            {
+              "tid": "8143",
+              "name": "QThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.04,
+              "scheduled_seconds": 0.05224675,
+              "runnable_wait_seconds": 0.11729275
+            },
+            {
+              "tid": "8129",
+              "name": "vsync-flip",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.03,
+              "scheduled_seconds": 0.015080875,
+              "runnable_wait_seconds": 0.0001575
+            },
+            {
+              "tid": "8113",
+              "name": "swt-fbc-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.014785125,
+              "runnable_wait_seconds": 0.0002085
+            },
+            {
+              "tid": "8115",
+              "name": "swt-act-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.021503125,
+              "runnable_wait_seconds": 0.216287875
+            },
+            {
+              "tid": "8116",
+              "name": "swt-act-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.02411825,
+              "runnable_wait_seconds": 0.005628125
+            },
+            {
+              "tid": "8114",
+              "name": "swt-fbc-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.01,
+              "scheduled_seconds": 0.01121925,
+              "runnable_wait_seconds": 0.00059675
+            },
+            {
+              "tid": "8166",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.01,
+              "scheduled_seconds": 0.005669125,
+              "runnable_wait_seconds": 0.001449375
+            },
+            {
+              "tid": "8252",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.01,
+              "scheduled_seconds": 0.00261525,
+              "runnable_wait_seconds": 0.003907625
+            },
+            {
+              "tid": "8110",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8111",
+              "name": "swt-proc-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8112",
+              "name": "swt-proc-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8119",
+              "name": "QEvdevTouchScre",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8120",
+              "name": "EPFramebufferQu",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8142",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8144",
+              "name": "PenInputThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8164",
+              "name": "LibraryLoader",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8165",
+              "name": "QDBusConnection",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8167",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0057255,
+              "runnable_wait_seconds": 0.00216775
+            },
+            {
+              "tid": "8198",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8218",
+              "name": "ScreenShare",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.00025475,
+              "runnable_wait_seconds": 0.00059625
+            },
+            {
+              "tid": "8229",
+              "name": "QQmlThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8253",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8269",
+              "name": "QNetworkAccessM",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.001694125,
+              "runnable_wait_seconds": 8.5e-06
+            }
+          ],
+          "new_or_reused_tids": [],
+          "vanished_tids": [],
+          "limitation": "Boundary scan and SSH overhead included; waits overlap across threads. Missing tasks are not zero CPU. Names do not prove worker roles."
+        },
+        {
+          "id": "pen-charcoal",
+          "wall_lower_seconds": 3.470000000001164,
+          "wall_upper_seconds": 3.5,
+          "snapshot_scan_seconds": [
+            0.010000000009313226,
+            0.01999999998952262
+          ],
+          "threads": [
+            {
+              "tid": "8102",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 1.62,
+              "scheduled_seconds": 1.62708425,
+              "runnable_wait_seconds": 1.66857175
+            },
+            {
+              "tid": "8130",
+              "name": "framegen",
+              "origin": "matched_birth",
+              "cpu_seconds": 1.45,
+              "scheduled_seconds": 1.445583875,
+              "runnable_wait_seconds": 0.000288625
+            },
+            {
+              "tid": "8310",
+              "name": "xochitl",
+              "origin": "born_in_window_cumulative",
+              "cpu_seconds": 1.06,
+              "scheduled_seconds": 1.07583325,
+              "runnable_wait_seconds": 1.581991
+            },
+            {
+              "tid": "8311",
+              "name": "xochitl",
+              "origin": "born_in_window_cumulative",
+              "cpu_seconds": 0.91,
+              "scheduled_seconds": 0.92953925,
+              "runnable_wait_seconds": 1.516824375
+            },
+            {
+              "tid": "8106",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.54,
+              "scheduled_seconds": 0.528581625,
+              "runnable_wait_seconds": 0.360604625
+            },
+            {
+              "tid": "8143",
+              "name": "QThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.06,
+              "scheduled_seconds": 0.0490635,
+              "runnable_wait_seconds": 0.264895375
+            },
+            {
+              "tid": "8114",
+              "name": "swt-fbc-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.05,
+              "scheduled_seconds": 0.048999375,
+              "runnable_wait_seconds": 0.02355125
+            },
+            {
+              "tid": "8113",
+              "name": "swt-fbc-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.04,
+              "scheduled_seconds": 0.03875825,
+              "runnable_wait_seconds": 0.100243375
+            },
+            {
+              "tid": "8116",
+              "name": "swt-act-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.04,
+              "scheduled_seconds": 0.034690125,
+              "runnable_wait_seconds": 0.045106875
+            },
+            {
+              "tid": "8251",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.04,
+              "scheduled_seconds": 0.042194375,
+              "runnable_wait_seconds": 0.272041625
+            },
+            {
+              "tid": "8112",
+              "name": "swt-proc-1",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.03,
+              "scheduled_seconds": 0.024957625,
+              "runnable_wait_seconds": 0.0032975
+            },
+            {
+              "tid": "8115",
+              "name": "swt-act-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.03,
+              "scheduled_seconds": 0.03086725,
+              "runnable_wait_seconds": 0.41948625
+            },
+            {
+              "tid": "8166",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.03,
+              "scheduled_seconds": 0.02497,
+              "runnable_wait_seconds": 0.069511875
+            },
+            {
+              "tid": "8111",
+              "name": "swt-proc-0",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.024857125,
+              "runnable_wait_seconds": 0.151379
+            },
+            {
+              "tid": "8167",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.02,
+              "scheduled_seconds": 0.019598125,
+              "runnable_wait_seconds": 0.087568625
+            },
+            {
+              "tid": "8129",
+              "name": "vsync-flip",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.01,
+              "scheduled_seconds": 0.01780875,
+              "runnable_wait_seconds": 0.000221125
+            },
+            {
+              "tid": "8110",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8119",
+              "name": "QEvdevTouchScre",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8120",
+              "name": "EPFramebufferQu",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8142",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8144",
+              "name": "PenInputThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8164",
+              "name": "LibraryLoader",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8165",
+              "name": "QDBusConnection",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8198",
+              "name": "Thread (pooled)",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8218",
+              "name": "ScreenShare",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.00032575,
+              "runnable_wait_seconds": 0.00063775
+            },
+            {
+              "tid": "8229",
+              "name": "QQmlThread",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8252",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.002475375,
+              "runnable_wait_seconds": 0.07926775
+            },
+            {
+              "tid": "8253",
+              "name": "xochitl",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            },
+            {
+              "tid": "8269",
+              "name": "QNetworkAccessM",
+              "origin": "matched_birth",
+              "cpu_seconds": 0.0,
+              "scheduled_seconds": 0.0,
+              "runnable_wait_seconds": 0.0
+            }
+          ],
+          "new_or_reused_tids": [],
+          "vanished_tids": [],
+          "limitation": "Boundary scan and SSH overhead included; waits overlap across threads. Missing tasks are not zero CPU. Names do not prove worker roles."
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Read-only task counters around synthetic evdev injection, not whole-stroke CPU or physical panel latency.",
+    "Boundary scans and SSH delay included; no zero-cost observer/control claim.",
+    "Thread names do not prove worker roles. Runnable wait excludes blocking and overlaps across threads."
+  ]
+}

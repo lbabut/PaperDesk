@@ -1,5 +1,9 @@
 Sketch preview damage experiment — 24 November 2026
 
+Historical CPU-only checkpoint below. Superseded by the subsequent guarded
+GUI ABBA study in SKETCH-TIGHT-PREVIEW-GUI-20261124.txt: rejected for UAT and
+rolled back. The earlier offline results remain unchanged.
+
 Status: CPU/geometry candidate ONLY. Not installed, not UAT, no GUI or panel
 speedup demonstrated. No artwork/settings/services changed on the tablet.
 

@@ -1,0 +1,84 @@
+Tight preview damage — guarded GUI ABBA, 24 November 2026
+
+DECISION: reject for UAT. No production/main/site publication. Original
+installed rowspan modules restored and verified after every run.
+Owner explicitly allowed discarding the current scratch drawing this turn;
+saved-library deletion was neither needed nor authorized.
+
+Comparison
+A = unchanged8ms preview + uninstrumented completion-wake24 raster.
+B = same raster/QML/input/material/cadence, tighter actual-write preview boxes.
+Four completed runs A1/B1/B2/A2, each both graphite and tilted soft charcoal,
+1260 ordered points/tool. Actual injection499.80..500.00Hz, same C task observer.
+Source candidate f3090acb3b075c33d0031f4f4a28e4583dd36e98.
+This is synthetic evdev through real GUI/native handlers, not a physical
+stylus/panel measurement and not a statistical throughput study.
+
+                       GUI max gap   queue p95 upper   release-to-drained
+charcoal A1 control      158ms           1172ms              2109ms
+charcoal B1 candidate    169ms           1053ms              1976ms
+charcoal B2 candidate    224ms           1183ms              1910ms
+charcoal A2 control      203ms           1088ms              2023ms
+
+Median control/candidate: gap180.5/196.5ms, queue1130/1118ms,
+tail2066/1943ms. The modest tail difference does not satisfy the unchanged
+queue<100ms or tail<150ms gates, and B2 also fails gap<200ms. A2 fails the
+gap gate too: retain control variability rather than claiming universal
+candidate slowdown. No convincing overall responsiveness benefit or UAT.
+Central tile not visible before release in A1/B1/A2; B2 passed that gate.
+Do not relabel these failed gates as successful correctness/performance runs.
+
+Graphite gap/queue/tail ms:
+A1 41/24/61; B1 47/22/29; B2 46/24/39; A2 54/25/29.
+No ordinary250Hz candidate cohort or extended workflow tests after heavy
+rejection. Do not claim all-app speed or save/load/export certification.
+
+Frame-generation accounting
+Charcoal framegen scheduled CPU in injection-boundary window:
+A1 1.469907250s; B1 1.285567625s; B2 1.283645500s; A2 1.445583875s.
+This supports reduced work in that named thread in these runs, not a
+proportional UI speedup or proof of the entire remaining bottleneck.
+Windows3.42..3.53s include SSH/boundary overhead and some post-release work;
+not full-stroke-aligned CPU. Snapshot scan0..20ms at10ms uptime resolution,
+not literally zero-cost. Thread names do not prove complete worker roles;
+runnable waits overlap and omit blocking/mutex waits.
+Earlier26% geometric area reduction was an offline idealized replay, not a
+measurement of actual framegen block/panel work in these GUI runs.
+
+Integrity / safety
+All8 tool cases:1260 samples,0 input overflow/pending, no blank frames after
+visibility, expected binary-display/grayscale-optical checks, no runtime
+errors, no automatic test save. Original document setting and17 checked
+saved cache files preserved each run; not a full-library audit. Test app
+removed from active AppLoad after each run, own backup/monitor masks handled.
+No firmware, clock, scheduler or governor changes.
+Installer7, report5, existing device report6 and task-profile13 tests PASS.
+Native batch regression PASS including3072 pale tip phases. Exporter now
+only states a shell sampler is excluded when one actually appears; checked
+against two current C-observer reports and a retained historical shell report.
+Historical failed gates and evidence were not edited.
+
+Identities
+Both experimental raster modules:
+5669f7707b8a3a36e4a5fc7d77b306e67884cc1107c03b014b40354aaf4c5518
+A ink:5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7
+B ink:2598023caaff68176bd682d8384834077f61a26af440d762d5f61fb19a85ecaf
+Native identities recorded inside every actual GUI report, not just on host.
+
+Final restoration 2026-11-24 09:02:34UTC: xochitl active, monitor static,
+raster29d482734f987777a8b355df8a3511d9a93f0e843375daee0f9950c8d52975a7,
+ink5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7,
+RCC3207f8fbd23057eeaa0ebc47b684b2888d4b0b66f21d5efd0295040035e5d0a1.
+Canonical PaperDesk343 dirty entries not modified by this session.
+
+Evidence
+tests/device/sketch-tight-preview-gui-results-20261124.json contains all
+four runs with failure lists, native identities, report digests and task data.
+Raw archive: plan-400/preflight-v01/sketch-tight-preview-gui-20261124.
+Each raw run has install receipt, logs, full probe report and restoration.
+Temporary candidate binaries are archived separately; inherited tracked
+binary payloads on this branch are not an installable package.
+
+Next: investigate remaining input/material/preview contention with bounded
+timing evidence; do not promote area reduction or another arbitrary cadence
+change as a fix. Keep the current installed baseline. No new UAT this turn.
