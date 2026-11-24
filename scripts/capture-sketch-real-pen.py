@@ -51,6 +51,7 @@ def summarize(data):
                 result['contacts'].append(contact)
             contact, touch = None, None
             axes = dict.fromkeys(axes)
+            rubber = None
         elif kind == 3 and code in axes:
             axes[code] = value
         elif kind == 1 and code == 321:

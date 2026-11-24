@@ -1,0 +1,36 @@
+PRIVATE RAW TRACE SELECTION — NOT A PERFORMANCE FIX
+
+scripts/sketch-trace-corpus.py selects explicitly audited canvas contacts from
+the bounded physical capture. Selection is tied to SHA256 and exact per-contact
+counts. Missing axes/tool, incomplete contacts, stream loss, reversed timestamps,
+duplicate indices and count mismatch cannot silently create usable replay data.
+The result preserves every accepted report, including stationary samples. It
+never injects input, restarts an app, installs a module or changes artwork.
+Exclusive output creation with mode0600 protects raw diagnostics from overwrite
+and accidental world-readable creation. Keep output OUTSIDE public repository.
+
+Example (paths are private inputs, not included here):
+  python3 scripts/sketch-trace-corpus.py --raw events.bin \
+    --selection selection.json --output private-corpus.json
+Selection keys: raw_sha256, canvas_evidence, contacts:[{index,reports},...].
+canvas_evidence is an operator-audited reference, NOT automatic proof that a
+contact painted. The tool does not infer that every pen contact is a stroke.
+
+Offline actual-recording result24November:10 audited canvas contacts selected,
+9 accepted with7284 unchanged reports; first contact refused for unknown axes
+and tool.3 other UI contacts excluded. No consecutive identical full states;
+57 unchanged XY pairs out of7275 adjacent pairs still have pressure/tilt changes.
+This does NOT justify discarding samples or promise a speedup.
+
+Raw capture parser also resets unknown pen/rubber state after SYN_DROPPED;
+previously old tool state could survive a loss boundary. This is a diagnostic
+parser correction only, not a tablet application fault or explanation of lag.
+
+Rendering replay remains explicitly NOT ready: historical viewport geometry,
+axis ranges, per-contact tool settings, pressure calibration and initial material
+state have not all been captured. Current settings are not substituted for
+historical ones. No optical latency or exact original image reproduction claim.
+
+Tests:11 existing capture cases plus14 corpus cases, including private output,
+refused overwrite and partial selection. Only synthetic fixtures are public.
+Product payload and installed page-capacity UAT unchanged; canonical tree untouched.
