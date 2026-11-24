@@ -740,7 +740,7 @@ Item {
             compare(findChild(a,"pageActionTitle").text,"Sketchbook is full (12 pages)");
             verify(!findChild(a,"saveLeave").visible);verify(!findChild(a,"discardLeave").visible);
             verify(!findChild(a,"confirmPageAction").visible);
-            if(!data.dirty){wait(50);verify(grabImage(scene).save(artifactPath("full-sketchbook.png")));}
+            if(!data.dirty){wait(50);var image=grabImage(scene);compare(image.width,scene.width);image.save(artifactPath("full-sketchbook.png"));}
             mouseClick(findChild(a,"cancelLeave"),50,25,Qt.LeftButton);
             compare(a.confirmation,"");compare(a.dirty,data.dirty);compare(a.pageIndex,index);
             compare(JSON.stringify(a.notebook),before);compare(a.lastSavedDocument,saved);

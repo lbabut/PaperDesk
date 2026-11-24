@@ -21,6 +21,9 @@ button, unchanged notebook/index/dirty/saved document, absence of save,
 discard and destructive actions, defensive dispatch, and creating page 12.
 Complete Sketch suite: 71 passed, 0 failed, 2 skipped (tablet native runtime
 required). Offscreen screenshot full-sketchbook.png visually checked.
+The screenshot assertion initially treated the void image.save() return as
+a boolean, producing one test failure after the initial green suite. The
+assertion now checks image dimensions; saving is verified by the PNG file.
 
 Candidate RCC SHA256:
 30192844e115fbd9cd27fafbd86d1733c43bb370634cf8d064350e98cdbaedfc
