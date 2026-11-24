@@ -1,0 +1,42 @@
+BOUNDED PHYSICAL CAPTURE METADATA — NOT A PAINTING SPEED FIX
+
+sketch-pen-metadata.c opens only the Wacom event1 device O_RDONLY and queries
+name, five axis ranges/current values and key state via GET ioctls. It does
+not read/consume pen events, grab input, inject, configure the device or restart
+services. It reads the existing preview permit (bounded240bytes). Its JSON has
+realtime start/end and a monotonic timestamp. Queries are NOT an atomic input
+snapshot and must not seed unknown historical raw samples.
+
+Optional capture-sketch-real-pen.py arguments:
+  --metadata-probe /tmp/OWNER_CREATED_DIRECTORY/probe
+  --metadata-sha256 VERIFIED_SHA256
+Both required together. Helper path is constrained, SHA checked before execution.
+No automatic upload/installation or downloading. metadata-snapshots.json records
+before-capture and roughly one-second observations. Transient setting changes
+between snapshots can be missed; failed probes retain partial evidence and do
+not produce a successful capture report. A matching hash verifies identity,
+not code safety; use only the reviewed helper built from this source.
+
+sketch-pen-metadata.py validates axes/permit and implements audited native
+screen-coordinate/pressure/tilt normalization with known-vector tests, including
+nonzero minima, clamping and axis swap/sign. It does not apply the canvas
+transform or pressure calibration. Preview bounds use ceil/floor in main.qml;
+therefore they are explicitly NOT exact viewport geometry. Screen brush size
+is not silently converted back into canvas brush size. No historical settings
+or original material state are reconstructed from today's settings.
+
+Validation24November:
+  14 metadata tests passed, including mocked C GET-only ioctl/open/read contract,
+  wrong device/range refusal, optional-capture integration, SHA mismatch before
+  process start, partial evidence retention on helper failure, and mapping cases.
+  Existing11 raw-capture and14 private-corpus tests passed.
+  Native ARM gcc12 -O2 -Wall -Wextra -Werror -marm build passed.
+  Two SSH attempts to the previously verified Wi-Fi host timed out. No helper
+  upload, live snapshot, new physical contact capture or device validation done.
+
+Next: when tablet is reachable, create a unique temporary helper directory,
+transfer/hash-check the helper, run a read-only snapshot and validate JSON.
+Do not install an application candidate or restart xochitl. Preserve existing
+UAT and all artwork. Later exact replay still needs unrounded native transform,
+material settings and a declared initial state; collecting this metadata alone
+does not qualify a fidelity replay or faster UAT.

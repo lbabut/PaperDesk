@@ -7,6 +7,7 @@ Only the audited 32-bit little-endian reMarkable profile is supported.
 """
 import argparse
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import re
@@ -15,6 +16,16 @@ import subprocess
 import time
 
 EVENT = struct.Struct('<iiHHi')
+
+
+def metadata_options(path, digest):
+    if path is None and digest is None:
+        return False
+    if not isinstance(path,str) or not re.fullmatch(r'/tmp/[a-zA-Z0-9_./-]+',path) or '..' in path.split('/'):
+        raise ValueError('Metadata probe must be an explicit safe /tmp path')
+    if not isinstance(digest,str) or not re.fullmatch(r'[0-9a-f]{64}',digest):
+        raise ValueError('Metadata probe requires pinned SHA256')
+    return True
 
 
 def pen_device(devices):
@@ -103,7 +114,13 @@ def main():
     parser.add_argument('--host-key-alias', required=True)
     parser.add_argument('--seconds', type=int, default=30, choices=range(5,61))
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--metadata-probe', help='Previously audited read-only helper in tablet /tmp')
+    parser.add_argument('--metadata-sha256', help='Required SHA256 of that helper')
     args = parser.parse_args()
+    try:
+        with_metadata=metadata_options(args.metadata_probe,args.metadata_sha256)
+    except ValueError as error:
+        parser.error(str(error))
     if not re.fullmatch(r'[a-zA-Z0-9.:-]+', args.host):
         parser.error('Invalid host')
     ssh = ['ssh','-F','/dev/null','-i',args.key,'-o','IdentitiesOnly=yes',
@@ -114,6 +131,19 @@ def main():
     def remote(command):
         return subprocess.check_output(ssh+[command], timeout=15).decode()
 
+    metadata_parser=None
+    if with_metadata:
+        actual=remote('sha256sum '+args.metadata_probe).split()[0]
+        if actual!=args.metadata_sha256:
+            raise RuntimeError('Metadata helper SHA256 mismatch; not executed')
+        spec=importlib.util.spec_from_file_location('pen_metadata',Path(__file__).with_name('sketch-pen-metadata.py'))
+        metadata_parser=importlib.util.module_from_spec(spec);spec.loader.exec_module(metadata_parser)
+
+    def metadata_snapshot():
+        snap=json.loads(remote(args.metadata_probe))
+        parsed=metadata_parser.validate(snap)
+        return {'received_at_unix':time.time(),'snapshot':snap,'preview':parsed}
+
     profile = remote('set -eu; test "$(uname -m)" = armv7l; '
                      'grep -q \'^IMG_VERSION="3.29.0.153"$\' /etc/os-release; '
                      'systemctl is-active --quiet xochitl; cat /proc/bus/input/devices')
@@ -122,12 +152,15 @@ def main():
     remote_now = int(remote('date +%s'))
     if not before.get('ready') or not before.get('armed') or abs(before['time_ms']/1000-remote_now)>3:
         raise RuntimeError('Open Sketch canvas with fresh armed preview before capture')
+    metadata_samples=[metadata_snapshot()] if with_metadata else []
     args.output.mkdir(parents=True, exist_ok=False, mode=0o700)
     (args.output/'input-profile.txt').write_text(profile)
     (args.output/'preview-before.json').write_text(json.dumps(before, indent=2)+'\n')
     meta = {'schema': 1, 'device': device, 'started_at_unix': time.time(),
             'requested_seconds': args.seconds, 'read_only_device': True,
             'physical_input_not_synthetic': True, 'optical_latency_measured': False}
+    meta['metadata_probe_sha256']=args.metadata_sha256
+    meta['metadata_sampling']='about1second; not atomic with input and may miss transient settings' if with_metadata else None
     started = time.monotonic()
     with (args.output/'events.bin').open('wb') as out, (args.output/'capture.stderr').open('w') as err:
         # Keep a shell parent: direct BusyBox timeout exec dies by SIGTERM,
@@ -140,6 +173,8 @@ def main():
             while process.poll() is None:
                 status = json.loads(remote('cat /tmp/papersketch-ink-status'))
                 snapshots.append({'received_at_unix': time.time(), 'status': status})
+                if with_metadata:
+                    metadata_samples.append(metadata_snapshot())
                 estimated_remote_now = remote_now + time.monotonic()-started
                 if (not status.get('ready') or not status.get('armed')
                         or status.get('pid') != before.get('pid')
@@ -165,6 +200,8 @@ def main():
             meta['finished_at_unix'] = time.time()
             (args.output/'capture.json').write_text(json.dumps(meta,indent=2)+'\n')
             (args.output/'preview-snapshots.json').write_text(json.dumps(snapshots,indent=2)+'\n')
+            if with_metadata:
+                (args.output/'metadata-snapshots.json').write_text(json.dumps(metadata_samples,indent=2)+'\n')
     report = summarize((args.output/'events.bin').read_bytes())
     report['status'] = 'captured' if report['usable_complete_contacts'] else 'no_complete_contact'
     if report['syn_dropped'] or report['timestamp_reversals'] or meta.get('stopped_reason'):
