@@ -22,13 +22,16 @@ static inline unsigned char sketchPreviewGray(int tool,float pressure) {
     float position=pressure*16;int i=(int)position;
     return (unsigned char)(gray[tool][i]+(gray[tool][i+1]-gray[tool][i])*(position-i)+.5f);
 }
-static inline int sketchCharcoalPreviewGray(int gray,float edge,int x,int y) {
+static inline float sketchCharcoalPreviewTexture(int x,int y) {
     uint32_t n=(uint32_t)x*374761393u+(uint32_t)y*668265263u+0x9e3779b9u;
     n=(n^(n>>13))*1274126177u;n^=n>>16;
     uint32_t coarse=(uint32_t)(x/4)*374761393u+(uint32_t)(y/4)*668265263u+0x9e3779b9u;
     coarse=(coarse^(coarse>>13))*1274126177u;coarse^=coarse>>16;
     float grain=((n&255)*3+(coarse&255)*2)/1275.f;
-    float texture=.18f+.82f*(1-grain)*(1-grain);
+    return .18f+.82f*(1-grain)*(1-grain);
+}
+static inline int sketchCharcoalPreviewGray(int gray,float edge,int x,int y) {
+    float texture=sketchCharcoalPreviewTexture(x,y);
     // Match the broader charcoal contact envelope of the material candidate.
     // This remains a fresh-paper guide, not a reconstruction of saved pigment.
     float coverage=edge*(.65f+.35f*edge)*(.45f+.55f*texture);

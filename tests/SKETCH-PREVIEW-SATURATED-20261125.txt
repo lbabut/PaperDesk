@@ -1,0 +1,51 @@
+Preview saturated-pixel and immutable-grain candidate,25November2026
+
+Candidate changes only native ink preview computation. Fine non-eraser
+pixels already opaque black with full mask need no further calculations.
+Read both live buffers, so repaint or mask clearing naturally invalidates
+the shortcut. Other pen/eraser paths retain the original behavior.
+Charcoal grain depends only on relative integer coordinates. Cache8192
+entries with full x/y tags and exact float texture values,128KiB static
+memory. Collisions recompute. Cache belongs to the existing single pen_loop
+owner of segment/surf; no TLS or new threads. Never cache pressure/edge/shade.
+Arithmetic order of coverage and density remains unchanged.
+
+Meaningful differential validation:7776 segments each on host andARM with
+identical pixels,masks,damage boxes, clipping, tools, legacy eraser, pale
+tips, random initial surfaces and external changes between segments.
+360000 cached/reference shade comparisons include hits, collisions, negative
+coordinates and varying gray/edge. ASan/UBSan host passed (leak check off).
+Existing native batch3072 tip phases and shade/material anchor check passed.
+
+Recorded private CPU workload: four contacts,6762reports per set, every
+sample retained. Digests match original onARM. Combined candidate median
+CPU savings about17.7/15.7/8.3/23.6percent for contacts0/1/7/10. Saturated-
+pixel shortcut alone gave about8.5/6.9percent on contacts0/1. JSON records
+fresh measurements and actual sequence. Cache remains warm between process
+passes; first pass also preserved digest. Small workload, no GUI/panel claim.
+
+Fresh module built separately, SHA256
+1cbb0305845e14de96c951cdff07f326abe8d02402a1b0b11ad428b5c55d3462.
+Tracked inherited .so/RCC/raster files are NOT an installable candidate.
+Source branch starts at0893833 diagnostic baseline; material raster and
+page-capacity resources are newer on tablet and MUST NOT be replaced.
+
+Prepared narrow UAT installer mode (not executed this session):
+ python3 scripts/install-sketch-charcoal-uat.py --host 10.11.99.1
+  --host-key-alias 192.168.1.167 --key KEY --known-hosts HOSTS
+  --baseline pages-preview-only-20261124 --ink-candidate FRESH_MODULE
+  --safe-state-confirmed --output NEW_RECEIPT.json
+Join the wrapped lines when invoking. A current saved/closed drawing is required before
+the interface restart. Existing broad authority covers the technical test;
+do not infer current unsaved artwork safety from older scratch consent.
+Installer changes only extensions.d/papersketch-ink.so, creates own verified
+baseline recovery receipt, pins current a1b2246f raster and7bcfc2d0 RCC,
+and rolls back only ink on error. Fault-injected tests confirm no raster
+replacement. This mode never uses inherited branch raster/RCC payloads.
+
+After a safe idle screen: fresh control GUI tests from the page-capacity
+checkout, then candidate ink and same GUI tests with unchanged limits,
+sample counts and preservation checks. Rollback only this ink receipt;
+do not revert page-capacity changes or user art. UAT remains unqualified
+until actual GUI/input/lifecycle comparison, and human painting acceptance
+is separate. No new physical display latency measured by these CPU tests.

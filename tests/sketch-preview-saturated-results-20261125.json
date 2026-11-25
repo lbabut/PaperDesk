@@ -1,0 +1,15 @@
+{
+  "scope":"Standalone ARM native preview CPU workload, all recorded samples, private white buffers, no display submission",
+  "baseline_source":"08938337df07ff47f83ebaa14aada6932b7dde3c",
+  "candidate_module_sha256":"1cbb0305845e14de96c951cdff07f326abe8d02402a1b0b11ad428b5c55d3462",
+  "contacts":[
+    {"index":0,"reports":3626,"tool":4,"baseline_cpu_ms":[1643.366750,1643.543875,1644.348375,1645.044875,1643.545125,1643.598375],"candidate_cpu_ms":[1352.900250,1352.206875,1351.313375,1352.070750,1357.758125,1352.128125],"baseline_saturated_only_cpu_ms":[1503.803000,1503.996625,1503.239750],"digest":"9bdcbb96d52a83f5"},
+    {"index":1,"reports":1754,"tool":4,"baseline_cpu_ms":[1056.458125,1056.600000,1056.174250,1055.940000,1055.690125,1056.047000],"candidate_cpu_ms":[889.920375,889.769875,889.269000,890.473250,890.104375,889.474875],"baseline_saturated_only_cpu_ms":[983.654000,983.782375,984.278625],"digest":"095698fe3f8b4031"},
+    {"index":7,"reports":791,"tool":4,"baseline_cpu_ms":[285.162500,284.872000,285.126250],"candidate_cpu_ms":[262.105125,261.490125,261.284250,261.652500,261.221125,261.188625],"digest":"0cdeaef2636a7a05"},
+    {"index":10,"reports":591,"tool":5,"baseline_cpu_ms":[261.604125,261.385125,261.599000],"candidate_cpu_ms":[199.779125,200.061875,199.948375,200.015000,199.715250,199.931625],"digest":"2beae43bd35b15db"}
+  ],
+  "sequence":"Initial saturation-only A0/B0/B1/A1; combined candidate0,1,7,10; reverse combined10/control10,combined7/control7,combined1/control1,combined0/control0. Three reset-buffer passes per process. Different order, not a randomized trial.",
+  "validation":{"all_report_counts_and_buffer_digests_match_baseline":true,"host_and_arm_differential_segments_each":7776,"cache_gray_comparisons_each":360000,"native_batch_regression":"passed including3072 pale thin-tip phases","asan_ubsan":"passed; leak detection disabled","preview_shade_anchor_regression":"passed","installer_fault_tests":8,"workload_tests":14},
+  "limitations":["Four owner strokes only", "CPU gain does not establish GUI or optical latency gain", "Sampled settings with white initial buffer", "No GUI installation or UAT qualification", "Cache adds128KiB static memory; single pen-loop ownership required"],
+  "uat_qualified":false
+}

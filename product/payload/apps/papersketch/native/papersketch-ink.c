@@ -164,6 +164,24 @@ static int open_surface(void) {
 
 static int clampi(int v, int lo, int hi) { return v < lo ? lo : v > hi ? hi : v; }
 
+// Immutable paper grain depends only on the relative integer coordinate.
+// A bounded cache, used only by the single pen_loop owner of segment/surf,
+// avoids repeating both hashes for overlapping pen samples. Full coordinate
+// tags make collisions ordinary cache misses. No per-module TLS allocation.
+static int cached_charcoal_gray(int gray,float edge,int x,int y) {
+    struct TextureEntry { int x,y,valid; float value; };
+    static struct TextureEntry cache[8192];
+    unsigned slot=(((unsigned)y&63u)<<7)|((unsigned)x&127u);
+    struct TextureEntry *entry=&cache[slot];
+    if(!entry->valid||entry->x!=x||entry->y!=y) {
+        entry->value=sketchCharcoalPreviewTexture(x,y);
+        entry->x=x;entry->y=y;entry->valid=1;
+    }
+    float texture=entry->value;
+    float coverage=edge*(.65f+.35f*edge)*(.45f+.55f*texture);
+    return 255-(int)((255-gray)*coverage);
+}
+
 // Paint a round-ended segment of width w, clipped to the armed canvas; returns its box
 static void segment(float x0, float y0, float x1, float y1, float w, uint32_t ink, int box[4]) {
     float minimum=arm.fine?.5f:.75f;
@@ -175,6 +193,12 @@ static void segment(float x0, float y0, float x1, float y1, float w, uint32_t in
     float dx = x1 - x0, dy = y1 - y0, len2 = dx * dx + dy * dy;
     for (int y = by0; y <= by1; y++)
         for (int x = bx0; x <= bx1; x++) {
+            // A fine pen preview only writes opaque black plus a full pen
+            // mask. Revisited pixels already in that state cannot change.
+            // Read both live buffers: GUI repaint/mask clearing invalidates
+            // this fast path automatically, without persistent cache state.
+            if (arm.fine && !arm.erase && surf.px[y * surf.ps + x] == 0xff000000u &&
+                surf.mk[y * surf.ms + x] == 0xff) continue;
             float px = x + 0.5f - x0, py = y + 0.5f - y0;
             float t = len2 > 0 ? (px * dx + py * dy) / len2 : 0;
             t = t < 0 ? 0 : t > 1 ? 1 : t;
@@ -183,7 +207,7 @@ static void segment(float x0, float y0, float x1, float y1, float w, uint32_t in
             // DU pen mode is binary. Leave skipped pixels and their masks
             // untouched so pale previews cannot erase existing artwork.
             int gray=ink&255;
-            if(arm.fine && (arm.tool==4 || arm.tool==5))gray=sketchCharcoalPreviewGray(gray,1-(ex*ex+ey*ey)/(r*r),x-arm.x,y-arm.y);
+            if(arm.fine && (arm.tool==4 || arm.tool==5))gray=cached_charcoal_gray(gray,1-(ex*ex+ey*ey)/(r*r),x-arm.x,y-arm.y);
             if(arm.fine && !arm.erase && !((arm.tool==4 || arm.tool==5)?sketchPreviewDotExact(gray,x,y):sketchPreviewDot(gray,x,y)))continue;
             surf.px[y * surf.ps + x] = arm.fine && !arm.erase ? 0xff000000u : ink;
             surf.mk[y * surf.ms + x] = 0xFF;

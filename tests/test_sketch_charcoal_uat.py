@@ -15,7 +15,7 @@ OLD = {'papersketch-raster.so': 'e84e1271f9398200a789355562a682244c247cc1662f501
        'papersketch-ink.so': '2643b947f47a4b3cb27b241fe0da6f4f5b8f89db6da70374cc902a2c17e14bc5'}
 
 class UatSafety(unittest.TestCase):
-    def exercise(self, confirmed=True, mismatch=False, fail_install=False, current=False, input24=False):
+    def exercise(self, confirmed=True, mismatch=False, fail_install=False, current=False, input24=False, preview_only=False):
         self.calls = []
         self.failed = False
         self.installed = set()
@@ -23,6 +23,14 @@ class UatSafety(unittest.TestCase):
             out = Path(folder) / 'receipt.json'
             argv = [str(SCRIPT), '--key', 'test-key', '--known-hosts', 'test-hosts', '--output', str(out)]
             old = dict(OLD)
+            candidate=None
+            if preview_only:
+                candidate=Path(folder)/'ink.so'
+                candidate.write_bytes((ROOT/'product/payload/apps/papersketch/native/papersketch-ink.so').read_bytes()+b'fixture')
+                argv+=['--baseline','pages-preview-only-20261124','--ink-candidate',str(candidate)]
+                old={'papersketch-raster.so':'a1b2246f8df6b03f17158b3bf7bad29b07ce8b8683eaa7bdff6d7ddf4433efcd',
+                     'papersketch-ink.so':'5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7',
+                     'resources.rcc':'7bcfc2d0bb5d53a51794537400cf38065699d9f80f7b807960fbe12764019ce1'}
             if current:
                 argv += ['--baseline', 'charcoal-20261121']
                 old = {'papersketch-raster.so': '227dd2ffedc7c1f867080d08ace59c40f545c09c333efd60537b4c8120f3e975',
@@ -41,7 +49,12 @@ class UatSafety(unittest.TestCase):
                 data = b''
                 if cmd.startswith('sha256sum '):
                     name = cmd.rsplit('/', 1)[1]
-                    value = hashlib.sha256((ROOT / 'product/payload/apps/papersketch/native' / name).read_bytes()).hexdigest() if name in self.installed else old[name]
+                    if '/previous-' in cmd:
+                        value=old[name.removeprefix('previous-')]
+                    elif '/candidate/' in cmd:
+                        value=hashlib.sha256(candidate.read_bytes()).hexdigest()
+                    else:
+                        value = hashlib.sha256((candidate if preview_only else ROOT / 'product/payload/apps/papersketch/native' / name).read_bytes()).hexdigest() if name in self.installed else old[name]
                     data = ((('0' * 64) if mismatch else value) + '  module\n').encode()
                 elif cmd.startswith('mktemp '):
                     data = b'/home/root/.local/state/sketch-charcoal-uat.TEST01\n'
@@ -101,6 +114,24 @@ class UatSafety(unittest.TestCase):
         self.assertIsNone(error)
         self.assertEqual(receipt['baseline_sha256']['papersketch-raster.so'],
                          'be89afb13593bdb2fbcf193d22fc972c3208ae776e878fb7739561f5035e4858')
+
+    def test_preview_only_preserves_capacity_artifacts(self):
+        error,receipt=self.exercise(preview_only=True)
+        self.assertIsNone(error)
+        self.assertEqual(self.installed,{'papersketch-ink.so'})
+        self.assertEqual(set(receipt['candidate_sha256']),{'papersketch-ink.so'})
+        self.assertEqual(receipt['baseline_sha256']['papersketch-raster.so'],
+                         'a1b2246f8df6b03f17158b3bf7bad29b07ce8b8683eaa7bdff6d7ddf4433efcd')
+        self.assertFalse(any('.so.uat-new' in c and 'papersketch-raster' in c for c in self.calls))
+        self.assertTrue(any('sha256sum ' in c and 'resources.rcc' in c for c in self.calls))
+
+    def test_preview_failure_rolls_back_only_ink(self):
+        error,receipt=self.exercise(preview_only=True,fail_install=True)
+        self.assertIsInstance(error,subprocess.CalledProcessError)
+        self.assertEqual(receipt['status'],'rolled_back')
+        rollback=next(c for c in self.calls if c.startswith('tee ') and '/rollback.sh' in c)
+        self.assertIn('rollback.sh',rollback)
+        self.assertTrue(any(c.startswith('sh ') and c.endswith('/rollback.sh') for c in self.calls))
 
 if __name__ == '__main__':
     unittest.main()

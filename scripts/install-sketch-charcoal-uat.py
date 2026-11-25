@@ -17,12 +17,18 @@ p.add_argument('--known-hosts', required=True)
 p.add_argument('--host-key-alias')
 p.add_argument('--safe-state-confirmed', action='store_true')
 p.add_argument('--output', required=True, type=Path)
-p.add_argument('--baseline', choices=['original','charcoal-20261121','input24-20261121'], default='original')
+p.add_argument('--baseline', choices=['original','charcoal-20261121','input24-20261121','pages-preview-only-20261124'], default='original')
+p.add_argument('--ink-candidate', type=Path, help='Explicit freshly built ink module; required for pages-preview-only baseline')
 a = p.parse_args()
 if not a.safe_state_confirmed:
     p.error('Owner must permit the UI restart; save/close personal work first')
+if a.output.exists() or not a.output.parent.is_dir():
+    p.error('Receipt needs a new path in an existing directory')
 root = Path(__file__).resolve().parents[1]
 names = ['papersketch-raster.so', 'papersketch-ink.so']
+preview_only = a.baseline == 'pages-preview-only-20261124'
+if preview_only != bool(a.ink_candidate):
+    p.error('Use --ink-candidate only with pages-preview-only-20261124; both are required together')
 expected = dict(zip(names, [
     'e84e1271f9398200a789355562a682244c247cc1662f501cd1d7bcfd29481d9a',
     '2643b947f47a4b3cb27b241fe0da6f4f5b8f89db6da70374cc902a2c17e14bc5']))
@@ -34,8 +40,13 @@ if a.baseline=='input24-20261121':
     expected=dict(zip(names,[
         'be89afb13593bdb2fbcf193d22fc972c3208ae776e878fb7739561f5035e4858',
         '5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7']))
+if preview_only:
+    expected=dict(zip(names,[
+        'a1b2246f8df6b03f17158b3bf7bad29b07ce8b8683eaa7bdff6d7ddf4433efcd',
+        '5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7']))
+    names=['papersketch-ink.so']
 modules = root / 'product/payload/apps/papersketch/native'
-payload = {n: (modules / n).read_bytes() for n in names}
+payload = {n: (a.ink_candidate if preview_only else modules / n).read_bytes() for n in names}
 for n, data in payload.items():
     if data[:5] != b'\x7fELF\x01' or int.from_bytes(data[18:20], 'little') != 40:
         p.error(n + ' is not a 32-bit ARM ELF')
@@ -54,10 +65,18 @@ remote('set -eu; systemctl is-active --quiet xochitl; '
        'test "$(stat -c %t:%T /dev/input/event2)" = d:42; '
        'test -z "$(pidof paperdesk-rm-touchd || true)"; '
        '! systemctl is-active --quiet paperdesk-update.service')
-for n in names:
+for n in expected:
     actual = remote('sha256sum ' + base + n).split()[0]
     if actual != expected[n]:
         raise RuntimeError('Installed baseline changed: ' + n)
+immutable = {}
+if preview_only:
+    immutable = {base+'papersketch-raster.so':expected['papersketch-raster.so'],
+        '/home/root/xovi/exthome/appload/papersketch/resources.rcc':
+        '7bcfc2d0bb5d53a51794537400cf38065699d9f80f7b807960fbe12764019ce1'}
+    for path,sha in immutable.items():
+        if remote('sha256sum '+shlex.quote(path)).split()[0] != sha:
+            raise RuntimeError('Page-capacity baseline changed: '+path)
 backup = remote('mktemp -d /home/root/.local/state/sketch-charcoal-uat.XXXXXX').strip()
 if not backup.startswith('/home/root/.local/state/sketch-charcoal-uat.'):
     raise RuntimeError('Unexpected backup path')
@@ -68,6 +87,10 @@ with tarfile.open(fileobj=buf, mode='w') as tf:
         info = tarfile.TarInfo(n); info.size = len(data); info.mode = 0o755
         tf.addfile(info, io.BytesIO(data))
 remote('mkdir ' + b + '/candidate; tar -xf - -C ' + b + '/candidate', buf.getvalue())
+if preview_only:
+    for n,data in payload.items():
+        if remote('sha256sum '+b+'/candidate/'+n).split()[0] != hashlib.sha256(data).hexdigest():
+            raise RuntimeError('Candidate upload mismatch: '+n)
 rollback = ('#!/bin/sh\nset -eu\nsystemctl stop xochitl\n' + ''.join(
     'cp -p ' + b + '/previous-' + n + ' ' + base + n + '\n' for n in names) +
     'systemctl start xochitl\n')
@@ -77,6 +100,8 @@ owned_mask = masked not in ('masked', 'masked-runtime')
 result = {'status': 'failed', 'backup': backup,
           'candidate_sha256': {n: hashlib.sha256(v).hexdigest() for n, v in payload.items()},
           'baseline_sha256': expected, 'scope': 'shared native modules only; installed app/resources and saved data untouched'}
+if preview_only:
+    result['scope']='Only shared ink preview module; page-capacity raster and resources pinned and preserved'
 copied = False
 try:
     if owned_mask:
@@ -85,6 +110,10 @@ try:
     # Back up both originals before replacing either. No config or notebook writes.
     remote('set -eu; ' + '; '.join('cp -p ' + base + n + ' ' + b + '/previous-' + n for n in names))
     copied = True
+    if preview_only:
+        for n in names:
+            if remote('sha256sum '+b+'/previous-'+n).split()[0] != expected[n]:
+                raise RuntimeError('Recovery copy mismatch: '+n)
     for n in names:
         remote('set -eu; cp ' + b + '/candidate/' + n + ' ' + base + n + '.uat-new; mv ' + base + n + '.uat-new ' + base + n)
     remote('systemctl start xochitl')
@@ -93,6 +122,9 @@ try:
     for n in names:
         if remote('sha256sum ' + base + n).split()[0] != result['candidate_sha256'][n]:
             raise RuntimeError('Post-install hash mismatch: ' + n)
+    for path,sha in immutable.items():
+        if remote('sha256sum '+shlex.quote(path)).split()[0] != sha:
+            raise RuntimeError('Unchanged page-capacity artifact mismatch: '+path)
     result['status'] = 'installed_for_uat'
 except BaseException:
     if copied:
