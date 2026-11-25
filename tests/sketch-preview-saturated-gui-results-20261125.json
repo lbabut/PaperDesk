@@ -1,0 +1,19 @@
+{
+  "experiment":"saturated-pixel and immutable-grain preview GUI validation",
+  "candidate_source_commit":"1b55b1445ead7fc911cc59da3dfafe56155b8c27",
+  "gui_source_commit":"889b58c4a8be334f927c62f2d75cff2da6068957",
+  "order":["control-a1","candidate-b1","candidate-b2","control-a2"],
+  "runs":[
+    {"label":"control-a1","graphite_gap_queue_tail_ms":[50,25,26],"charcoal_gap_queue_tail_ms":[208,2820,2873],"achieved_input_hz":[500,500]},
+    {"label":"candidate-b1","graphite_gap_queue_tail_ms":[44,25,38],"charcoal_gap_queue_tail_ms":[182,2913,2958],"achieved_input_hz":[500,500]},
+    {"label":"candidate-b2","graphite_gap_queue_tail_ms":[51,22,65],"charcoal_gap_queue_tail_ms":[143,2700,2743],"achieved_input_hz":[500,499.80166600555333]},
+    {"label":"control-a2","graphite_gap_queue_tail_ms":[53,27,34],"charcoal_gap_queue_tail_ms":[181,2684,2719],"achieved_input_hz":[500,498.02371541501975]}
+  ],
+  "control_charcoal_medians_ms":[194.5,2752,2796],
+  "candidate_charcoal_medians_ms":[162.5,2806.5,2850.5],
+  "unchanged_limits_ms":{"gui_gap":200,"queue_p95":100,"release_tail":150},
+  "validation":{"samples_per_tool_per_run":1260,"total_samples":10080,"no_overflow_or_pending_after_each_tool":true,"blank_frames_after_visible":0,"charcoal_central_tile_visible_before_release_all_runs":false,"graphite_central_tile_visible_before_release_all_runs":true,"qml_runtime_errors":0,"document_setting_and17checked_saved_file_manifests_identical_across_all_runs":true,"no_automatic_test_save":true},
+  "decision":"reject_candidate_for_uat_and_restore_original_ink",
+  "final_runtime":{"xochitl":"active PID13865","failure_monitor":"static, own runtime masks removed","ink_sha256":"5fb519b9ca50bd6c3697494ab82804d6c2748e1d8504ea5df01825e185b318e7","raster_sha256":"a1b2246f8df6b03f17158b3bf7bad29b07ce8b8683eaa7bdff6d7ddf4433efcd","rcc_sha256":"7bcfc2d0bb5d53a51794537400cf38065699d9f80f7b807960fbe12764019ce1","temporary_benchmark_app_removed_from_launcher":true},
+  "limitations":["Two controls and two candidates, not statistical evidence of a universal slowdown", "Synthetic evdev workload through real GUI handlers, not physical panel latency", "Standalone preview CPU improvements do not qualify overall painting responsiveness", "Preservation scope is document setting and17checked files, not full-library audit", "No ordinary250Hz or extended workflow candidate cohort after high-rate failure"]
+}

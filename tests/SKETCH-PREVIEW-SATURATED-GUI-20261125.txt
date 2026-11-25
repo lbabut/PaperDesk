@@ -1,0 +1,48 @@
+25November2026 -- GUI candidate rejected, original UAT restored
+
+Owner confirmed current drawing saved/closed. USB10.11.99.1, existing trusted
+host-key alias. Used page-capacity source889b58c, original installed RCC,
+production handlers and unchanged guarded test. Order A1/B1/B2/A2;500Hz
+requested,498.02..500Hz achieved;1260 ordered samples/tool/run,10080total.
+No discarded points, overflow or residual input queue;17checked saved files
+and original document setting hashes identical across all four reports.
+No QML runtime errors or automatic test saves, no blanking after visibility.
+These are scoped preservation checks, not an audit of the full library.
+
+Heavy tilted soft-charcoal median gap/queue-p95/release-tail milliseconds:
+ control194.5/2752/2796, candidate162.5/2806.5/2850.5.
+Individual records and graphite measurements are in the adjacent JSON.
+Central charcoal material tile was not visible before release in any run;
+the independent native preview is not that tile. This does not measure
+physical e-ink latency or conclude that the stylus tip was invisible.
+Both candidates fail unchanged100ms queue and150ms tail limits. The smaller
+GUI timer gap does not establish overall responsiveness improvement. With
+two repetitions per arm, small differences do not establish universal harm.
+
+Temporarily installed ONLY ink1cbb0305 using the tested explicit-candidate,
+pages-preview-only mode, with verified own recovery copy. The installer
+receipt status installed_for_uat means temporary technical installation;
+the GUI comparison rejects UAT qualification. Restored own original ink
+before A2, then verified final ink5fb519b9, capacity rastera1b2246f and
+RCC7bcfc2d0. UI active PID13865, failure monitor static, own masks removed,
+temporary benchmark app moved out of launcher by runner. Saved art was not
+restored over newer files or re-rendered. No production/main/site changes.
+
+Reproduction uses the page-capacity checkout, not this diagnostic branch's
+inherited old raster/RCC. Exact invocation flags for each shading run:
+ python3 scripts/run-sketch-native-guarded.py --safe-state-confirmed
+  --host 10.11.99.1 --host-key-alias 192.168.1.167 --key KEY --known-hosts HOSTS
+  --expected-installed-rcc 7bcfc2d0bb5d53a51794537400cf38065699d9f80f7b807960fbe12764019ce1
+  --shading-probe --tilted-shading --soft-charcoal --high-rate-shading
+  --output NEW_PRIVATE_REPORT.json
+Join wrapped lines. Candidate installation is documented in the CPU study;
+this GUI rejection supersedes its earlier awaiting-GUI checkpoint. Do not
+reinstall this rejected candidate automatically. CPU8..24percent results
+remain valid for their standalone preview workload only.
+
+Full private reports, journals and recovery receipt retained in Plan400
+preflight-v01/sketch-preview-saturated-gui-20261125. No personal drawings or
+private raw pen recordings published. No ordinary-rate or extended workflow
+candidate cohort was run after this heavy-load failure. Investigate the
+material/GUI queue pipeline using these stage counters before further
+preview-only optimization or any UAT promotion.

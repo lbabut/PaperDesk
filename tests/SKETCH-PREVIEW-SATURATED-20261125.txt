@@ -1,5 +1,9 @@
 Preview saturated-pixel and immutable-grain candidate,25November2026
 
+LATEST: actual GUI comparison completed later25November. Candidate rejected
+for UAT and original ink restored. See SKETCH-PREVIEW-SATURATED-GUI-20261125.txt
+and its JSON. The awaiting-GUI instructions below are historical checkpoints.
+
 Candidate changes only native ink preview computation. Fine non-eraser
 pixels already opaque black with full mask need no further calculations.
 Read both live buffers, so repaint or mask clearing naturally invalidates
