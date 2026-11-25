@@ -41,3 +41,22 @@ Host CPU measurements cannot be transferred to the tablet's Cortex-A7.
 Compiler warns about an inherited open_pen snprintf path bound in included
 source; that function is never invoked by this diagnostic. No product code
 was changed to suppress the warning.
+
+25 NOVEMBER FOLLOW-UP -- ARM EXECUTION COMPLETED
+After owner restored Wi-Fi, the SHA-pinned standalone binary ran on armv7l.
+Two opposite contact orders, three buffer-reset passes/contact/order:24 runs.
+All6762 reports/pass total retained, painted counts and per-contact digests
+match host. Approximate median CPU times for contacts0/1/7/10:
+1644.55/1056.56/285.05/261.61ms, versus recorded durations
+6708.145/3261.669/1463.614/1092.160ms. Equivalent single-core CPU demand
+about24.5/32.4/19.5/24.0percent of those durations, NOT live utilization.
+Recorded hardware input rate was about538..541Hz. Workload executes as a
+burst, excludes poll/status/submit/material processing, starts on white, and
+does not prove end-to-end/optical improvement. Four strokes are a narrow set.
+Governor remained ondemand; frequency snapshots996000->1200000kHz, no setting
+changed. xochitl active PID10110 before/after. Installed ink5fb519b9,
+rastera1b2246f and RCC7bcfc2d0 hashes unchanged. No UI restart or installation.
+Only a private temporary directory with benchmark/input files was added.
+No raw paths or drawing coordinates published. Next candidate should isolate
+the repeated charcoal-preview pixel computations and prove exact masks/pixels
+before any GUI trial; this baseline alone is not a performance fix.
