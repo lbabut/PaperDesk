@@ -17,6 +17,7 @@ public:
 private:
  static int count(int extent,int tile){if(extent<=0||tile<=0)throw std::invalid_argument("geometry");return 1+(extent-1)/tile;}
  const int width,height,size,columns,rows;
+ const bool consumerSeeded;
  std::vector<std::shared_ptr<const Pixels>> latest;
  std::mutex mutex;
  Batch pending;
@@ -27,10 +28,12 @@ private:
 public:
  uint64_t copiedBytes=0; // Producer-owned diagnostic, read only after barrier.
  uint64_t inspectedTiles=0;
- DirtyTilesPrototype(int w,int h,int tile=128):width(w),height(h),size(tile),columns(count(w,tile)),rows(count(h,tile)){
+ // Optional research mode: consumer already owns an exact initial page copy.
+ // Unvisited tiles need no duplicate white allocation or first full-page scan.
+ DirtyTilesPrototype(int w,int h,int tile=128,bool seeded=false):width(w),height(h),size(tile),columns(count(w,tile)),rows(count(h,tile)),consumerSeeded(seeded){
   if(w<=0||h<=0||tile<=0)throw std::invalid_argument("geometry");
   for(int y=0;y<rows;y++)for(int x=0;x<columns;x++)
-   latest.push_back(std::make_shared<const Pixels>(std::min(size,width-x*size)*std::min(size,height-y*size),0xffffffffu));
+   latest.push_back(consumerSeeded?nullptr:std::make_shared<const Pixels>(std::min(size,width-x*size)*std::min(size,height-y*size),0xffffffffu));
   dirty.assign(latest.size(),false);
  }
  bool publish(uint64_t revision,const Pixels &image){
@@ -39,7 +42,7 @@ public:
  // Producer only, after prior page's accepted commands have reached a barrier.
  bool beginPage(uint64_t page){
   if(page<=producerPage)return false;
-  for(auto &tile:latest)tile=std::make_shared<const Pixels>(tile->size(),0xffffffffu);
+  for(auto &tile:latest){if(consumerSeeded)tile.reset();else tile=std::make_shared<const Pixels>(tile->size(),0xffffffffu);}
   std::fill(dirty.begin(),dirty.end(),false);dirtyRects.clear();producerPage=page;producerRevision=0;
   std::lock_guard<std::mutex> lock(mutex);pending=Batch{};pending.page=page;return true;
  }
@@ -60,8 +63,10 @@ public:
    int index=ty*columns+tx,tw=std::min(size,width-tx*size),th=std::min(size,height-ty*size);bool same=true;
    if(markedOnly&&!dirty[index])continue;
    inspectedTiles++;
-   const auto &old=*latest[index];
-   for(int y=0;y<th&&same;y++)same=std::equal(old.begin()+y*tw,old.begin()+(y+1)*tw,image.begin()+(ty*size+y)*width+tx*size);
+   same=bool(latest[index]);
+   if(same){const auto &old=*latest[index];
+    for(int y=0;y<th&&same;y++)same=std::equal(old.begin()+y*tw,old.begin()+(y+1)*tw,image.begin()+(ty*size+y)*width+tx*size);
+   }
    if(same)continue;
    auto tile=std::make_shared<Pixels>();tile->reserve(tw*th);
    for(int y=0;y<th;y++){auto first=image.begin()+(ty*size+y)*width+tx*size;tile->insert(tile->end(),first,first+tw);}

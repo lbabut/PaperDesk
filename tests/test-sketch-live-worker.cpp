@@ -8,7 +8,7 @@ static void equal(SketchRaster &a,SketchRaster &b){
  assert(a.physics.burnish==b.physics.burnish&&a.physics.tooth==b.physics.tooth&&a.physics.ink==b.physics.ink&&a.physics.wear==b.physics.wear&&a.physics.untilNext==b.physics.untilNext);
 }
 int main(int argc,char **argv){QGuiApplication app(argc,argv);QTemporaryDir dir;assert(dir.isValid());
- SketchRaster a(nullptr,dir.filePath("async")),b(nullptr,dir.filePath("sync"));a.setDeferredLiveEnabled(true);
+ SketchRaster a(nullptr,dir.filePath("async")),b(nullptr,dir.filePath("sync"));a.setDeferredSeededTilesEnabled(argc>1);a.setDeferredLiveEnabled(true);
  for(int stroke=0;stroke<4;stroke++){
   a.begin();b.begin();
   for(int i=0;i<320;i++){
@@ -35,7 +35,7 @@ int main(int argc,char **argv){QGuiApplication app(argc,argv);QTemporaryDir dir;
  assert(a.researchLive&&a.completionError().isEmpty());release.set_value();a.researchWorker->drain();
  assert(a.tryFinish());b.finish();equal(a,b);assert(!a.researchLive);
  {
-  SketchRaster failed(nullptr,dir.filePath("failed"));failed.setDeferredLiveEnabled(true);failed.begin();
+  SketchRaster failed(nullptr,dir.filePath("failed"));failed.setDeferredSeededTilesEnabled(argc>1);failed.setDeferredLiveEnabled(true);failed.begin();
   failed.advancePenInput(5,38,1,200,200,.8,true,.8,.3);
   assert(failed.researchWorker->trySubmit([]{throw std::runtime_error("injected worker fault");}));
   try{failed.researchWorker->drain();assert(false);}catch(const std::runtime_error&){}

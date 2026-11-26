@@ -130,7 +130,9 @@ public:
         std::vector<uint16_t> finger;
         std::atomic<int> completed{0};
         std::vector<long long> completionAges; // Worker-owned, read after drain.
-        DirtyTilesPrototype tiles{1200,1600};
+        DirtyTilesPrototype tiles;
+        const bool consumerSeeded;
+        explicit ResearchSurface(bool seeded=false):tiles(1200,1600,128,seeded),consumerSeeded(seeded){}
     };
     std::vector<uint32_t> researchDisplay;
     uint64_t researchRevision=0;
@@ -162,6 +164,8 @@ public:
     int researchPublicationStride=1; // Research harness only; final marker required.
     bool researchSynchronous=false; // Controlled comparison only, default async.
     bool deferredLiveEnabled=false,researchLive=false;
+    bool deferredSeededTilesEnabled=false; // Isolated opt-in A/B, not deployed.
+    void setDeferredSeededTilesEnabled(bool enabled){settleDeferredLive();if(researchDeferredEnabled)stopDeferredResearch();deferredSeededTilesEnabled=enabled;}
     bool researchFirstSample=true;
     QVariantMap lastDeferredStats;
     QString deferredCompletionError;
@@ -219,7 +223,7 @@ public:
     }
     bool startDeferredSurface(){
         SketchLatency::Scope timing(std::atomic_load_explicit(&latency,std::memory_order_acquire),SketchLatency::Stage::InitialCopy);
-        auto state=std::make_shared<ResearchSurface>();state->physics=physics;
+        auto state=std::make_shared<ResearchSurface>(deferredSeededTilesEnabled);state->physics=physics;
         const auto *m=reinterpret_cast<const uint32_t*>(material.constBits());
         const auto *im=reinterpret_cast<const uint32_t*>(image.constBits());
         const auto *f=reinterpret_cast<const uint16_t*>(finger.constBits());
@@ -238,11 +242,12 @@ public:
         const auto timing=std::atomic_load_explicit(&latency,std::memory_order_acquire);
         auto job=[state,tool,size,strength,ax,ay,ap,x,y,p,index,stride,tx,ty,aspect,angle,segmentIndex,submittedAt,timing]{
             state->physics.tiltX=tx;state->physics.tiltY=ty;state->physics.contactAspect=aspect;state->physics.contactAngle=angle;
-            // First publication is a full scan: loaded pages need a non-white base.
+            // Default scans the first page; opt-in mode seeds the consumer from
+            // the exact initial image and publishes marked changes from sample0.
             double radius=std::max(state->physics.footprintRadius(tool,size,ap),state->physics.footprintRadius(tool,size,p))+3;
             state->tiles.markRect(1,int(std::floor(std::min(ax,x)-radius)),int(std::floor(std::min(ay,y)-radius)),int(std::ceil(std::max(ax,x)+radius)),int(std::ceil(std::max(ay,y)+radius)));
             {SketchLatency::Scope scope(timing,SketchLatency::Stage::WorkerMaterial);state->physics.segment(state->mass.data(),state->image.data(),state->finger.data(),tool,size,0,strength,ax,ay,ap,x,y,p,segmentIndex);}
-            if(index==0||(index+1)%stride==0){SketchLatency::Scope scope(timing,SketchLatency::Stage::WorkerPublish);state->tiles.publishForPage(1,uint64_t(index)+1,state->image,index!=0);}
+            if(index==0||(index+1)%stride==0){SketchLatency::Scope scope(timing,SketchLatency::Stage::WorkerPublish);state->tiles.publishForPage(1,uint64_t(index)+1,state->image,state->consumerSeeded||index!=0);}
             state->completed++;
             state->completionAges.push_back(PaperPen::now()-submittedAt);
         };

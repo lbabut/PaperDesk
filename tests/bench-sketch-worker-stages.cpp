@@ -16,11 +16,13 @@ int main(int argc,char **argv){
  QCoreApplication app(argc,argv);
  const bool paced=argc>1&&QString::fromLatin1(argv[1])=="paced";
  const bool drain=argc>1&&QString::fromLatin1(argv[1])=="blocking";
+ const bool seeded=argc>2&&QString::fromLatin1(argv[2])=="seeded";
  const int count=1260;
  QTemporaryDir folder(QDir::tempPath()+"/sketch-worker-stage-XXXXXX");assert(folder.isValid());
  auto make=[&](const char *name){QString path=folder.filePath(name);return std::make_unique<SketchRaster>(nullptr,path,path+"/exports",path+"/permit",false);};
  auto owner=make("async"),reference=make("sync");owner->resetWhite();reference->resetWhite();
  assert(!owner->penSamples.thread.joinable()&&!reference->penSamples.thread.joinable());
+ owner->setDeferredSeededTilesEnabled(seeded);
  owner->setDeferredLiveEnabled(true);owner->begin();reference->begin();
  QElapsedTimer clock;clock.start();qint64 submitMaxUs=0;
  for(int i=0;i<count;i++){
@@ -54,7 +56,7 @@ int main(int argc,char **argv){
  }
  reference->finish();equal(*owner,*reference);
  QVariantMap result{{"mode",paced?"absolute_500hz":drain?"burst_blocking_finish":"burst_poll_finish"},
-  {"samples",count},{"submitted_us",submittedUs},{"completed_us",completedUs},
+  {"seeded_tiles",seeded},{"samples",count},{"submitted_us",submittedUs},{"completed_us",completedUs},
   {"after_last_submission_us",completedUs-submittedUs},{"max_submit_us",submitMaxUs},
   {"finish_polls",polls},{"stages",stats},{"exact_state",true},
   {"hardware_readers",false},{"gui_test",false},{"optical_timing",false}};

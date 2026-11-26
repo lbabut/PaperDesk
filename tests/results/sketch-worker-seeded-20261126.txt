@@ -1,0 +1,54 @@
+Seeded-consumer tile transport research — 26 November 2026
+
+Baseline91661062d346bf9b54cf0b02b6464f499b686480, an older async research
+integration, NOT current page-capacity UAT. No installed app/binary/resource,
+artwork, input injection or GUI restart changed during this session.
+
+Change (default remains OFF)
+The consumer already starts with the exact initial page image. Opt-in
+setDeferredSeededTilesEnabled(true) leaves producer tile snapshots absent
+until touched, eliminating duplicate white tile allocation and the initial
+whole-page scan. Every changed tile is still a complete immutable snapshot;
+dirty-region accumulation and final material/image/finger commit remain.
+No sample removal, material physics, publication stride or timer change.
+Legacy transport behavior remains the default, including full initial scan.
+The final publication marker still publishes accumulated marked changes.
+
+Checks
+scripts/test-sketch-worker-stages.py builds both modes from one source/binary.
+Host:6 benchmark invocations, counter ownership test, existing lifecycle and
+fault test in BOTH modes, plus loaded-page seeded-display test all passed.
+Loaded-page test imports a deterministic non-white PNG into private buffers;
+compares display pixels after every barrier across six graphite/charcoal
+strokes, sizes38/80, edges/tilt/pressure. Final material/image/finger/physics
+match synchronous reference, and seeded transport page reset rejects stale
+page batches. Test barriers are correctness checks, not timing claims.
+ARM:the counter and loaded-page tests passed, plus8 benchmark runs in ABBA
+order for each mode (control,seeded,seeded,control). All full-state comparisons
+passed,1260 samples/run. QCoreApplication and readHardware=false throughout
+ARM runs; private cache/export/permit directories only, bounded timeout60s.
+
+ARM binary hashes (host/target matched before execution)
+bench4f8d731bedc6fdf0558fb6931e11b2acbf7c68bc34145576d7edd4cd8c29b2ed
+seedtestbfaf002b8f0e6eaa7ec86783f8d134af2401d0c13ac21335de9d4b63e3e72103
+counter278551a915e3d4558cdb3f9358b9e12da263a56b72bc6d4e9d53ef0c96030cc4
+
+Results (means of two runs per variant/mode; wall scopes, NOT additive CPU)
+Requested500Hz absolute deadlines:
+initial84.800->73.060ms; publication total102.465->54.298ms;
+completion after last submission34.554->34.520ms (no meaningful improvement).
+Burst/poll:
+initial85.284->72.7685ms; publication94.153->50.9445ms;
+total completion472.954->421.465ms; tail370.2385->331.345ms.
+First-publication maximum dropped from44..46ms control to<=2.2ms candidate.
+Synthetic path on white page only; loaded-page check above is fidelity only.
+Very small cohort, ordinary system scheduling, no controlled CPU frequency,
+no optical timing and no actual GUI/render-loop/repaint benchmark.
+
+Decision
+Keep as an isolated opt-in research candidate; do not call it a new UAT or a
+solution to painting lag. Startup/transport show a local improvement, but
+paced completion is unchanged. Preserve current >12-page UAT during any later
+integration; never install inherited older raster/RCC from this branch.
+Next: carry only reviewed transport changes into a current-page-capacity
+candidate and run guarded end-to-end GUI comparisons and lifecycle tests.
