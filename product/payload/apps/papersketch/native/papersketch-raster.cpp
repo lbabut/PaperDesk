@@ -60,8 +60,12 @@ struct SketchLatency {
     struct Counter {
         std::atomic<qulonglong> calls{0},totalUs{0},maxUs{0};
         std::atomic<qlonglong> firstMs{0};
-    } advance,publish,tilePaint,dequeue,rawBatch,prefixBatch;
-    enum class Stage {Advance,Publish,TilePaint,Dequeue,RawBatch,PrefixBatch};
+    } advance,publish,tilePaint,dequeue,rawBatch,prefixBatch,
+        workerMaterial,workerPublish,ownerTake,ownerApply,ownerNotify,
+        finalDrain,finalCopy,workerClose,finalNotify,initialCopy,finalAges;
+    enum class Stage {Advance,Publish,TilePaint,Dequeue,RawBatch,PrefixBatch,
+        WorkerMaterial,WorkerPublish,OwnerTake,OwnerApply,OwnerNotify,
+        FinalDrain,FinalCopy,WorkerClose,FinalNotify,InitialCopy,FinalAges};
     Counter *stageCounter(Stage stage){
         switch(stage){
         case Stage::Advance:return &advance;
@@ -70,6 +74,17 @@ struct SketchLatency {
         case Stage::Dequeue:return &dequeue;
         case Stage::RawBatch:return &rawBatch;
         case Stage::PrefixBatch:return &prefixBatch;
+        case Stage::WorkerMaterial:return &workerMaterial;
+        case Stage::WorkerPublish:return &workerPublish;
+        case Stage::OwnerTake:return &ownerTake;
+        case Stage::OwnerApply:return &ownerApply;
+        case Stage::OwnerNotify:return &ownerNotify;
+        case Stage::FinalDrain:return &finalDrain;
+        case Stage::FinalCopy:return &finalCopy;
+        case Stage::WorkerClose:return &workerClose;
+        case Stage::FinalNotify:return &finalNotify;
+        case Stage::InitialCopy:return &initialCopy;
+        case Stage::FinalAges:return &finalAges;
         }
         return &advance;
     }
@@ -122,12 +137,18 @@ public:
     // Owner-thread polling never drains the executor or reads its mutable pixels.
     Q_INVOKABLE int pollDeferredResearch(){
         if(!researchDeferredEnabled||!researchSurface)return -1;
-        auto batch=researchSurface->tiles.take();
+        const auto timing=std::atomic_load_explicit(&latency,std::memory_order_acquire);
+        DirtyTilesPrototype::Batch batch;
+        {SketchLatency::Scope scope(timing,SketchLatency::Stage::OwnerTake);batch=researchSurface->tiles.take();}
         if(batch.revision>researchRevision){
-            researchSurface->tiles.apply(batch,researchDisplay);
-            researchRevision=batch.revision;
             QRegion damage;
-            for(const auto &entry:batch.damage){const auto &r=entry.second;damage+=QRect(QPoint(r.left,r.top),QPoint(r.right,r.bottom));}
+            {
+                SketchLatency::Scope scope(timing,SketchLatency::Stage::OwnerApply);
+                researchSurface->tiles.apply(batch,researchDisplay);
+                researchRevision=batch.revision;
+                for(const auto &entry:batch.damage){const auto &r=entry.second;damage+=QRect(QPoint(r.left,r.top),QPoint(r.right,r.bottom));}
+            }
+            SketchLatency::Scope notify(timing,SketchLatency::Stage::OwnerNotify);
             if(!damage.isEmpty())emit researchDamaged(damage);
             if(researchLive&&!damage.isEmpty())emit damaged(damage);
         }
@@ -163,24 +184,32 @@ public:
     std::shared_ptr<ResearchSurface> researchSurface;
     std::unique_ptr<SketchResearchExecutor> researchWorker;
     Q_INVOKABLE void stopDeferredResearch(){
+        const auto timing=std::atomic_load_explicit(&latency,std::memory_order_acquire);
         researchPollTimer.stop();
         if(researchLive&&researchWorker&&researchSurface){
             try{
-            researchWorker->drain();
-            auto ages=researchSurface->completionAges;std::sort(ages.begin(),ages.end());
-            if(!ages.empty())lastDeferredStats={{"samples",int(ages.size())},{"completion_age_p95_ms",qlonglong(ages[(ages.size()*95+99)/100-1])},{"completion_age_max_ms",qlonglong(ages.back())}};
-            memcpy(material.bits(),researchSurface->mass.data(),1200*1600*4);
-            memcpy(image.bits(),researchSurface->image.data(),1200*1600*4);
-            memcpy(finger.bits(),researchSurface->finger.data(),82*81*2);
-            physics=researchSurface->physics;researchLive=false;
+            {SketchLatency::Scope scope(timing,SketchLatency::Stage::FinalDrain);researchWorker->drain();}
+            {
+                SketchLatency::Scope scope(timing,SketchLatency::Stage::FinalAges);
+                auto ages=researchSurface->completionAges;std::sort(ages.begin(),ages.end());
+                if(!ages.empty())lastDeferredStats={{"samples",int(ages.size())},{"completion_age_p95_ms",qlonglong(ages[(ages.size()*95+99)/100-1])},{"completion_age_max_ms",qlonglong(ages.back())}};
+            }
+            {
+                SketchLatency::Scope scope(timing,SketchLatency::Stage::FinalCopy);
+                memcpy(material.bits(),researchSurface->mass.data(),1200*1600*4);
+                memcpy(image.bits(),researchSurface->image.data(),1200*1600*4);
+                memcpy(finger.bits(),researchSurface->finger.data(),82*81*2);
+                physics=researchSurface->physics;
+            }
+            researchLive=false;
             unpublished=true;
             }catch(const std::exception &e){deferredCompletionError=QString::fromUtf8(e.what());researchLive=false;}
         }
         researchDeferredEnabled=false;
-        if(researchWorker)researchWorker->close();
+        if(researchWorker){SketchLatency::Scope scope(timing,SketchLatency::Stage::WorkerClose);researchWorker->close();}
         researchWorker.reset();researchSurface.reset();researchSubmitted=0;
         researchDisplay.clear();researchRevision=0;
-        emit researchDamaged(QRegion(QRect(0,0,1200,1600)));
+        {SketchLatency::Scope scope(timing,SketchLatency::Stage::FinalNotify);emit researchDamaged(QRegion(QRect(0,0,1200,1600)));}
     }
     Q_INVOKABLE bool setDeferredResearchEnabled(bool enabled){
         stopDeferredResearch();
@@ -189,6 +218,7 @@ public:
         return startDeferredSurface();
     }
     bool startDeferredSurface(){
+        SketchLatency::Scope timing(std::atomic_load_explicit(&latency,std::memory_order_acquire),SketchLatency::Stage::InitialCopy);
         auto state=std::make_shared<ResearchSurface>();state->physics=physics;
         const auto *m=reinterpret_cast<const uint32_t*>(material.constBits());
         const auto *im=reinterpret_cast<const uint32_t*>(image.constBits());
@@ -205,13 +235,14 @@ public:
         double tx=physics.tiltX,ty=physics.tiltY,aspect=physics.contactAspect,angle=physics.contactAngle;
         int segmentIndex=researchLive?(researchFirstSample?0:1):index;
         auto submittedAt=PaperPen::now();
-        auto job=[state,tool,size,strength,ax,ay,ap,x,y,p,index,stride,tx,ty,aspect,angle,segmentIndex,submittedAt]{
+        const auto timing=std::atomic_load_explicit(&latency,std::memory_order_acquire);
+        auto job=[state,tool,size,strength,ax,ay,ap,x,y,p,index,stride,tx,ty,aspect,angle,segmentIndex,submittedAt,timing]{
             state->physics.tiltX=tx;state->physics.tiltY=ty;state->physics.contactAspect=aspect;state->physics.contactAngle=angle;
             // First publication is a full scan: loaded pages need a non-white base.
             double radius=std::max(state->physics.footprintRadius(tool,size,ap),state->physics.footprintRadius(tool,size,p))+3;
             state->tiles.markRect(1,int(std::floor(std::min(ax,x)-radius)),int(std::floor(std::min(ay,y)-radius)),int(std::ceil(std::max(ax,x)+radius)),int(std::ceil(std::max(ay,y)+radius)));
-            state->physics.segment(state->mass.data(),state->image.data(),state->finger.data(),tool,size,0,strength,ax,ay,ap,x,y,p,segmentIndex);
-            if(index==0||(index+1)%stride==0)state->tiles.publishForPage(1,uint64_t(index)+1,state->image,index!=0);
+            {SketchLatency::Scope scope(timing,SketchLatency::Stage::WorkerMaterial);state->physics.segment(state->mass.data(),state->image.data(),state->finger.data(),tool,size,0,strength,ax,ay,ap,x,y,p,segmentIndex);}
+            if(index==0||(index+1)%stride==0){SketchLatency::Scope scope(timing,SketchLatency::Stage::WorkerPublish);state->tiles.publishForPage(1,uint64_t(index)+1,state->image,index!=0);}
             state->completed++;
             state->completionAges.push_back(PaperPen::now()-submittedAt);
         };
@@ -221,7 +252,8 @@ public:
     Q_INVOKABLE bool publishDeferredResearch(){
         if(!researchDeferredEnabled||!researchWorker||!researchSurface)return false;
         auto state=researchSurface;
-        auto job=[state]{state->tiles.publishForPage(1,state->completed.load(),state->image);};
+        const auto timing=std::atomic_load_explicit(&latency,std::memory_order_acquire);
+        auto job=[state,timing]{SketchLatency::Scope scope(timing,SketchLatency::Stage::WorkerPublish);state->tiles.publishForPage(1,state->completed.load(),state->image);};
         if(researchSynchronous){job();return true;}
         return researchWorker->trySubmit(std::move(job));
     }
@@ -235,6 +267,19 @@ public:
         return QString::fromLatin1(QCryptographicHash::hash(QByteArray::fromRawData(reinterpret_cast<const char*>(pixels.data()),pixels.size()*sizeof(uint32_t)),QCryptographicHash::Sha256).toHex());
     }
     std::shared_ptr<SketchLatency> latency=std::make_shared<SketchLatency>();
+    Q_INVOKABLE QVariantMap deferredStageStats()const{
+        const auto s=std::atomic_load_explicit(&latency,std::memory_order_acquire);
+        QVariantMap result;
+        auto add=[&](const char *name,const SketchLatency::Counter &c){result.insert(QString::fromLatin1(name),QVariantMap{
+            {"calls",c.calls.load(std::memory_order_relaxed)},
+            {"total_us",c.totalUs.load(std::memory_order_relaxed)},
+            {"max_us",c.maxUs.load(std::memory_order_relaxed)}});};
+        add("worker_material",s->workerMaterial);add("worker_publish",s->workerPublish);
+        add("owner_take",s->ownerTake);add("owner_apply",s->ownerApply);add("owner_notify",s->ownerNotify);
+        add("final_drain",s->finalDrain);add("final_copy",s->finalCopy);add("worker_close",s->workerClose);add("final_notify",s->finalNotify);
+        add("initial_copy",s->initialCopy);add("final_ages",s->finalAges);
+        return result;
+    }
     Q_INVOKABLE QVariantMap latencyStats()const{
         const auto snapshot=std::atomic_load_explicit(&latency,std::memory_order_acquire);
         auto load=[](const auto &value){return value.load(std::memory_order_relaxed);};
@@ -623,7 +668,20 @@ public:
          writeError=false;saves.push_back(std::move(job));}
         saveWake.notify_one();
     }
-    SketchRaster(QObject *parent=nullptr,QString directory="/home/root/.local/share/paperdesk/sketch",QString exports=QString(),QString permit=QString("/tmp/papersketch-ink")):QObject(parent),cacheDirectory(directory),exportDirectoryOverride(exports),previewPermitPath(permit){image.fill(Qt::white);displayPublicationTimer.setInterval(16);displayPublicationTimer.setSingleShot(true);displayPublicationTimer.setTimerType(Qt::PreciseTimer);connect(&displayPublicationTimer,&QTimer::timeout,this,[this]{bool hadDamage=!displayPending.isEmpty();flushDisplayDamage();if(hadDamage&&livePublication)displayPublicationTimer.start();});proximityTimer.setInterval(40);connect(&proximityTimer,&QTimer::timeout,this,[this]{bool nearby=penSamples.nearby.load(),reader=penSamples.ready.load();if(nearby!=penNearby||reader!=penReaderReady){if(nearby&&tentativeTouch)cancel();penNearby=nearby;penReaderReady=reader;emit proximityChanged();}});proximityTimer.start();penSamples.setInputWake([this]{notifyPenInput();});writer=std::thread([this]{writeLoop();});}
+    SketchRaster(QObject *parent=nullptr,QString directory="/home/root/.local/share/paperdesk/sketch",QString exports=QString(),QString permit=QString("/tmp/papersketch-ink"),bool readHardware=true)
+        :QObject(parent),penSamples(readHardware),touchSamples(readHardware),cacheDirectory(directory),exportDirectoryOverride(exports),previewPermitPath(permit){
+        image.fill(Qt::white);
+        displayPublicationTimer.setInterval(16);displayPublicationTimer.setSingleShot(true);displayPublicationTimer.setTimerType(Qt::PreciseTimer);
+        connect(&displayPublicationTimer,&QTimer::timeout,this,[this]{bool hadDamage=!displayPending.isEmpty();flushDisplayDamage();if(hadDamage&&livePublication)displayPublicationTimer.start();});
+        proximityTimer.setInterval(40);
+        connect(&proximityTimer,&QTimer::timeout,this,[this]{
+            bool nearby=penSamples.nearby.load(),reader=penSamples.ready.load();
+            if(nearby!=penNearby||reader!=penReaderReady){
+                if(nearby&&tentativeTouch)cancel();penNearby=nearby;penReaderReady=reader;emit proximityChanged();
+            }
+        });
+        proximityTimer.start();penSamples.setInputWake([this]{notifyPenInput();});writer=std::thread([this]{writeLoop();});
+    }
     ~SketchRaster() override {stopDeferredResearch();penSamples.shutdown();{std::lock_guard<std::mutex> lock(saveMutex);stopping=true;}saveWake.notify_one();writer.join();if(pressureFd>=0)close(pressureFd);}
     mutable int pressureFd=-1;mutable double pressureLast=.5;mutable QElapsedTimer pressureAge;
     Q_INVOKABLE double penPressure(double fallback)const{

@@ -1,0 +1,49 @@
+Experimental async worker stage profiling — 26 November 2026
+
+Scope
+Base d6c513399ef7f8af56263b58a752fc78e31f771b, the existing 23 November
+async research integration. This is NOT the current page-capacity UAT.
+No experimental raster, RCC or ink was installed. No GUI restart/input
+injection. QCoreApplication, private temporary cache/export/permit paths,
+real pen/touch readers disabled explicitly.
+
+Reproduction
+python3 scripts/test-sketch-worker-stages.py --output NEW_DIRECTORY
+Optional --arm-libs DIRECTORY containing actual tablet Qt6 libraries builds
+ARM binaries using the pre-existing local cached SDK/toolchain (see script).
+Run test-sketch-worker-stage-counters-arm, then benchmark with arguments
+burst, blocking, paced, paced, blocking, burst. Use bounded timeout and
+private TMPDIR. Target libraries were Qt 6.10.3; device app remained active.
+ARM benchmark SHA256:
+807a15c4b66680f0853b4ead8d7ef041cbca86107563c256486c395d5f1de280
+ARM counter-test SHA256:
+b363fc85c8425c4fc3eaadcd477c85a1eff9605a48b54088fd7757560a1fbcf8
+Uploaded hashes matched these host binaries before execution.
+
+Workload and checks
+1260 synthetic charcoal samples, size38, strength1, pressure0.2..0.9,
+tilt(0,-0.8), deterministic path on a white 1200x1600 page. Paced mode uses
+absolute 2ms deadlines, not actual hardware input. No optical measurement.
+All six ARM runs passed exact full image/material/finger and physics state
+comparison with synchronous reference. Stage counters passed on host/ARM,
+including accepted-job counter ownership across reset. Existing actual
+advancePenInput async lifecycle/fault/nonblocking test also passed on host.
+
+Measured ARM results (wall-clock scopes; concurrent totals are NOT additive)
+Initial state creation/copy: 84.4..87.2ms; final authoritative copy:
+24.4..27.8ms. Publication totals:91.0..100.8ms, max44.3..46.5ms;
+first publication scans the whole page, but per-publication attribution is
+not recorded here. Material total:214.0..296.8ms for1260 samples.
+Owner application of tile batches totals12.8..13.4ms when polling.
+At requested500Hz, post-last-submission completion34.3/37.1ms; burst
+poll completion405.8/362.1ms; blocking burst338.8/395.8ms. These synthetic
+results must NOT be compared as improvements against prior real GUI UAT.
+Host benchmarks and raw ARM results are separate hardware/workloads.
+
+Decision
+Instrumentation is suitable for further isolated research; no speed fix is
+claimed and no UAT promotion. A large initial copy and whole-page first
+publication are concrete next targets, but preserving loaded-page content,
+ownership, save/undo barriers and current >12-page support is mandatory.
+Real GUI/repaint scheduling can dominate; backend-only timing cannot explain
+the previous multi-second GUI tail by itself. Existing UAT remains unchanged.

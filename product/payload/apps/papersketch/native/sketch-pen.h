@@ -84,7 +84,7 @@ struct PaperPen {
  std::array<Sample,2048> samples{};unsigned head=0,count=0;uint64_t serial=0;mutable std::mutex mutex;
  std::atomic<bool> stop{false},enabled{true},ready{false},nearby{false},eraserNearby{false};std::thread thread;
  static long long now(){return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();}
- PaperPen(){thread=std::thread([this]{readLoop();});}
+ explicit PaperPen(bool startReader=true){if(startReader)thread=std::thread([this]{readLoop();});}
  void shutdown(){stop=true;if(thread.joinable())thread.join();}
  ~PaperPen(){shutdown();}
  void activate(){std::lock_guard<std::mutex> lock(mutex);head=0;count=0;input.clear();inputContact=0;nearby=false;eraserNearby=false;enabled=true;}
