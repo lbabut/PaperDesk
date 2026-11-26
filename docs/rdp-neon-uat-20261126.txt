@@ -1,0 +1,66 @@
+RDP exact NEON row conversion — tablet UAT, 26 November 2026
+
+Provenance
+Isolated branch contains a snapshot of current authoritative RDP files from
+/home/lukasz/Documents/Codex/PaperDesk, NOT that dirty tree's old Git HEAD.
+Baseline native binary matched installed UAT exactly:
+75b7e0e7c80ce469194d5ad4db5f8de485c65b7a25e2be1b4f932ca8ed5dfbf8
+Baseline installed/canonical C++ SHA256:
+1f69b615bf179c8eb7e0de9ee1ffc7cfe9181ea8824a6ba76de4b9343d7ed025
+Much of the diff against the old repository HEAD is pre-existing RDP work,
+not newly implemented here. Canonical source and unrelated work preserved.
+
+New change
+rdp-render-row.h converts8 BGRA pixels at once on ARM NEON, preserving the
+exact (77R+150G+29B)>>8 and RGB565 quantization. Exact changed-pixel bounds,
+partial edge tiles and alpha-ignore behavior retained. Only valid contiguous
+1:1 spans use it; scaling/zoom/letterboxing retain original scalar mapping.
+Non-NEON builds use exact scalar row helper. Refresh scheduling, TLS/certificate
+policy, networking, profiles and input handling were NOT changed.
+
+Build/reproduction
+bash scripts/build-rdp.sh
+bash scripts/build-rdp.sh --tests
+bash scripts/build-rdp.sh --render-tests
+Run work/tests/rdp-regression and work/tests/rdp-render-regression on ARM,
+bounded with timeout60. Tests use private memory-only framebuffer and fake
+input; no AppLoad/QTFB, real profiles or network connections are accessed.
+Existing native regression checks keys/scroll/orientation/retry/idle and
+password/profile/certificate handling; passed on target.
+New differential suite checks all16777216 RGB combinations, ignored alpha,
+lengths0..256, guard pixels and exact dirty spans. Actual flushRemoteFrame
+is compared against original scalar path, alternating order each frame.
+Includes portrait, landscape, dense/sparse, scaling/letterbox, zoom/pan and
+keyboard viewport. Exact final framebuffer and refresh rectangles in all cases.
+
+Target measurements: two runs; per-frame averages, render CPU/wall scope only
+Portrait1:1 dense:scalar135.62/135.54ms -> candidate52.12/51.98ms (~62% less).
+Portrait sparse cohort:scalar3.95/3.96ms -> candidate1.65/1.65ms (~58% less).
+Sparse cohort includes one initial full frame; not a steady-state typing claim.
+Landscape1:1 dense:scalar196.98/196.88ms -> candidate116.99/117.30ms (~40% less).
+Scaled,zoomed and keyboard cases exercised fallback and remained near controls.
+These are synthetic local-render measurements on the real tablet CPU, NOT
+network/session latency, e-ink optical timing, ghosting or human UAT acceptance.
+Dense-frame minimum gap700ms and other existing update rules remain unchanged.
+Compiler emitted pre-existing bundled FreeRDP LTO warnings; no new warnings
+in the row helper. First render-test build failed due missing fixture argument;
+corrected, second build and both target runs passed. No failed tests hidden.
+
+Installed UAT (not Prod/public release)
+Binary SHA256 c43367a4862a06ab1eb88423ddde9d541f417762956bc285b798429b3c04b455
+C++ SHA256 1a35cc592ccbee56ff9328f4275f5a5fd846ccd2b5d2effaa96ac4ae2b63b7fd
+Header SHA256 dae7a0965d272c1489bc267da201be0c6f8bd5722c5f4ac44147d885a6e3e67b
+Installed only paperrdp binary/source/header, while no paperrdp process was
+active. Binary replacement atomic, exact baseline and staged hashes checked;
+rollback trap and owned previous files retained. No xochitl restart, current
+app/Sketch change, profile/certificate modification or production publication.
+User must reopen RDP to use candidate. Real remote session and optical panel
+behavior still require UAT; test-suite success is not acceptance.
+
+Recovery location on tablet
+/home/root/.local/state/rdp-neon-uat.U2wxNP/previous
+Contains exact previous binary and C++ source; new header had not existed.
+Rollback only while RDP idle and after checking current candidate hash above.
+Atomically restore previous/paperrdp and restore previous/paperrdp.cpp; retain
+the introduced header as an inactive recovery artifact rather than deleting
+unrelated data. Do not restart xochitl or overwrite other apps/artwork.

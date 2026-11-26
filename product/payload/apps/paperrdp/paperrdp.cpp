@@ -28,21 +28,35 @@
 #include <vector>
 
 namespace {
-constexpr int W = 1404;
-constexpr int H = 1872;
+constexpr int PHYSICAL_W = 1404;
+constexpr int PHYSICAL_H = 1872;
+// Logical dimensions are selected once, before constructing App. QTFB keeps
+// its firmware-compatible portrait surface; only this client's pixels rotate.
+int W = PHYSICAL_W;
+int H = PHYSICAL_H;
 constexpr int BAR_H = 112;
-constexpr int RDP_H = H - BAR_H;
+int RDP_H = H - BAR_H;
 constexpr int ACTION_H = 68;
 constexpr int ACTION_Y = 22;
-constexpr int CLOSE_X = 1210;
+int CLOSE_X = W - 194;
 constexpr int CLOSE_W = 176;
-constexpr int SHORTCUTS_X = 980;
+int SHORTCUTS_X = W - 424;
 constexpr int SHORTCUTS_W = 216;
-constexpr int DAMAGE_TILE_W = 176;
-constexpr int DAMAGE_TILE_H = 176;
-constexpr int DAMAGE_COLS = (W + DAMAGE_TILE_W - 1) / DAMAGE_TILE_W;
-constexpr int DAMAGE_ROWS = (RDP_H + DAMAGE_TILE_H - 1) / DAMAGE_TILE_H;
-constexpr int DAMAGE_TILE_COUNT = DAMAGE_COLS * DAMAGE_ROWS;
+// Smaller tiles keep cursor, typing and window-decoration updates local.  The
+// old 176 px grid made a one-pixel change rescan more than 30k output pixels.
+constexpr int DAMAGE_TILE_W = 88;
+constexpr int DAMAGE_TILE_H = 88;
+int DAMAGE_COLS = (W + DAMAGE_TILE_W - 1) / DAMAGE_TILE_W;
+int DAMAGE_ROWS = (RDP_H + DAMAGE_TILE_H - 1) / DAMAGE_TILE_H;
+int DAMAGE_TILE_COUNT = DAMAGE_COLS * DAMAGE_ROWS;
+constexpr int SPARSE_FRAME_MIN_GAP_MS = 80;
+constexpr int SPARSE_FRAME_QUIET_MS = 35;
+constexpr int SPARSE_FRAME_MAX_LATENCY_MS = 160;
+constexpr int DENSE_FRAME_MIN_GAP_MS = 700;
+constexpr int DENSE_FRAME_QUIET_MS = 100;
+constexpr int DENSE_FRAME_MAX_LATENCY_MS = 900;
+constexpr int CLEAN_REFRESH_IDLE_MS = 4500;
+constexpr int CLEAN_REFRESH_MIN_GAP_MS = 15000;
 
 struct App;
 struct PaperContext {
@@ -60,10 +74,70 @@ struct Profile {
     int port = 3389;
     int scalePercent = 100;
     int colorDepth = 16;
+    bool landscape = false;
 };
 
+void configureOrientation(bool landscape) {
+    W = landscape ? PHYSICAL_H : PHYSICAL_W;
+    H = landscape ? PHYSICAL_W : PHYSICAL_H;
+    RDP_H = H - BAR_H;
+    CLOSE_X = W - 194;
+    SHORTCUTS_X = W - 424;
+    DAMAGE_COLS = (W + DAMAGE_TILE_W - 1) / DAMAGE_TILE_W;
+    DAMAGE_ROWS = (RDP_H + DAMAGE_TILE_H - 1) / DAMAGE_TILE_H;
+    DAMAGE_TILE_COUNT = DAMAGE_COLS * DAMAGE_ROWS;
+}
+
+struct ScreenRect { int x, y, w, h; };
+
+ScreenRect physicalRect(bool landscape, ScreenRect r) {
+    return landscape ? ScreenRect{PHYSICAL_W-r.y-r.h, r.x, r.h, r.w} : r;
+}
+
+std::pair<float,float> logicalPoint(bool landscape, float x, float y) {
+    return landscape ? std::make_pair(y, PHYSICAL_W-1-x) : std::make_pair(x,y);
+}
+
+// Iterate physical rows for cache-friendly QTFB writes. Only damaged rectangles
+// are transposed, not the complete desktop on each cursor/typing update.
+void rotateRect(const uint16_t* source, uint16_t* target, ScreenRect logical) {
+    const ScreenRect p=physicalRect(true,logical);
+    for(int py=p.y; py<p.y+p.h; ++py)
+        for(int px=p.x; px<p.x+p.w; ++px)
+            target[py*PHYSICAL_W+px]=source[(PHYSICAL_W-1-px)*PHYSICAL_H+py];
+}
+
+Profile profileForStorage(const Profile& session, bool rememberPassword) {
+    Profile stored=session;
+    if(!rememberPassword) stored.password.clear();
+    return stored;
+}
+
+#ifdef PAPERDESK_RDP_TESTING
+// Memory-only framebuffer: regression tests never contact AppLoad or a device.
+struct TestFramebuffer {
+    std::vector<unsigned char> storage=std::vector<unsigned char>(PHYSICAL_W*PHYSICAL_H*2);
+    unsigned char* shm=storage.data();
+    size_t shmSize=storage.size();
+    int updates=0, fullRefreshes=0;
+    std::vector<std::array<int,4>> regions;
+    void setRefreshMode(int) {}
+    void sendPartialUpdate(int x,int y,int w,int h) { ++updates;regions.push_back({x,y,w,h}); }
+    void sendCompleteUpdate() { ++updates; }
+    void requestFullRefresh() { ++fullRefreshes; }
+    bool pollServerPacket(qtfb::ServerMessage&) { return false; }
+};
+#endif
+
+enum class TwoFingerMode { None, Pending, Scroll, Pinch };
+
 struct App {
+#ifdef PAPERDESK_RDP_TESTING
+    TestFramebuffer fb;
+    bool fastRows=true; // Differential benchmark only; not a runtime option.
+#else
     qtfb::ClientConnection fb;
+#endif
     Mode mode = Mode::Login;
     Profile profile;
     int field = 0;
@@ -82,13 +156,27 @@ struct App {
     int pendingTapY = 0;
     std::chrono::steady_clock::time_point pendingTapSince = std::chrono::steady_clock::now();
     int doubleTapTouchId = -1;
+    bool doubleClickSecondPending = false;
+    int doubleClickX = 0;
+    int doubleClickY = 0;
+    std::chrono::steady_clock::time_point doubleClickSecondDue =
+        std::chrono::steady_clock::now();
     std::chrono::steady_clock::time_point mousePressSince = std::chrono::steady_clock::now();
     bool rightClickSent = false;
+    int viewportHeight = RDP_H;
     float zoom = 1.0f;
     float viewX = 0.0f;
     float viewY = 0.0f;
     std::map<int,std::pair<float,float>> touches;
     bool pinchActive = false;
+    TwoFingerMode twoFingerMode = TwoFingerMode::None;
+    float gestureStartCx=0, gestureStartCy=0, gestureLastCy=0;
+    float wheelRemainder=0;
+    int pendingWheel=0;
+    bool gestureViewChanged=false;
+    bool gestureSamplePending=false;
+    std::chrono::steady_clock::time_point gestureSampleDue=std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point lastWheel=std::chrono::steady_clock::now();
     bool gestureConsumed = false;
     bool panCandidate = false;
     bool panActive = false;
@@ -106,7 +194,8 @@ struct App {
     int dirtyY1 = RDP_H;
     int dirtyX2 = 0;
     int dirtyY2 = 0;
-    std::array<uint8_t,DAMAGE_TILE_COUNT> dirtyTiles{};
+    std::vector<uint8_t> dirtyTiles = std::vector<uint8_t>(DAMAGE_TILE_COUNT,0);
+    std::vector<uint16_t> landscapePixels;
     int dirtyTileCount = 0;
     std::chrono::steady_clock::time_point lastFrame = std::chrono::steady_clock::now();
     std::chrono::steady_clock::time_point dirtySince = std::chrono::steady_clock::now();
@@ -114,14 +203,38 @@ struct App {
     bool cleanRefreshPending = false;
     std::chrono::steady_clock::time_point cleanRefreshDue = std::chrono::steady_clock::now();
     std::chrono::steady_clock::time_point lastCleanRefresh =
-        std::chrono::steady_clock::now() - std::chrono::seconds(10);
+        std::chrono::steady_clock::now() - std::chrono::seconds(20);
     std::string status = "ENTER CONNECTION DETAILS";
     bool launchedFromNativeLogin = false;
+    bool rememberPassword = true;
+    bool certificateChanged = false;
     freerdp* rdp = nullptr;
 
-    App() : fb(qtfb::getIDFromAppload(), FBFMT_RM2FB) {
+    explicit App(const Profile& selected) :
+#ifndef PAPERDESK_RDP_TESTING
+        fb(qtfb::getIDFromAppload(), FBFMT_RM2FB),
+#endif
+        profile(selected) {
         fb.setRefreshMode(REFRESH_MODE_UI);
         std::memset(fb.shm, 0xff, fb.shmSize);
+        if(profile.landscape) landscapePixels.assign(PHYSICAL_W*PHYSICAL_H,0xffff);
+    }
+
+    uint16_t* pixels() {
+        return profile.landscape ? landscapePixels.data() : reinterpret_cast<uint16_t*>(fb.shm);
+    }
+    void update(int x,int y,int w,int h) {
+        x=std::clamp(x,0,W); y=std::clamp(y,0,H);
+        w=std::clamp(w,0,W-x); h=std::clamp(h,0,H-y);
+        if(w==0 || h==0) return;
+        const ScreenRect logical{x,y,w,h};
+        if(profile.landscape) rotateRect(pixels(),reinterpret_cast<uint16_t*>(fb.shm),logical);
+        const ScreenRect p=physicalRect(profile.landscape,logical);
+        fb.sendPartialUpdate(p.x,p.y,p.w,p.h);
+    }
+    void publish() {
+        if(profile.landscape) rotateRect(pixels(),reinterpret_cast<uint16_t*>(fb.shm),{0,0,W,H});
+        fb.sendCompleteUpdate();
     }
 };
 
@@ -173,7 +286,7 @@ inline uint16_t gray565(uint8_t v) {
 void fill(App& a, int x, int y, int w, int h, uint8_t gray) {
     x = std::max(0, x); y = std::max(0, y);
     w = std::min(w, W - x); h = std::min(h, H - y);
-    auto* p = reinterpret_cast<uint16_t*>(a.fb.shm);
+    auto* p = a.pixels();
     const uint16_t c = gray565(gray);
     for (int yy = y; yy < y + h; ++yy)
         std::fill(p + yy * W + x, p + yy * W + x + w, c);
@@ -200,7 +313,7 @@ void roundedFill(App& a, int x, int y, int w, int h, int radius, uint8_t gray) {
 }
 
 void text(App& a, int x, int y, const std::string& s, int scale = 4, uint8_t gray = 0) {
-    auto* p = reinterpret_cast<uint16_t*>(a.fb.shm);
+    auto* p = a.pixels();
     const uint16_t c = gray565(gray);
     int cx = x;
     for (unsigned char raw : s) {
@@ -258,9 +371,9 @@ void drawLogin(App& a,bool complete=false) {
     button(a,870,900,464,120,"CONNECT",true);
     text(a,75,1015,a.status,3,70);
     if(complete) {
-        a.fb.sendCompleteUpdate();
+        a.publish();
         a.fb.requestFullRefresh();
-    } else a.fb.sendPartialUpdate(0,250,W,940);
+    } else a.update(0,250,W,940);
 }
 
 void drawConnecting(App& a) {
@@ -270,7 +383,7 @@ void drawConnecting(App& a) {
     text(a,72,210,"CONNECTING TO REMOTE COMPUTER...",5,0);
     text(a,72,300,a.profile.host,4,70);
     text(a,72,390,"PLEASE WAIT",4,70);
-    a.fb.sendCompleteUpdate();
+    a.publish();
     a.fb.requestFullRefresh();
 }
 
@@ -278,7 +391,7 @@ void drawBar(App& a) {
     headerTitle(a,a.status);
     button(a,SHORTCUTS_X,ACTION_Y,SHORTCUTS_W,ACTION_H,"SHORTCUTS");
     button(a,CLOSE_X,ACTION_Y,CLOSE_W,ACTION_H,"CLOSE");
-    a.fb.sendPartialUpdate(0,0,W,BAR_H);
+    a.update(0,0,W,BAR_H);
 }
 
 const std::array<const char*,9> shortcutLabels={
@@ -295,9 +408,14 @@ void drawShortcuts(App& a) {
         button(a,left+col*(bw+gap),top+row*(bh+gap),bw,bh,shortcutLabels[i]);
     }
     button(a,440,900,524,125,"BACK",true);
-    a.fb.sendPartialUpdate(0,BAR_H,W,RDP_H);
+    a.update(0,BAR_H,W,RDP_H);
 }
 
+bool canRetry(const App& a) {
+    return a.mode==Mode::Error && !a.certificateChanged &&
+           !a.profile.host.empty() && !a.profile.user.empty();
+}
+bool requestRetry(App& a);
 void drawError(App& a, const std::string& message) {
     a.mode=Mode::Error; a.status=message;
     fill(a,0,0,W,H,255);
@@ -305,8 +423,9 @@ void drawError(App& a, const std::string& message) {
     button(a,CLOSE_X,ACTION_Y,CLOSE_W,ACTION_H,"CLOSE");
     text(a,70,190,"CONNECTION FAILED",6);
     text(a,70,235,message,4,80);
-    button(a,70,360,520,120,"BACK",true);
-    a.fb.sendCompleteUpdate();
+    if(canRetry(a)) button(a,70,360,520,120,"RETRY",true);
+    button(a,650,360,520,120,"CLOSE");
+    a.publish();
 }
 
 std::string hexEncode(const std::string& value) {
@@ -365,10 +484,11 @@ bool sameProfile(const Profile& a,const Profile& b) {
 }
 
 std::string profileListLine(const Profile& p) {
-    return "v1\t"+hexEncode(p.host)+"\t"+hexEncode(p.user)+"\t"+hexEncode(p.domain)+"\t"+
+    return "v2\t"+hexEncode(p.host)+"\t"+hexEncode(p.user)+"\t"+hexEncode(p.domain)+"\t"+
            std::to_string(p.port)+"\t"+hexEncode(p.password)+"\t"+
            std::to_string(normalizeScalePercent(p.scalePercent))+"\t"+
-           std::to_string(normalizeColorDepth(p.colorDepth))+"\n";
+           std::to_string(normalizeColorDepth(p.colorDepth))+"\t"+
+           (p.landscape ? "landscape" : "portrait")+"\n";
 }
 
 bool parseProfileListLine(const std::string& line,Profile& profile) {
@@ -381,7 +501,9 @@ bool parseProfileListLine(const std::string& line,Profile& profile) {
         if(end==std::string::npos) break;
         begin=end+1;
     }
-    if(parts.size()!=8 || parts[0]!="v1") return false;
+    const bool legacy=parts.size()==8 && parts[0]=="v1";
+    if(!legacy && !(parts.size()==9 && parts[0]=="v2")) return false;
+    if(!legacy && parts[8]!="portrait" && parts[8]!="landscape") return false;
     for(size_t i=1;i<=5;++i) if(parts[i].size()>4096) return false;
     Profile parsed;
     if(!hexDecode(parts[1],parsed.host) || !hexDecode(parts[2],parsed.user) ||
@@ -389,6 +511,7 @@ bool parseProfileListLine(const std::string& line,Profile& profile) {
     if(!parsePort(parts[4],parsed.port)) return false;
     parsed.scalePercent=normalizeScalePercent(std::atoi(parts[6].c_str()));
     parsed.colorDepth=normalizeColorDepth(std::atoi(parts[7].c_str()));
+    parsed.landscape=!legacy && parts[8]=="landscape";
     if(parsed.host.empty() || parsed.user.empty()) return false;
     profile=std::move(parsed);
     return true;
@@ -411,38 +534,44 @@ bool writePrivateFile(const char* path,const char* temp,const std::string& data)
     return true;
 }
 
+const std::string& profileDirectory() {
+    static const std::string directory=[] {
+#ifdef PAPERDESK_E2E
+        if(const char* test=std::getenv("PAPERDESK_TEST_RDP_CONFIG_DIR")) {
+            struct stat st{};
+            if(test[0]!='/' || ::lstat(test,&st)<0 || !S_ISDIR(st.st_mode) ||
+               st.st_uid!=::getuid() || (st.st_mode&0777)!=0700) {
+                std::fputs("Invalid private RDP test profile directory\n",stderr);
+                std::abort();
+            }
+            return std::string(test);
+        }
+#endif
+        return std::string("/home/root/.config/paperrdp");
+    }();
+    return directory;
+}
+
 bool saveProfile(const Profile& p) {
-    constexpr const char* dir="/home/root/.config/paperrdp";
-    constexpr const char* path="/home/root/.config/paperrdp/profile";
-    constexpr const char* temp="/home/root/.config/paperrdp/profile.tmp";
-    constexpr const char* profilesPath="/home/root/.config/paperrdp/profiles";
-    constexpr const char* profilesTemp="/home/root/.config/paperrdp/profiles.tmp";
-    if(::mkdir("/home/root/.config",0700)<0 && errno!=EEXIST) return false;
+    const std::string& directory=profileDirectory();
+    const std::string profilePath=directory+"/profile", profileTemp=directory+"/profile.tmp";
+    const char *dir=directory.c_str(),*path=profilePath.c_str(),*temp=profileTemp.c_str();
+    if(directory=="/home/root/.config/paperrdp" &&
+       ::mkdir("/home/root/.config",0700)<0 && errno!=EEXIST) return false;
     if(::mkdir(dir,0700)<0 && errno!=EEXIST) return false;
     ::chmod(dir,0700);
     const std::string data="host="+p.host+"\nuser="+p.user+"\ndomain="+p.domain+
                            "\nport="+std::to_string(p.port)+"\npassword_hex="+hexEncode(p.password)+
                            "\nscale_percent="+std::to_string(normalizeScalePercent(p.scalePercent))+
-                           "\ncolor_depth="+std::to_string(normalizeColorDepth(p.colorDepth))+"\n";
-    if(!writePrivateFile(path,temp,data)) return false;
-
-    std::vector<Profile> profiles;
-    std::ifstream saved(profilesPath);
-    std::string line;
-    while(std::getline(saved,line)) {
-        Profile candidate;
-        if(parseProfileListLine(line,candidate) && !sameProfile(candidate,p))
-            profiles.push_back(std::move(candidate));
-    }
-    profiles.insert(profiles.begin(),p);
-    if(profiles.size()>8) profiles.resize(8);
-    std::string listData;
-    for(const Profile& profile:profiles) listData+=profileListLine(profile);
-    return writePrivateFile(profilesPath,profilesTemp,listData);
+                           "\ncolor_depth="+std::to_string(normalizeColorDepth(p.colorDepth))+
+                           "\norientation="+(p.landscape ? "landscape" : "portrait")+"\n";
+    // Explicit GUI Save/Delete is the only writer of the saved profile list.
+    // Connecting updates only the legacy last-connection record.
+    return writePrivateFile(path,temp,data);
 }
 
 void loadProfile(Profile& p) {
-    std::ifstream f("/home/root/.config/paperrdp/profile");
+    std::ifstream f(profileDirectory()+"/profile");
     std::string line;
     while(std::getline(f,line)) {
         auto pos=line.find('='); if(pos==std::string::npos) continue;
@@ -452,41 +581,49 @@ void loadProfile(Profile& p) {
         else if(k=="password_hex") hexDecode(v,p.password);
         else if(k=="scale_percent") p.scalePercent=normalizeScalePercent(std::atoi(v.c_str()));
         else if(k=="color_depth") p.colorDepth=normalizeColorDepth(std::atoi(v.c_str()));
+        else if(k=="orientation") p.landscape=v=="landscape";
     }
 }
 
-float outputScaleX(const App& a) {
-    if(!a.rdp || !a.rdp->context || !a.rdp->context->gdi || a.rdp->context->gdi->width<=0) return a.zoom;
-    return (static_cast<float>(W)/a.rdp->context->gdi->width)*a.zoom;
+// The same transform drives raster damage, sampling and pointer hit testing.
+// Keyboard space reduces the viewport, never the server desktop dimensions.
+struct ViewTransform {
+    float scale, offsetX, offsetY, maxX, maxY;
+    int remoteWidth, remoteHeight, viewportWidth, viewportHeight;
+    bool contains(float x,float y) const {
+        return x>=offsetX && y>=offsetY && x<viewportWidth && y<viewportHeight &&
+               x<offsetX+remoteWidth*scale && y<offsetY+remoteHeight*scale;
+    }
+};
+
+ViewTransform makeTransform(int rw,int rh,int width,int height,float zoom) {
+    rw=std::max(1,rw); rh=std::max(1,rh);
+    const float scale=std::min(float(width)/rw,float(height)/rh)*zoom;
+    return {scale,std::max(0.0f,(width-rw*scale)/2),
+            std::max(0.0f,(height-rh*scale)/2),
+            std::max(0.0f,rw-width/scale),std::max(0.0f,rh-height/scale),
+            rw,rh,width,height};
 }
 
-float outputScaleY(const App& a) {
-    if(!a.rdp || !a.rdp->context || !a.rdp->context->gdi || a.rdp->context->gdi->height<=0) return a.zoom;
-    return (static_cast<float>(RDP_H)/a.rdp->context->gdi->height)*a.zoom;
-}
-
-float maxViewX(const App& a) {
-    if(!a.rdp || !a.rdp->context || !a.rdp->context->gdi) return 0.0f;
-    const float width=static_cast<float>(a.rdp->context->gdi->width);
-    return std::max(0.0f,width-width/a.zoom);
-}
-
-float maxViewY(const App& a) {
-    if(!a.rdp || !a.rdp->context || !a.rdp->context->gdi) return 0.0f;
-    const float height=static_cast<float>(a.rdp->context->gdi->height);
-    return std::max(0.0f,height-height/a.zoom);
-}
-
-int remoteX(const App& a,int screenX) {
+ViewTransform viewTransform(const App& a) {
     const auto* gdi=a.rdp && a.rdp->context ? a.rdp->context->gdi : nullptr;
-    const int limit=gdi ? std::max(1,gdi->width) : W;
-    return std::clamp<int>(a.viewX+screenX/std::max(0.001f,outputScaleX(a)),0,limit-1);
+    return makeTransform(gdi ? gdi->width : W,gdi ? gdi->height : RDP_H,
+                         W,a.viewportHeight,a.zoom);
 }
-
-int remoteY(const App& a,int screenY) {
-    const auto* gdi=a.rdp && a.rdp->context ? a.rdp->context->gdi : nullptr;
-    const int limit=gdi ? std::max(1,gdi->height) : RDP_H;
-    return std::clamp<int>(a.viewY+(screenY-BAR_H)/std::max(0.001f,outputScaleY(a)),0,limit-1);
+float outputScaleX(const App& a) { return viewTransform(a).scale; }
+float outputScaleY(const App& a) { return viewTransform(a).scale; }
+float maxViewX(const App& a) { return viewTransform(a).maxX; }
+float maxViewY(const App& a) { return viewTransform(a).maxY; }
+bool remotePoint(const App& a,float x,float y) {
+    return viewTransform(a).contains(x,y-BAR_H);
+}
+int remoteX(const App& a,int x) {
+    const auto t=viewTransform(a);
+    return std::clamp<int>(a.viewX+(x-t.offsetX)/t.scale,0,t.remoteWidth-1);
+}
+int remoteY(const App& a,int y) {
+    const auto t=viewTransform(a);
+    return std::clamp<int>(a.viewY+(y-BAR_H-t.offsetY)/t.scale,0,t.remoteHeight-1);
 }
 
 BOOL beginPaint(rdpContext* c) {
@@ -507,11 +644,12 @@ BOOL endPaint(rdpContext* c) {
         x=std::clamp(x,0,gdi->width); y=std::clamp(y,0,gdi->height);
         int x2=std::clamp(x+w,0,gdi->width), y2=std::clamp(y+h,0,gdi->height);
         if(x2<=x || y2<=y) return;
-        const float scaleX=outputScaleX(a),scaleY=outputScaleY(a);
-        const int dx1=std::clamp<int>(std::floor((x-a.viewX)*scaleX),0,W);
-        const int dy1=std::clamp<int>(std::floor((y-a.viewY)*scaleY),0,RDP_H);
-        const int dx2=std::clamp<int>(std::ceil((x2-a.viewX)*scaleX),dx1,W);
-        const int dy2=std::clamp<int>(std::ceil((y2-a.viewY)*scaleY),dy1,RDP_H);
+        const auto transform=viewTransform(a);
+        const float scaleX=transform.scale,scaleY=transform.scale;
+        const int dx1=std::clamp<int>(std::floor(transform.offsetX+(x-a.viewX)*scaleX),0,W);
+        const int dy1=std::clamp<int>(std::floor(transform.offsetY+(y-a.viewY)*scaleY),0,a.viewportHeight);
+        const int dx2=std::clamp<int>(std::ceil(transform.offsetX+(x2-a.viewX)*scaleX),dx1,W);
+        const int dy2=std::clamp<int>(std::ceil(transform.offsetY+(y2-a.viewY)*scaleY),dy1,a.viewportHeight);
         if(dx2<=dx1 || dy2<=dy1) return;
         const auto now=std::chrono::steady_clock::now();
         if(!a.dirty) a.dirtySince=now;
@@ -541,6 +679,7 @@ BOOL endPaint(rdpContext* c) {
     return TRUE;
 }
 
+#include "rdp-render-row.h"
 void flushRemoteFrame(App& a, bool force=false) {
     if(a.shortcutsOpen) return;
     if(!a.dirty || !a.rdp || !a.rdp->context || !a.rdp->context->gdi) return;
@@ -550,19 +689,17 @@ void flushRemoteFrame(App& a, bool force=false) {
         // horizontal bands.  Publishing every band lets the e-ink controller
         // scan a half-old, half-new shared buffer.  Wait for a short quiet
         // period and cap the wait so genuinely continuous changes still show.
-        // Large desktop changes are deliberately much slower: QTFB/e-ink can
-        // display them reliably, but cannot consume several full frames per
-        // second without composing pieces of different frames on screen.
+        // Dense desktop changes still need a little more breathing room than
+        // cursor/text updates, but multi-second gaps make the session feel
+        // frozen. One dense QTFB transaction plus a short debounce keeps the
+        // frame coherent without building a stale queue.
         const bool largeFrame=a.dirtyTileCount>DAMAGE_TILE_COUNT/3;
-        // Dense frames are one atomic e-ink transaction.  Publishing them
-        // faster than the panel consumes them queues stale frames and makes a
-        // healthy RDP session look frozen.
-        const auto minFrameGap=largeFrame ? std::chrono::milliseconds(3200)
-                                          : std::chrono::milliseconds(300);
-        const auto quietPeriod=largeFrame ? std::chrono::milliseconds(420)
-                                          : std::chrono::milliseconds(120);
-        const auto maxLatency=largeFrame ? std::chrono::milliseconds(4200)
-                                         : std::chrono::milliseconds(900);
+        const auto minFrameGap=std::chrono::milliseconds(
+            largeFrame ? DENSE_FRAME_MIN_GAP_MS : SPARSE_FRAME_MIN_GAP_MS);
+        const auto quietPeriod=std::chrono::milliseconds(
+            largeFrame ? DENSE_FRAME_QUIET_MS : SPARSE_FRAME_QUIET_MS);
+        const auto maxLatency=std::chrono::milliseconds(
+            largeFrame ? DENSE_FRAME_MAX_LATENCY_MS : SPARSE_FRAME_MAX_LATENCY_MS);
         if(now-a.lastFrame<minFrameGap) return;
         const bool burstSettled=now-a.lastDirty>=quietPeriod;
         const bool maxLatencyReached=now-a.dirtySince>=maxLatency;
@@ -571,10 +708,23 @@ void flushRemoteFrame(App& a, bool force=false) {
     auto* gdi=a.rdp->context->gdi;
     if(!gdi->primary_buffer) return;
     const float vx=a.viewX, vy=a.viewY;
-    const float scaleX=outputScaleX(a),scaleY=outputScaleY(a);
-    auto* dst=reinterpret_cast<uint16_t*>(a.fb.shm);
+    const auto transform=viewTransform(a);
+    const float scaleX=transform.scale,scaleY=transform.scale;
+    // Mapping output coordinates to the FreeRDP surface used to perform two
+    // floating-point divisions and clamps for every one of the 2.47 million
+    // output pixels. The mapping is constant for a frame, so calculate it
+    // once and keep the hot tile loop integer-only.
+    std::vector<int> sourceX(W);
+    std::vector<int> sourceY(a.viewportHeight);
+    for(int dx=0;dx<W;++dx)
+        sourceX[dx]=(dx<transform.offsetX || dx>=transform.offsetX+gdi->width*scaleX) ? -1 :
+            std::clamp<int>(vx+(dx-transform.offsetX)/scaleX,0,gdi->width-1);
+    for(int dy=0;dy<a.viewportHeight;++dy)
+        sourceY[dy]=(dy<transform.offsetY || dy>=transform.offsetY+gdi->height*scaleY) ? -1 :
+            std::clamp<int>(vy+(dy-transform.offsetY)/scaleY,0,gdi->height-1);
+    auto* dst=a.pixels();
     struct ChangedRow { int x1=W,y1=RDP_H,x2=0,y2=0; bool changed=false; };
-    std::array<ChangedRow,DAMAGE_ROWS> changedRows{};
+    std::vector<ChangedRow> changedRows(DAMAGE_ROWS);
     int changedTileCount=0;
     for(int tile=0;tile<DAMAGE_TILE_COUNT;++tile) {
         if(!a.dirtyTiles[tile]) continue;
@@ -583,16 +733,33 @@ void flushRemoteFrame(App& a, bool force=false) {
         const int tx1=tileCol*DAMAGE_TILE_W;
         const int ty1=tileRow*DAMAGE_TILE_H;
         const int tx2=std::min(W,tx1+DAMAGE_TILE_W);
-        const int ty2=std::min(RDP_H,ty1+DAMAGE_TILE_H);
+        const int ty2=std::min(a.viewportHeight,ty1+DAMAGE_TILE_H);
         int changedX1=W,changedY1=RDP_H,changedX2=0,changedY2=0;
         for(int dy=ty1;dy<ty2;++dy) {
-            const int sy=std::clamp<int>(vy+dy/scaleY,0,gdi->height-1);
+            const int sy=sourceY[dy];
             uint16_t* out=dst+(dy+BAR_H)*W+tx1;
+            // Only a valid, unclipped contiguous 1:1 source span may use the
+            // vector path. Zoom, letterbox and scaling retain original mapping.
+            if(scaleX==1.0f&&sy>=0&&sourceX[tx1]>=0&&
+               sourceX[tx2-1]==sourceX[tx1]+tx2-tx1-1
+#ifdef PAPERDESK_RDP_TESTING
+               &&a.fastRows
+#endif
+            ) {
+                const auto damage=rdp_render::contiguous(gdi->primary_buffer+sy*gdi->stride+sourceX[tx1]*4,out,tx2-tx1);
+                if(damage.right>damage.left) {
+                    changedX1=std::min(changedX1,tx1+damage.left);changedY1=std::min(changedY1,dy);
+                    changedX2=std::max(changedX2,tx1+damage.right);changedY2=std::max(changedY2,dy+1);
+                }
+                continue;
+            }
             for(int dx=tx1;dx<tx2;++dx,++out) {
-                const int sx=std::clamp<int>(vx+dx/scaleX,0,gdi->width-1);
-                const uint8_t* src=gdi->primary_buffer+sy*gdi->stride+sx*4;
-                const uint8_t lum=static_cast<uint8_t>((77*src[2]+150*src[1]+29*src[0])>>8);
-                const uint16_t pixel=gray565(lum);
+                const int sx=sourceX[dx];
+                uint16_t pixel=0xffff;
+                if(sx>=0 && sy>=0) {
+                    const uint8_t* src=gdi->primary_buffer+sy*gdi->stride+sx*4;
+                    pixel=gray565(static_cast<uint8_t>((77*src[2]+150*src[1]+29*src[0])>>8));
+                }
                 if(*out!=pixel) {
                     *out=pixel;
                     changedX1=std::min(changedX1,dx); changedY1=std::min(changedY1,dy);
@@ -609,12 +776,14 @@ void flushRemoteFrame(App& a, bool force=false) {
         }
     }
     if(changedTileCount>DAMAGE_TILE_COUNT/3) {
-        // One complete notification is cheaper and atomic for a dense frame.
-        a.fb.sendCompleteUpdate();
+        // Keep a dense desktop frame atomic, but do not refresh the unchanged
+        // toolbar. This is a materially smaller e-ink transaction than the
+        // former complete-screen update.
+        a.update(0,BAR_H,W,a.viewportHeight);
     } else {
         // Sparse, distant changes stay sparse instead of becoming one giant
-        // bounding rectangle.  Pairing adjacent rows caps the QTFB message
-        // count at five per flush.
+        // bounding rectangle. Pairing adjacent rows keeps the QTFB message
+        // count bounded even with the finer damage grid.
         for(int row=0;row<DAMAGE_ROWS;) {
             if(!changedRows[row].changed) { ++row; continue; }
             ChangedRow merged=changedRows[row];
@@ -626,24 +795,30 @@ void flushRemoteFrame(App& a, bool force=false) {
                 merged.y2=std::max(merged.y2,changedRows[next].y2);
                 ++next;
             }
-            a.fb.sendPartialUpdate(merged.x1,merged.y1+BAR_H,
+            a.update(merged.x1,merged.y1+BAR_H,
                                    merged.x2-merged.x1,merged.y2-merged.y1);
             row=next;
         }
     }
     a.dirty=false; a.dirtyX1=W; a.dirtyY1=RDP_H; a.dirtyX2=0; a.dirtyY2=0;
-    a.dirtyTiles.fill(0); a.dirtyTileCount=0;
+    std::fill(a.dirtyTiles.begin(),a.dirtyTiles.end(),0); a.dirtyTileCount=0;
     a.lastFrame=now;
 }
 
 void maybeCleanRefresh(App& a) {
-    if(!a.cleanRefreshPending || a.mouseDown || a.dirty || std::chrono::steady_clock::now()<a.cleanRefreshDue) return;
+    const auto now=std::chrono::steady_clock::now();
+    if(!a.cleanRefreshPending || a.mouseDown || !a.touches.empty() || a.dirty || now<a.cleanRefreshDue) return;
+    // Full black/white cleanup is intentionally an idle-time maintenance
+    // operation. Requiring real input silence and rate-limiting it prevents
+    // the three-second flashing/freeze cycle seen during active sessions.
+    if(now-a.lastDirty<std::chrono::milliseconds(CLEAN_REFRESH_IDLE_MS)) return;
+    if(now-a.lastCleanRefresh<std::chrono::milliseconds(CLEAN_REFRESH_MIN_GAP_MS)) return;
     // UPDATE_ALL publishes the complete current framebuffer.  The explicit
     // refresh then clears e-ink ghosting left by the fast partial waveform.
-    a.fb.sendCompleteUpdate();
+    a.publish();
     a.fb.requestFullRefresh();
     a.cleanRefreshPending=false;
-    a.lastCleanRefresh=std::chrono::steady_clock::now();
+    a.lastCleanRefresh=now;
 }
 
 BOOL resizeDesktop(rdpContext* c) {
@@ -654,7 +829,7 @@ BOOL resizeDesktop(rdpContext* c) {
     a.viewX=std::clamp(a.viewX,0.0f,maxViewX(a));
     a.viewY=std::clamp(a.viewY,0.0f,maxViewY(a));
     a.dirty=true;
-    a.dirtyTiles.fill(1);
+    std::fill(a.dirtyTiles.begin(),a.dirtyTiles.end(),1);
     a.dirtyTileCount=DAMAGE_TILE_COUNT;
     a.dirtySince=a.lastDirty=std::chrono::steady_clock::now();
     return TRUE;
@@ -672,18 +847,24 @@ BOOL postConnect(freerdp* instance) {
     // starts, then clean once immediately and once after the desktop settles.
     fill(a,0,BAR_H,W,RDP_H,255);
     drawBar(a);
-    a.fb.sendCompleteUpdate();
+    a.publish();
     a.fb.requestFullRefresh();
     a.lastCleanRefresh=std::chrono::steady_clock::now();
     a.fb.setRefreshMode(REFRESH_MODE_UFAST);
     a.cleanRefreshPending=true;
-    a.cleanRefreshDue=a.lastCleanRefresh+std::chrono::milliseconds(1200);
+    a.cleanRefreshDue=a.lastCleanRefresh+std::chrono::milliseconds(CLEAN_REFRESH_IDLE_MS);
     return TRUE;
 }
 
 void postDisconnect(freerdp* instance) { if(instance) gdi_free(instance); }
-DWORD acceptCertificate(freerdp*,const char*,UINT16,const char*,const char*,const char*,const char*,DWORD) { return 2; }
-DWORD acceptChangedCertificate(freerdp*,const char*,UINT16,const char*,const char*,const char*,const char*,const char*,const char*,const char*,DWORD) { return 2; }
+// Trust on first use: FreeRDP persists a new certificate (return 1), but a
+// changed identity must never be accepted silently (return 0).
+DWORD acceptCertificate(freerdp*,const char*,UINT16,const char*,const char*,const char*,const char*,DWORD) { return 1; }
+DWORD acceptChangedCertificate(freerdp* instance,const char*,UINT16,const char*,const char*,const char*,const char*,const char*,const char*,const char*,DWORD) {
+    if(instance && instance->context)
+        reinterpret_cast<PaperContext*>(instance->context)->app->certificateChanged=true;
+    return 0;
+}
 
 BOOL contextNew(freerdp*, rdpContext* c) { reinterpret_cast<PaperContext*>(c)->app=g_app; return TRUE; }
 
@@ -718,36 +899,78 @@ uint32_t specialKeyToScan(int key) {
         case 0x0a:       // ASCII LF
         case 0x0d:       // ASCII CR
             return 0x1c;
+        case 0x01000000: case 0xff1b: case 0x1b: return 0x01;
+        case 0x01000001: case 0x01000002: case 0xff09: case 0xfe20: case 0x09: return 0x0f;
+        case 0x01000007: case 0xffff: return MAKE_RDP_SCANCODE(0x53,TRUE);
+        case 0x01000010: case 0xff50: return MAKE_RDP_SCANCODE(0x47,TRUE);
+        case 0x01000011: case 0xff57: return MAKE_RDP_SCANCODE(0x4f,TRUE);
+        case 0x01000012: case 0xff51: return MAKE_RDP_SCANCODE(0x4b,TRUE);
+        case 0x01000013: case 0xff52: return MAKE_RDP_SCANCODE(0x48,TRUE);
+        case 0x01000014: case 0xff53: return MAKE_RDP_SCANCODE(0x4d,TRUE);
+        case 0x01000015: case 0xff54: return MAKE_RDP_SCANCODE(0x50,TRUE);
+        case 0x01000016: case 0xff55: return MAKE_RDP_SCANCODE(0x49,TRUE);
+        case 0x01000017: case 0xff56: return MAKE_RDP_SCANCODE(0x51,TRUE);
         default:
+            if(key>=0x01000030 && key<=0x0100003b) {
+                const int n=key-0x01000030;
+                return n<10 ? 0x3b+n : 0x57+n-10;
+            }
+            if(key>=0xffbe && key<=0xffc9) {
+                const int n=key-0xffbe;
+                return n<10 ? 0x3b+n : 0x57+n-10;
+            }
             return 0;
     }
+}
+
+BOOL sendKeyPacket(rdpInput* input,BOOL down,UINT32 scan) {
+    const UINT16 flags=(RDP_SCANCODE_EXTENDED(scan) ? KBD_FLAGS_EXTENDED : 0) |
+                       (down ? 0 : KBD_FLAGS_RELEASE);
+#ifdef PAPERDESK_RDP_TESTING
+    return input->KeyboardEvent(input,flags,RDP_SCANCODE_CODE(scan));
+#else
+    return freerdp_input_send_keyboard_event(input,flags,RDP_SCANCODE_CODE(scan));
+#endif
+}
+BOOL sendMousePacket(rdpInput* input,UINT16 flags,UINT16 x,UINT16 y) {
+#ifdef PAPERDESK_RDP_TESTING
+    return input->MouseEvent(input,flags,x,y);
+#else
+    return freerdp_input_send_mouse_event(input,flags,x,y);
+#endif
+}
+BOOL sendUnicodePacket(rdpInput* input,UINT16 flags,UINT16 ch) {
+#ifdef PAPERDESK_RDP_TESTING
+    return input->UnicodeKeyboardEvent(input,flags,ch);
+#else
+    return freerdp_input_send_unicode_keyboard_event(input,flags,ch);
+#endif
 }
 
 void remoteKey(App& a,int key,bool down) {
     if(!a.rdp || !a.rdp->context || !a.rdp->context->input) return;
     uint32_t scan=specialKeyToScan(key);
     if(!scan) scan=qtToScan(key);
-    if(scan) freerdp_input_send_keyboard_event_ex(a.rdp->context->input,down,FALSE,scan);
+    if(scan) sendKeyPacket(a.rdp->context->input,down,scan);
 }
 
 void sendUnicode(App& a,uint16_t ch);
 void sendShortcut(App& a,int index);
+bool handleClientCommand(App& a,int key,bool down);
 
 void remoteInputKey(App& a,int rawKey,bool down) {
-    constexpr int shortcutPrefix=0x02ff0000;
-    if((rawKey&0xffff0000)==shortcutPrefix) {
-        if(down) sendShortcut(a,rawKey&0xff);
-        return;
-    }
+    if(handleClientCommand(a,rawKey,down)) return;
+    if(a.mode!=Mode::Remote) return;
     const bool encodedUnicode=(rawKey&0xFF000000)==0x02000000;
     const int key=encodedUnicode ? rawKey&0xFFFF : rawKey;
-    if(specialKeyToScan(key)) {
-        remoteKey(a,key,down);
-    } else if(encodedUnicode) {
-        // A Unicode helper sends its own press/release pair.  Ignore the
-        // corresponding VKB release packet so printable characters stay
-        // single keystrokes.
-        if(down) sendUnicode(a,static_cast<uint16_t>(key));
+    if(encodedUnicode) {
+        // A tagged codepoint is not an X11 keysym: U+FF09 and U+FF50 are
+        // printable fullwidth characters, even though their values coincide
+        // with XK_Tab/Home. Only actual C0/DEL controls take the key path.
+        if((key<0x20 || key==0x7f) && specialKeyToScan(key)) remoteKey(a,key,down);
+        else if(down) sendUnicode(a,static_cast<uint16_t>(key));
+    } else if(key==0x01000002 || key==0xfe20) {
+        if(down) sendShortcut(a,30);
     } else {
         remoteKey(a,key,down);
     }
@@ -756,9 +979,9 @@ void remoteInputKey(App& a,int rawKey,bool down) {
 void sendChord(App& a,const std::vector<std::pair<uint32_t,bool>>& keys) {
     if(!a.rdp || !a.rdp->context || !a.rdp->context->input) return;
     for(const auto& key:keys)
-        freerdp_input_send_keyboard_event_ex(a.rdp->context->input,TRUE,key.second,key.first);
+        sendKeyPacket(a.rdp->context->input,TRUE,MAKE_RDP_SCANCODE(key.first,key.second));
     for(auto it=keys.rbegin();it!=keys.rend();++it)
-        freerdp_input_send_keyboard_event_ex(a.rdp->context->input,FALSE,it->second,it->first);
+        sendKeyPacket(a.rdp->context->input,FALSE,MAKE_RDP_SCANCODE(it->first,it->second));
 }
 
 void sendShortcut(App& a,int index) {
@@ -772,13 +995,21 @@ void sendShortcut(App& a,int index) {
         case 6: sendChord(a,{{0x5b,true}}); break; // Windows
         case 7: sendChord(a,{{0x01,false}}); break; // Escape
         case 8: sendChord(a,{{0x0f,false}}); break; // Tab
+        case 30: sendChord(a,{{0x2a,false},{0x0f,false}}); break;
+        default: {
+            static const int navigation[]={0x01000007,0x01000013,0x01000015,0x01000012,
+                0x01000014,0x01000010,0x01000011,0x01000016,0x01000017};
+            const int key=index>=9 && index<=17 ? navigation[index-9] :
+                          index>=18 && index<=29 ? 0x01000030+index-18 : 0;
+            if(key) { remoteKey(a,key,true); remoteKey(a,key,false); }
+        }
     }
 }
 
 void sendUnicode(App& a,uint16_t ch) {
     if(!a.rdp || !a.rdp->context || !a.rdp->context->input) return;
-    freerdp_input_send_unicode_keyboard_event(a.rdp->context->input,0,static_cast<UINT16>(ch));
-    freerdp_input_send_unicode_keyboard_event(a.rdp->context->input,KBD_FLAGS_RELEASE,static_cast<UINT16>(ch));
+    sendUnicodePacket(a.rdp->context->input,0,static_cast<UINT16>(ch));
+    sendUnicodePacket(a.rdp->context->input,KBD_FLAGS_RELEASE,static_cast<UINT16>(ch));
 }
 
 char keyAt(int x,int y) {
@@ -813,6 +1044,9 @@ void processLoginTouch(App& a,int x,int y) {
 void redrawZoomedView(App& a);
 
 void processRemoteTouch(App& a,int x,int y) {
+    // The QML chrome owns this strip. Never let an event forwarded through
+    // the overlay open the obsolete bitmap menu underneath Keyboard / Close.
+    if(a.launchedFromNativeLogin && y<BAR_H) return;
     if(y<BAR_H) {
         a.pendingTap=false;
         if(x>=CLOSE_X) a.running=false;
@@ -839,33 +1073,37 @@ void processRemoteTouch(App& a,int x,int y) {
         }
         return;
     }
+    if(!a.rdp || !a.rdp->context || !a.rdp->context->input || !remotePoint(a,x,y)) return;
     const int rx=remoteX(a,x);
     const int ry=remoteY(a,y);
-    freerdp_input_send_mouse_event(a.rdp->context->input,PTR_FLAGS_MOVE|PTR_FLAGS_DOWN|PTR_FLAGS_BUTTON1,rx,ry);
-    freerdp_input_send_mouse_event(a.rdp->context->input,PTR_FLAGS_BUTTON1,rx,ry);
+    sendMousePacket(a.rdp->context->input,PTR_FLAGS_MOVE|PTR_FLAGS_DOWN|PTR_FLAGS_BUTTON1,rx,ry);
+    sendMousePacket(a.rdp->context->input,PTR_FLAGS_BUTTON1,rx,ry);
 }
 
 void sendRemoteClick(App& a,int x,int y) {
+    if(!a.rdp || !a.rdp->context || !a.rdp->context->input || !remotePoint(a,x,y)) return;
     const int rx=remoteX(a,x);
     const int ry=remoteY(a,y);
-    freerdp_input_send_mouse_event(a.rdp->context->input,
+    sendMousePacket(a.rdp->context->input,
                                   PTR_FLAGS_MOVE|PTR_FLAGS_DOWN|PTR_FLAGS_BUTTON1,rx,ry);
-    freerdp_input_send_mouse_event(a.rdp->context->input,PTR_FLAGS_BUTTON1,rx,ry);
+    sendMousePacket(a.rdp->context->input,PTR_FLAGS_BUTTON1,rx,ry);
 }
 
 void sendRemoteRightClick(App& a,int x,int y) {
+    if(!a.rdp || !a.rdp->context || !a.rdp->context->input || !remotePoint(a,x,y)) return;
     const int rx=remoteX(a,x);
     const int ry=remoteY(a,y);
-    freerdp_input_send_mouse_event(a.rdp->context->input,
+    sendMousePacket(a.rdp->context->input,
                                   PTR_FLAGS_MOVE|PTR_FLAGS_DOWN|PTR_FLAGS_BUTTON2,rx,ry);
-    freerdp_input_send_mouse_event(a.rdp->context->input,PTR_FLAGS_BUTTON2,rx,ry);
+    sendMousePacket(a.rdp->context->input,PTR_FLAGS_BUTTON2,rx,ry);
 }
 
 void flushPendingTap(App& a,bool force=false) {
     if(!a.pendingTap) return;
     const auto elapsed=std::chrono::steady_clock::now()-a.pendingTapSince;
     if(!force && elapsed<std::chrono::milliseconds(500)) return;
-    sendRemoteClick(a,a.pendingTapX,a.pendingTapY);
+    // The click itself is sent immediately on release. This timer only
+    // expires the short-lived candidate used to recognise a second tap.
     a.pendingTap=false;
 }
 
@@ -875,31 +1113,44 @@ void queueRemoteTap(App& a,int x,int y) {
         processRemoteTouch(a,x,y);
         return;
     }
-    // A different tap cannot complete the pending double-click, so preserve
-    // normal ordering by delivering the older single click immediately.
-    if(a.pendingTap) flushPendingTap(a,true);
+    if(!remotePoint(a,x,y)) return;
+    // Send an ordinary click without the old half-second penalty, then retain
+    // only its position/time as a possible double-click candidate.
+    sendRemoteClick(a,x,y);
     a.pendingTap=true;
     a.pendingTapX=x;
     a.pendingTapY=y;
     a.pendingTapSince=std::chrono::steady_clock::now();
 }
 
+void flushDoubleClickSecond(App& a) {
+    if(!a.doubleClickSecondPending ||
+       std::chrono::steady_clock::now()<a.doubleClickSecondDue) return;
+    sendRemoteClick(a,a.doubleClickX,a.doubleClickY);
+    a.doubleClickSecondPending=false;
+    std::fprintf(stderr,"PaperDesk RDP double click %d %d\n",
+                 a.doubleClickX,a.doubleClickY);
+}
+
 bool beginDoubleTap(App& a,const qtfb::UserInputContents& u) {
-    if(!a.pendingTap || u.y<BAR_H || a.shortcutsOpen) return false;
+    if(!a.pendingTap || !remotePoint(a,u.x,u.y) || a.shortcutsOpen) return false;
     const auto elapsed=std::chrono::steady_clock::now()-a.pendingTapSince;
     const int dx=u.x-a.pendingTapX,dy=u.y-a.pendingTapY;
     if(elapsed>std::chrono::milliseconds(500) || dx*dx+dy*dy>40*40) {
         flushPendingTap(a,true);
         return false;
     }
-    // The first tap was deliberately held.  Deliver both click pairs now,
-    // back-to-back, so the remote OS sees a real double-click regardless of
-    // e-ink latency between the user's two physical taps.
-    sendRemoteClick(a,a.pendingTapX,a.pendingTapY);
-    sendRemoteClick(a,u.x,u.y);
+    // The first click has already been sent. Snap the second click to the
+    // first click's exact coordinates because Windows uses a very small
+    // double-click rectangle. Also enforce a short minimum gap: synthetic
+    // hardware taps may otherwise arrive in the same RDP event batch.
+    a.doubleClickX=a.pendingTapX;
+    a.doubleClickY=a.pendingTapY;
+    a.doubleClickSecondPending=true;
+    a.doubleClickSecondDue=std::max(std::chrono::steady_clock::now(),
+        a.pendingTapSince+std::chrono::milliseconds(90));
     a.pendingTap=false;
     a.doubleTapTouchId=u.devId;
-    std::fprintf(stderr,"PaperDesk RDP double click %d %d\n",u.x,u.y);
     return true;
 }
 
@@ -934,7 +1185,7 @@ void redrawZoomedView(App& a) {
                        int(std::ceil(a.viewX+a.rdp->context->gdi->width/a.zoom)));
     a.dirtyY2=std::min(a.rdp->context->gdi->height,
                        int(std::ceil(a.viewY+a.rdp->context->gdi->height/a.zoom)));
-    a.dirtyTiles.fill(1);
+    std::fill(a.dirtyTiles.begin(),a.dirtyTiles.end(),1);
     a.dirtyTileCount=DAMAGE_TILE_COUNT;
     flushRemoteFrame(a,true);
     a.status="CONNECTED  "+std::to_string(int(std::lround(a.zoom*100)))+"%";
@@ -942,9 +1193,10 @@ void redrawZoomedView(App& a) {
 }
 
 void remoteMouse(App& a,UINT16 flags,int x,int y) {
+    if(!a.rdp || !a.rdp->context || !a.rdp->context->input) return;
     const int rx=remoteX(a,x);
     const int ry=remoteY(a,y);
-    freerdp_input_send_mouse_event(a.rdp->context->input,flags,rx,ry);
+    sendMousePacket(a.rdp->context->input,flags,rx,ry);
 }
 
 void releaseRemoteMouse(App& a,int x,int y) {
@@ -954,7 +1206,91 @@ void releaseRemoteMouse(App& a,int x,int y) {
     a.mouseDown=false;
     a.mouseTouchId=-1;
     a.cleanRefreshPending=true;
-    a.cleanRefreshDue=std::chrono::steady_clock::now()+std::chrono::milliseconds(1100);
+    a.cleanRefreshDue=std::chrono::steady_clock::now()+
+        std::chrono::milliseconds(CLEAN_REFRESH_IDLE_MS);
+}
+
+void resetRemoteInput(App& a,bool release=true) {
+    if(release && a.mouseDown) releaseRemoteMouse(a,a.mouseLastX,a.mouseLastY);
+    a.mouseDown=false; a.mouseTouchId=-1;
+    a.pendingTap=false; a.doubleTapTouchId=-1; a.doubleClickSecondPending=false;
+    a.rightClickSent=false; a.touches.clear(); a.pinchActive=false;
+    a.gestureConsumed=false; a.panCandidate=false; a.panActive=false; a.panId=-1;
+    a.twoFingerMode=TwoFingerMode::None; a.gestureSamplePending=false;
+    a.gestureViewChanged=false; a.wheelRemainder=0; a.pendingWheel=0;
+    a.lastWheel=std::chrono::steady_clock::now();
+}
+
+void setViewportHeight(App& a,int requested) {
+    const int height=requested==0 ? RDP_H : std::clamp(requested,240,RDP_H);
+    if(height==a.viewportHeight) return;
+    const auto old=viewTransform(a);
+    const float centerX=a.viewX+(W/2.0f-old.offsetX)/old.scale;
+    const float centerY=a.viewY+(a.viewportHeight/2.0f-old.offsetY)/old.scale;
+    resetRemoteInput(a);
+    a.viewportHeight=height;
+    const auto next=viewTransform(a);
+    a.viewX=std::clamp(centerX-(W/2.0f-next.offsetX)/next.scale,0.0f,next.maxX);
+    a.viewY=std::clamp(centerY-(height/2.0f-next.offsetY)/next.scale,0.0f,next.maxY);
+    if(a.mode==Mode::Remote) {
+        // Clear the old covered area once, never redraw it on remote damage.
+        fill(a,0,BAR_H,W,RDP_H,255);
+        a.update(0,BAR_H,W,RDP_H);
+        redrawZoomedView(a);
+    }
+}
+
+UINT16 wheelFlags(int rotation) {
+    // RDP wheel rotation is a signed nine-bit value, not an absolute delta
+    // plus a separately negated magnitude. One notch is normally 120 units.
+    rotation=std::clamp(rotation,-240,240);
+    return PTR_FLAGS_WHEEL | (static_cast<UINT16>(rotation)&WheelRotationMask);
+}
+void flushWheel(App& a,bool force=false) {
+    if(a.mode!=Mode::Remote || !a.pendingWheel || !a.rdp || !a.rdp->context || !a.rdp->context->input) return;
+    const auto now=std::chrono::steady_clock::now();
+    if(!force && now-a.lastWheel<std::chrono::milliseconds(40)) return;
+    const int rotation=std::clamp(a.pendingWheel,-240,240);
+    sendMousePacket(a.rdp->context->input,wheelFlags(rotation),0,0);
+    a.pendingWheel-=rotation;
+    a.lastWheel=now;
+}
+
+void sampleTwoFinger(App& a,bool force=false) {
+    if(a.touches.size()!=2 || a.twoFingerMode==TwoFingerMode::None || !a.gestureSamplePending) return;
+    if(!force && std::chrono::steady_clock::now()<a.gestureSampleDue) return;
+    a.gestureSamplePending=false;
+    auto it=a.touches.begin(); const auto p1=it++->second,p2=it->second;
+    const float dx=p2.first-p1.first,dy=p2.second-p1.second;
+    const float distance=std::max(20.0f,std::hypot(dx,dy));
+    const float cx=(p1.first+p2.first)/2,cy=(p1.second+p2.second)/2;
+    const float translation=std::hypot(cx-a.gestureStartCx,cy-a.gestureStartCy);
+    const float separation=std::abs(distance-a.pinchDistance);
+    if(a.twoFingerMode==TwoFingerMode::Pending) {
+        // Coalescing both fingers before classification avoids interpreting
+        // staggered packets from a parallel scroll as a pinch.
+        if(separation>std::max(14.0f,a.pinchDistance*0.07f) && separation>translation*1.5f)
+            a.twoFingerMode=TwoFingerMode::Pinch;
+        else if(translation>=14 && separation<std::max(20.0f,translation*0.9f))
+            a.twoFingerMode=TwoFingerMode::Scroll;
+    }
+    if(a.twoFingerMode==TwoFingerMode::Scroll) {
+        // Finger up scrolls the document down. Bound queued travel so a fast
+        // swipe cannot leave seconds of wheel traffic after release.
+        const float units=(cy-a.gestureLastCy)*(120.0f/36.0f)+a.wheelRemainder;
+        const int whole=static_cast<int>(units);
+        a.wheelRemainder=units-whole;
+        a.pendingWheel=std::clamp(a.pendingWheel+whole,-960,960);
+        a.gestureLastCy=cy;
+        flushWheel(a);
+    } else if(a.twoFingerMode==TwoFingerMode::Pinch) {
+        const float previous=a.zoom,previousX=a.viewX,previousY=a.viewY;
+        a.zoom=std::clamp(a.pinchStartZoom*distance/a.pinchDistance,1.0f,3.0f);
+        const auto transform=viewTransform(a);
+        a.viewX=std::clamp(a.pinchAnchorX-(cx-transform.offsetX)/transform.scale,0.0f,transform.maxX);
+        a.viewY=std::clamp(a.pinchAnchorY-(cy-BAR_H-transform.offsetY)/transform.scale,0.0f,transform.maxY);
+        a.gestureViewChanged=a.gestureViewChanged || previous!=a.zoom || previousX!=a.viewX || previousY!=a.viewY;
+    }
 }
 
 void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
@@ -963,7 +1299,21 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
     const bool release=u.inputType==INPUT_TOUCH_RELEASE;
     if(!press&&!move&&!release) return;
 
-    if(press || move) a.touches[u.devId]={float(u.x),float(u.y)};
+    if(press && !remotePoint(a,u.x,u.y)) return;
+    if(!press && a.touches.find(u.devId)==a.touches.end()) return;
+    if((move || release) && !remotePoint(a,u.x,u.y)) {
+        // Never turn a keyboard-covered release into a click. Existing drags
+        // still receive a clamped button-up before their state is discarded.
+        resetRemoteInput(a);
+        return;
+    }
+    a.touches[u.devId]={float(u.x),float(u.y)};
+    if(a.touches.size()>2) {
+        if(a.mouseDown) releaseRemoteMouse(a,a.mouseLastX,a.mouseLastY);
+        a.mouseTouchId=-1; a.panCandidate=false; a.panActive=false;
+        a.twoFingerMode=TwoFingerMode::None; a.pinchActive=false;
+        a.pendingTap=false; a.doubleClickSecondPending=false; a.gestureConsumed=true;
+    }
     if(press && a.touches.size()==1 && beginDoubleTap(a,u)) return;
     if(release && a.doubleTapTouchId==u.devId) {
         a.touches.erase(u.devId);
@@ -1016,20 +1366,19 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
     }
     if(press && a.touches.size()==2) {
         if(a.mouseDown) releaseRemoteMouse(a,a.mouseLastX,a.mouseLastY);
-        a.mouseTouchId=-1;
-        a.panCandidate=false;
-        a.panActive=false;
-        a.panId=-1;
-        auto it=a.touches.begin(); auto p1=it++->second; auto p2=it->second;
-        if(p1.second>=BAR_H && p2.second>=BAR_H) {
-            const float dx=p2.first-p1.first,dy=p2.second-p1.second;
-            a.pinchDistance=std::max(20.0f,std::sqrt(dx*dx+dy*dy));
-            a.pinchStartZoom=a.zoom;
-            const float cx=(p1.first+p2.first)*0.5f,cy=(p1.second+p2.second)*0.5f-BAR_H;
-            a.pinchAnchorX=a.viewX+cx/outputScaleX(a);
-            a.pinchAnchorY=a.viewY+cy/outputScaleY(a);
-            a.pinchActive=true; a.gestureConsumed=true;
-        }
+        a.mouseTouchId=-1; a.panCandidate=false; a.panActive=false; a.panId=-1;
+        a.pendingTap=false; a.doubleClickSecondPending=false; a.doubleTapTouchId=-1;
+        auto it=a.touches.begin(); const auto p1=it++->second,p2=it->second;
+        a.pinchDistance=std::max(20.0f,std::hypot(p2.first-p1.first,p2.second-p1.second));
+        a.pinchStartZoom=a.zoom;
+        a.gestureStartCx=(p1.first+p2.first)/2;
+        a.gestureStartCy=a.gestureLastCy=(p1.second+p2.second)/2;
+        const auto transform=viewTransform(a);
+        a.pinchAnchorX=a.viewX+(a.gestureStartCx-transform.offsetX)/transform.scale;
+        a.pinchAnchorY=a.viewY+(a.gestureStartCy-BAR_H-transform.offsetY)/transform.scale;
+        a.pinchActive=true; a.gestureConsumed=true;
+        a.twoFingerMode=TwoFingerMode::Pending; a.gestureViewChanged=false;
+        a.wheelRemainder=0; a.gestureSamplePending=false;
     }
     if(move && !a.pinchActive && a.panCandidate && a.panId==u.devId && a.touches.size()==1) {
         const float dx=float(u.x)-a.panStartX,dy=float(u.y)-a.panStartY;
@@ -1047,17 +1396,11 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
             // the e-ink queue and produced duplicated/torn desktop halves.
         }
     }
-    if((move||release) && a.pinchActive && a.touches.size()>=2) {
-        if(move) a.touches[u.devId]={float(u.x),float(u.y)};
-        auto it=a.touches.begin(); auto p1=it++->second; auto p2=it->second;
-        const float dx=p2.first-p1.first,dy=p2.second-p1.second;
-        const float dist=std::max(20.0f,std::sqrt(dx*dx+dy*dy));
-        a.zoom=std::clamp(a.pinchStartZoom*dist/a.pinchDistance,1.0f,3.0f);
-        const float cx=(p1.first+p2.first)*0.5f,cy=(p1.second+p2.second)*0.5f-BAR_H;
-        a.viewX=a.pinchAnchorX-cx/outputScaleX(a);
-        a.viewY=a.pinchAnchorY-cy/outputScaleY(a);
-        a.viewX=std::clamp(a.viewX,0.0f,maxViewX(a));
-        a.viewY=std::clamp(a.viewY,0.0f,maxViewY(a));
+    if((move||release) && a.pinchActive && a.touches.size()==2) {
+        if(!a.gestureSamplePending)
+            a.gestureSampleDue=std::chrono::steady_clock::now()+std::chrono::milliseconds(24);
+        a.gestureSamplePending=true;
+        sampleTwoFinger(a,release);
     }
     if(release) {
         const bool wasGesture=a.gestureConsumed;
@@ -1076,7 +1419,12 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
             a.panId=-1;
         }
         a.touches.erase(u.devId);
-        if(a.pinchActive && a.touches.size()<2) { a.pinchActive=false; redrawZoomedView(a); }
+        if(a.pinchActive && a.touches.size()<2) {
+            a.pinchActive=false; a.twoFingerMode=TwoFingerMode::None;
+            a.gestureSamplePending=false;
+            if(a.gestureViewChanged) redrawZoomedView(a);
+            a.gestureViewChanged=false;
+        }
         else if(finishPan) redrawZoomedView(a);
         else if(!finishMouse && !wasGesture && !a.gestureConsumed) queueRemoteTap(a,u.x,u.y);
         if(a.rightClickSent) a.rightClickSent=false;
@@ -1090,7 +1438,18 @@ void pollInput(App& a) {
     // Remaining packets are handled on the next 12 ms event-loop turn.
     for(int packetBudget=0;packetBudget<64 && a.fb.pollServerPacket(msg);++packetBudget) {
         if(msg.type!=MESSAGE_USERINPUT) continue;
-        const auto& u=msg.userInput;
+        auto u=msg.userInput;
+        if(u.inputType==INPUT_TOUCH_PRESS || u.inputType==INPUT_TOUCH_UPDATE ||
+           u.inputType==INPUT_TOUCH_RELEASE || u.inputType==INPUT_PEN_RELEASE ||
+           u.inputType==INPUT_PEN_PRESS || u.inputType==INPUT_PEN_UPDATE) {
+            const auto point=logicalPoint(a.profile.landscape,u.x,u.y);
+            u.x=point.first; u.y=point.second;
+        }
+        if(u.inputType==INPUT_BTN_PRESS || u.inputType==INPUT_VKB_PRESS ||
+           u.inputType==INPUT_BTN_RELEASE || u.inputType==INPUT_VKB_RELEASE) {
+            const bool down=u.inputType==INPUT_BTN_PRESS || u.inputType==INPUT_VKB_PRESS;
+            if(handleClientCommand(a,u.x,down)) continue;
+        }
         if(a.mode==Mode::Remote && (u.inputType==INPUT_TOUCH_PRESS || u.inputType==INPUT_TOUCH_UPDATE || u.inputType==INPUT_TOUCH_RELEASE)) {
             processTouchPacket(a,u);
             continue;
@@ -1099,10 +1458,8 @@ void pollInput(App& a) {
             if(a.mode==Mode::Login) processLoginTouch(a,u.x,u.y);
             else if(a.mode==Mode::Error) {
                 if(u.x>=CLOSE_X&&u.y>=ACTION_Y&&u.y<ACTION_Y+ACTION_H) a.running=false;
-                else if(u.x<650&&u.y>=330&&u.y<520) {
-                    if(a.launchedFromNativeLogin) a.running=false;
-                    else {a.mode=Mode::Login;a.status="ENTER CONNECTION DETAILS";drawLogin(a,true);}
-                }
+                else if(u.y>=360 && u.y<480 && u.x>=70 && u.x<590) requestRetry(a);
+                else if(u.y>=360 && u.y<480 && u.x>=650 && u.x<1170) a.running=false;
             } else if(a.mode==Mode::Remote) processRemoteTouch(a,u.x,u.y);
         } else if(u.inputType==INPUT_BTN_PRESS || u.inputType==INPUT_VKB_PRESS) {
             if(a.mode==Mode::Login) {
@@ -1126,22 +1483,57 @@ void pollInput(App& a) {
 }
 
 #ifdef PAPERDESK_E2E
+bool parseStateRequest(const std::string& line,int& request) {
+    if(line.compare(0,6,"state ")!=0 || line.size()<7 || line.size()>15) return false;
+    int value=0;
+    for(size_t i=6;i<line.size();++i) {
+        if(line[i]<'0' || line[i]>'9') return false;
+        value=value*10+(line[i]-'0');
+    }
+    request=value; // At most nine decimal digits: no signed overflow.
+    return true;
+}
+
 void pollAutomation(App& a,int fd,std::string& pending) {
     char chunk[256];
-    for(;;) {
+    for(int budget=0;budget<16;++budget) {
         const ssize_t count=::read(fd,chunk,sizeof(chunk));
-        if(count>0) pending.append(chunk,static_cast<size_t>(count));
-        else break;
+        if(count>0) {
+            pending.append(chunk,static_cast<size_t>(count));
+            if(pending.size()>8192) { pending.clear(); break; }
+        } else break;
     }
-    for(;;) {
+    for(int budget=0;budget<64;++budget) {
         const auto end=pending.find('\n');
         if(end==std::string::npos) break;
         const std::string line=pending.substr(0,end);
         pending.erase(0,end+1);
-        int x=0,y=0,key=0;
-        if(std::sscanf(line.c_str(),"tap %d %d",&x,&y)==2 && a.mode==Mode::Remote)
+        int x=0,y=0,key=0,id=0;
+        char command[8]={},extra=0;
+        if(line=="quit") { a.running=false; return; }
+        int request=0;
+        if(parseStateRequest(line,request)) {
+            std::fprintf(stderr,
+                "PAPERDESK_RDP_NATIVE_STATE {\"request\":%d,\"pid\":%ld,\"mode\":%d,"
+                "\"viewportHeight\":%d,\"zoom\":%.6f,\"certificateChanged\":%s,"
+                "\"mouseDown\":%s,\"pendingWheel\":%d}\n",
+                request,static_cast<long>(::getpid()),static_cast<int>(a.mode),
+                a.viewportHeight,static_cast<double>(a.zoom),a.certificateChanged ? "true" : "false",
+                a.mouseDown ? "true" : "false",a.pendingWheel);
+            continue;
+        }
+        if(std::sscanf(line.c_str(),"%7s %d %d %d %c",command,&id,&x,&y,&extra)==4 &&
+           id>=0 && id<32 && x>=0 && x<W && y>=0 && y<H && a.mode==Mode::Remote) {
+            qtfb::UserInputContents u{};
+            u.devId=id; u.x=x; u.y=y;
+            if(std::strcmp(command,"down")==0) u.inputType=INPUT_TOUCH_PRESS;
+            else if(std::strcmp(command,"move")==0) u.inputType=INPUT_TOUCH_UPDATE;
+            else if(std::strcmp(command,"up")==0) u.inputType=INPUT_TOUCH_RELEASE;
+            else continue;
+            processTouchPacket(a,u);
+        } else if(std::sscanf(line.c_str(),"tap %d %d %c",&x,&y,&extra)==2 && a.mode==Mode::Remote)
             processRemoteTouch(a,x,y);
-        else if(std::sscanf(line.c_str(),"key %d",&key)==1 && a.mode==Mode::Remote) {
+        else if(std::sscanf(line.c_str(),"key %d %c",&key,&extra)==1) {
             remoteInputKey(a,key,true);
             remoteInputKey(a,key,false);
         }
@@ -1149,7 +1541,10 @@ void pollAutomation(App& a,int fd,std::string& pending) {
 }
 #endif
 
+void disconnectRdp(App& a);
+
 bool connectRdp(App& a) {
+    disconnectRdp(a);
     freerdp* r=freerdp_new(); if(!r) return false;
     a.rdp=r; r->ContextSize=sizeof(PaperContext); r->ContextNew=contextNew;
     if(!freerdp_context_new(r)) {freerdp_free(r);a.rdp=nullptr;return false;}
@@ -1159,6 +1554,7 @@ bool connectRdp(App& a) {
     bool ok=true;
     ok &= freerdp_settings_set_string(s,FreeRDP_ServerHostname,a.profile.host.c_str());
     ok &= freerdp_settings_set_uint32(s,FreeRDP_ServerPort,a.profile.port);
+    ok &= freerdp_settings_set_uint32(s,FreeRDP_TcpConnectTimeout,5000);
     ok &= freerdp_settings_set_string(s,FreeRDP_Username,a.profile.user.c_str());
     ok &= freerdp_settings_set_string(s,FreeRDP_Password,a.profile.password.c_str());
     if(!a.profile.domain.empty()) ok &= freerdp_settings_set_string(s,FreeRDP_Domain,a.profile.domain.c_str());
@@ -1184,15 +1580,49 @@ bool connectRdp(App& a) {
     std::fprintf(stderr,"PaperDesk RDP performance scale=%d colors=%d size=%ux%u\n",
                  a.profile.scalePercent,a.profile.colorDepth,sessionWidth,sessionHeight);
     if(!ok || !freerdp_connect(r)) {
-        freerdp_context_free(r); freerdp_free(r); a.rdp=nullptr; return false;
+        disconnectRdp(a); return false;
     }
+    std::fprintf(stderr,"PaperDesk RDP connected\n");
     return true;
 }
 
 void disconnectRdp(App& a) {
+    resetRemoteInput(a,false);
+    a.shortcutsOpen=false; a.shift=false;
+    a.dirty=false; a.dirtyTileCount=0;
+    std::fill(a.dirtyTiles.begin(),a.dirtyTiles.end(),0);
+    a.dirtyX1=W; a.dirtyY1=RDP_H; a.dirtyX2=a.dirtyY2=0;
+    a.cleanRefreshPending=false;
     if(!a.rdp) return;
     freerdp_disconnect(a.rdp);
     freerdp_context_free(a.rdp); freerdp_free(a.rdp); a.rdp=nullptr;
+}
+
+bool requestRetry(App& a) {
+    if(!canRetry(a)) return false;
+    disconnectRdp(a);
+    // No profile write here: this retry uses only the current in-memory copy.
+    // A rejected changed certificate remains latched until the app closes.
+    a.zoom=1; a.viewX=a.viewY=0;
+    a.mode=Mode::Connecting; a.status="CONNECTING...";
+    a.fb.setRefreshMode(REFRESH_MODE_UI);
+    drawConnecting(a);
+    return true;
+}
+
+bool handleClientCommand(App& a,int key,bool down) {
+    if((key&0xff000000)==0x03000000) {
+        if(down) setViewportHeight(a,key&0x00ffffff);
+        return true;
+    }
+    if((key&0xffff0000)!=0x02ff0000) return false;
+    if(!down) return true;
+    const int command=key&0xffff;
+    if(command==0x100) requestRetry(a);
+    else if(command==0x101 && a.mode==Mode::Remote) {
+        resetRemoteInput(a); a.zoom=1; a.viewX=a.viewY=0; redrawZoomedView(a);
+    } else if(a.mode==Mode::Remote) sendShortcut(a,command);
+    return true;
 }
 
 void signalHandler(int) { if(g_app) g_app->running=false; }
@@ -1200,7 +1630,9 @@ void signalHandler(int) { if(g_app) g_app->running=false; }
 
 int main(int argc,char** argv) {
     std::signal(SIGTERM,signalHandler); std::signal(SIGINT,signalHandler); std::signal(SIGPIPE,SIG_IGN);
-    App app; g_app=&app; loadProfile(app.profile);
+    Profile selected;
+    loadProfile(selected);
+    bool rememberPassword=true;
 #ifdef PAPERDESK_E2E
     int automationFd=-1;
     std::string automationPending;
@@ -1216,27 +1648,36 @@ int main(int argc,char** argv) {
             autoConnect=true;
             return true;
         };
-        if(arg=="--host") takeValue(app.profile.host);
-        else if(arg=="--user") takeValue(app.profile.user);
+        if(arg=="--host") takeValue(selected.host);
+        else if(arg=="--user") takeValue(selected.user);
         else if(arg=="--domain-hex") {
             std::string encoded;
-            if(takeValue(encoded)) hexDecode(encoded,app.profile.domain);
+            if(takeValue(encoded)) hexDecode(encoded,selected.domain);
         }
         else if(arg=="--password-hex") {
             std::string encoded;
-            if(takeValue(encoded)) hexDecode(encoded,app.profile.password);
+            if(takeValue(encoded)) hexDecode(encoded,selected.password);
         } else if(arg=="--port" && i+1<argc) {
             int port=0;
-            if(parsePort(argv[++i],port)) app.profile.port=port;
+            if(parsePort(argv[++i],port)) selected.port=port;
             autoConnect=true;
         } else if(arg=="--scale-percent" && i+1<argc) {
-            app.profile.scalePercent=normalizeScalePercent(std::atoi(argv[++i]));
+            selected.scalePercent=normalizeScalePercent(std::atoi(argv[++i]));
             autoConnect=true;
         } else if(arg=="--color-depth" && i+1<argc) {
-            app.profile.colorDepth=normalizeColorDepth(std::atoi(argv[++i]));
+            selected.colorDepth=normalizeColorDepth(std::atoi(argv[++i]));
             autoConnect=true;
+        } else if(arg=="--orientation" && i+1<argc) {
+            selected.landscape=std::string(argv[++i])=="landscape";
         } else if(arg=="--connect") autoConnect=true;
+        else if(arg=="--no-save-password") rememberPassword=false;
     }
+    configureOrientation(selected.landscape);
+    std::fprintf(stderr,"PaperDesk RDP orientation %s logical=%dx%d\n",
+                 selected.landscape ? "landscape" : "portrait",W,H);
+    App app(selected); g_app=&app;
+    app.rememberPassword=rememberPassword;
+    std::fill(selected.password.begin(),selected.password.end(),'\0');
     // The editable login belongs to the native QML front-end.  AppLoad can
     // still expose this external engine as a direct entry, so make that path
     // reuse the saved profile instead of falling back to the framebuffer
@@ -1245,7 +1686,9 @@ int main(int argc,char** argv) {
         autoConnect=true;
     if(autoConnect) {
         app.launchedFromNativeLogin=true;
-        saveProfile(app.profile);
+        Profile persisted=profileForStorage(app.profile,app.rememberPassword);
+        saveProfile(persisted);
+        std::fill(persisted.password.begin(),persisted.password.end(),'\0');
         app.mode=Mode::Connecting;
         app.status="CONNECTING...";
         drawConnecting(app);
@@ -1255,13 +1698,17 @@ int main(int argc,char** argv) {
     }
     while(app.running) {
         pollInput(app);
+        sampleTwoFinger(app);
+        flushWheel(app);
         maybeSendLongPress(app);
         flushPendingTap(app);
+        flushDoubleClickSecond(app);
 #ifdef PAPERDESK_E2E
         if(automationFd>=0) pollAutomation(app,automationFd,automationPending);
 #endif
+        if(!app.running) break;
         if(app.mode==Mode::Connecting) {
-            if(!connectRdp(app)) drawError(app,"CONNECTION OR LOGIN ERROR");
+            if(!connectRdp(app)) drawError(app,app.certificateChanged ? "SERVER CERTIFICATE CHANGED" : "CONNECTION OR LOGIN ERROR");
         } else if(app.mode==Mode::Remote && app.rdp) {
             if(!freerdp_check_event_handles(app.rdp->context)) {disconnectRdp(app);app.fb.setRefreshMode(REFRESH_MODE_UI);drawError(app,"CONNECTION WAS INTERRUPTED");}
             else { flushRemoteFrame(app); maybeCleanRefresh(app); }
