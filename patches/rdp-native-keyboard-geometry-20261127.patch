@@ -1,0 +1,41 @@
+diff --git a/product/payload/system/paperdesk-appload-window.qml b/product/payload/system/paperdesk-appload-window.qml
+index df0b18a..79fc790 100644
+--- a/product/payload/system/paperdesk-appload-window.qml
++++ b/product/payload/system/paperdesk-appload-window.qml
+@@ -39,6 +39,7 @@ FocusScope {
+     readonly property bool paperdeskRdp: appName === "PaperDesk RDP Engine"
+     property bool rdpLandscape: false
+     readonly property bool rdpKeyboardVisible: systemKeyboardActive || Qt.inputMethod.visible
++    onRdpKeyboardVisibleChanged: updateRdpKeyboardLayout()
+     property rect rdpKeyboardRectangle: Qt.inputMethod.keyboardRectangle
+     readonly property real rdpKeyboardInset: calculateRdpKeyboardInset(rdpKeyboardVisible, rdpKeyboardRectangle)
+     readonly property int rdpViewportHeight: Math.max(240, Math.floor(rdpChrome.height - 112 - rdpKeyboardInset))
+@@ -61,6 +62,19 @@ FocusScope {
+         const maximum = Math.max(0, rdpChrome.height - 112 - 240);
+         const fallback = rdpChrome.height * 0.38;
+         let inset = fallback;
++        // This firmware reports keyboardRectangle in panel-local coordinates
++        // (0,0,1404,544), not its screen position (0,1328). Measure the actual
++        // native keyboard item instead; never interpret the full-screen panel
++        // or a hidden language-selection popup as the keyboard bounds.
++        const keyboard = rdpNativeKeyboardPanel ? rdpNativeKeyboardPanel.virtualKeyboard : null;
++        if(keyboard && keyboard.visible && keyboard.width > 0 && keyboard.height > 0) {
++            const nativeBounds = keyboard.mapToItem(rdpChrome, 0, 0, keyboard.width, keyboard.height);
++            const nativeWidth = Math.max(0, Math.min(rdpChrome.width, nativeBounds.x + nativeBounds.width) - Math.max(0, nativeBounds.x));
++            if(isFinite(nativeBounds.y) && nativeWidth >= rdpChrome.width * 0.5 &&
++                    nativeBounds.y >= 112 && nativeBounds.y < rdpChrome.height &&
++                    nativeBounds.y + nativeBounds.height >= rdpChrome.height - 2)
++                return Math.min(maximum, Math.max(0, rdpChrome.height - nativeBounds.y));
++        }
+         if(rectangle.width > 0 && rectangle.height > 0 &&
+                 isFinite(rectangle.x) && isFinite(rectangle.y) &&
+                 isFinite(rectangle.width) && isFinite(rectangle.height)) {
+@@ -111,7 +125,7 @@ FocusScope {
+         return null;
+     }
+     function updateRdpKeyboardLayout() {
+-        if(!rdpOwnsLandscapeKeyboard) {
++        if(!paperdeskRdp || !rdpKeyboardVisible || !enabled || !visible || closing) {
+             nativeKeyboardLayoutProbe.stop();
+             return;
+         }

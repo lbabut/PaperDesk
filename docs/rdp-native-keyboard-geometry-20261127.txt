@@ -1,0 +1,26 @@
+Live tablet keyboard geometry correction, 27 November 2026
+
+This supersedes the earlier mock-only blank-band diagnosis. The earlier
+Math.max correction was necessary but did not resolve this firmware's issue.
+Real saved-profile RDP session, production native engine and firmware keyboard:
+Qt.inputMethod.keyboardRectangle=(0,0,1404,544); native visible keyboard item
+maps to screen (0,1328,1404,544), full display 1404x1872, toolbar112px.
+Before: fallback inset711.36, viewport1048; blank reservation about168px.
+After: actual item inset544, viewport1216; 112+1216=1328 keyboard top.
+Actual device QML probe logged RDP_LIVE_ALIGNMENT PASS at10:27:47UTC.
+
+Change: discover native panel for portrait as well as landscape, bounded
+lazy probing, and prefer mapped visible virtualKeyboard bounds. Preserve
+rectangle/fallback checks if no native keyboard is available. No native
+binary, remote resolution, credentials, saved profiles or artwork changes.
+Patch applies AFTER rdp-keyboard-gap-20261127.patch to the actual runtime
+wrapper2248e84b, NOT blindly to older public shared-QML source.
+Candidate SHA25688d4cabfb72811f202ede8c272d55d20949b28d65e221f78e4870b67643a5846.
+Rollback previous wrapper retained in private tablet state.
+
+Tests:22 actual-function JS cases;28 offscreen QML compatibility cases pass.
+Mock tests do not establish optical performance. Live geometry is measured,
+not inferred from the user photograph. Qt grabToImage is unsupported on this
+firmware and was removed from the private diagnostic; it is NOT product code.
+No raw screenshots, saved-session details or full pre-existing dirty shared
+QML files are included in this publication. Production release unchanged.
