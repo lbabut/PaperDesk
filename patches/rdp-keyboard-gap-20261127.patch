@@ -1,0 +1,13 @@
+--- a/product/payload/system/paperdesk-appload-window.qml
++++ b/product/payload/system/paperdesk-appload-window.qml
+@@ -74,7 +74,9 @@
+             // bottom-docked landscape keyboard's actual geometry.
+             if(coveredWidth >= rdpChrome.width * 0.5 && bounds.y >= 112 &&
+                     bounds.y < rdpChrome.height && bounds.y + bounds.height >= rdpChrome.height - 2)
+-                inset = Math.max(fallback, rdpChrome.height - bounds.y);
++                // A valid measured keyboard can be smaller than the emergency
++                // fallback. Keeping fallback as a minimum leaves a white gap.
++                inset = rdpChrome.height - bounds.y;
+         }
+         return Math.min(maximum, Math.max(0, inset));
+     }

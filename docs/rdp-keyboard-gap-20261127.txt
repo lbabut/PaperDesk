@@ -1,0 +1,59 @@
+RDP blank band above keyboard — 27 November 2026
+
+Scope/provenance
+Previous keyboard-scale UAT remains b0de58fd; this change is in the shared
+AppLoad QML wrapper, not native scale conversion. Snapshot exact installed/
+canonical window baseline7e49658564c936e3740a3227f36c68f0384f805e4ac446f56f7130bd53d03629
+and AppLoad main9a7c4769c9b995a47a077e1342817ef418f1bd1ac7abade106199d2f424b5a00
+into an isolated LOCAL test worktree. Current QML files/mocks contain earlier
+dirty work newer than Git HEAD. Auto-review rejected publishing those full
+shared files because it would expose unrelated pre-existing changes. The safe
+publication is ONLY patches/rdp-keyboard-gap-20261127.patch, the focused JS
+test and this evidence note. Full runtime baselines stay local/uncommitted.
+Canonical dirty sources and deployed files remain untouched by preparation.
+
+Reproduced defect
+calculateRdpKeyboardInset used Math.max(fallback,actualInset). Even a valid,
+fully bottom-docked keyboard smaller than38% of display height could not
+reclaim excess reserved area. Test portrait keyboard500: viewport1048 instead
+of1260 (212px gap). Landscape keyboard300: viewport758 instead of992 (234px).
+Owner photograph shows a blank band consistent with this defect; actual live
+Qt.inputMethod keyboard rectangle was not captured, so visual resolution is
+not yet independently established.
+
+Change
+When mapped, finite, sufficiently wide, bottom-docked geometry is valid, use
+its actual inset rather than imposing the emergency38% estimate as a minimum.
+Still retain fallback for invalid/empty/stale orientation geometry and clamp
+to a minimum240px viewport. No native desktop shrink, pointer, refresh or
+security-policy change. Only window wrapper is a potential deployment target;
+AppLoad main/mocks are matching baseline dependencies for reproducible tests.
+
+Tests actually run
+scripts/test-rdp-keyboard-gap.sh uses cached Qt runtime and private config.
+That full-suite runner/baseline is retained locally, not included in narrow
+publication. Public focused reproduction:
+node tests/rdp-keyboard-gap-inset.cjs PATH_TO_ACTUAL_WINDOW_QML
+It reads the actual function and checks16 cases across both orientations,
+without storing/re-publishing the rest of the runtime source. Apply the narrow
+patch ONLY to the baseline hash specified above, not the older Git HEAD.
+New portrait_short/landscape_short cases fail original formula (26pass2fail),
+then exact same28-case suite passes patched formula (28pass0fail0skip).
+Includes existing keyboard geometry, orientation, toolbar, shortcut and
+window-stack/input ownership tests. These are mocked offscreen QML tests,
+not actual firmware keyboard geometry/optical validation. Initial test runner
+attempt lacked QuickTest library search path; proper cached runtime rerun
+passed. No installation or UI restart yet. Whitespace diff check passes.
+
+Candidate window SHA256
+2248e84b773621eb0e6b5e48a09ca3c1b4bc0f6eb7883bc6386c08869bb9feca
+
+Deployment boundary
+Shared window component is cached by the active UI; apply requires a short
+xochitl/interface restart, not device reboot. RDPPID17523 currently active.
+Owner was asked whether another app has unsaved notes/art before restart;
+no reply yet. Do NOT infer yesterday's scratch permission or RDP-only close
+permission covers new unsaved work in other apps. Preserve current native
+keyboard-scale fix, Sketch and profiles. Before deployment validate original
+window hash, retain rollback, close RDP gracefully only as authorized, restart
+UI only after save-safety gate, verify active runtime and QML error logs.
