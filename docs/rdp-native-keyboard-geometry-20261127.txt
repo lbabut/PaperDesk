@@ -8,6 +8,11 @@ maps to screen (0,1328,1404,544), full display 1404x1872, toolbar112px.
 Before: fallback inset711.36, viewport1048; blank reservation about168px.
 After: actual item inset544, viewport1216; 112+1216=1328 keyboard top.
 Actual device QML probe logged RDP_LIVE_ALIGNMENT PASS at10:27:47UTC.
+Repeat without Qt capture at10:30:17UTC:PASS1216; hidden10:30:26UTC:
+inset0/viewportCommand0; reopened10:30:29UTC:inset544/viewport1216.
+Private read-only composed-framebuffer capture visually inspected afterward:
+desktop reaches native keyboard with no white band. This verifies composed
+pixels, not physical panel ghosting. No raw user-desktop image published.
 
 Change: discover native panel for portrait as well as landscape, bounded
 lazy probing, and prefer mapped visible virtualKeyboard bounds. Preserve
