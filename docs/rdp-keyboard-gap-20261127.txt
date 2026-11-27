@@ -1,5 +1,19 @@
 RDP blank band above keyboard — 27 November 2026
 
+DEPLOYMENT UPDATE27November10:19UTC
+Owner explicitly authorized closing apps and restarting tablet interface after
+save-safety question. RDP was already closed at preflight; no process killed.
+Installed only the tested narrow wrapper change, exact baseline/candidate
+hash checks, previous wrapper retained at:
+/home/root/.local/state/rdp-gap-uat.XbWRUQ/previous-window.qml
+One normal xochitl stop/start, no device reboot. Fresh10:19:33UTC: active
+PID17629,NRestarts0, qmldiff resource directory startup observed; no matching
+ReferenceError/TypeError/SyntaxError/load errors in scoped startup query.
+RDP nativeb0de58fd and Sketchrastera1b2246f/ink5fb519b9 unchanged; profiles,
+certificates, artwork and production not modified. Firmware keyboard's live
+rectangle and optical blank-band disappearance NOT yet verified; human UAT
+must reopen RDP and keyboard. Earlier deployment boundary below is historical.
+
 Scope/provenance
 Previous keyboard-scale UAT remains b0de58fd; this change is in the shared
 AppLoad QML wrapper, not native scale conversion. Snapshot exact installed/
