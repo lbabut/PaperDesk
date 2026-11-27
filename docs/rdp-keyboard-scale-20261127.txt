@@ -1,5 +1,18 @@
 RDP keyboard crop instead of shrink — 27 November 2026
 
+DEPLOYMENT UPDATE — 27 November09:54UTC
+Owner explicitly authorized closing the active RDP session over Wi-Fi and
+deferred monetization work. VerifiedPID17395 mapped to the installed RDP
+binary; SIGTERM invoked its normal running=false shutdown, then exit verified.
+Idle-only recovery-backed installation succeeded: candidate binaryb0de58fd
+and C++7d570474 hashes matched. NEON header unchanged; no xochitl restart,
+profile/certificate modification, Sketch/artwork change or Prod publication.
+Previous exact NEON UAT binary/source retained at:
+/home/root/.local/state/rdp-keyboard-uat.fQ9aVv/previous
+Runtime/visual acceptance of this new keyboard behavior remains for owner
+UAT; prior tests below were private-framebuffer tests, not a live session.
+Earlier deployment boundary at the bottom is historical and superseded.
+
 Base: installed NEON UAT8115e9f5ee809603214a94adcc471cef0f6160f1.
 Report: opening system keyboard shrank the entire remote desktop and text.
 Root cause: viewTransform fitted remote height to the reduced viewport on
