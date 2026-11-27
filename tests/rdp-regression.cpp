@@ -132,30 +132,41 @@ static void inputAndViewportTests() {
     app.zoom=1; app.viewX=app.viewY=0; resetRemoteInput(app); mousePackets.clear();
     touch(app,INPUT_TOUCH_PRESS,1,400,700); touch(app,INPUT_TOUCH_UPDATE,1,450,750);
     assert(app.mouseDown);
+    const float fullScale=outputScaleX(app);
     setViewportHeight(app,700);
     assert(!app.mouseDown && app.touches.empty() && !app.pendingTap && app.pendingWheel==0);
     assert(mousePackets.back().flags==PTR_FLAGS_BUTTON1);
     assert(near(outputScaleX(app),outputScaleY(app)));
     const auto t=viewTransform(app);
-    assert(t.offsetX>0 && near(t.offsetY,0));
-    assert(app.pixels()[(BAR_H+300)*W]==0xffff);
+    assert(near(t.scale,fullScale)&&near(t.offsetX,0)&&near(t.offsetY,0));
+    assert(t.maxY>0); // Hidden desktop remains accessible without smaller text.
+    assert(app.pixels()[(BAR_H+300)*W]==0);
     assert(app.pixels()[(BAR_H+300)*W+W/2]==0);
     assert(app.pixels()[(BAR_H+701)*W+W/2]==0xffff);
     mousePackets.clear();
-    touch(app,INPUT_TOUCH_PRESS,1,1,300); touch(app,INPUT_TOUCH_RELEASE,1,1,300);
+    touch(app,INPUT_TOUCH_PRESS,1,-1,300); touch(app,INPUT_TOUCH_RELEASE,1,-1,300);
     touch(app,INPUT_TOUCH_PRESS,1,W/2,BAR_H+701); touch(app,INPUT_TOUCH_RELEASE,1,W/2,BAR_H+701);
-    sendRemoteClick(app,1,300); processRemoteTouch(app,W/2,BAR_H+701);
+    sendRemoteClick(app,-1,300); processRemoteTouch(app,W/2,BAR_H+701);
     assert(mousePackets.empty());
     // Both edges of the actual content map into the corresponding remote edges.
     assert(remoteX(app,int(std::ceil(t.offsetX)))<=1);
     assert(remoteX(app,int(t.offsetX+gdi.width*t.scale)-1)>=gdi.width-4);
-    assert(remoteY(app,BAR_H)==0);
+    assert(std::abs(remoteY(app,BAR_H)-app.viewY)<1.01f);
+    // Two-finger translation exposes keyboard-covered content locally, with
+    // no remote wheel packets or drag. Full-screen scroll was tested above.
+    const float beforePan=app.viewY;mousePackets.clear();
+    touch(app,INPUT_TOUCH_PRESS,1,400,450);touch(app,INPUT_TOUCH_PRESS,2,700,450);
+    touch(app,INPUT_TOUCH_UPDATE,1,400,350);touch(app,INPUT_TOUCH_UPDATE,2,700,350);
+    sampleTwoFinger(app,true);assert(app.viewY>beforePan&&!app.pendingWheel);
+    touch(app,INPUT_TOUCH_RELEASE,1,400,350);touch(app,INPUT_TOUCH_RELEASE,2,700,350);
+    assert(mousePackets.empty()&&near(outputScaleX(app),fullScale));
     const int updates=app.fb.updates;
     app.cleanRefreshPending=false; app.dirty=false;
     for(int n=0;n<100;++n) { flushRemoteFrame(app); maybeCleanRefresh(app); flushWheel(app); sampleTwoFinger(app); }
     assert(app.fb.updates==updates);
     remoteInputKey(app,0x03000000,false); assert(app.viewportHeight==700);
     remoteInputKey(app,0x03000000,true); assert(app.viewportHeight==RDP_H);
+    assert(near(outputScaleX(app),fullScale)&&near(app.viewY,0));
     remoteInputKey(app,0x02ff0101,true); assert(near(app.zoom,1));
     app.rdp=nullptr; // fixture owns stack-backed FreeRDP objects
 

@@ -1,0 +1,45 @@
+RDP keyboard crop instead of shrink — 27 November 2026
+
+Base: installed NEON UAT8115e9f5ee809603214a94adcc471cef0f6160f1.
+Report: opening system keyboard shrank the entire remote desktop and text.
+Root cause: viewTransform fitted remote height to the reduced viewport on
+every keyboard-height event. No server resolution change was involved.
+
+Change
+Fit scale uses full RDP_H before keyboard cropping; raster, damage mapping,
+pointer hit tests and pan limits still share one transform. Available height
+clips output instead of shrinking the desktop. Resize preserves the previous
+view center, constrained to valid pan limits. Hiding keyboard returns to full
+viewport and clamps offsets. Two-finger parallel swipe with keyboard open
+moves local cropped viewport, rather than sending remote wheel events.
+Single-finger remote drag remains unchanged. With keyboard hidden, two-finger
+remote scroll remains unchanged. Pan publishes one coherent frame on release.
+Existing NEON rendering and certificate/profile/network policy are unchanged.
+
+Checks actually completed
+ARM native regression passed on real tablet: keyboard-scale invariance in
+portrait/landscape, released held mouse during transition, blocked covered/
+outside clicks, viewport-aware pointer mapping, two-finger local pan with no
+remote mouse/wheel traffic, restored full viewport, and prior keyboard, input,
+retry, profile/password/certificate tests. The previous expected keyboard
+letterboxing was explicitly replaced by no-shrink assertions, not removed.
+ARM actual-render differential passed six cases including keyboard, with
+identical scalar/NEON framebuffer and refresh rectangles. Exhaustive allRGB
+color conversion check passed16777216 values. This is private-framebuffer
+testing, not a new live RDP connection or optical e-ink validation. Existing
+user RDP was active during tests; no real input or profile access by fixtures.
+Source diff whitespace check and production ARM build passed. Bundled old
+FreeRDP LTO warnings remain in build logs. No changed security/library policy.
+
+Candidate binary SHA256
+b0de58fd3e9251f2ec3efb71ebd3408c0d37487ab7e6b5c7233b664bdb1115f4
+C++ SHA256
+7d5704742f434f7611c737f7a33e5b2ee92307528571fb6a75f75457b62bf0c7
+
+Deployment boundary
+At09:46:20UTC installed binary stillc43367a4 and paperrdpPID17395 active.
+Do not interrupt user's session. Owner asked to Close RDP before idle-only
+UAT installation. This commit prepares the fix; it does NOT claim deployment,
+human acceptance or Prod publication. Do not change Sketch or current art.
+Recoverable install must check current expectedc43367a4 hash, back up binary/
+C++ before atomic replacement, verify new hashes and preserve NEON header.

@@ -1,0 +1,13 @@
+PaperDesk RDP double click 500 700
+PaperDesk RDP right click 500 700
+NATIVE_RDP_KEYS_WHEEL_VIEWPORT_RETRY_IDLE_TESTS_PASS
+NATIVE_RDP_ORIENTATION_RASTER_TOUCH_PROFILES_PASS
+NATIVE_RDP_PASSWORD_CERTIFICATE_PROFILE_KEY_TESTS_PASS
+PASS all16777216 RGB values, alpha ignored, edge lengths and exact damage spans
+{"case":"portrait_1to1_dense","frames":12,"scalar_us":1654024,"candidate_us":638069,"exact_pixels_and_regions":true,"network":false,"optical":false}
+{"case":"portrait_1to1_sparse","frames":40,"scalar_us":160581,"candidate_us":67860,"exact_pixels_and_regions":true,"network":false,"optical":false}
+{"case":"landscape_1to1_dense","frames":12,"scalar_us":2396949,"candidate_us":1429874,"exact_pixels_and_regions":true,"network":false,"optical":false}
+{"case":"scaled_letterbox","frames":6,"scalar_us":446946,"candidate_us":446951,"exact_pixels_and_regions":true,"network":false,"optical":false}
+{"case":"zoom_pan","frames":6,"scalar_us":755889,"candidate_us":766005,"exact_pixels_and_regions":true,"network":false,"optical":false}
+{"case":"keyboard","frames":6,"scalar_us":596842,"candidate_us":226199,"exact_pixels_and_regions":true,"network":false,"optical":false}
+PASS actual renderer differential matrix; private framebuffer, no profiles/network/QTFB

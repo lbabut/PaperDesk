@@ -586,7 +586,7 @@ void loadProfile(Profile& p) {
 }
 
 // The same transform drives raster damage, sampling and pointer hit testing.
-// Keyboard space reduces the viewport, never the server desktop dimensions.
+// Keyboard space crops the viewport; it must not shrink the desktop/text.
 struct ViewTransform {
     float scale, offsetX, offsetY, maxX, maxY;
     int remoteWidth, remoteHeight, viewportWidth, viewportHeight;
@@ -596,9 +596,9 @@ struct ViewTransform {
     }
 };
 
-ViewTransform makeTransform(int rw,int rh,int width,int height,float zoom) {
+ViewTransform makeTransform(int rw,int rh,int width,int height,float zoom,int fitHeight=0) {
     rw=std::max(1,rw); rh=std::max(1,rh);
-    const float scale=std::min(float(width)/rw,float(height)/rh)*zoom;
+    const float scale=std::min(float(width)/rw,float(fitHeight>0?fitHeight:height)/rh)*zoom;
     return {scale,std::max(0.0f,(width-rw*scale)/2),
             std::max(0.0f,(height-rh*scale)/2),
             std::max(0.0f,rw-width/scale),std::max(0.0f,rh-height/scale),
@@ -608,7 +608,7 @@ ViewTransform makeTransform(int rw,int rh,int width,int height,float zoom) {
 ViewTransform viewTransform(const App& a) {
     const auto* gdi=a.rdp && a.rdp->context ? a.rdp->context->gdi : nullptr;
     return makeTransform(gdi ? gdi->width : W,gdi ? gdi->height : RDP_H,
-                         W,a.viewportHeight,a.zoom);
+                         W,a.viewportHeight,a.zoom,RDP_H);
 }
 float outputScaleX(const App& a) { return viewTransform(a).scale; }
 float outputScaleY(const App& a) { return viewTransform(a).scale; }
@@ -1275,6 +1275,15 @@ void sampleTwoFinger(App& a,bool force=false) {
             a.twoFingerMode=TwoFingerMode::Scroll;
     }
     if(a.twoFingerMode==TwoFingerMode::Scroll) {
+        // With keyboard cropping, move the local viewport instead of shrinking
+        // the desktop. One-finger drag still belongs to the remote application.
+        if(a.viewportHeight<RDP_H && maxViewY(a)>0) {
+            const float previous=a.viewY;
+            a.viewY=std::clamp(a.viewY-(cy-a.gestureLastCy)/outputScaleY(a),0.0f,maxViewY(a));
+            a.gestureLastCy=cy;
+            a.gestureViewChanged=a.gestureViewChanged||previous!=a.viewY;
+            return; // Coherent repaint on gesture release, as with zoom/pan.
+        }
         // Finger up scrolls the document down. Bound queued travel so a fast
         // swipe cannot leave seconds of wheel traffic after release.
         const float units=(cy-a.gestureLastCy)*(120.0f/36.0f)+a.wheelRemainder;
