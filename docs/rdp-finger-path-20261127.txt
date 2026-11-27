@@ -40,3 +40,11 @@ change global keyboard maps. No new Unicode success claim.
 Canonical dirty PaperDesk tree, production/main/site and user documents stay
 untouched. Private test canvas/probe/configuration must be retired/restored
 before leaving normal UAT. No monetization or trading changes.
+
+UAT installed and verified: binary/cpp hashes above, wrapper88d4cabf remains.
+Normal non-E2E build connected successfully in the saved session (PID20064)
+and composed-framebuffer image was inspected privately. Then test connection
+closed, own canvas closed, original manifest/config restored, private probe
+retired. Final UI activePID20256/NRestarts0. Previous binary/cpp retained at
+private tablet state rdp-drag-play-20261127 for recovery. No physical-finger
+or optical latency qualification and no production release inferred.
