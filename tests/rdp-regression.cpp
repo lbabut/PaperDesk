@@ -24,6 +24,10 @@ static void touch(App& app,int type,int id,int x,int y) {
     processTouchPacket(app,u);
 }
 static bool near(float a,float b) { return std::abs(a-b)<0.01f; }
+static void pen(App& app,int type,int x,int y) {
+    qtfb::UserInputContents u{};u.inputType=type;u.x=x;u.y=y;
+    processPenPacket(app,u);
+}
 
 static void inputAndViewportTests() {
     Profile p; p.host="fixture.invalid"; p.user="fixture-user";
@@ -79,11 +83,53 @@ static void inputAndViewportTests() {
     unicodePackets.clear(); remoteInputKey(app,0x02000009,true); remoteInputKey(app,0x02000009,false);
     assert(unicodePackets.empty() && keyPackets.size()==2 && keyPackets[0].code==0x0f);
 
+    // Stylus starts drawing immediately, keeps every move and final position.
+    mousePackets.clear();pen(app,INPUT_PEN_UPDATE,300,500);
+    pen(app,INPUT_PEN_RELEASE,300,500);assert(mousePackets.empty());
+    pen(app,INPUT_PEN_PRESS,300,500);
+    assert(app.penDown && app.mouseDown && mousePackets.size()==1);
+    for(int n=1;n<=100;++n)pen(app,INPUT_PEN_UPDATE,300+n,500+n);
+    assert(mousePackets.size()==101);
+    touch(app,INPUT_TOUCH_PRESS,1,700,800);assert(app.penDown && app.touches.empty());
+    pen(app,INPUT_PEN_RELEASE,410,610);
+    assert(mousePackets.size()==103 && !app.penDown && !app.mouseDown);
+    assert(mousePackets.back().flags==PTR_FLAGS_BUTTON1);
+    assert(mousePackets.back().x==410 && mousePackets.back().y==610-BAR_H);
+    pen(app,INPUT_PEN_PRESS,300,500);pen(app,INPUT_PEN_UPDATE,300,BAR_H-1);
+    assert(!app.penDown && !app.mouseDown);
+    // Keyboard clipping cancels contact and never generates a new click.
+    resetRemoteInput(app);mousePackets.clear();setViewportHeight(app,1000);
+    pen(app,INPUT_PEN_PRESS,300,500);pen(app,INPUT_PEN_UPDATE,300,BAR_H+1001);
+    assert(!app.penDown && !app.mouseDown && mousePackets.size()==3);
+    pen(app,INPUT_PEN_RELEASE,300,500);assert(mousePackets.size()==3);
+    pen(app,INPUT_PEN_PRESS,300,500);setViewportHeight(app,0);
+    assert(!app.penDown && !app.mouseDown);
+    // At zoom >1 pen draws remotely, while fingers retain local pan semantics.
+    app.zoom=2;mousePackets.clear();pen(app,INPUT_PEN_PRESS,400,500);
+    pen(app,INPUT_PEN_UPDATE,450,550);pen(app,INPUT_PEN_RELEASE,460,560);
+    assert(mousePackets.size()==4 && !app.panActive && !app.penDown);
+    app.zoom=1;resetRemoteInput(app);mousePackets.clear();
+
     // Single-finger drag, ordinary click and right click retain distinct paths.
     mousePackets.clear(); touch(app,INPUT_TOUCH_PRESS,1,300,500);
     touch(app,INPUT_TOUCH_UPDATE,1,340,540); touch(app,INPUT_TOUCH_RELEASE,1,340,540);
     assert(mousePackets.size()>=3 && (mousePackets.front().flags&PTR_FLAGS_DOWN));
     assert(mousePackets.back().flags==PTR_FLAGS_BUTTON1 && !app.mouseDown);
+    // A 30ms-old move must progress now (legacy55ms dropped it), while
+    // immediate bursts remain bounded and release always flushes the endpoint.
+    resetRemoteInput(app);mousePackets.clear();
+    touch(app,INPUT_TOUCH_PRESS,1,300,500);
+    touch(app,INPUT_TOUCH_UPDATE,1,340,540);
+    auto dragCount=mousePackets.size();
+    app.lastMouseMove-=std::chrono::milliseconds(30);
+    touch(app,INPUT_TOUCH_UPDATE,1,360,560);
+    assert(mousePackets.size()==dragCount+1);
+    dragCount=mousePackets.size();
+    touch(app,INPUT_TOUCH_UPDATE,1,380,580);
+    assert(mousePackets.size()==dragCount);
+    touch(app,INPUT_TOUCH_RELEASE,1,390,590);
+    assert(mousePackets.back().x==390 && mousePackets.back().y==590-BAR_H);
+    assert(!app.mouseDown);
     resetRemoteInput(app); mousePackets.clear();
     touch(app,INPUT_TOUCH_PRESS,1,500,700); touch(app,INPUT_TOUCH_RELEASE,1,500,700);
     assert(mousePackets.size()==2 && app.pendingTap);
@@ -132,30 +178,52 @@ static void inputAndViewportTests() {
     app.zoom=1; app.viewX=app.viewY=0; resetRemoteInput(app); mousePackets.clear();
     touch(app,INPUT_TOUCH_PRESS,1,400,700); touch(app,INPUT_TOUCH_UPDATE,1,450,750);
     assert(app.mouseDown);
+    const float fullScale=outputScaleX(app);
     setViewportHeight(app,700);
     assert(!app.mouseDown && app.touches.empty() && !app.pendingTap && app.pendingWheel==0);
     assert(mousePackets.back().flags==PTR_FLAGS_BUTTON1);
     assert(near(outputScaleX(app),outputScaleY(app)));
     const auto t=viewTransform(app);
-    assert(t.offsetX>0 && near(t.offsetY,0));
-    assert(app.pixels()[(BAR_H+300)*W]==0xffff);
+    assert(near(t.scale,fullScale)&&near(t.offsetX,0)&&near(t.offsetY,0));
+    assert(t.maxY>0); // Hidden desktop remains accessible without smaller text.
+    assert(app.pixels()[(BAR_H+300)*W]==0);
     assert(app.pixels()[(BAR_H+300)*W+W/2]==0);
     assert(app.pixels()[(BAR_H+701)*W+W/2]==0xffff);
     mousePackets.clear();
-    touch(app,INPUT_TOUCH_PRESS,1,1,300); touch(app,INPUT_TOUCH_RELEASE,1,1,300);
+    touch(app,INPUT_TOUCH_PRESS,1,-1,300); touch(app,INPUT_TOUCH_RELEASE,1,-1,300);
     touch(app,INPUT_TOUCH_PRESS,1,W/2,BAR_H+701); touch(app,INPUT_TOUCH_RELEASE,1,W/2,BAR_H+701);
-    sendRemoteClick(app,1,300); processRemoteTouch(app,W/2,BAR_H+701);
+    sendRemoteClick(app,-1,300); processRemoteTouch(app,W/2,BAR_H+701);
     assert(mousePackets.empty());
     // Both edges of the actual content map into the corresponding remote edges.
     assert(remoteX(app,int(std::ceil(t.offsetX)))<=1);
     assert(remoteX(app,int(t.offsetX+gdi.width*t.scale)-1)>=gdi.width-4);
-    assert(remoteY(app,BAR_H)==0);
+    assert(std::abs(remoteY(app,BAR_H)-app.viewY)<1.01f);
+    // Two-finger translation exposes keyboard-covered content locally, with
+    // no remote wheel packets or drag. Full-screen scroll was tested above.
+    const float beforePan=app.viewY;mousePackets.clear();
+    touch(app,INPUT_TOUCH_PRESS,1,400,450);touch(app,INPUT_TOUCH_PRESS,2,700,450);
+    touch(app,INPUT_TOUCH_UPDATE,1,400,350);touch(app,INPUT_TOUCH_UPDATE,2,700,350);
+    sampleTwoFinger(app,true);assert(app.viewY>beforePan&&!app.pendingWheel);
+    touch(app,INPUT_TOUCH_RELEASE,1,400,350);touch(app,INPUT_TOUCH_RELEASE,2,700,350);
+    assert(mousePackets.empty()&&near(outputScaleX(app),fullScale));
+    // A swipe crossing into the keyboard cancels input, but the changed
+    // transform must still be published. Otherwise later sparse damage is
+    // painted over the previous viewport, leaving a mixed desktop image.
+    resetRemoteInput(app);app.viewY=0;
+    touch(app,INPUT_TOUCH_PRESS,1,400,450);touch(app,INPUT_TOUCH_PRESS,2,700,450);
+    touch(app,INPUT_TOUCH_UPDATE,1,400,350);touch(app,INPUT_TOUCH_UPDATE,2,700,350);
+    sampleTwoFinger(app,true);assert(app.gestureViewChanged);
+    const int beforeCancelUpdates=app.fb.updates;
+    touch(app,INPUT_TOUCH_UPDATE,1,400,BAR_H+701);
+    assert(app.touches.empty()&&!app.gestureViewChanged);
+    assert(app.fb.updates>beforeCancelUpdates);
     const int updates=app.fb.updates;
     app.cleanRefreshPending=false; app.dirty=false;
     for(int n=0;n<100;++n) { flushRemoteFrame(app); maybeCleanRefresh(app); flushWheel(app); sampleTwoFinger(app); }
     assert(app.fb.updates==updates);
     remoteInputKey(app,0x03000000,false); assert(app.viewportHeight==700);
     remoteInputKey(app,0x03000000,true); assert(app.viewportHeight==RDP_H);
+    assert(near(outputScaleX(app),fullScale)&&near(app.viewY,0));
     remoteInputKey(app,0x02ff0101,true); assert(near(app.zoom,1));
     app.rdp=nullptr; // fixture owns stack-backed FreeRDP objects
 

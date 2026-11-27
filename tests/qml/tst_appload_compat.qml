@@ -180,18 +180,23 @@ Item {
             verify(nativeKeyboardPanel.portrait)
         }
 
-        function test_native_dismiss_does_not_rotate_button_during_a_press() {
+        function test_native_outside_dismiss_keeps_keyboard_owned_until_explicit_hide() {
             const win = windowLoader.item
             win.appName = "PaperDesk RDP Engine"
             win.rdpLandscape = true
+            win.fullscreen = true
             win.systemKeyboardActive = true
             win.systemKeyboardVisibilityChanged(false)
             compare(win.rdpChromeLandscape, true)
             wait(60)
             compare(win.rdpChromeLandscape, true)
             wait(200)
-            compare(win.systemKeyboardActive, false)
+            compare(win.systemKeyboardActive, true)
             compare(win.rdpChromeLandscape, true)
+            win.hideSystemKeyboard()
+            wait(200)
+            compare(win.systemKeyboardActive, false)
+            compare(win.rdpViewportCommand, 0)
         }
 
         function test_native_panel_restores_bindings_on_focus_loss_and_close() {
@@ -297,7 +302,9 @@ Item {
 
         function test_rdp_keyboard_viewport_data() {
             return [{tag: "portrait", landscape: false, keyboardHeight: 720},
-                    {tag: "landscape", landscape: true, keyboardHeight: 550}]
+                    {tag: "portrait_short", landscape: false, keyboardHeight: 500},
+                    {tag: "landscape", landscape: true, keyboardHeight: 550},
+                    {tag: "landscape_short", landscape: true, keyboardHeight: 300}]
         }
         function test_rdp_keyboard_viewport(data) {
             const win = windowLoader.item

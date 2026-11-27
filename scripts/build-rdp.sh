@@ -11,9 +11,10 @@ SOURCE="$ROOT/product/payload/apps/paperrdp/paperrdp.cpp"
 OUT="$ROOT/product/payload/apps/paperrdp/paperrdp"
 case ${1:-} in
     --tests) SOURCE="$ROOT/tests/rdp-regression.cpp"; OUT="$ROOT/work/tests/rdp-regression" ;;
+    --render-tests) SOURCE="$ROOT/tests/rdp-render-regression.cpp"; OUT="$ROOT/work/tests/rdp-render-regression" ;;
     --e2e) OUT="$ROOT/work/tests/paperrdp-e2e" ;;
     '') ;;
-    *) echo 'Usage: build-rdp.sh [--tests|--e2e]' >&2; exit 64 ;;
+    *) echo 'Usage: build-rdp.sh [--tests|--render-tests|--e2e]' >&2; exit 64 ;;
 esac
 mkdir -p "$ROOT/work/tests"
 STAGED=$(mktemp "$ROOT/work/tests/rdp-build.XXXXXX")

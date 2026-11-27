@@ -39,6 +39,7 @@ FocusScope {
     readonly property bool paperdeskRdp: appName === "PaperDesk RDP Engine"
     property bool rdpLandscape: false
     readonly property bool rdpKeyboardVisible: systemKeyboardActive || Qt.inputMethod.visible
+    onRdpKeyboardVisibleChanged: updateRdpKeyboardLayout()
     property rect rdpKeyboardRectangle: Qt.inputMethod.keyboardRectangle
     readonly property real rdpKeyboardInset: calculateRdpKeyboardInset(rdpKeyboardVisible, rdpKeyboardRectangle)
     readonly property int rdpViewportHeight: Math.max(240, Math.floor(rdpChrome.height - 112 - rdpKeyboardInset))
@@ -61,6 +62,19 @@ FocusScope {
         const maximum = Math.max(0, rdpChrome.height - 112 - 240);
         const fallback = rdpChrome.height * 0.38;
         let inset = fallback;
+        // This firmware reports keyboardRectangle in panel-local coordinates
+        // (0,0,1404,544), not its screen position (0,1328). Measure the actual
+        // native keyboard item instead; never interpret the full-screen panel
+        // or a hidden language-selection popup as the keyboard bounds.
+        const keyboard = rdpNativeKeyboardPanel ? rdpNativeKeyboardPanel.virtualKeyboard : null;
+        if(keyboard && keyboard.visible && keyboard.width > 0 && keyboard.height > 0) {
+            const nativeBounds = keyboard.mapToItem(rdpChrome, 0, 0, keyboard.width, keyboard.height);
+            const nativeWidth = Math.max(0, Math.min(rdpChrome.width, nativeBounds.x + nativeBounds.width) - Math.max(0, nativeBounds.x));
+            if(isFinite(nativeBounds.y) && nativeWidth >= rdpChrome.width * 0.5 &&
+                    nativeBounds.y >= 112 && nativeBounds.y < rdpChrome.height &&
+                    nativeBounds.y + nativeBounds.height >= rdpChrome.height - 2)
+                return Math.min(maximum, Math.max(0, rdpChrome.height - nativeBounds.y));
+        }
         if(rectangle.width > 0 && rectangle.height > 0 &&
                 isFinite(rectangle.x) && isFinite(rectangle.y) &&
                 isFinite(rectangle.width) && isFinite(rectangle.height)) {
@@ -74,7 +88,9 @@ FocusScope {
             // bottom-docked landscape keyboard's actual geometry.
             if(coveredWidth >= rdpChrome.width * 0.5 && bounds.y >= 112 &&
                     bounds.y < rdpChrome.height && bounds.y + bounds.height >= rdpChrome.height - 2)
-                inset = Math.max(fallback, rdpChrome.height - bounds.y);
+                // A valid measured keyboard can be smaller than the emergency
+                // fallback. Keeping fallback as a minimum leaves a white gap.
+                inset = rdpChrome.height - bounds.y;
         }
         return Math.min(maximum, Math.max(0, inset));
     }
@@ -109,7 +125,7 @@ FocusScope {
         return null;
     }
     function updateRdpKeyboardLayout() {
-        if(!rdpOwnsLandscapeKeyboard) {
+        if(!paperdeskRdp || !rdpKeyboardVisible || !enabled || !visible || closing) {
             nativeKeyboardLayoutProbe.stop();
             return;
         }
@@ -247,9 +263,20 @@ FocusScope {
     }
     Timer {
         id: nativeKeyboardHiddenGuard
-        interval: 180
+        interval: 0
         onTriggered: {
-            if(!Qt.inputMethod.visible) root.systemKeyboardActive = false;
+            // Firmware dismisses its input panel on an outside PRESS. RDP
+            // needs that same contact (including two fingers) for viewport
+            // navigation. Keep explicit toolbar ownership until Hide/Close;
+            // never collapse the viewport in the middle of that gesture.
+            if(root.paperdeskRdp && root.systemKeyboardActive && root.fullscreen &&
+                    root.enabled && root.visible && !root.closing) {
+                if(!Qt.inputMethod.visible) {
+                    paperdeskSystemKeyboardInput.forceActiveFocus();
+                    Qt.inputMethod.show();
+                }
+            }
+            else root.systemKeyboardActive = false;
         }
     }
     function toggleKeyboardInput() {

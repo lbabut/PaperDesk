@@ -50,6 +50,9 @@ int DAMAGE_COLS = (W + DAMAGE_TILE_W - 1) / DAMAGE_TILE_W;
 int DAMAGE_ROWS = (RDP_H + DAMAGE_TILE_H - 1) / DAMAGE_TILE_H;
 int DAMAGE_TILE_COUNT = DAMAGE_COLS * DAMAGE_ROWS;
 constexpr int SPARSE_FRAME_MIN_GAP_MS = 80;
+// Remote drawing needs denser pointer paths than the e-ink frame cadence.
+// Bound finger traffic to 50Hz, independently of framebuffer publication.
+constexpr int FINGER_MOVE_MIN_GAP_MS = 20;
 constexpr int SPARSE_FRAME_QUIET_MS = 35;
 constexpr int SPARSE_FRAME_MAX_LATENCY_MS = 160;
 constexpr int DENSE_FRAME_MIN_GAP_MS = 700;
@@ -120,8 +123,9 @@ struct TestFramebuffer {
     unsigned char* shm=storage.data();
     size_t shmSize=storage.size();
     int updates=0, fullRefreshes=0;
+    std::vector<std::array<int,4>> regions;
     void setRefreshMode(int) {}
-    void sendPartialUpdate(int,int,int,int) { ++updates; }
+    void sendPartialUpdate(int x,int y,int w,int h) { ++updates;regions.push_back({x,y,w,h}); }
     void sendCompleteUpdate() { ++updates; }
     void requestFullRefresh() { ++fullRefreshes; }
     bool pollServerPacket(qtfb::ServerMessage&) { return false; }
@@ -133,6 +137,7 @@ enum class TwoFingerMode { None, Pending, Scroll, Pinch };
 struct App {
 #ifdef PAPERDESK_RDP_TESTING
     TestFramebuffer fb;
+    bool fastRows=true; // Differential benchmark only; not a runtime option.
 #else
     qtfb::ClientConnection fb;
 #endif
@@ -143,6 +148,7 @@ struct App {
     bool shortcutsOpen = false;
     bool running = true;
     bool mouseDown = false;
+    bool penDown = false;
     int mouseTouchId = -1;
     float mouseStartX = 0.0f;
     float mouseStartY = 0.0f;
@@ -584,7 +590,7 @@ void loadProfile(Profile& p) {
 }
 
 // The same transform drives raster damage, sampling and pointer hit testing.
-// Keyboard space reduces the viewport, never the server desktop dimensions.
+// Keyboard space crops the viewport; it must not shrink the desktop/text.
 struct ViewTransform {
     float scale, offsetX, offsetY, maxX, maxY;
     int remoteWidth, remoteHeight, viewportWidth, viewportHeight;
@@ -594,9 +600,9 @@ struct ViewTransform {
     }
 };
 
-ViewTransform makeTransform(int rw,int rh,int width,int height,float zoom) {
+ViewTransform makeTransform(int rw,int rh,int width,int height,float zoom,int fitHeight=0) {
     rw=std::max(1,rw); rh=std::max(1,rh);
-    const float scale=std::min(float(width)/rw,float(height)/rh)*zoom;
+    const float scale=std::min(float(width)/rw,float(fitHeight>0?fitHeight:height)/rh)*zoom;
     return {scale,std::max(0.0f,(width-rw*scale)/2),
             std::max(0.0f,(height-rh*scale)/2),
             std::max(0.0f,rw-width/scale),std::max(0.0f,rh-height/scale),
@@ -606,7 +612,7 @@ ViewTransform makeTransform(int rw,int rh,int width,int height,float zoom) {
 ViewTransform viewTransform(const App& a) {
     const auto* gdi=a.rdp && a.rdp->context ? a.rdp->context->gdi : nullptr;
     return makeTransform(gdi ? gdi->width : W,gdi ? gdi->height : RDP_H,
-                         W,a.viewportHeight,a.zoom);
+                         W,a.viewportHeight,a.zoom,RDP_H);
 }
 float outputScaleX(const App& a) { return viewTransform(a).scale; }
 float outputScaleY(const App& a) { return viewTransform(a).scale; }
@@ -677,6 +683,7 @@ BOOL endPaint(rdpContext* c) {
     return TRUE;
 }
 
+#include "rdp-render-row.h"
 void flushRemoteFrame(App& a, bool force=false) {
     if(a.shortcutsOpen) return;
     if(!a.dirty || !a.rdp || !a.rdp->context || !a.rdp->context->gdi) return;
@@ -735,6 +742,21 @@ void flushRemoteFrame(App& a, bool force=false) {
         for(int dy=ty1;dy<ty2;++dy) {
             const int sy=sourceY[dy];
             uint16_t* out=dst+(dy+BAR_H)*W+tx1;
+            // Only a valid, unclipped contiguous 1:1 source span may use the
+            // vector path. Zoom, letterbox and scaling retain original mapping.
+            if(scaleX==1.0f&&sy>=0&&sourceX[tx1]>=0&&
+               sourceX[tx2-1]==sourceX[tx1]+tx2-tx1-1
+#ifdef PAPERDESK_RDP_TESTING
+               &&a.fastRows
+#endif
+            ) {
+                const auto damage=rdp_render::contiguous(gdi->primary_buffer+sy*gdi->stride+sourceX[tx1]*4,out,tx2-tx1);
+                if(damage.right>damage.left) {
+                    changedX1=std::min(changedX1,tx1+damage.left);changedY1=std::min(changedY1,dy);
+                    changedX2=std::max(changedX2,tx1+damage.right);changedY2=std::max(changedY2,dy+1);
+                }
+                continue;
+            }
             for(int dx=tx1;dx<tx2;++dx,++out) {
                 const int sx=sourceX[dx];
                 uint16_t pixel=0xffff;
@@ -1186,6 +1208,7 @@ void releaseRemoteMouse(App& a,int x,int y) {
     remoteMouse(a,PTR_FLAGS_MOVE,x,y);
     remoteMouse(a,PTR_FLAGS_BUTTON1,x,y);
     a.mouseDown=false;
+    a.penDown=false;
     a.mouseTouchId=-1;
     a.cleanRefreshPending=true;
     a.cleanRefreshDue=std::chrono::steady_clock::now()+
@@ -1193,14 +1216,20 @@ void releaseRemoteMouse(App& a,int x,int y) {
 }
 
 void resetRemoteInput(App& a,bool release=true) {
+    // Cancelling at the keyboard boundary must commit any pending local pan.
+    // Otherwise subsequent sparse remote damage uses a new transform over
+    // pixels still rendered at the previous viewport position.
+    const bool commitView=a.gestureViewChanged || a.panActive;
     if(release && a.mouseDown) releaseRemoteMouse(a,a.mouseLastX,a.mouseLastY);
     a.mouseDown=false; a.mouseTouchId=-1;
+    a.penDown=false;
     a.pendingTap=false; a.doubleTapTouchId=-1; a.doubleClickSecondPending=false;
     a.rightClickSent=false; a.touches.clear(); a.pinchActive=false;
     a.gestureConsumed=false; a.panCandidate=false; a.panActive=false; a.panId=-1;
     a.twoFingerMode=TwoFingerMode::None; a.gestureSamplePending=false;
     a.gestureViewChanged=false; a.wheelRemainder=0; a.pendingWheel=0;
     a.lastWheel=std::chrono::steady_clock::now();
+    if(commitView && a.mode==Mode::Remote) redrawZoomedView(a);
 }
 
 void setViewportHeight(App& a,int requested) {
@@ -1257,6 +1286,15 @@ void sampleTwoFinger(App& a,bool force=false) {
             a.twoFingerMode=TwoFingerMode::Scroll;
     }
     if(a.twoFingerMode==TwoFingerMode::Scroll) {
+        // With keyboard cropping, move the local viewport instead of shrinking
+        // the desktop. One-finger drag still belongs to the remote application.
+        if(a.viewportHeight<RDP_H && maxViewY(a)>0) {
+            const float previous=a.viewY;
+            a.viewY=std::clamp(a.viewY-(cy-a.gestureLastCy)/outputScaleY(a),0.0f,maxViewY(a));
+            a.gestureLastCy=cy;
+            a.gestureViewChanged=a.gestureViewChanged||previous!=a.viewY;
+            return; // Coherent repaint on gesture release, as with zoom/pan.
+        }
         // Finger up scrolls the document down. Bound queued travel so a fast
         // swipe cannot leave seconds of wheel traffic after release.
         const float units=(cy-a.gestureLastCy)*(120.0f/36.0f)+a.wheelRemainder;
@@ -1276,6 +1314,8 @@ void sampleTwoFinger(App& a,bool force=false) {
 }
 
 void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
+    // Palm/finger packets must not steal an active stylus drag.
+    if(a.penDown) return;
     const bool press=u.inputType==INPUT_TOUCH_PRESS;
     const bool move=u.inputType==INPUT_TOUCH_UPDATE;
     const bool release=u.inputType==INPUT_TOUCH_RELEASE;
@@ -1321,9 +1361,9 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
             remoteMouse(a,PTR_FLAGS_MOVE|PTR_FLAGS_DOWN|PTR_FLAGS_BUTTON1,
                         int(a.mouseStartX),int(a.mouseStartY));
             a.mouseDown=true;
-            a.lastMouseMove=now-std::chrono::milliseconds(55);
+            a.lastMouseMove=now-std::chrono::milliseconds(FINGER_MOVE_MIN_GAP_MS);
         }
-        if(a.mouseDown && now-a.lastMouseMove>=std::chrono::milliseconds(55)) {
+        if(a.mouseDown && now-a.lastMouseMove>=std::chrono::milliseconds(FINGER_MOVE_MIN_GAP_MS)) {
             remoteMouse(a,PTR_FLAGS_MOVE,u.x,u.y);
             a.mouseLastX=u.x;
             a.mouseLastY=u.y;
@@ -1414,6 +1454,34 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
     }
 }
 
+void processPenPacket(App& a,const qtfb::UserInputContents& u) {
+    const bool press=u.inputType==INPUT_PEN_PRESS;
+    const bool move=u.inputType==INPUT_PEN_UPDATE;
+    const bool release=u.inputType==INPUT_PEN_RELEASE;
+    if(a.mode!=Mode::Remote || (!press&&!move&&!release)) return;
+    if(a.shortcutsOpen || u.y<BAR_H) {
+        if(a.penDown) resetRemoteInput(a);
+        else if(release) processRemoteTouch(a,u.x,u.y);
+        return; // Preserve legacy toolbar actions, never draw through a menu.
+    }
+    if(press) {
+        if(!remotePoint(a,u.x,u.y)) return;
+        resetRemoteInput(a);
+        a.penDown=true; a.mouseDown=true;
+        a.mouseLastX=u.x; a.mouseLastY=u.y;
+        remoteMouse(a,PTR_FLAGS_MOVE|PTR_FLAGS_DOWN|PTR_FLAGS_BUTTON1,u.x,u.y);
+        return;
+    }
+    if(!a.penDown) return; // Ignore hover and unmatched release, never click.
+    if(!remotePoint(a,u.x,u.y)) {
+        resetRemoteInput(a); // Release at last valid point, never in keyboard.
+        return;
+    }
+    a.mouseLastX=u.x; a.mouseLastY=u.y;
+    if(release) releaseRemoteMouse(a,u.x,u.y);
+    else remoteMouse(a,PTR_FLAGS_MOVE,u.x,u.y);
+}
+
 void pollInput(App& a) {
     qtfb::ServerMessage msg{};
     // A repaint/input storm must not starve FreeRDP network processing.
@@ -1431,6 +1499,10 @@ void pollInput(App& a) {
            u.inputType==INPUT_BTN_RELEASE || u.inputType==INPUT_VKB_RELEASE) {
             const bool down=u.inputType==INPUT_BTN_PRESS || u.inputType==INPUT_VKB_PRESS;
             if(handleClientCommand(a,u.x,down)) continue;
+        }
+        if(a.mode==Mode::Remote && (u.inputType==INPUT_PEN_PRESS || u.inputType==INPUT_PEN_UPDATE || u.inputType==INPUT_PEN_RELEASE)) {
+            processPenPacket(a,u);
+            continue;
         }
         if(a.mode==Mode::Remote && (u.inputType==INPUT_TOUCH_PRESS || u.inputType==INPUT_TOUCH_UPDATE || u.inputType==INPUT_TOUCH_RELEASE)) {
             processTouchPacket(a,u);
@@ -1491,7 +1563,7 @@ void pollAutomation(App& a,int fd,std::string& pending) {
         const std::string line=pending.substr(0,end);
         pending.erase(0,end+1);
         int x=0,y=0,key=0,id=0;
-        char command[8]={},extra=0;
+        char command[16]={},extra=0;
         if(line=="quit") { a.running=false; return; }
         int request=0;
         if(parseStateRequest(line,request)) {
@@ -1504,15 +1576,20 @@ void pollAutomation(App& a,int fd,std::string& pending) {
                 a.mouseDown ? "true" : "false",a.pendingWheel);
             continue;
         }
-        if(std::sscanf(line.c_str(),"%7s %d %d %d %c",command,&id,&x,&y,&extra)==4 &&
+        if(std::sscanf(line.c_str(),"%15s %d %d %d %c",command,&id,&x,&y,&extra)==4 &&
            id>=0 && id<32 && x>=0 && x<W && y>=0 && y<H && a.mode==Mode::Remote) {
             qtfb::UserInputContents u{};
             u.devId=id; u.x=x; u.y=y;
             if(std::strcmp(command,"down")==0) u.inputType=INPUT_TOUCH_PRESS;
             else if(std::strcmp(command,"move")==0) u.inputType=INPUT_TOUCH_UPDATE;
             else if(std::strcmp(command,"up")==0) u.inputType=INPUT_TOUCH_RELEASE;
+            else if(std::strcmp(command,"pen-down")==0) u.inputType=INPUT_PEN_PRESS;
+            else if(std::strcmp(command,"pen-move")==0) u.inputType=INPUT_PEN_UPDATE;
+            else if(std::strcmp(command,"pen-up")==0) u.inputType=INPUT_PEN_RELEASE;
             else continue;
-            processTouchPacket(a,u);
+            if(u.inputType==INPUT_PEN_PRESS || u.inputType==INPUT_PEN_UPDATE || u.inputType==INPUT_PEN_RELEASE)
+                processPenPacket(a,u);
+            else processTouchPacket(a,u);
         } else if(std::sscanf(line.c_str(),"tap %d %d %c",&x,&y,&extra)==2 && a.mode==Mode::Remote)
             processRemoteTouch(a,x,y);
         else if(std::sscanf(line.c_str(),"key %d %c",&key,&extra)==1) {

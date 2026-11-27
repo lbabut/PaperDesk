@@ -1,0 +1,27 @@
+RDP keyboard/gesture UAT, 27 November 2026
+
+Owner reported two-finger panning dismissed the native keyboard and outline
+window movement left artifacts. Production publication remains withheld.
+
+The wrapper formerly cleared systemKeyboardActive 180ms after firmware hid
+the panel on an outside press. The candidate retains explicit RDP keyboard
+ownership and restores focus/show on the next event-loop turn. Hide/Close,
+loss of enabled/visible ownership and closing do not reopen the keyboard.
+
+Native input cancellation now commits any pending viewport transform before
+discarding gesture state. Previously a cancelled swipe could leave sparse
+remote damage painted over pixels from a different viewport position.
+
+Evidence: updated ARM cancellation regression failed before the fix and
+passed after it. AppLoad compatibility suite: 28 passed, zero failed.
+Inset actual-function suite: 22 passed. On the real tablet, a disposable
+saved-profile RDP frontend hid the native input method three times; each
+restored visible=true, owned=true and unchanged viewport=1216. Explicit
+Hide remained hidden with viewport=0. Normal production native, not the
+input-injection build, was installed as isolated owner-device UAT.
+
+This is not a physical two-finger replay or optical ghosting measurement.
+Actual owner's swipe still needs UAT confirmation. Outline artifact cause
+remains unresolved; do not publish 4.2.12 on these tests alone. All prior
+release archives/feed signatures predate these fixes and must be rebuilt.
+Canonical dirty source and unrelated tablet applications remain untouched.
