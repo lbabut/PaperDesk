@@ -1,0 +1,5 @@
+{"round": 1, "arm": "baseline", "sent_moves": 120, "received_moves": 26, "remote_contact_seconds": 1.6744, "endpoint_correct": true, "mouse_released": true}
+{"round": 2, "arm": "candidate", "sent_moves": 120, "received_moves": 55, "remote_contact_seconds": 1.5883, "endpoint_correct": true, "mouse_released": true}
+{"round": 3, "arm": "candidate", "sent_moves": 120, "received_moves": 57, "remote_contact_seconds": 1.5628, "endpoint_correct": true, "mouse_released": true}
+{"round": 4, "arm": "baseline", "sent_moves": 120, "received_moves": 25, "remote_contact_seconds": 1.6406, "endpoint_correct": true, "mouse_released": true}
+{"passed": true, "baseline_moves": [26, 25], "candidate_moves": [55, 57], "physical_input": false, "optical_latency_measured": false}

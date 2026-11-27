@@ -50,6 +50,9 @@ int DAMAGE_COLS = (W + DAMAGE_TILE_W - 1) / DAMAGE_TILE_W;
 int DAMAGE_ROWS = (RDP_H + DAMAGE_TILE_H - 1) / DAMAGE_TILE_H;
 int DAMAGE_TILE_COUNT = DAMAGE_COLS * DAMAGE_ROWS;
 constexpr int SPARSE_FRAME_MIN_GAP_MS = 80;
+// Remote drawing needs denser pointer paths than the e-ink frame cadence.
+// Bound finger traffic to 50Hz, independently of framebuffer publication.
+constexpr int FINGER_MOVE_MIN_GAP_MS = 20;
 constexpr int SPARSE_FRAME_QUIET_MS = 35;
 constexpr int SPARSE_FRAME_MAX_LATENCY_MS = 160;
 constexpr int DENSE_FRAME_MIN_GAP_MS = 700;
@@ -1353,9 +1356,9 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
             remoteMouse(a,PTR_FLAGS_MOVE|PTR_FLAGS_DOWN|PTR_FLAGS_BUTTON1,
                         int(a.mouseStartX),int(a.mouseStartY));
             a.mouseDown=true;
-            a.lastMouseMove=now-std::chrono::milliseconds(55);
+            a.lastMouseMove=now-std::chrono::milliseconds(FINGER_MOVE_MIN_GAP_MS);
         }
-        if(a.mouseDown && now-a.lastMouseMove>=std::chrono::milliseconds(55)) {
+        if(a.mouseDown && now-a.lastMouseMove>=std::chrono::milliseconds(FINGER_MOVE_MIN_GAP_MS)) {
             remoteMouse(a,PTR_FLAGS_MOVE,u.x,u.y);
             a.mouseLastX=u.x;
             a.mouseLastY=u.y;

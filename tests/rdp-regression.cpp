@@ -115,6 +115,21 @@ static void inputAndViewportTests() {
     touch(app,INPUT_TOUCH_UPDATE,1,340,540); touch(app,INPUT_TOUCH_RELEASE,1,340,540);
     assert(mousePackets.size()>=3 && (mousePackets.front().flags&PTR_FLAGS_DOWN));
     assert(mousePackets.back().flags==PTR_FLAGS_BUTTON1 && !app.mouseDown);
+    // A 30ms-old move must progress now (legacy55ms dropped it), while
+    // immediate bursts remain bounded and release always flushes the endpoint.
+    resetRemoteInput(app);mousePackets.clear();
+    touch(app,INPUT_TOUCH_PRESS,1,300,500);
+    touch(app,INPUT_TOUCH_UPDATE,1,340,540);
+    auto dragCount=mousePackets.size();
+    app.lastMouseMove-=std::chrono::milliseconds(30);
+    touch(app,INPUT_TOUCH_UPDATE,1,360,560);
+    assert(mousePackets.size()==dragCount+1);
+    dragCount=mousePackets.size();
+    touch(app,INPUT_TOUCH_UPDATE,1,380,580);
+    assert(mousePackets.size()==dragCount);
+    touch(app,INPUT_TOUCH_RELEASE,1,390,590);
+    assert(mousePackets.back().x==390 && mousePackets.back().y==590-BAR_H);
+    assert(!app.mouseDown);
     resetRemoteInput(app); mousePackets.clear();
     touch(app,INPUT_TOUCH_PRESS,1,500,700); touch(app,INPUT_TOUCH_RELEASE,1,500,700);
     assert(mousePackets.size()==2 && app.pendingTap);

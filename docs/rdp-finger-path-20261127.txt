@@ -1,0 +1,42 @@
+RDP finger path cadence / UAT candidate, 27 November 2026
+
+Baseline: native3be3d224/cpp0cc89637 from stylus UAT5af9e03. Keyboard
+wrapper88d4cabf is a separate deployed fix and must remain unchanged.
+This isolated change replaces only the55ms finger-move interval with a named
+20ms interval, bounded to at most50 emitted movement updates per second.
+First drag movement and final release position still send immediately.
+Stylus path, palm ownership, scroll/zoom gestures and renderer stay unchanged.
+Remote drawing accuracy is independent of the e-ink frame cadence: this is
+denser pointer sampling, NOT a claim that the display renders2x faster.
+
+Actual device/network comparison: same saved profile, same own disposable
+702x880 X11 canvas,120 points/trace at nominal60Hz, order A/B/B/A. Isolated
+E2E adapters enter the production touch handler; not physical input injection.
+Baseline exact5af9e03 build; candidate differs only by cadence/test changes.
+Results: baseline26 and25 received movement events; candidate55 and57.
+All four final endpoints correct; native mouseDownfalse and pendingWheel0
+after each trace. Remote contact spans1.6744/1.5883/1.5628/1.6406s include
+SSH buffering effects and must NOT be reported as end-to-end input latency.
+No optical latency/ghosting, physical finger or CPU-speed measurement.
+
+ARM regression passed keyboard, viewport, mouse/pen, gestures, retry/idle,
+orientation/raster/touch and profile/certificate cases. Added explicit30ms
+progress case, immediate-burst suppression and release-endpoint check.
+Initial test build had a duplicate local variable name; corrected it and
+reran ARM regression successfully before comparison. No product-test bypass.
+Normal candidate excludes the E2E FIFO/state strings and is separately
+connected through the saved profile before installation.
+
+Candidate binary SHA256e237f66a64e3927c1989c8c921d97ef691e6c448135f719937ee9910d8a9f587
+Candidate cpp SHA256cb3853ccd9daaf9facb25b145f2b95eff91562bc64b8511e3e1458f1bd9732d0
+
+Unicode remains unresolved: actual previous session lost Polish characters;
+host XRDP0.10.1 configure flags omit --enable-ibus, keyboard layoutUS.
+Reviewed actual bundled FreeRDP input/capability handling; no proven safe
+client-only universal fix. Did not silently translate characters into shell
+key sequences, change clipboard, install packages, rebuild/restart XRDP or
+change global keyboard maps. No new Unicode success claim.
+
+Canonical dirty PaperDesk tree, production/main/site and user documents stay
+untouched. Private test canvas/probe/configuration must be retired/restored
+before leaving normal UAT. No monetization or trading changes.
