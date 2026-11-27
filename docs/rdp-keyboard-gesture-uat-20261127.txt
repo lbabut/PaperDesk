@@ -25,3 +25,14 @@ Actual owner's swipe still needs UAT confirmation. Outline artifact cause
 remains unresolved; do not publish 4.2.12 on these tests alone. All prior
 release archives/feed signatures predate these fixes and must be rebuilt.
 Canonical dirty source and unrelated tablet applications remain untouched.
+
+Worker follow-up 12:56 UTC: tablet Wi-Fi SSH reported No route to host.
+No new runtime state, install, restart or physical UAT confirmation obtained.
+Added independent sparse EndPaint-vs-full redraw coverage: moving outline
+and final erasure, 25 frames in each of eight portrait/landscape,
+keyboard/full-height and 1x/1.5x cases. All 200 host frames matched exactly.
+This does not reproduce or resolve the reported optical/transport artifacts.
+Host run command (no network/device, headers from existing toolcache):
+  bash scripts/build-rdp.sh --host-render-tests
+  work/tests/rdp-render-host
+Host timings in the older differential matrix are not ARM/NEON speed claims.

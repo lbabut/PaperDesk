@@ -7,6 +7,18 @@ TOOLS="$CACHE/arm-toolchain/root"
 SDK="$CACHE/arm-sysroot/root"
 FREERDP="$CACHE/FreeRDP"
 BUILD="$FREERDP/build-rm2e"
+if [ "${1:-}" = --host-render-tests ]; then
+    # Private-memory renderer only. Discard unused network/device functions,
+    # so this mode requires headers but no host FreeRDP installation.
+    mkdir -p "$ROOT/work/tests"
+    "${CXX:-g++}" -std=c++17 -O2 -ffunction-sections -fdata-sections \
+        -I"$FREERDP/include" -I"$BUILD/include" \
+        -I"$FREERDP/winpr/include" -I"$BUILD/winpr/include" \
+        "$ROOT/tests/rdp-render-regression.cpp" -Wl,--gc-sections \
+        -o "$ROOT/work/tests/rdp-render-host"
+    printf 'Built %s (host correctness only, not ARM/optical performance)\n' "$ROOT/work/tests/rdp-render-host"
+    exit 0
+fi
 SOURCE="$ROOT/product/payload/apps/paperrdp/paperrdp.cpp"
 OUT="$ROOT/product/payload/apps/paperrdp/paperrdp"
 case ${1:-} in
@@ -14,7 +26,7 @@ case ${1:-} in
     --render-tests) SOURCE="$ROOT/tests/rdp-render-regression.cpp"; OUT="$ROOT/work/tests/rdp-render-regression" ;;
     --e2e) OUT="$ROOT/work/tests/paperrdp-e2e" ;;
     '') ;;
-    *) echo 'Usage: build-rdp.sh [--tests|--render-tests|--e2e]' >&2; exit 64 ;;
+    *) echo 'Usage: build-rdp.sh [--tests|--render-tests|--host-render-tests|--e2e]' >&2; exit 64 ;;
 esac
 mkdir -p "$ROOT/work/tests"
 STAGED=$(mktemp "$ROOT/work/tests/rdp-build.XXXXXX")

@@ -49,6 +49,47 @@ static void frameCase(const char* label,bool landscape,int rw,int rh,float zoom,
     printf("{\"case\":\"%s\",\"frames\":%d,\"scalar_us\":%lld,\"candidate_us\":%lld,\"exact_pixels_and_regions\":true,\"network\":false,\"optical\":false}\n",label,frames,times[0],times[1]);
     fflush(stdout);
 }
+// Unlike scalar-vs-NEON equality, this compares sparse EndPaint damage with
+// an independent full redraw. Both optimized paths could share a damage bug.
+static void movingOutline(bool landscape,int keyboard,float zoom) {
+    configureOrientation(landscape);Profile p;p.landscape=landscape;
+    App partial(p),full(p);freerdp instance{};PaperContext context{};
+    rdpGdi gdi{};gdiBitmap primary{};GDI_DC dc{};GDI_WND wnd{};GDI_RGN invalid{};
+    instance.context=&context.context;context.context.gdi=&gdi;context.app=&partial;
+    gdi.primary=&primary;primary.hdc=&dc;dc.hwnd=&wnd;wnd.invalid=&invalid;
+    gdi.width=W/2;gdi.height=RDP_H/2;gdi.stride=gdi.width*4+16;
+    std::vector<BYTE> source(gdi.stride*gdi.height),previous=source;
+    gdi.primary_buffer=source.data();
+    for(App* a:{&partial,&full}) {
+        a->rdp=&instance;a->mode=Mode::Remote;a->viewportHeight=RDP_H-keyboard;
+        a->zoom=zoom;a->viewX=zoom>1?17.5f:0;a->viewY=keyboard?31.25f:0;
+    }
+    for(int frame=0;frame<25;frame++) {
+        const int left=30+frame*7,top=40+frame*5;
+        for(int y=0;y<gdi.height;y++)for(int x=0;x<gdi.width;x++) {
+            bool line=frame<24 && ((x>=left&&x<=left+140&&(y==top||y==top+100)) ||
+                      (y>=top&&y<=top+100&&(x==left||x==left+140)));
+            BYTE v=line?0:BYTE(170+(x/11+y/13)%70);auto*q=source.data()+y*gdi.stride+x*4;
+            q[0]=q[1]=q[2]=v;q[3]=255;
+        }
+        std::vector<GDI_RGN> rows;
+        for(int y=0;y<gdi.height;y++) {
+            int leftChanged=gdi.width,rightChanged=0;
+            for(int x=0;x<gdi.width;x++)if(std::memcmp(source.data()+y*gdi.stride+x*4,previous.data()+y*gdi.stride+x*4,4)) {
+                leftChanged=std::min(leftChanged,x);rightChanged=x+1;
+            }
+            if(rightChanged>leftChanged){GDI_RGN r{};r.x=leftChanged;r.y=y;r.w=rightChanged-leftChanged;r.h=1;rows.push_back(r);}
+        }
+        invalid.null=rows.empty();wnd.ninvalid=rows.size();wnd.cinvalid=rows.data();
+        assert(endPaint(&context.context));flushRemoteFrame(partial,true);
+        full.dirty=true;std::fill(full.dirtyTiles.begin(),full.dirtyTiles.end(),1);
+        full.dirtyTileCount=DAMAGE_TILE_COUNT;flushRemoteFrame(full,true);
+        assert(partial.fb.storage==full.fb.storage);
+        assert(partial.landscapePixels==full.landscapePixels);
+        previous=source;
+    }
+    printf("PASS outline sparse-vs-full: landscape=%d keyboard=%d zoom=%.2f frames=25; not optical/network\n",landscape,keyboard,zoom);
+}
 int main() {
     allColors();puts("PASS all16777216 RGB values, alpha ignored, edge lengths and exact damage spans");
     frameCase("portrait_1to1_dense",false,1404,1760,1,0,0,12,false);
@@ -57,5 +98,7 @@ int main() {
     frameCase("scaled_letterbox",false,1920,1080,1,0,0,6,false);
     frameCase("zoom_pan",false,1404,1760,1.5,30.5,0,6,false);
     frameCase("keyboard",false,1404,1760,1,0,6*88,6,false);
+    for(bool landscape:{false,true})for(int keyboard:{0,400})for(float zoom:{1.0f,1.5f})
+        movingOutline(landscape,keyboard,zoom);
     puts("PASS actual renderer differential matrix; private framebuffer, no profiles/network/QTFB");
 }
