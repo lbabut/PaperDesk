@@ -24,6 +24,10 @@ static void touch(App& app,int type,int id,int x,int y) {
     processTouchPacket(app,u);
 }
 static bool near(float a,float b) { return std::abs(a-b)<0.01f; }
+static void pen(App& app,int type,int x,int y) {
+    qtfb::UserInputContents u{};u.inputType=type;u.x=x;u.y=y;
+    processPenPacket(app,u);
+}
 
 static void inputAndViewportTests() {
     Profile p; p.host="fixture.invalid"; p.user="fixture-user";
@@ -78,6 +82,33 @@ static void inputAndViewportTests() {
     }
     unicodePackets.clear(); remoteInputKey(app,0x02000009,true); remoteInputKey(app,0x02000009,false);
     assert(unicodePackets.empty() && keyPackets.size()==2 && keyPackets[0].code==0x0f);
+
+    // Stylus starts drawing immediately, keeps every move and final position.
+    mousePackets.clear();pen(app,INPUT_PEN_UPDATE,300,500);
+    pen(app,INPUT_PEN_RELEASE,300,500);assert(mousePackets.empty());
+    pen(app,INPUT_PEN_PRESS,300,500);
+    assert(app.penDown && app.mouseDown && mousePackets.size()==1);
+    for(int n=1;n<=100;++n)pen(app,INPUT_PEN_UPDATE,300+n,500+n);
+    assert(mousePackets.size()==101);
+    touch(app,INPUT_TOUCH_PRESS,1,700,800);assert(app.penDown && app.touches.empty());
+    pen(app,INPUT_PEN_RELEASE,410,610);
+    assert(mousePackets.size()==103 && !app.penDown && !app.mouseDown);
+    assert(mousePackets.back().flags==PTR_FLAGS_BUTTON1);
+    assert(mousePackets.back().x==410 && mousePackets.back().y==610-BAR_H);
+    pen(app,INPUT_PEN_PRESS,300,500);pen(app,INPUT_PEN_UPDATE,300,BAR_H-1);
+    assert(!app.penDown && !app.mouseDown);
+    // Keyboard clipping cancels contact and never generates a new click.
+    resetRemoteInput(app);mousePackets.clear();setViewportHeight(app,1000);
+    pen(app,INPUT_PEN_PRESS,300,500);pen(app,INPUT_PEN_UPDATE,300,BAR_H+1001);
+    assert(!app.penDown && !app.mouseDown && mousePackets.size()==3);
+    pen(app,INPUT_PEN_RELEASE,300,500);assert(mousePackets.size()==3);
+    pen(app,INPUT_PEN_PRESS,300,500);setViewportHeight(app,0);
+    assert(!app.penDown && !app.mouseDown);
+    // At zoom >1 pen draws remotely, while fingers retain local pan semantics.
+    app.zoom=2;mousePackets.clear();pen(app,INPUT_PEN_PRESS,400,500);
+    pen(app,INPUT_PEN_UPDATE,450,550);pen(app,INPUT_PEN_RELEASE,460,560);
+    assert(mousePackets.size()==4 && !app.panActive && !app.penDown);
+    app.zoom=1;resetRemoteInput(app);mousePackets.clear();
 
     // Single-finger drag, ordinary click and right click retain distinct paths.
     mousePackets.clear(); touch(app,INPUT_TOUCH_PRESS,1,300,500);

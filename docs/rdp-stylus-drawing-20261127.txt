@@ -1,0 +1,46 @@
+RDP session interaction check / stylus drawing UAT, 27 November 2026
+
+Baseline native cpp7d570474, binaryb0de58fd, keyboard wrapper88d4cabf.
+Canonical dirty PaperDesk source, Sketch, saved profiles and production are
+outside this change. Isolated branch fix/rdp-stylus-drawing-20261127.
+
+Defect: pollInput normalized pen coordinates but ignored PEN_PRESS/UPDATE,
+then treated PEN_RELEASE as a click. AppLoad's actual FBController source
+maps mouse/stylus press/move/release to these three PEN packet types.
+This is a functional input-path defect, not proof of a slow framebuffer.
+
+Change: dedicated contact-only stylus path sends immediate left-down, every
+move, and final move/up. Hover/unmatched releases do not click. Palm touch
+packets cannot steal an active pen stroke. Keyboard/viewport/toolbar boundary
+and disconnect resets release the held button. Finger gestures, local zoom,
+legacy toolbar and certificate/profile handling retain their existing paths.
+No frame cadence, quality, remote resolution or pressure protocol changed:
+RDP receives a mouse stroke, not pressure-sensitive Windows Ink.
+
+Tests actually performed
+ARM native regression executable ran on the tablet: keys, wheel, viewport,
+retry/idle, orientation/raster/touch, profiles/password/certificate cases pass.
+New cases: unmatched pen,100 consecutive moves, palm interleaving, final
+position, keyboard/toolbar cancellation, viewport reset, drawing while zoomed.
+
+Actual saved-profile connection to owner's XRDP desktop, separate temporary
+X11 canvas (702x880), no user file opened or edited. Actual installed QML
+TextInput-to-QTFB keyboard path sent text; remote canvas received ASCII,
+Backspace and Return. Polish characters were missing from received events.
+Host verified: XRDP0.10.1, configure flags omit --enable-ibus, session layoutUS.
+No keyboard-map changes, server rebuild, package install or XRDP restart.
+Unicode server support requires separate investigation; do not mark resolved.
+
+Drawing used an explicitly isolated E2E FIFO adapter entering the same native
+pen/touch handlers; it is NOT a physical pen sensor or native keyboard tap
+test. No global physical-input injection. Sent two pen strokes of60 movement
+points at60Hz and200Hz: remote X11 canvas received60/60 each, correct final
+positions and button-up. Same60Hz finger trace received16 movements due to
+the pre-existing55ms throttle. This does NOT establish end-to-end optical
+latency or a CPU speedup. Private composed-framebuffer image visually confirms
+smooth pen curves and the coarser finger curve. Optical ghosting not measured.
+Native state after each trace: modeRemote, mouseDownfalse, pendingWheel0.
+Diagnostic build/FIFO is never shipped as the UAT binary; normal build only.
+
+Prior keyboard-band correction remains installed separately. No production
+release, website publication, monetization or old trading service activation.

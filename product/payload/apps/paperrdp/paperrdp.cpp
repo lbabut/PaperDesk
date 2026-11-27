@@ -145,6 +145,7 @@ struct App {
     bool shortcutsOpen = false;
     bool running = true;
     bool mouseDown = false;
+    bool penDown = false;
     int mouseTouchId = -1;
     float mouseStartX = 0.0f;
     float mouseStartY = 0.0f;
@@ -1204,6 +1205,7 @@ void releaseRemoteMouse(App& a,int x,int y) {
     remoteMouse(a,PTR_FLAGS_MOVE,x,y);
     remoteMouse(a,PTR_FLAGS_BUTTON1,x,y);
     a.mouseDown=false;
+    a.penDown=false;
     a.mouseTouchId=-1;
     a.cleanRefreshPending=true;
     a.cleanRefreshDue=std::chrono::steady_clock::now()+
@@ -1213,6 +1215,7 @@ void releaseRemoteMouse(App& a,int x,int y) {
 void resetRemoteInput(App& a,bool release=true) {
     if(release && a.mouseDown) releaseRemoteMouse(a,a.mouseLastX,a.mouseLastY);
     a.mouseDown=false; a.mouseTouchId=-1;
+    a.penDown=false;
     a.pendingTap=false; a.doubleTapTouchId=-1; a.doubleClickSecondPending=false;
     a.rightClickSent=false; a.touches.clear(); a.pinchActive=false;
     a.gestureConsumed=false; a.panCandidate=false; a.panActive=false; a.panId=-1;
@@ -1303,6 +1306,8 @@ void sampleTwoFinger(App& a,bool force=false) {
 }
 
 void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
+    // Palm/finger packets must not steal an active stylus drag.
+    if(a.penDown) return;
     const bool press=u.inputType==INPUT_TOUCH_PRESS;
     const bool move=u.inputType==INPUT_TOUCH_UPDATE;
     const bool release=u.inputType==INPUT_TOUCH_RELEASE;
@@ -1441,6 +1446,34 @@ void processTouchPacket(App& a,const qtfb::UserInputContents& u) {
     }
 }
 
+void processPenPacket(App& a,const qtfb::UserInputContents& u) {
+    const bool press=u.inputType==INPUT_PEN_PRESS;
+    const bool move=u.inputType==INPUT_PEN_UPDATE;
+    const bool release=u.inputType==INPUT_PEN_RELEASE;
+    if(a.mode!=Mode::Remote || (!press&&!move&&!release)) return;
+    if(a.shortcutsOpen || u.y<BAR_H) {
+        if(a.penDown) resetRemoteInput(a);
+        else if(release) processRemoteTouch(a,u.x,u.y);
+        return; // Preserve legacy toolbar actions, never draw through a menu.
+    }
+    if(press) {
+        if(!remotePoint(a,u.x,u.y)) return;
+        resetRemoteInput(a);
+        a.penDown=true; a.mouseDown=true;
+        a.mouseLastX=u.x; a.mouseLastY=u.y;
+        remoteMouse(a,PTR_FLAGS_MOVE|PTR_FLAGS_DOWN|PTR_FLAGS_BUTTON1,u.x,u.y);
+        return;
+    }
+    if(!a.penDown) return; // Ignore hover and unmatched release, never click.
+    if(!remotePoint(a,u.x,u.y)) {
+        resetRemoteInput(a); // Release at last valid point, never in keyboard.
+        return;
+    }
+    a.mouseLastX=u.x; a.mouseLastY=u.y;
+    if(release) releaseRemoteMouse(a,u.x,u.y);
+    else remoteMouse(a,PTR_FLAGS_MOVE,u.x,u.y);
+}
+
 void pollInput(App& a) {
     qtfb::ServerMessage msg{};
     // A repaint/input storm must not starve FreeRDP network processing.
@@ -1458,6 +1491,10 @@ void pollInput(App& a) {
            u.inputType==INPUT_BTN_RELEASE || u.inputType==INPUT_VKB_RELEASE) {
             const bool down=u.inputType==INPUT_BTN_PRESS || u.inputType==INPUT_VKB_PRESS;
             if(handleClientCommand(a,u.x,down)) continue;
+        }
+        if(a.mode==Mode::Remote && (u.inputType==INPUT_PEN_PRESS || u.inputType==INPUT_PEN_UPDATE || u.inputType==INPUT_PEN_RELEASE)) {
+            processPenPacket(a,u);
+            continue;
         }
         if(a.mode==Mode::Remote && (u.inputType==INPUT_TOUCH_PRESS || u.inputType==INPUT_TOUCH_UPDATE || u.inputType==INPUT_TOUCH_RELEASE)) {
             processTouchPacket(a,u);
@@ -1518,7 +1555,7 @@ void pollAutomation(App& a,int fd,std::string& pending) {
         const std::string line=pending.substr(0,end);
         pending.erase(0,end+1);
         int x=0,y=0,key=0,id=0;
-        char command[8]={},extra=0;
+        char command[16]={},extra=0;
         if(line=="quit") { a.running=false; return; }
         int request=0;
         if(parseStateRequest(line,request)) {
@@ -1531,15 +1568,20 @@ void pollAutomation(App& a,int fd,std::string& pending) {
                 a.mouseDown ? "true" : "false",a.pendingWheel);
             continue;
         }
-        if(std::sscanf(line.c_str(),"%7s %d %d %d %c",command,&id,&x,&y,&extra)==4 &&
+        if(std::sscanf(line.c_str(),"%15s %d %d %d %c",command,&id,&x,&y,&extra)==4 &&
            id>=0 && id<32 && x>=0 && x<W && y>=0 && y<H && a.mode==Mode::Remote) {
             qtfb::UserInputContents u{};
             u.devId=id; u.x=x; u.y=y;
             if(std::strcmp(command,"down")==0) u.inputType=INPUT_TOUCH_PRESS;
             else if(std::strcmp(command,"move")==0) u.inputType=INPUT_TOUCH_UPDATE;
             else if(std::strcmp(command,"up")==0) u.inputType=INPUT_TOUCH_RELEASE;
+            else if(std::strcmp(command,"pen-down")==0) u.inputType=INPUT_PEN_PRESS;
+            else if(std::strcmp(command,"pen-move")==0) u.inputType=INPUT_PEN_UPDATE;
+            else if(std::strcmp(command,"pen-up")==0) u.inputType=INPUT_PEN_RELEASE;
             else continue;
-            processTouchPacket(a,u);
+            if(u.inputType==INPUT_PEN_PRESS || u.inputType==INPUT_PEN_UPDATE || u.inputType==INPUT_PEN_RELEASE)
+                processPenPacket(a,u);
+            else processTouchPacket(a,u);
         } else if(std::sscanf(line.c_str(),"tap %d %d %c",&x,&y,&extra)==2 && a.mode==Mode::Remote)
             processRemoteTouch(a,x,y);
         else if(std::sscanf(line.c_str(),"key %d %c",&key,&extra)==1) {
