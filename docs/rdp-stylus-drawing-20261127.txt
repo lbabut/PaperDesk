@@ -44,3 +44,15 @@ Diagnostic build/FIFO is never shipped as the UAT binary; normal build only.
 
 Prior keyboard-band correction remains installed separately. No production
 release, website publication, monetization or old trading service activation.
+
+UAT installation verified after the tests: normal non-E2E binary SHA256
+3be3d2242d676ffcc8fbd6f4f08fdeddb6afb42a35edff71228a38be3f16a78a;
+cpp0cc8963738b61134061b13f85508c0fe10401def5c6e9f7aaae2aeef30afa9b8.
+Normal binary contains neither diagnostic FIFO environment variable nor state
+logging marker. Previous native binary/cpp retained privately on tablet.
+Original engine manifest/config restored, private probe retired, UI active
+PID19506/NRestarts0. Disposable desktop test window closed afterward.
+Final ARM regression and full renderer differential matrix passed, including
+all16777216 RGB values and six geometry/damage cases. Existing NEON benchmark
+differences are not new stylus optimization results. Normal UAT build has not
+yet been tested with a person's physical stylus; do not label it a release.
