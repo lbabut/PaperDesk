@@ -260,13 +260,31 @@ Rectangle {
             complete(ready(app) && (command.expectedCount === undefined || app.savedProfileCount === command.expectedCount),
                 {count: app.savedProfileCount, refresh_required: app.profileRefreshRequired})
         } else if (kind === "connect_save" && !app.profileActionPending) {
-            check(ready(app) && app.editorMode === "" && status(app) === "Profile saved", "The loopback connection fixture could not save")
+            check(ready(app) && app.editorMode === "" && status(app) === "Profile saved",
+                "The loopback connection fixture could not save: status=" + status(app) +
+                ", count=" + app.savedProfileCount + ", revision=" + app.profileRevision +
+                ", refresh_required=" + app.profileRefreshRequired)
             app.openSelectedProfile(); awaiting.kind = "engine"; awaiting.at = Date.now()
         } else if (kind === "engine") {
             var candidate = engine(probe.Window.window.contentItem, 0)
             if (!candidate) return
+            // AppLoad can briefly retain the outgoing window while it
+            // completes an orientation switch.  Do not bind the next
+            // command to the first matching frame: require the same native
+            // engine/ framebuffer pair to remain present for a bounded
+            // settling interval.  This keeps the test from reporting a
+            // spurious unavailable engine after a genuine landscape connect.
+            if (awaiting.candidatePid !== candidate.appPid ||
+                    awaiting.candidateKey !== candidate.qtfbKey) {
+                awaiting.candidatePid = candidate.appPid
+                awaiting.candidateKey = candidate.qtfbKey
+                awaiting.stableAt = Date.now()
+                return
+            }
+            if (Date.now() - awaiting.stableAt < 900) return
             enginePid = candidate.appPid
             complete(true, {engine_window_ready: true, orientation: sessionOrientation,
+                engine_pid: enginePid, qtfb_key: candidate.qtfbKey,
                 note: "Coordinator must await the real connected marker before sending input"})
         } else if (kind === "close") {
             if (ownEngine()) return

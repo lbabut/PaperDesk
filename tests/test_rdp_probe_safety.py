@@ -7,6 +7,10 @@ import unittest
 SOURCE=Path(__file__).with_name('run-rdp-usability.py')
 
 class RdpProbeRecoveryTests(unittest.TestCase):
+    def test_journal_reads_a_bounded_tail(self):
+        source=SOURCE.read_text()
+        self.assertIn("_PID='+str(pid)+' -n 300 --no-pager",source)
+
     def test_watchdog_is_token_bound_and_restores_only_its_probe_apps(self):
         calls=[]
         def remote(command,data=None):

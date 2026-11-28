@@ -143,7 +143,10 @@ def stop_server():
  server_process=None
 
 def journal():
- logs=remote('journalctl -u xochitl _PID='+str(pid)+' --no-pager').decode(errors='replace');(run/'xochitl-journal.log').write_text(logs);return logs
+ # The tablet keeps a large persistent Xochitl journal.  A full read after
+ # every probe command can make the diagnostic itself look like an RDP stall,
+ # so retain a bounded recent tail for the current process only.
+ logs=remote('journalctl -u xochitl _PID='+str(pid)+' -n 300 --no-pager').decode(errors='replace');(run/'xochitl-journal.log').write_text(logs);return logs
 def payload(line,marker):return json.JSONDecoder().raw_decode(line.split(marker,1)[1])[0]
 
 def until(check,seconds=20):
