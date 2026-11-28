@@ -7,6 +7,29 @@ import unittest
 SOURCE=Path(__file__).with_name('run-rdp-usability.py')
 
 class RdpProbeRecoveryTests(unittest.TestCase):
+    def test_watchdog_is_token_bound_and_restores_only_its_probe_apps(self):
+        calls=[]
+        def remote(command,data=None):
+            calls.append((command,data))
+            return b''
+        module=ast.parse(SOURCE.read_text())
+        functions=[node for node in module.body if isinstance(node,ast.FunctionDef) and node.name == 'arm_watchdog']
+        context=dict(remote=remote,q=shlex.quote,remote_base='/private/fixture',
+                     token='owned-run',watchdog_active=False)
+        exec(compile(ast.Module(body=functions,type_ignores=[]),str(SOURCE),'exec'),context)
+        context['arm_watchdog']()
+        self.assertTrue(context['watchdog_active'])
+        self.assertEqual(len(calls),2)
+        script=calls[0][1].decode()
+        self.assertIn('paperrdp-probe-$token',script)
+        self.assertIn('paperrdp-engine-probe-$token',script)
+        self.assertIn('paperrdp-profile-probe-$token',script)
+        self.assertIn('test "$(cat "$d/probe-run-id")" = "$token"',script)
+        self.assertIn('cp -p "$base/old-appload.qml" "$main"',script)
+        self.assertIn('cp -p "$base/old-window.qml" "$window"',script)
+        self.assertIn('systemctl start xochitl',script)
+        self.assertIn('date +%s >',calls[1][0])
+
     def recovery(self, rejected):
         calls=[]
         def remote(command):

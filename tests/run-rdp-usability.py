@@ -15,18 +15,65 @@ remote_base='/home/root/.local/state/paperrdp-usability-'+token
 fixture=remote_base+'/fixture';apps='/home/root/xovi/exthome/appload';qrr='/home/root/xovi/exthome/qt-resource-rebuilder/paperdesk-appload-window.qml'
 main_qrr='/home/root/xovi/exthome/qt-resource-rebuilder/paperdesk-appload.qml'
 ids={'ui':'paperrdp-probe-'+token,'engine':'paperrdp-engine-probe-'+token,'helper':'paperrdp-profile-probe-'+token}
+watchdog_active=False
 # Isolate the fixture from workstation-wide SSH snippets: it supplies an
 # explicit key and pinned host file, so no ambient ProxyCommand or config can
 # turn a recoverable device probe into a false failure.
 ssh=['ssh','-F','/dev/null','-i',a.key,'-o','UserKnownHostsFile='+a.known_hosts,'-o','StrictHostKeyChecking=yes','-o','BatchMode=yes','-o','ConnectTimeout=8','root@'+a.host]
 q=shlex.quote
 def remote(cmd,data=None):
+ global watchdog_active
+ if watchdog_active: cmd='touch '+q(remote_base+'/watchdog.lease')+'; '+cmd
  c=subprocess.run(ssh+[cmd],input=data,capture_output=True,timeout=45)
  if c.returncode:raise RuntimeError('Remote operation failed: '+c.stderr.decode(errors='replace').strip())
  return c.stdout
 def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 def interrupted(_s,_f):raise KeyboardInterrupt
 signal.signal(signal.SIGTERM,interrupted)
+
+def arm_watchdog():
+ global watchdog_active
+ # A killed local test must not strand the tablet in its isolated fixture.
+ # This script owns only this run's backups and token-marked probe apps.
+ lease_timeout=90
+ watchdog='''#!/bin/sh
+set -u
+base={base}
+token={token}
+apps=/home/root/xovi/exthome/appload
+main=/home/root/xovi/exthome/qt-resource-rebuilder/paperdesk-appload.qml
+window=/home/root/xovi/exthome/qt-resource-rebuilder/paperdesk-appload-window.qml
+lease="$base/watchdog.lease"
+cleanup() {{
+  test -f "$base/xochitl.conf" && test -f "$base/old-appload.qml" && test -f "$base/old-window.qml" || exit 0
+  systemctl stop xochitl || true
+  cp -p "$base/xochitl.conf" /home/root/.config/remarkable/xochitl.conf || true
+  cp -p "$base/old-appload.qml" "$main" || true
+  cp -p "$base/old-window.qml" "$window" || true
+  for d in "$apps/paperrdp-probe-$token" "$apps/paperrdp-engine-probe-$token" "$apps/paperrdp-profile-probe-$token"; do
+    if test -f "$d/probe-run-id" && test "$(cat "$d/probe-run-id")" = "$token"; then rm -rf "$d"; fi
+  done
+  systemctl reset-failed xochitl || true
+  systemctl start xochitl || true
+  rm -f "$lease"
+}}
+while test -f "$lease"; do
+  now=$(date +%s)
+  then=$(cat "$lease" 2>/dev/null || echo 0)
+  case "$then" in *[!0-9]*|'') then=0;; esac
+  if test $((now - then)) -gt {timeout}; then cleanup; exit 0; fi
+  sleep 5
+done
+'''.format(base=q(remote_base),token=q(token),timeout=lease_timeout)
+ remote('cat > '+q(remote_base+'/watchdog.sh')+'; chmod 700 '+q(remote_base+'/watchdog.sh'),watchdog.encode())
+ remote('date +%s > '+q(remote_base+'/watchdog.lease')+'; nohup sh '+q(remote_base+'/watchdog.sh')+' >/dev/null 2>&1 & echo $! > '+q(remote_base+'/watchdog.pid'))
+ watchdog_active=True
+
+def disarm_watchdog():
+ global watchdog_active
+ if not watchdog_active:return
+ watchdog_active=False
+ remote('rm -f '+q(remote_base+'/watchdog.lease'))
 source=root/'product/payload/apps';binary=source/'paperrdp/paperrdp';testbinary=root/'work/tests/paperrdp-e2e'
 assert sha(binary)==a.expected_native_sha256,'Stale native production binary'
 assert testbinary.is_file(),'Build --e2e first'
@@ -195,6 +242,7 @@ try:
  if old_failure not in ('masked','masked-runtime'):remote('systemctl mask --runtime remarkable-fail.service')
  remote(idle_guard);stopped=True
  remote('set -eu; systemctl stop xochitl; cp -p /home/root/.config/remarkable/xochitl.conf '+q(remote_base+'/xochitl.conf')+'; cp -p '+q(qrr)+' '+q(remote_base+'/old-window.qml')+'; cp -p '+q(main_qrr)+' '+q(remote_base+'/old-appload.qml'))
+ arm_watchdog()
  original=remote('cat '+q(remote_base+'/xochitl.conf'));report['config_before_sha256']=hashlib.sha256(original).hexdigest()
  rows=[];skip=False
  for line in original.decode().splitlines():
@@ -249,6 +297,7 @@ except BaseException as error:
  failure=error;report['error']=str(error)
 finally:
  try:
+  disarm_watchdog()
   if stopped:
    remote('systemctl stop xochitl')
    if passed and failure is None and a.deploy:
