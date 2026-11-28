@@ -16,6 +16,10 @@ class RdpProbeRecoveryTests(unittest.TestCase):
         self.assertIn('for _ in range(4):',source)
         self.assertIn("timeout 2 sh -c",source)
 
+    def test_second_orientation_refreshes_uncertain_profile_state(self):
+        source=SOURCE.read_text()
+        self.assertIn("if direction=='landscape':command('refresh',expectedCount=2)",source)
+
     def test_watchdog_is_token_bound_and_restores_only_its_probe_apps(self):
         calls=[]
         def remote(command,data=None):

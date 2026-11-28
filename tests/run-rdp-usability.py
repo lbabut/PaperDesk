@@ -273,6 +273,11 @@ try:
  remote('cat > '+q(fixture+'/profiles/profiles')+'; chmod 600 '+q(fixture+'/profiles/profiles'),stale.encode());command('save_stale');command('refresh',expectedCount=1)
  report['wire']={}
  for direction in ['portrait','landscape']:
+  # Closing the first external window may leave a just-completed profile
+  # helper result in flight.  The UI intentionally fails closed with
+  # refresh_required in that case; exercise its documented recovery before
+  # creating the independent landscape profile.
+  if direction=='landscape':command('refresh',expectedCount=2)
   connections=wire().count('WIRE_CONNECTED');command('connect',orientation=direction);until(lambda:wire().count('WIRE_CONNECTED')>connections,20);await_mode(2)
   shown=command('keyboard')['details']
   # QTFB forwards the local viewport control as an input event.  The QML
