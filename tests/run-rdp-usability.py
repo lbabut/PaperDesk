@@ -176,7 +176,17 @@ def command(action,**kw):
  remote('cat > '+q(fixture+'/command.new')+'; mv '+q(fixture+'/command.new')+' '+q(fixture+'/command.json'),data)
  return wait_state(action,revision)
 
-def fifo(lines):remote('timeout 4 sh -c '+q('cat > '+q(fixture+'/input.fifo')),lines.encode())
+def fifo(lines):
+ # The external engine opens its private FIFO after AppLoad's first frame.
+ # A just-connected landscape surface may race that open by one UI turn;
+ # retry the probe command briefly instead of classifying that harness race
+ # as an RDP keyboard regression.
+ last=None
+ for _ in range(4):
+  try:return remote('timeout 2 sh -c '+q('cat > '+q(fixture+'/input.fifo')),lines.encode())
+  except RuntimeError as error:
+   last=error;time.sleep(.25)
+ raise last
 def native_state():
  global state_request
  state_request+=1;fifo('state '+str(state_request)+'\n')

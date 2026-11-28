@@ -11,6 +11,11 @@ class RdpProbeRecoveryTests(unittest.TestCase):
         source=SOURCE.read_text()
         self.assertIn("_PID='+str(pid)+' -n 300 --no-pager",source)
 
+    def test_fifo_probe_retries_startup_race(self):
+        source=SOURCE.read_text()
+        self.assertIn('for _ in range(4):',source)
+        self.assertIn("timeout 2 sh -c",source)
+
     def test_watchdog_is_token_bound_and_restores_only_its_probe_apps(self):
         calls=[]
         def remote(command,data=None):
