@@ -161,6 +161,15 @@ Rectangle {
                 beforeKeyboard = geometry(window)
                 if (!window.rdpKeyboardVisible) window.toggleKeyboardInput()
                 waitFor("keyboard", command)
+            } else if (action === "outside_dismiss") {
+                // This models the firmware's native-panel dismiss that an
+                // outside touch can cause.  It intentionally does not call
+                // hideSystemKeyboard(): toolbar Hide is the only explicit
+                // user request that may relinquish RDP keyboard ownership.
+                check(window.rdpKeyboardVisible && Qt.inputMethod.visible,
+                      "The native keyboard must be visible before an outside dismiss")
+                Qt.inputMethod.hide()
+                waitFor("outside_dismiss", command)
             } else if (action === "hide_keyboard") {
                 window.hideSystemKeyboard()
                 waitFor("hide_keyboard", command)
@@ -267,10 +276,26 @@ Rectangle {
             var window = ownEngine()
             check(window !== null, "The diagnostic engine closed during a command")
             if (kind === "keyboard") {
-                if (!Qt.inputMethod.visible || window.rdpLastViewportCommand <= 0) return
+                // The firmware creates the native keyboard item lazily.  Its
+                // first UI turn reports the conservative fallback inset; wait
+                // for the bounded discovery pass so this device test assesses
+                // the settled geometry rather than that transitional frame.
+                if (!Qt.inputMethod.visible || window.rdpLastViewportCommand <= 0 ||
+                        Date.now() - awaiting.at < 1100) return
                 var shown = geometry(window)
                 result.orientations[sessionOrientation] = sameCanvas(beforeKeyboard, shown) && shown.toolbarReachable && shown.viewportHeight >= 240
                 complete(result.orientations[sessionOrientation], shown)
+            } else if (kind === "outside_dismiss") {
+                // The guard restores the native keyboard after the
+                // outside-touch dismissal, preserving the cropped viewport
+                // and therefore the two-finger navigation gesture.
+                if (!Qt.inputMethod.visible || !window.rdpKeyboardVisible ||
+                        window.rdpLastViewportCommand <= 0 ||
+                        Date.now() - awaiting.at < 1100) return
+                var restored = geometry(window)
+                complete(beforeKeyboard && sameCanvas(beforeKeyboard, restored) &&
+                    restored.toolbarReachable && restored.viewportHeight >= 240,
+                    restored)
             } else if (kind === "hide_keyboard") {
                 if (Qt.inputMethod.visible || window.rdpKeyboardVisible || window.rdpLastViewportCommand !== 0) return
                 var hidden = geometry(window)

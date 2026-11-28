@@ -8,13 +8,17 @@ p.add_argument('--host',required=True);p.add_argument('--key',required=True);p.a
 p.add_argument('--run',action='store_true');p.add_argument('--deploy',action='store_true')
 p.add_argument('--expected-native-sha256',required=True)
 p.add_argument('--server');p.add_argument('--output',default='docs/paperrdp-usability-device-2026-11-01.json')
+p.add_argument('--capture-script')
 a=p.parse_args();os.umask(0o077);root=Path(__file__).resolve().parents[1];work=root/'work/rdp-usability';token=secrets.token_hex(8)
 run=work/('probe-'+token);run.mkdir(parents=True);run.chmod(0o700)
 remote_base='/home/root/.local/state/paperrdp-usability-'+token
 fixture=remote_base+'/fixture';apps='/home/root/xovi/exthome/appload';qrr='/home/root/xovi/exthome/qt-resource-rebuilder/paperdesk-appload-window.qml'
 main_qrr='/home/root/xovi/exthome/qt-resource-rebuilder/paperdesk-appload.qml'
 ids={'ui':'paperrdp-probe-'+token,'engine':'paperrdp-engine-probe-'+token,'helper':'paperrdp-profile-probe-'+token}
-ssh=['ssh','-i',a.key,'-o','UserKnownHostsFile='+a.known_hosts,'-o','StrictHostKeyChecking=yes','-o','BatchMode=yes','-o','ConnectTimeout=8','root@'+a.host]
+# Isolate the fixture from workstation-wide SSH snippets: it supplies an
+# explicit key and pinned host file, so no ambient ProxyCommand or config can
+# turn a recoverable device probe into a false failure.
+ssh=['ssh','-F','/dev/null','-i',a.key,'-o','UserKnownHostsFile='+a.known_hosts,'-o','StrictHostKeyChecking=yes','-o','BatchMode=yes','-o','ConnectTimeout=8','root@'+a.host]
 q=shlex.quote
 def remote(cmd,data=None):
  c=subprocess.run(ssh+[cmd],input=data,capture_output=True,timeout=45)
@@ -136,6 +140,9 @@ def native_state():
 def await_mode(mode):return until(lambda:(value if (value:=native_state())['mode']==mode else None),15)
 def capture(label):
  python='/home/lukasz/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3';script=root.with_name('PaperDesk-terminal')/'work/capture-terminal-screen.py'
+ if a.capture_script: script=Path(a.capture_script)
+ elif not script.is_file(): script=Path('/home/lukasz/Documents/Codex/PaperDesk-terminal/work/capture-terminal-screen.py')
+ if not script.is_file(): raise RuntimeError('No trusted PaperDesk framebuffer capture script is available')
  c=subprocess.run([python,str(script),'--host','root@'+a.host,'--identity',a.key,'--known-hosts',a.known_hosts,'--output',str(run/(label+'.png'))],capture_output=True,text=True,timeout=45)
  assert c.returncode==0,c.stderr
 
@@ -206,7 +213,19 @@ try:
  report['wire']={}
  for direction in ['portrait','landscape']:
   connections=wire().count('WIRE_CONNECTED');command('connect',orientation=direction);until(lambda:wire().count('WIRE_CONNECTED')>connections,20);await_mode(2)
-  shown=command('keyboard')['details'];state=native_state();engine_pid=int(state['pid']);assert state['viewportHeight']==shown['viewportHeight']
+  shown=command('keyboard')['details']
+  # QTFB forwards the local viewport control as an input event.  The QML
+  # layout can settle one event-loop turn before the external engine consumes
+  # that event, so a single immediately-following state read races the real
+  # transport.  Require convergence within a bounded window instead.
+  state=until(lambda:(value if (value:=native_state())['viewportHeight']==shown['viewportHeight'] else None),5)
+  engine_pid=int(state['pid'])
+  # An outside press can make the firmware dismiss its own keyboard before
+  # the RDP gesture reaches the canvas. Verify that the production wrapper
+  # keeps its explicit keyboard ownership and re-establishes the settled
+  # viewport before testing the gesture transport.
+  restored=command('outside_dismiss')['details']
+  state=until(lambda:(value if (value:=native_state())['viewportHeight']==restored['viewportHeight'] else None),5)
   capture(direction+'-keyboard');key_start=len(wire());command('navigation');command('send_navigation');command('functions');capture(direction+'-functions');command('send_functions')
   def keys_received():
    packets=re.findall(r'WIRE_KEY flags=(\d+) code=(\d+)',wire()[key_start:]);down={(int(c),bool(int(f)&256)) for f,c in packets if not int(f)&32768}
